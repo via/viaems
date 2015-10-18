@@ -15,28 +15,16 @@ int decoder_valid(struct decoder *d) {
     return 0;
 
   timeval_t curtime = current_time();
-  if (d->expiration > d->last_trigger_time) { 
-    /* No timer-wrap */
-    if ((curtime >= d->last_trigger_time) && (curtime < d->expiration)) {
-      return 1;
-    } else {
-      d->valid = 0;
-      return 0;
-    }
+  if (time_in_range(curtime, d->last_trigger_time, d->expiration)) {
+    return 1;
   } else {
-    if ((curtime >= d->expiration) && (curtime < d->last_trigger_time)) {
-      d->valid = 0;
-      return 0;
-    } else {
-      return 1;
-    }
+    d->valid = 0;
+    return 0;
   }
 }
 
 void tfi_pip_decoder(struct decoder *d) {
   timeval_t t0, prev_t0;
-  timeval_t acc = 0;
-  int i;
   static timeval_t last_times[SAVE_VALS];
   static int cur_index = 0;
   static int valid_time_count = 0;

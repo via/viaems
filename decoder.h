@@ -10,7 +10,7 @@ struct decoder {
   /* Unsafe interrupt-written vars */
   timeval_t last_t0;
   timeval_t last_t1;
-  int needs_decoding;
+  char needs_decoding;
 
   /* Safe, only handled in main loop */
   decoder_func decode;

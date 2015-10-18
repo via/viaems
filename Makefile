@@ -1,6 +1,6 @@
 PLATFORM=attiny861
 CC=avr-gcc
-CFLAGS=-I. -mmcu=${PLATFORM} -nostartfiles -nostdlib -std=c99 -Wall -O2
+CFLAGS=-I. -mmcu=${PLATFORM} -std=c99 -Wall -O2
 LDFLAGS=-lgcc
 
 all: tfi
