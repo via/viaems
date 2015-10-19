@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "platform.h"
+#include "util.h"
 #include <check.h>
 
 void disable_interrupts() {
@@ -40,6 +41,19 @@ START_TEST(check_time_in_range) {
 } END_TEST
 
 START_TEST(check_time_diff) {
+  timeval_t t1, t2;
+
+  t1 = 0xFF000000;
+  t2 = 0xFF0000FF;
+  ck_assert_int_eq(time_diff(t2, t1), 0xFF);
+
+  t1 = 0xFFFFFF00;
+  t2 = 0x00000010;
+  ck_assert_int_eq(time_diff(t2, t1), 0x110);
+
+  t1 = 0xFFFFFF00;
+  t2 = 0xFFFFFF00;
+  ck_assert_int_eq(time_diff(t2, t1), 0);
 } END_TEST
 
 int main(void) {

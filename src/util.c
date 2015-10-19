@@ -30,7 +30,7 @@ timeval_t time_diff(timeval_t later, timeval_t earlier) {
   if (later > earlier) {
     return later - earlier;
   } else {
-    return ULONG_MAX - (earlier - later);
+    return ULONG_MAX - (earlier - later) + 1;
   }
 }
 
