@@ -4,7 +4,7 @@ PLATFORM?=attiny861
 CFLAGS!=pkg-config --cflags check
 LDFLAGS!=pkg-config --libs check
 CC=gcc
-CFLAGS+= -I. -std=c99 -Wall -O2 
+CFLAGS+= -I. -std=c99 -Wall -O0 -g
 .else
 CC=avr-gcc
 CFLAGS=-I. -mmcu=${PLATFORM} -std=c99 -Wall -O2
