@@ -19,7 +19,7 @@ void validate_decoder_sequence(struct decoder *d, struct decoder_event *ev,
     d->last_t0 = ev[i].time;
     tfi_pip_decoder(d);
     ck_assert_msg(d->valid == ev[i].valid, "expected: {%d, %d, %d} got: {%d, %d, %d}",
-        ev[i].time, ev[i].valid, ev[1].rpm, d->last_trigger_time, d->valid, d->rpm);
+        ev[i].time, ev[i].valid, ev[i].rpm, d->last_trigger_time, d->valid, d->rpm);
     if (ev[i].valid) {
       ck_assert_int_eq(d->rpm, ev[i].rpm);
     }
@@ -40,8 +40,8 @@ START_TEST(check_decoder_startup_rough) {
 } END_TEST
 
 START_TEST(check_decoder_startup_normal) {
-  struct decoder d;
-  struct decoder_event ev[] = {
+  struct decoder d1;
+  struct decoder_event ev1[] = {
     {18000, 0, 0},
     {25000, 0, 0},
     {50000, 0, 0},
@@ -50,7 +50,21 @@ START_TEST(check_decoder_startup_normal) {
     {125000, 1, 6000},
   };
 
-  validate_decoder_sequence(&d, ev, 6);
+  validate_decoder_sequence(&d1, ev1, 6);
+
+  struct decoder d2;
+  struct decoder_event ev2[] = {
+    {0xFFFD6000, 0, 0},
+    {0xFFFDE000, 0, 0},
+    {0xFFFE6000, 0, 0},
+    {0xFFFEE000, 1, 4577},
+    {0xFFFF6000, 1, 4577},
+    {0xFFFFE000, 1, 4577},
+    {0x00006000, 1, 4577},
+    {0x0000E000, 1, 4577},
+  };
+
+  validate_decoder_sequence(&d2, ev2, 8);
 
 } END_TEST
 
