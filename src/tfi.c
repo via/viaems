@@ -45,12 +45,17 @@ void do_ignition_event(struct ignition_event *ig, timeval_t start, timeval_t sto
 
 int main() {
 
-  platform_init();
   decoder_init(&d);
+  platform_init(&d);
   timeval_t cur = current_time();
   timeval_t prev = cur;
 
-  struct ignition_event ig1 = {0, 0, 1, 0};
+  struct ignition_event ig1 = {
+    .on = 0, 
+    .off = 0, 
+    .output_id = 1, 
+    .output_val = 0
+  };
   struct ignition_event tmp;
 
   while (1) {

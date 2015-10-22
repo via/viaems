@@ -7,7 +7,7 @@ CC=gcc
 CFLAGS+= -I. -std=c99 -Wall -O0 -g
 .else
 CC=avr-gcc
-CFLAGS=-I. -mmcu=${PLATFORM} -std=c99 -Wall -O2
+CFLAGS=-I. -mmcu=${PLATFORM} -std=c99 -Wall -O2 -Wextra
 LDFLAGS=-lgcc
 .endif
 
