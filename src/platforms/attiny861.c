@@ -27,6 +27,9 @@ void platform_init(struct decoder *d) {
   GIMSK |= _BV(INT0);
 
   SREG |= _BV(SREG_I);
+
+  /* Setup output */
+  DDRB |= DDB0;
 }
 
 ISR(INT0_vect) {
@@ -64,5 +67,10 @@ timeval_t current_time() {
 }
 
 void set_output(int output, char value) {
+  if (value) {
+    PORTB |= PORTB0;
+  } else {
+    PORTB ^= PORTB0;
+  }
 }
 
