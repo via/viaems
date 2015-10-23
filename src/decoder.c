@@ -63,7 +63,6 @@ void tfi_pip_decoder(struct decoder *d) {
     } else {
       d->valid = 1;
       d->last_trigger_time = t0;
-      /* d->expiration = t0 + time_from_rpm_diff(d->rpm + MAX_RPM_DEVIATION, 90); */
       d->expiration = t0 + diff + (diff >> 1); /* 1.5x length of previous slice */
     }
   } else {

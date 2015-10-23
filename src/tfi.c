@@ -50,26 +50,29 @@ int main() {
   platform_init(&d);
   timeval_t cur = current_time();
   timeval_t prev = cur;
+  degrees_t adv = 15;
 
   struct ignition_event ig1 = {
     .on = 0, 
     .off = 0, 
-    .output_id = 1, 
+    .output_id = 0, 
     .output_val = 0
   };
   struct ignition_event tmp;
 
   while (1) {
-    set_output(2, 1);
+    set_output(1, 1);
     if (d.needs_decoding) {
-      set_output(2, 0);
+      set_output(1, 0);
+      set_output(2, 1);
       set_output(3, 1);
       d.decode(&d);
-      set_output(3, 0);
+      set_output(2, 0);
       /* Calculate Advance */
       /* Plan times for things */
-      tmp.on = d.last_trigger_time + time_from_rpm_diff(d.rpm, 35);
-      tmp.off = tmp.on + 1000;
+      tmp.on = d.last_trigger_time + time_from_rpm_diff(d.rpm, 45 - adv);
+      tmp.off = tmp.on + 16000; /* 1 ms pulse */
+      set_output(3, 0);
       update_ignition_event(&ig1, &tmp);
     }
     cur = current_time();

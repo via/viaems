@@ -20,7 +20,6 @@ void platform_init(struct decoder *d) {
   /* Set CLKPCE high then immediately write CLKPS */
   CLKPR = _BV(CLKPCE);
   CLKPR = 0;
-  PLLCSR |= _BV(PLLE); /* Enable PLL */
 
   /* Set up overflow interrupt */
   TCCR0A |= _BV(TCW0); /* 16-bit width */
@@ -48,7 +47,6 @@ ISR(INT0_vect) {
 }
 
 ISR(TIMER0_OVF_vect) {
-  PORTB ^= _BV(PORTB3);
   time_high++;
 }
 
@@ -77,7 +75,7 @@ timeval_t current_time() {
 }
 
 void set_output(int output, char value) {
-  unsigned char mask = 1 << (output - 1);
+  unsigned char mask = 1 << output;
   if (value) {
     PORTB |= mask;
   } else {
