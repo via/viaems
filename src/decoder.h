@@ -14,10 +14,10 @@ struct decoder {
 
   /* Safe, only handled in main loop */
   decoder_func decode;
-  int valid;
-  int rpm;
+  unsigned char valid;
+  unsigned int rpm;
   timeval_t last_trigger_time;
-  int last_trigger_rpm;
+  unsigned int last_trigger_rpm;
   timeval_t expiration;
 };
 

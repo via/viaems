@@ -8,14 +8,19 @@
 static unsigned int time_high = 0;
 static struct decoder *decoder;
 
+FUSES = {
+  .low = (FUSE_CKDIV8 & FUSE_SUT0 & FUSE_CKSEL3 & FUSE_CKSEL2 & FUSE_CKSEL1),
+};
+
 void platform_init(struct decoder *d) {
 
   decoder = d;
   /* Set up clocks*/
-  /* Default CKSEL3:0 - 0010, 8 Mhz */
+  /* CKSEL3:0 - 0001, 16 Mhz */
   /* Set CLKPCE high then immediately write CLKPS */
   CLKPR = _BV(CLKPCE);
   CLKPR = 0;
+  PLLCSR |= _BV(PLLE); /* Enable PLL */
 
   /* Set up overflow interrupt */
   TCCR0A |= _BV(TCW0); /* 16-bit width */
@@ -29,7 +34,11 @@ void platform_init(struct decoder *d) {
   SREG |= _BV(SREG_I);
 
   /* Setup output */
-  DDRB |= DDB0;
+  PORTB = 0;
+  DDRB |= _BV(DDB0);
+  DDRB |= _BV(DDB1);
+  DDRB |= _BV(DDB2);
+  DDRB |= _BV(DDB3);
 }
 
 ISR(INT0_vect) {
@@ -39,6 +48,7 @@ ISR(INT0_vect) {
 }
 
 ISR(TIMER0_OVF_vect) {
+  PORTB ^= _BV(PORTB3);
   time_high++;
 }
 
@@ -67,10 +77,11 @@ timeval_t current_time() {
 }
 
 void set_output(int output, char value) {
+  unsigned char mask = 1 << (output - 1);
   if (value) {
-    PORTB |= PORTB0;
+    PORTB |= mask;
   } else {
-    PORTB ^= PORTB0;
+    PORTB &= ~mask;
   }
 }
 

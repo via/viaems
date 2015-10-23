@@ -7,7 +7,7 @@ struct decoder d;
 struct ignition_event {
   timeval_t on;
   timeval_t off;
-  int output_id;
+  char output_id;
   char output_val;
 };
 
@@ -24,7 +24,8 @@ void update_ignition_event(struct ignition_event *dst,
   dst->off = src->off;
 }
 
-void do_ignition_event(struct ignition_event *ig, timeval_t start, timeval_t stop) {
+void do_ignition_event(struct ignition_event *ig, timeval_t start, 
+                       timeval_t stop, char valid) {
   char turn_on = time_in_range(ig->on, start, stop);
   char turn_off = time_in_range(ig->off, start, stop);
 
@@ -32,7 +33,7 @@ void do_ignition_event(struct ignition_event *ig, timeval_t start, timeval_t sto
     /* This should never happen unless something took way longer than normal */
     while(1); 
   }
-  if (turn_on) {
+  if (turn_on && valid) {
     ig->output_val = 1;
     set_output(ig->output_id, 1);
   }
@@ -59,18 +60,20 @@ int main() {
   struct ignition_event tmp;
 
   while (1) {
-    cur = current_time();
+    set_output(2, 1);
     if (d.needs_decoding) {
+      set_output(2, 0);
+      set_output(3, 1);
       d.decode(&d);
+      set_output(3, 0);
       /* Calculate Advance */
       /* Plan times for things */
-      tmp.on = cur + time_from_rpm_diff(d.rpm, 20);
-      tmp.off = cur + time_from_rpm_diff(d.rpm, 30);
+      tmp.on = d.last_trigger_time + time_from_rpm_diff(d.rpm, 35);
+      tmp.off = tmp.on + 1000;
       update_ignition_event(&ig1, &tmp);
     }
-    if (decoder_valid(&d)) {
-      do_ignition_event(&ig1, prev, cur);
-    }
+    cur = current_time();
+    do_ignition_event(&ig1, prev, cur, decoder_valid(&d));
     prev = cur;
   }
 

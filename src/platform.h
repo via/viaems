@@ -2,7 +2,7 @@
 #define _PLATFORM_H
 #include <stdint.h>
 
-#define TICKRATE 20000000
+#define TICKRATE 16000000
 
 struct decoder;
 typedef uint32_t timeval_t;

@@ -3,12 +3,12 @@
 #include "limits.h"
 
 unsigned int rpm_from_time_diff(timeval_t t1, degrees_t deg) {
-  unsigned int rpm  = (TICKRATE * deg) / (t1 * 6);
+  unsigned int rpm  = (TICKRATE / 6 * deg) / t1;
   return rpm;
 }
 
 timeval_t time_from_rpm_diff(unsigned int rpm, degrees_t deg) {
-  timeval_t ticks = (TICKRATE * deg) / (rpm * 6);
+  timeval_t ticks = (TICKRATE / 6 * deg) / rpm;
   return ticks;
 }
 

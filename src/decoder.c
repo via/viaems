@@ -23,11 +23,21 @@ int decoder_valid(struct decoder *d) {
   }
 }
 
+/* Assumes idx is less than `max` greater than the bounds of the array */
+static inline unsigned char constrain(unsigned char idx, 
+                                      unsigned char max) {
+  if (idx >= max) {
+    return idx - max;
+  } else {
+    return idx;
+  }
+}
+
 void tfi_pip_decoder(struct decoder *d) {
   timeval_t t0, prev_t0;
   static timeval_t last_times[SAVE_VALS] = {0, 0, 0, 0};
-  static int cur_index = 0;
-  static int valid_time_count = 0;
+  static unsigned char cur_index = 0;
+  static unsigned char valid_time_count = 0;
 
   disable_interrupts();
   t0 = d->last_t0;
@@ -35,14 +45,14 @@ void tfi_pip_decoder(struct decoder *d) {
   enable_interrupts();
 
   prev_t0 = last_times[cur_index];
-  cur_index = (cur_index + 1) % SAVE_VALS;
+  cur_index = constrain((cur_index + 1), SAVE_VALS);
   last_times[cur_index] = t0;
   valid_time_count++;
   if (valid_time_count >= SAVE_VALS) {
     timeval_t diff = time_diff(t0, prev_t0);
-    int slicerpm = rpm_from_time_diff(diff, 45);
+    unsigned int slicerpm = rpm_from_time_diff(diff, 90);
     d->rpm = rpm_from_time_diff(time_diff(last_times[cur_index], 
-          last_times[(cur_index + 1) % SAVE_VALS]), 135);
+          last_times[constrain(cur_index + 1, SAVE_VALS)]), 270);
     valid_time_count = SAVE_VALS;
     if ((slicerpm <= MAX_RPM_DEVIATION) ||
         (slicerpm > d->rpm + MAX_RPM_DEVIATION) ||
@@ -53,7 +63,8 @@ void tfi_pip_decoder(struct decoder *d) {
     } else {
       d->valid = 1;
       d->last_trigger_time = t0;
-      d->expiration = t0 + time_from_rpm_diff(d->rpm + MAX_RPM_DEVIATION, 45);
+      /* d->expiration = t0 + time_from_rpm_diff(d->rpm + MAX_RPM_DEVIATION, 90); */
+      d->expiration = t0 + diff + (diff >> 1); /* 1.5x length of previous slice */
     }
   } else {
     d->valid = 0;
