@@ -1,8 +1,10 @@
 #include "platform.h"
 #include "util.h"
 #include "decoder.h"
+#include "factors.h"
 
 struct decoder d;
+struct analog_inputs inputs;
 
 struct ignition_event {
   timeval_t on;
@@ -47,7 +49,7 @@ void do_ignition_event(struct ignition_event *ig, timeval_t start,
 int main() {
 
   decoder_init(&d);
-  platform_init(&d);
+  platform_init(&d, &inputs);
   timeval_t cur = current_time();
   timeval_t prev = cur;
   degrees_t adv = 15;
@@ -61,17 +63,16 @@ int main() {
   struct ignition_event tmp;
 
   while (1) {
-    set_output(1, 1);
     if (d.needs_decoding) {
-      set_output(1, 0);
       set_output(2, 1);
       set_output(3, 1);
       d.decode(&d);
       set_output(2, 0);
       /* Calculate Advance */
       /* Plan times for things */
-      tmp.on = d.last_trigger_time + time_from_rpm_diff(d.rpm, 45 - adv);
-      tmp.off = tmp.on + 16000; /* 1 ms pulse */
+      adv = (inputs.MAP >> 5);
+      tmp.on = d.last_trigger_time + time_from_rpm_diff(d.rpm, 40 - adv);
+      tmp.off = tmp.on + 4000;
       set_output(3, 0);
       update_ignition_event(&ig1, &tmp);
     }

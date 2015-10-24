@@ -3,14 +3,18 @@
 #include <stdint.h>
 
 #define TICKRATE 16000000
+#ifndef NULL
+#define NULL 0
+#endif
 
 struct decoder;
+struct analog_inputs;
 typedef uint32_t timeval_t;
 typedef uint16_t degrees_t;
 /* timeval_t is gauranteed to be 32 bits */
 
 timeval_t current_time();
-void platform_init(struct decoder *);
+void platform_init(struct decoder *, struct analog_inputs *);
 
 void disable_interrupts();
 void enable_interrupts();
