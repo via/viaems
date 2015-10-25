@@ -12,6 +12,7 @@ unsigned int *adc_mapping[] = {NULL, NULL, NULL, NULL};
 
 FUSES = {
   .low = (FUSE_CKDIV8 & FUSE_SUT0 & FUSE_CKSEL3 & FUSE_CKSEL2 & FUSE_CKSEL1),
+  .high = (FUSE_SPIEN & FUSE_BODLEVEL1 & FUSE_BODLEVEL0),
 };
 
 void platform_init(struct decoder *d, struct analog_inputs *a) {
@@ -35,8 +36,6 @@ void platform_init(struct decoder *d, struct analog_inputs *a) {
   MCUCR |= _BV(ISC00); /* Both edges */
   GIMSK |= _BV(INT0);
 
-  SREG |= _BV(SREG_I);
-
   /* Setup output */
   PORTB = 0;
   DDRB |= _BV(DDB0);
@@ -50,9 +49,12 @@ void platform_init(struct decoder *d, struct analog_inputs *a) {
   ADCSRA = _BV(ADEN) | _BV(ADIE) | _BV(ADPS2) | _BV(ADPS1) | _BV(ADPS0);
   ADMUX = 0; /* Vcc ref, mux 0 */
 
+  SREG |= _BV(SREG_I);
+
 }
 
 ISR(INT0_vect) {
+  PORTB ^= _BV(PORTB1);
   /* If falling edge, its a trigger. Otherwise ADC */
   if (PINB & _BV(PINB6)) {
     /* Kick off ADC */
@@ -70,7 +72,6 @@ ISR(TIMER0_OVF_vect) {
 }
 
 ISR(ADC_vect) {
-  PORTB ^= _BV(PORTB1);
   unsigned int val = ADCL;
   val |= ((ADCH & 0x3) << 8);
   unsigned char curmux = ADMUX & 0x1F;

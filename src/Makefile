@@ -11,7 +11,7 @@ CFLAGS=-I. -mmcu=${PLATFORM} -std=c99 -Wall -O3 -Wextra
 LDFLAGS=-lgcc
 .endif
 
-all: tfi.hex lfuse.hex
+all: tfi.hex lfuse.hex hfuse.hex
 
 tfi: decoder.o util.o tfi.o platforms/${PLATFORM}.o
 	${CC} ${CFLAGS} -o tfi tfi.o decoder.o util.o ${PLATFORM}.o ${LDFLAGS}
@@ -24,6 +24,9 @@ fuses.hex: tfi
 
 lfuse.hex: fuses.hex
 	srec_cat fuses.hex -Intel -crop 0x00 0x01 -offset  0x00 -O lfuse.hex -Intel
+
+hfuse.hex: fuses.hex
+	srec_cat fuses.hex -Intel -crop 0x01 0x02 -offset  -0x01 -O hfuse.hex -Intel
 
 check: decoder.o util.o test/check.o
 	${CC} ${CFLAGS} -o check check.o decoder.o util.o ${LDFLAGS}

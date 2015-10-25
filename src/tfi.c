@@ -33,7 +33,9 @@ void do_ignition_event(struct ignition_event *ig, timeval_t start,
 
   if (turn_on && turn_off) {
     /* This should never happen unless something took way longer than normal */
-    while(1); 
+    ig->output_val = 0;
+    set_output(ig->output_id, 0);
+    return;
   }
   if (turn_on && valid) {
     ig->output_val = 1;
@@ -49,18 +51,17 @@ void do_ignition_event(struct ignition_event *ig, timeval_t start,
 int main() {
 
   decoder_init(&d);
-  platform_init(&d, &inputs);
-  timeval_t cur = current_time();
-  timeval_t prev = cur;
-  degrees_t adv = 15;
-
+  degrees_t adv = 18;
   struct ignition_event ig1 = {
     .on = 0, 
     .off = 0, 
     .output_id = 0, 
     .output_val = 0
   };
-  struct ignition_event tmp;
+  struct ignition_event tmp = {0, 0, 0, 0};
+  platform_init(&d, &inputs);
+  timeval_t cur = current_time();
+  timeval_t prev = cur;
 
   while (1) {
     if (d.needs_decoding) {
@@ -70,9 +71,13 @@ int main() {
       set_output(2, 0);
       /* Calculate Advance */
       /* Plan times for things */
-      adv = (inputs.MAP >> 5);
-      tmp.on = d.last_trigger_time + time_from_rpm_diff(d.rpm, 40 - adv);
-      tmp.off = tmp.on + 4000;
+      if (d.rpm < 2500) {
+        adv = d.rpm >> 7; /* 0-2500 rpms is 0-20 deg */
+      } else {
+        adv = 20;
+      }
+      tmp.on = d.last_trigger_time + time_from_rpm_diff(d.rpm, 45 - adv);
+      tmp.off = tmp.on + 10000;
       set_output(3, 0);
       update_ignition_event(&ig1, &tmp);
     }
