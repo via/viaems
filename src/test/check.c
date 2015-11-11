@@ -2,7 +2,9 @@
 #include "platform.h"
 #include "util.h"
 #include "decoder.h"
+#include "scheduler.h"
 #include <check.h>
+#include "queue.h"
 
 struct decoder_event {
   timeval_t time;
@@ -34,6 +36,20 @@ void enable_interrupts() {
 
 timeval_t current_time() {
   return 0;
+}
+
+void set_event_timer(timeval_t t) {
+}
+
+timeval_t get_event_timer() {
+  return 0;
+}
+
+void clear_event_timer() {
+}
+void disable_event_timer() {
+}
+void set_output(int output, char value) {
 }
 
 START_TEST(check_decoder_startup_rough) {
@@ -121,18 +137,18 @@ START_TEST(check_decoder_normal_regain_sync) {
 } END_TEST
 
 START_TEST(check_rpm_from_time_diff) {
-  /* 180 degrees for 0.005 s is 6000 rpm */
+  /* 360 degrees for 0.005 s is 6000 rpm */
   ck_assert_int_eq(rpm_from_time_diff(100000, 180), 6000);
 
-  /* 45 degrees for 0.00125 s is 6000 rpm */
+  /* 90 degrees for 0.00125 s is 6000 rpm */
   ck_assert_int_eq(rpm_from_time_diff(25000, 45), 6000);
 } END_TEST
 
 START_TEST(check_time_from_rpm_diff) {
-  /* 6000 RPMS, 180 degrees = 0.005 s */
+  /* 6000 RPMS, 360 degrees = 0.005 s */
   ck_assert_int_eq(time_from_rpm_diff(6000, 180), 100000);
 
-  /* 6000 RPMS, 45 is 0.00125 s */
+  /* 6000 RPMS, 90 is 0.00125 s */
   ck_assert_int_eq(time_from_rpm_diff(6000, 45), 25000);
 } END_TEST
 
@@ -176,11 +192,54 @@ START_TEST(check_time_diff) {
   ck_assert_int_eq(time_diff(t2, t1), 0);
 } END_TEST
 
+START_TEST(check_scheduler_inserts) {
+ struct scheduler_head s = LIST_HEAD_INITIALIZER(sched_entry);
+ struct sched_entry a[] = {
+   {5000, 0, 0, 0, 0},
+   {8000, 0, 0, 0, 0},
+   {6000, 0, 0, 0, 0},
+   {2000, 0, 0, 0, 0},
+ };
+ timeval_t ret;
+
+ ret = schedule_insert(&s, 0, &a[0]);
+ ck_assert(LIST_FIRST(&s) == &a[0]);
+ ck_assert(ret == 5000);
+
+ ret = schedule_insert(&s, 0, &a[1]);
+ ck_assert(LIST_FIRST(&s) == &a[0]);
+ ck_assert(LIST_NEXT(LIST_FIRST(&s), entries) = &a[1]);
+ ck_assert(ret == 5000);
+
+ ret = schedule_insert(&s, 0, &a[2]);
+ ck_assert(LIST_FIRST(&s) == &a[0]);
+ ck_assert(LIST_NEXT(LIST_FIRST(&s), entries) == &a[2]);
+ ck_assert(LIST_NEXT(LIST_NEXT(LIST_FIRST(&s), entries), entries) == &a[1]);
+ ck_assert(ret == 5000);
+
+ ret = schedule_insert(&s, 0, &a[3]);
+ ck_assert(LIST_FIRST(&s) == &a[3]);
+ ck_assert(LIST_NEXT(LIST_FIRST(&s), entries) == &a[0]);
+ ck_assert(LIST_NEXT(LIST_NEXT(LIST_FIRST(&s), entries), entries) == &a[2]);
+ ck_assert(LIST_NEXT(LIST_NEXT(LIST_NEXT(LIST_FIRST(&s), entries), entries), entries) == &a[1]);
+ ck_assert(ret == 2000);
+
+ a[2].time = 1000;
+ ret = schedule_insert(&s, 0, &a[2]);
+ ck_assert(LIST_FIRST(&s) == &a[2]);
+ ck_assert(LIST_NEXT(LIST_FIRST(&s), entries) == &a[3]);
+ ck_assert(LIST_NEXT(LIST_NEXT(LIST_FIRST(&s), entries), entries) == &a[0]);
+ ck_assert(LIST_NEXT(LIST_NEXT(LIST_NEXT(LIST_FIRST(&s), entries), entries), entries) == &a[1]);
+ ck_assert(ret == 1000);
+
+} END_TEST
+
 int main(void) {
 
   Suite *tfi_suite = suite_create("TFI");
   TCase *decoder_tests = tcase_create("tfi_pip_decoder");
   TCase *util_tests = tcase_create("util");
+  TCase *scheduler_tests = tcase_create("scheduler");
 
   tcase_add_test(decoder_tests, check_decoder_startup_rough);
   tcase_add_test(decoder_tests, check_decoder_startup_normal);
@@ -193,8 +252,11 @@ int main(void) {
   tcase_add_test(util_tests, check_time_in_range);
   tcase_add_test(util_tests, check_time_diff);
 
+  tcase_add_test(scheduler_tests, check_scheduler_inserts);
+
   suite_add_tcase(tfi_suite, decoder_tests);
   suite_add_tcase(tfi_suite, util_tests);
+  suite_add_tcase(tfi_suite, scheduler_tests);
   SRunner *sr = srunner_create(tfi_suite);
   srunner_run_all(sr, CK_NORMAL);
   return 0;

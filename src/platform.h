@@ -2,7 +2,6 @@
 #define _PLATFORM_H
 #include <stdint.h>
 
-#define TICKRATE 16000000
 #ifndef NULL
 #define NULL 0
 #endif
@@ -14,6 +13,13 @@ typedef uint16_t degrees_t;
 /* timeval_t is gauranteed to be 32 bits */
 
 timeval_t current_time();
+
+void set_event_timer(timeval_t);
+timeval_t get_event_timer();
+/* Clear any pending interrupt */
+void clear_event_timer();
+void disable_event_timer();
+
 void platform_init(struct decoder *, struct analog_inputs *);
 
 void disable_interrupts();

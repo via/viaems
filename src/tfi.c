@@ -55,7 +55,7 @@ int main() {
   struct ignition_event ig1 = {
     .on = 0, 
     .off = 0, 
-    .output_id = 0, 
+    .output_id = 15, 
     .output_val = 0
   };
   struct ignition_event tmp = {0, 0, 0, 0};
@@ -65,10 +65,10 @@ int main() {
 
   while (1) {
     if (d.needs_decoding) {
-      set_output(2, 1);
-      set_output(3, 1);
+      set_output(12, 1);
+      set_output(13, 1);
       d.decode(&d);
-      set_output(2, 0);
+      set_output(12, 0);
       /* Calculate Advance */
       /* Plan times for things */
       if (d.rpm < 2500) {
@@ -77,8 +77,8 @@ int main() {
         adv = 20;
       }
       tmp.on = d.last_trigger_time + time_from_rpm_diff(d.rpm, 45 - adv);
-      tmp.off = tmp.on + 10000;
-      set_output(3, 0);
+      tmp.off = tmp.on + 168000;
+      set_output(13, 0);
       update_ignition_event(&ig1, &tmp);
     }
     cur = current_time();
