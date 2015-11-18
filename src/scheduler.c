@@ -69,13 +69,13 @@ schedule_ignition_event(struct output_event *ev,
   curtime = current_time();
   max_time = curtime + time_from_rpm_diff(d->rpm, 720);
 
-  /* If we cant schedule this event, don't try */
-  if (!time_in_range(start_time, curtime, max_time)){
-    return 0;
-  }
 
   disable_interrupts();
   if (!event_is_active(ev)) {
+    /* If we cant schedule this event, don't try */
+    if (!time_in_range(start_time, curtime, max_time)){
+      return 0;
+    }
     ev->start.time = start_time;
     ev->start.output_id = ev->output_id;
     ev->start.output_val = 1;
@@ -87,11 +87,11 @@ schedule_ignition_event(struct output_event *ev,
     new_sched = schedule_insert(&schedule, curtime, &ev->stop);
 
     /* Did we miss an event when interrupts were off? */
+    set_event_timer(new_sched);
     if ((time_in_range(new_sched, curtime, current_time())) ||
-         (time_diff(new_sched, curtime) < 2000)) {
+         (time_diff(curtime, new_sched) < 2000)) {
       scheduler_execute();
     } else {
-      set_event_timer(new_sched);
     }
   }
   enable_interrupts();
