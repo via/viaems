@@ -3,10 +3,12 @@
 #include <libopencm3/stm32/timer.h>
 #include <libopencm3/stm32/exti.h>
 #include <libopencm3/cm3/nvic.h>
+#include <libopencm3/cm3/cortex.h>
 
 #include "decoder.h"
 #include "platform.h"
 #include "factors.h"
+#include "scheduler.h"
 #include "limits.h"
 
 static struct decoder *decoder;
@@ -30,6 +32,8 @@ void platform_init(struct decoder *d, struct analog_inputs *a) {
   /* Port D gpio clock */
   rcc_periph_clock_enable(RCC_GPIOD);
   rcc_periph_clock_enable(RCC_GPIOB);
+  gpio_mode_setup(GPIOD, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO10);
+  gpio_mode_setup(GPIOD, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO11);
   gpio_mode_setup(GPIOD, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO12);
   gpio_mode_setup(GPIOD, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO13);
   gpio_mode_setup(GPIOD, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO14);
@@ -44,7 +48,17 @@ void platform_init(struct decoder *d, struct analog_inputs *a) {
   timer_set_prescaler(TIM2, 0);
   timer_disable_preload(TIM2);
   timer_continuous_mode(TIM2);
+  /* Setup output compare registers */
+  timer_disable_oc_output(TIM2, TIM_OC1);
+  timer_disable_oc_output(TIM2, TIM_OC2);
+  timer_disable_oc_output(TIM2, TIM_OC3);
+  timer_disable_oc_output(TIM2, TIM_OC4);
+	timer_disable_oc_clear(TIM2, TIM_OC1);
+	timer_disable_oc_preload(TIM2, TIM_OC1);
+	timer_set_oc_slow_mode(TIM2, TIM_OC1);
+	timer_set_oc_mode(TIM2, TIM_OC1, TIM_OCM_FROZEN);
   timer_enable_counter(TIM2);
+	nvic_enable_irq(NVIC_TIM2_IRQ);
 
   /* Set up interrupt on B0 */
   rcc_periph_clock_enable(RCC_SYSCFG);
@@ -57,15 +71,42 @@ void platform_init(struct decoder *d, struct analog_inputs *a) {
 
 void exti0_isr() {
   exti_reset_request(EXTI0);
-  timeval_t cur = current_time();
-  decoder->last_t0 = cur;
+
+  decoder->last_t0 = current_time();
   decoder->needs_decoding = 1;
 }
 
+void tim2_isr() {
+  if (timer_get_flag(TIM2, TIM_SR_CC1IF)) {
+    timer_clear_flag(TIM2, TIM_SR_CC1IF);
+    scheduler_execute();
+  }
+}
+
 void enable_interrupts() {
+  cm_enable_interrupts();
 }
 
 void disable_interrupts() {
+  cm_disable_interrupts();
+}
+
+void set_event_timer(timeval_t t) {
+	timer_set_oc_value(TIM2, TIM_OC1, t);
+	timer_enable_irq(TIM2, TIM_DIER_CC1IE);
+}
+
+timeval_t get_event_timer() {
+  return TIM2_CCR1;
+}
+
+void clear_event_timer() {
+  timer_clear_flag(TIM2, TIM_SR_CC1IF);
+}
+
+void disable_event_timer() {
+	timer_disable_irq(TIM2, TIM_DIER_CC1IE);
+  timer_clear_flag(TIM2, TIM_SR_CC1IF);
 }
 
 timeval_t current_time() {

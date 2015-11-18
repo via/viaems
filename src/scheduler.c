@@ -7,7 +7,7 @@
 static struct scheduler_head schedule = LIST_HEAD_INITIALIZER(schedule);
 
 unsigned char event_is_active(struct output_event *ev) {
-  return (ev->start->fired && !ev->stop->fired);
+  return (ev->start.fired && !ev->stop.fired);
 }
 
 timeval_t
@@ -47,28 +47,55 @@ schedule_insert(struct scheduler_head *sched, timeval_t curtime, struct sched_en
   return LIST_FIRST(sched)->time;
 }
 
-void
+int
 schedule_ignition_event(struct output_event *ev, 
                         struct decoder *d,
                         degrees_t advance, 
                         unsigned int usecs_dwell) {
   
-  degrees_t fire_angle = ev->angle - advance;
-  timeval_t stop_time = d->last_trigger_time + 
-    time_from_rpm_diff(d->rpm, fire_angle - d->last_trigger_rpm);  
-    /*Fix to handle wrapping angle */
-  timeval_t start_time = stop_time - (TICKRATE / 1000000) * usecs_dwell;
+  timeval_t new_sched;
+  timeval_t stop_time;
+  timeval_t start_time;
+  timeval_t max_time;
+  timeval_t curtime;
+  degrees_t fire_angle;
 
-  timeval_t curtime = current_time();
+  fire_angle = ev->angle - advance;
+  stop_time = d->last_trigger_time + 
+    time_from_rpm_diff(d->rpm, fire_angle);  
+    /*Fix to handle wrapping angle */
+  start_time = stop_time - (TICKRATE / 1000000) * usecs_dwell;
+
+  curtime = current_time();
+  max_time = curtime + time_from_rpm_diff(d->rpm, 720);
+
+  /* If we cant schedule this event, don't try */
+  if (!time_in_range(start_time, curtime, max_time)){
+    return 0;
+  }
+
   disable_interrupts();
   if (!event_is_active(ev)) {
-    ev->start->time = start_time;
-    schedule_insert(&schedule, curtime, ev->start);
-    ev->stop->time = stop_time;
-    schedule_insert(&schedule, curtime, ev->stop);
+    ev->start.time = start_time;
+    ev->start.output_id = ev->output_id;
+    ev->start.output_val = 1;
+    schedule_insert(&schedule, curtime, &ev->start);
+
+    ev->stop.time = stop_time;
+    ev->stop.output_id = ev->output_id;
+    ev->stop.output_val = 0;
+    new_sched = schedule_insert(&schedule, curtime, &ev->stop);
+
+    /* Did we miss an event when interrupts were off? */
+    if ((time_in_range(new_sched, curtime, current_time())) ||
+         (time_diff(new_sched, curtime) < 2000)) {
+      scheduler_execute();
+    } else {
+      set_event_timer(new_sched);
+    }
   }
   enable_interrupts();
-
+  return 1;
 }
 
 void
@@ -79,18 +106,18 @@ schedule_fuel_event(struct output_event *ev,
 }
 
 void
-scheduler_execute(struct scheduler_head *ent) {
+scheduler_execute() {
 
   timeval_t schedtime = get_event_timer();
   timeval_t cur;
-  struct sched_entry *en = LIST_FIRST(ent);
+  struct sched_entry *en = LIST_FIRST(&schedule);
   do {
     clear_event_timer();
     set_output(en->output_id, en->output_val);
     en->fired = 1;
     en->scheduled = 0;
     LIST_REMOVE(en, entries);
-    en = LIST_FIRST(ent);
+    en = LIST_FIRST(&schedule);
     if (en == NULL) {
       disable_event_timer();
       break;

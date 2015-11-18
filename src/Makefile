@@ -28,7 +28,7 @@ all: tfi.hex lfuse.hex hfuse.hex
 
 
 tfi: decoder.o util.o tfi.o scheduler.o platforms/${PLATFORM}.o
-	${CC} ${CFLAGS} -o tfi tfi.o decoder.o util.o ${PLATFORM}.o  ${LDFLAGS}
+	${CC} ${CFLAGS} -o tfi tfi.o scheduler.o decoder.o util.o ${PLATFORM}.o  ${LDFLAGS}
 
 
 tfi.hex: tfi

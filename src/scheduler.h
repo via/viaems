@@ -25,8 +25,8 @@ struct output_event {
   degrees_t angle;
   unsigned char output_id;
 
-  struct sched_entry *start;
-  struct sched_entry *stop;
+  struct sched_entry start;
+  struct sched_entry stop;
 };
 
 
@@ -43,14 +43,14 @@ struct output_event events[] = {
 };
 */
 
-void schedule_ignition_event(struct output_event *, struct decoder *d, 
+int schedule_ignition_event(struct output_event *, struct decoder *d, 
     degrees_t advance, unsigned int usecs_dwell);
 void schedule_fuel_event(struct output_event *, struct decoder *d, 
     unsigned int usecs_pw);
 void deschedule_event(struct output_event *);
 timeval_t schedule_insert(struct scheduler_head *, timeval_t, struct sched_entry *);
 
-void scheduler_execute(struct scheduler_head *);
+void scheduler_execute();
 
 unsigned char event_is_active(struct output_event *);
 
