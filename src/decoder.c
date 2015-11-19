@@ -1,6 +1,7 @@
 #include "decoder.h"
 #include "platform.h"
 #include "util.h"
+#include "scheduler.h"
 
 /* This function assumes it will be called at least once every timer
  * wrap-around.  That should be a valid assumption seeing as this should
@@ -9,6 +10,8 @@
 
 #define MAX_RPM_DEVIATION 200
 #define SAVE_VALS 4 
+
+static struct sched_entry expire_event;
 
 int decoder_valid(struct decoder *d) {
   if (!d->valid)
@@ -67,13 +70,26 @@ void tfi_pip_decoder(struct decoder *d) {
       if (d->last_trigger_angle == 720) {
         d->last_trigger_angle = 0;
       }
+      /* Schedule expiration */
+      disable_interrupts();
       d->expiration = t0 + diff + (diff >> 1); /* 1.5x length of previous slice */
+      expire_event.time = d->expiration;
+      schedule_insert(current_time(), &expire_event);
+      enable_interrupts();
     }
   } else {
     d->valid = 0;
   }
 }
 
+static void decoder_invalidate(void *_d) {
+  struct decoder *d = (struct decoder *)_d;
+  d->valid = 0;
+
+  /* Disable all not-yet-fired scheduled events */
+  /* But for this moment, just disable events */
+  invalidate_scheduled_events();
+}
 
 void decoder_init(struct decoder *d) {
   d->last_t0 = 0;
@@ -86,5 +102,8 @@ void decoder_init(struct decoder *d) {
   d->last_trigger_angle = 0;
   d->offset = 45; /* Falling edge comes 45 degrees before "TDC" */
   d->expiration = 0;
+
+  expire_event.callback = decoder_invalidate;
+  expire_event.ptr = d;
 }
 
