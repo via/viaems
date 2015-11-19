@@ -63,6 +63,10 @@ void tfi_pip_decoder(struct decoder *d) {
     } else {
       d->valid = 1;
       d->last_trigger_time = t0;
+      d->last_trigger_angle += 90;
+      if (d->last_trigger_angle == 720) {
+        d->last_trigger_angle = 0;
+      }
       d->expiration = t0 + diff + (diff >> 1); /* 1.5x length of previous slice */
     }
   } else {
@@ -79,7 +83,8 @@ void decoder_init(struct decoder *d) {
   d->valid = 0;
   d->rpm = 0;
   d->last_trigger_time = 0;
-  d->last_trigger_rpm = 0;
+  d->last_trigger_angle = 0;
+  d->offset = 45; /* Falling edge comes 45 degrees before "TDC" */
   d->expiration = 0;
 }
 

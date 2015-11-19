@@ -35,3 +35,12 @@ timeval_t time_diff(timeval_t later, timeval_t earlier) {
   }
 }
 
+degrees_t clamp_angle(int ang, degrees_t max) {
+  while (ang < 0) {
+    ang += max;
+  }
+  while (ang >= max) {
+    ang -= max;
+  }
+  return (degrees_t) ang;
+}

@@ -58,11 +58,13 @@ schedule_ignition_event(struct output_event *ev,
   timeval_t start_time;
   timeval_t max_time;
   timeval_t curtime;
-  degrees_t fire_angle;
+  int firing_angle;
 
-  fire_angle = ev->angle - advance;
+  firing_angle = clamp_angle(ev->angle - advance - 
+      d->last_trigger_angle + d->offset, 720);
+
   stop_time = d->last_trigger_time + 
-    time_from_rpm_diff(d->rpm, fire_angle);  
+    time_from_rpm_diff(d->rpm, (degrees_t)firing_angle);
     /*Fix to handle wrapping angle */
   start_time = stop_time - (TICKRATE / 1000000) * usecs_dwell;
 
@@ -74,6 +76,7 @@ schedule_ignition_event(struct output_event *ev,
   if (!event_is_active(ev)) {
     /* If we cant schedule this event, don't try */
     if (!time_in_range(start_time, curtime, max_time)){
+      enable_interrupts();
       return 0;
     }
     ev->start.time = start_time;

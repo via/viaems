@@ -8,16 +8,17 @@ typedef void (*decoder_func)(struct decoder *);
 
 struct decoder {
   /* Unsafe interrupt-written vars */
-  timeval_t last_t0;
-  timeval_t last_t1;
-  char needs_decoding;
+  volatile timeval_t last_t0;
+  volatile timeval_t last_t1;
+  volatile char needs_decoding;
 
   /* Safe, only handled in main loop */
   decoder_func decode;
   unsigned char valid;
   unsigned int rpm;
   timeval_t last_trigger_time;
-  unsigned int last_trigger_rpm;
+  degrees_t last_trigger_angle;
+  degrees_t offset;
   timeval_t expiration;
 };
 
