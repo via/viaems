@@ -3,17 +3,24 @@
 
 struct table timing_vs_rpm = {
   .title = "Timing",
-  .num_axis = 1,
+  .num_axis = 2,
   .axis = {
     { 
       .name = "RPM", 
       .num = 8,
       .values = {400, 700, 1000, 1500, 2000, 2500, 3000, 6000}
     },
+    {
+      .name = "MAP",
+      .num = 3,
+      .values = {25, 75, 100}
+    },
   },
   .data = {
-    .one = {
-      15, 18, 20, 22, 24, 26, 28, 32
+    .two = {
+      {15, 18, 20, 22, 24, 26, 28, 32},
+      {10, 15, 20, 22, 24, 26, 28, 32},
+      {5,   8, 12, 15, 18, 23, 25, 28},
     },
   },
 };
@@ -35,7 +42,7 @@ struct config config = {
   .trigger = FORD_TFI,
   .trigger_offset = 45,
   .trigger_max_rpm_change = 0.25,
-  .trigger_min_rpm = 8,
+  .trigger_min_rpm = 80,
   .t0_pin = 0,
   .t1_pin = 1,
   .adc = {
