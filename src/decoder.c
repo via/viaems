@@ -16,8 +16,6 @@ static struct sched_entry expire_event;
 static void decoder_invalidate(void *_d) {
   struct decoder *d = (struct decoder *)_d;
   d->valid = 0;
-  set_output(15, 0);
-
   /* Disable all not-yet-fired scheduled events */
   /* But for this moment, just disable events */
   invalidate_scheduled_events();

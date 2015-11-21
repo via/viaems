@@ -4,6 +4,7 @@
 #include "scheduler.h"
 #include "config.h"
 #include "table.h"
+#include "adc.h"
 #include <libopencm3/stm32/gpio.h>
 
 struct decoder d;
@@ -12,7 +13,7 @@ int main() {
   decoder_init(&d);
   platform_init(&d, NULL);
   while (1) {
-    set_output(15, d.valid);
+    adc_process();
     if (d.needs_decoding) {
       d.decode(&d);
 

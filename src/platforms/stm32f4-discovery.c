@@ -2,7 +2,10 @@
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/timer.h>
 #include <libopencm3/stm32/exti.h>
+#include <libopencm3/stm32/dma.h>
+#include <libopencm3/stm32/adc.h>
 #include <libopencm3/cm3/nvic.h>
+#include <libopencm3/cm3/scb.h>
 #include <libopencm3/cm3/cortex.h>
 
 #include "decoder.h"
@@ -10,17 +13,24 @@
 #include "factors.h"
 #include "scheduler.h"
 #include "limits.h"
+#include "adc.h"
+#include "config.h"
 
 static struct decoder *decoder;
+static uint16_t adc_dma_buf[MAX_ADC_INPUTS];
+static uint8_t adc_pins[MAX_ADC_INPUTS];
 
 /* Hardware setup:
  *  LD3 - Orange - PD13
  *  LD4 - Green - PD12
  *  LD5 - Red - PD14
  *  LD6 - Blue - PD15
- *  B1 - User - PA0
+ *  BUT1 - User - PA0
+ *
+ *  ADC Pin 0-7 - A1-A8
  *
  *  T0 - Primary Trigger - PB0
+ *  T1 - Primary Trigger - PB1
  */
 
 void platform_init(struct decoder *d, struct analog_inputs *a) {
@@ -67,6 +77,46 @@ void platform_init(struct decoder *d, struct analog_inputs *a) {
   exti_set_trigger(EXTI0, EXTI_TRIGGER_FALLING);
   exti_enable_request(EXTI0);
 
+  /* Set up DMA for the ADC */
+  rcc_periph_clock_enable(RCC_DMA2);
+  nvic_enable_irq(NVIC_DMA2_STREAM0_IRQ);
+
+  /* Set up ADC */
+  rcc_periph_clock_enable(RCC_GPIOA);
+  rcc_periph_clock_enable(RCC_ADC1);
+  for (int i = 0; i < MAX_ADC_INPUTS; ++i) {
+    if (config.adc[i].pin) {
+      adc_pins[i] = config.adc[i].pin;
+      gpio_mode_setup(GPIOA, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, (1<<adc_pins[i]));
+    }
+  }
+  adc_off(ADC1);
+  adc_enable_scan_mode(ADC1);
+  adc_set_sample_time_on_all_channels(ADC1, ADC_SMPR_SMP_15CYC);
+  adc_power_on(ADC1);
+}
+
+void adc_gather(void *_unused) {
+  set_output(15, 1);
+  adc_disable_dma(ADC1);
+  adc_enable_dma(ADC1);
+  adc_clear_overrun_flag(ADC1);
+
+  dma_stream_reset(DMA2, DMA_STREAM0);
+  dma_set_priority(DMA2, DMA_STREAM0, DMA_SxCR_PL_LOW);
+  dma_set_memory_size(DMA2, DMA_STREAM0, DMA_SxCR_MSIZE_16BIT);
+  dma_set_peripheral_size(DMA2, DMA_STREAM0, DMA_SxCR_PSIZE_16BIT);
+  dma_enable_memory_increment_mode(DMA2, DMA_STREAM0);
+  dma_set_transfer_mode(DMA2, DMA_STREAM0, DMA_SxCR_DIR_PERIPHERAL_TO_MEM);
+  dma_set_peripheral_address(DMA2, DMA_STREAM0, (uint32_t) &ADC1_DR);
+  dma_set_memory_address(DMA2, DMA_STREAM0, (uint32_t) adc_dma_buf);
+  dma_set_number_of_data(DMA2, DMA_STREAM0, MAX_ADC_INPUTS);
+  dma_enable_transfer_complete_interrupt(DMA2, DMA_STREAM0);
+  dma_channel_select(DMA2, DMA_STREAM0, DMA_SxCR_CHSEL_0);
+  dma_enable_stream(DMA2, DMA_STREAM0);
+
+  adc_set_regular_sequence(ADC1, MAX_ADC_INPUTS, adc_pins);
+  adc_start_conversion_regular(ADC1);
 }
 
 void exti0_isr() {
@@ -81,6 +131,17 @@ void tim2_isr() {
     timer_clear_flag(TIM2, TIM_SR_CC1IF);
     scheduler_execute();
   }
+}
+
+void dma2_stream0_isr(void) {
+ if (dma_get_interrupt_flag(DMA2, DMA_STREAM0, DMA_TCIF)) {
+   dma_clear_interrupt_flags(DMA2, DMA_STREAM0, DMA_TCIF);
+   set_output(15, 0);
+   for (int i = 0; i < MAX_ADC_INPUTS; ++i) {
+     config.adc[i].raw_value = adc_dma_buf[i];
+   }
+   adc_notify();
+ }
 }
 
 void enable_interrupts() {
@@ -119,8 +180,4 @@ void set_output(int output, char value) {
   } else {
     gpio_clear(GPIOD, (1 << output));
   }
-}
-
-/* Initiate ADC gathering via DMA */
-void adc_gather(void *_unused) {
 }
