@@ -2,38 +2,37 @@
 #include "util.h"
 #include "decoder.h"
 #include "scheduler.h"
+#include "config.h"
+#include "table.h"
 #include <libopencm3/stm32/gpio.h>
 
 struct decoder d;
-
-/* For each event, a second one that is a full cycle further should be used to
- * allow for decoder/event timing conflicts.
- */
-struct output_event events[] = {
-  {IGNITION_EVENT, 0, 14, {}, {}},
-  {IGNITION_EVENT, 90, 13, {}, {}},
-  {IGNITION_EVENT, 180, 12, {}, {}},
-  {IGNITION_EVENT, 270, 11, {}, {}},
-  {IGNITION_EVENT, 360, 14, {}, {}},
-  {IGNITION_EVENT, 450, 13, {}, {}},
-  {IGNITION_EVENT, 540, 12, {}, {}},
-  {IGNITION_EVENT, 630, 11, {}, {}},
-};
 
 int main() {
   decoder_init(&d);
   platform_init(&d, NULL);
   while (1) {
+    set_output(15, d.valid);
     if (d.needs_decoding) {
       d.decode(&d);
 
-      if (d.valid) {
-      set_output(15, 1);
-        for (int e = 0; e < 8; ++e) {
-          schedule_ignition_event(&events[e], &d, 15, 300);
+      if (decoder_valid(&d)) {
+      float adv = interpolate_table_oneaxis(config.timing, d.rpm);
+        for (unsigned int e = 0; e < config.num_events; ++e) {
+          switch(config.events[e].type) {
+          case IGNITION_EVENT:
+            schedule_ignition_event(&config.events[e], &d, (degrees_t)adv, 1000);
+            break;
+          case FUEL_EVENT:
+            schedule_fuel_event(&config.events[e], &d, 0);
+            break;
+          case ADC_EVENT:
+            schedule_adc_event(&config.events[e], &d);
+            break;
+          }
+
         }
       }
-      set_output(15, 0);
     }
   }
 

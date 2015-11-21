@@ -2,16 +2,26 @@
 #include "platform.h"
 #include "util.h"
 #include "scheduler.h"
+#include "config.h"
 
 /* This function assumes it will be called at least once every timer
  * wrap-around.  That should be a valid assumption seeing as this should
  * be called in the main loop repeatedly 
  */
 
-#define MAX_RPM_DEVIATION 200
 #define SAVE_VALS 4 
 
 static struct sched_entry expire_event;
+
+static void decoder_invalidate(void *_d) {
+  struct decoder *d = (struct decoder *)_d;
+  d->valid = 0;
+  set_output(15, 0);
+
+  /* Disable all not-yet-fired scheduled events */
+  /* But for this moment, just disable events */
+  invalidate_scheduled_events();
+}
 
 int decoder_valid(struct decoder *d) {
   if (!d->valid)
@@ -21,7 +31,7 @@ int decoder_valid(struct decoder *d) {
   if (time_in_range(curtime, d->last_trigger_time, d->expiration)) {
     return 1;
   } else {
-    d->valid = 0;
+    decoder_invalidate(d);
     return 0;
   }
 }
@@ -34,6 +44,13 @@ static inline unsigned char constrain(unsigned char idx,
   } else {
     return idx;
   }
+}
+
+static void set_expire_event(timeval_t t) {
+  expire_event.time = t;
+  disable_interrupts();
+  schedule_insert(current_time(), &expire_event);
+  enable_interrupts();
 }
 
 void tfi_pip_decoder(struct decoder *d) {
@@ -55,13 +72,13 @@ void tfi_pip_decoder(struct decoder *d) {
     timeval_t diff = time_diff(t0, prev_t0);
     unsigned int slicerpm = rpm_from_time_diff(diff, 90);
     d->rpm = rpm_from_time_diff(time_diff(last_times[cur_index], 
-          last_times[constrain(cur_index + 1, SAVE_VALS)]), 270);
+          last_times[constrain(cur_index + 2, SAVE_VALS)]), 180);
     valid_time_count = SAVE_VALS;
-    if ((slicerpm <= MAX_RPM_DEVIATION) ||
-        (slicerpm > d->rpm + MAX_RPM_DEVIATION) ||
-        (slicerpm < d->rpm - MAX_RPM_DEVIATION)) {
+    if ((slicerpm <= config.trigger_min_rpm) ||
+        (slicerpm > d->rpm + (d->rpm * config.trigger_max_rpm_change)) ||
+        (slicerpm < d->rpm - (d->rpm * config.trigger_max_rpm_change))) {
       /* RPM changed too much, or is too low */
-      d->valid = 0;
+      decoder_invalidate(d);
       return;
     } else {
       d->valid = 1;
@@ -70,37 +87,26 @@ void tfi_pip_decoder(struct decoder *d) {
       if (d->last_trigger_angle == 720) {
         d->last_trigger_angle = 0;
       }
-      /* Schedule expiration */
-      disable_interrupts();
       d->expiration = t0 + diff + (diff >> 1); /* 1.5x length of previous slice */
-      expire_event.time = d->expiration;
-      schedule_insert(current_time(), &expire_event);
-      enable_interrupts();
+      set_expire_event(d->expiration);
     }
   } else {
-    d->valid = 0;
+    decoder_invalidate(d);
   }
-}
-
-static void decoder_invalidate(void *_d) {
-  struct decoder *d = (struct decoder *)_d;
-  d->valid = 0;
-
-  /* Disable all not-yet-fired scheduled events */
-  /* But for this moment, just disable events */
-  invalidate_scheduled_events();
 }
 
 void decoder_init(struct decoder *d) {
   d->last_t0 = 0;
   d->last_t1 = 0;
   d->needs_decoding = 0;
-  d->decode = tfi_pip_decoder;
+  if (config.trigger == FORD_TFI) {
+    d->decode = tfi_pip_decoder;
+  }
   d->valid = 0;
   d->rpm = 0;
   d->last_trigger_time = 0;
   d->last_trigger_angle = 0;
-  d->offset = 45; /* Falling edge comes 45 degrees before "TDC" */
+  d->offset = config.trigger_offset;
   d->expiration = 0;
 
   expire_event.callback = decoder_invalidate;

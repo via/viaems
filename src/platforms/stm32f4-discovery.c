@@ -120,3 +120,7 @@ void set_output(int output, char value) {
     gpio_clear(GPIOD, (1 << output));
   }
 }
+
+/* Initiate ADC gathering via DMA */
+void adc_gather(void *_unused) {
+}

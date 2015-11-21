@@ -8,6 +8,7 @@
 typedef enum {
   FUEL_EVENT,
   IGNITION_EVENT,
+  ADC_EVENT,
 } event_type_t;
 
 struct sched_entry {
@@ -39,8 +40,9 @@ struct output_event {
 
 int schedule_ignition_event(struct output_event *, struct decoder *d, 
     degrees_t advance, unsigned int usecs_dwell);
-void schedule_fuel_event(struct output_event *, struct decoder *d, 
+int schedule_fuel_event(struct output_event *, struct decoder *d, 
     unsigned int usecs_pw);
+int schedule_adc_event(struct output_event *, struct decoder *);
 void deschedule_event(struct output_event *);
 timeval_t schedule_insert(timeval_t, struct sched_entry *);
 

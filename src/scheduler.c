@@ -11,14 +11,17 @@ unsigned char event_is_active(struct output_event *ev) {
 }
 
 void invalidate_scheduled_events() {
-  struct sched_entry *cur;
-  LIST_FOREACH(cur, &schedule, entries) {
+  struct sched_entry *cur, *tmp;
+  disable_interrupts();
+  LIST_FOREACH_SAFE(cur, &schedule, entries, tmp) {
     /* For now, the hacky way to do this is to just disable the ones with 'val'
      * set to 1, so still allow current events to stop */
     if (cur->output_val) {
       cur->scheduled = 0;
+      LIST_REMOVE(cur, entries);
     }
   }
+  enable_interrupts();
 }
 
 static timeval_t reschedule_head(timeval_t new, timeval_t old) {
@@ -33,7 +36,6 @@ static timeval_t reschedule_head(timeval_t new, timeval_t old) {
 timeval_t
 schedule_insert(timeval_t curtime, struct sched_entry *en) {
   struct sched_entry *cur;
-  timeval_t new_sched;
 
   if (LIST_EMPTY(&schedule)) {
     LIST_INSERT_HEAD(&schedule, en, entries);
@@ -80,6 +82,7 @@ schedule_ignition_event(struct output_event *ev,
   timeval_t curtime;
   int firing_angle;
 
+
   firing_angle = clamp_angle(ev->angle - advance - 
       d->last_trigger_angle + d->offset, 720);
 
@@ -91,11 +94,17 @@ schedule_ignition_event(struct output_event *ev,
   curtime = current_time();
   max_time = curtime + time_from_rpm_diff(d->rpm, 720);
 
-
   disable_interrupts();
   if (!event_is_active(ev)) {
+    /* If this even was fired in the last 180 degrees, do not reschedule */
+    if (time_diff(current_time(), ev->stop.time) < 
+        time_from_rpm_diff(d->rpm, 180)) {
+      enable_interrupts();
+      return 0;
+    }
+
     /* If we cant schedule this event, don't try */
-    if (!time_in_range(start_time, curtime, max_time)){
+    if (!time_in_range(start_time, curtime, max_time)) {
       enable_interrupts();
       return 0;
     }
@@ -114,11 +123,37 @@ schedule_ignition_event(struct output_event *ev,
   return 1;
 }
 
-void
+int
 schedule_fuel_event(struct output_event *ev, 
                     struct decoder *d, 
                     unsigned int usecs_pw) {
+  return 0;
+}
 
+int
+schedule_adc_event(struct output_event *ev, struct decoder *d) {
+  int firing_angle;
+  timeval_t firing_time;
+  timeval_t curtime;
+  timeval_t max_time;
+
+  firing_angle = clamp_angle(ev->angle - d->last_trigger_angle + 
+      d->offset, 720);
+  firing_time = d->last_trigger_time + 
+    time_from_rpm_diff(d->rpm, (degrees_t)firing_angle);
+  curtime = current_time();
+  max_time = curtime + time_from_rpm_diff(d->rpm, 720);
+
+  disable_interrupts();
+  if (!time_in_range(firing_time, curtime, max_time)){
+    enable_interrupts();
+    return 0;
+  }
+  ev->stop.time = firing_time;
+  ev->stop.callback = adc_gather;
+  schedule_insert(curtime, &ev->stop);
+  enable_interrupts();
+  return 1;
 }
 
 void

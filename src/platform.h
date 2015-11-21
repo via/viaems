@@ -26,5 +26,6 @@ void disable_interrupts();
 void enable_interrupts();
 
 void set_output(int output, char value);
+void adc_gather(void *);
 
 #endif
