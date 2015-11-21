@@ -9,6 +9,17 @@
 
 struct decoder d;
 
+static int ignition_cut() {
+  static int rpm_cut = 0;
+  if (d.rpm >= config.rpm_stop) {
+    rpm_cut = 1;
+  }
+  if (d.rpm < config.rpm_start) {
+    rpm_cut = 0;
+  }
+  return rpm_cut;
+}
+
 int main() {
   decoder_init(&d);
   platform_init(&d, NULL);
@@ -20,6 +31,12 @@ int main() {
       if (decoder_valid(&d)) {
         float adv = interpolate_table_twoaxis(config.timing, d.rpm, 
             config.adc[ADC_MAP].processed_value);
+
+        if (ignition_cut()) {
+          invalidate_scheduled_events();
+          continue;
+        }
+
         for (unsigned int e = 0; e < config.num_events; ++e) {
           switch(config.events[e].type) {
             case IGNITION_EVENT:

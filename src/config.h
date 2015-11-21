@@ -32,9 +32,12 @@ struct config {
 
   /* Tables */
   struct table *timing;
-
   struct table *iat_timing_adjust;
   struct table *clt_timing_adjust;
+
+  /* Cutoffs */
+  unsigned int rpm_stop;
+  unsigned int rpm_start;
 };
 
 extern struct config config;

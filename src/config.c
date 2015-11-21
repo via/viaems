@@ -50,5 +50,7 @@ struct config config = {
     [ADC_IAT] = {2, adc_process_linear, -30.0, 120.0, 0, 0},
   },
   .timing = &timing_vs_rpm,
+  .rpm_stop = 4000,
+  .rpm_start = 3800,
 };
 
