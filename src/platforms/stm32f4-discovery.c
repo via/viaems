@@ -10,7 +10,6 @@
 
 #include "decoder.h"
 #include "platform.h"
-#include "factors.h"
 #include "scheduler.h"
 #include "limits.h"
 #include "adc.h"

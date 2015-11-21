@@ -3,7 +3,6 @@
 #include <util/atomic.h>
 #include "decoder.h"
 #include "platform.h"
-#include "factors.h"
 #include "limits.h"
 
 static unsigned int time_high = 0;
