@@ -120,7 +120,6 @@ void adc_gather(void *_unused) {
 
 void exti0_isr() {
   exti_reset_request(EXTI0);
-
   decoder->last_t0 = current_time();
   decoder->needs_decoding = 1;
 }

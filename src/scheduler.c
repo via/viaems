@@ -3,25 +3,12 @@
 #include "decoder.h"
 #include "platform.h"
 #include "scheduler.h"
+#define DIAGNOSTIC
 
 static struct scheduler_head schedule = LIST_HEAD_INITIALIZER(schedule);
 
 unsigned char event_is_active(struct output_event *ev) {
   return (ev->start.fired && !ev->stop.fired);
-}
-
-void invalidate_scheduled_events() {
-  struct sched_entry *cur, *tmp;
-  disable_interrupts();
-  LIST_FOREACH_SAFE(cur, &schedule, entries, tmp) {
-    /* For now, the hacky way to do this is to just disable the ones with 'val'
-     * set to 1, so still allow current events to stop */
-    if (cur->output_val) {
-      cur->scheduled = 0;
-      LIST_REMOVE(cur, entries);
-    }
-  }
-  enable_interrupts();
 }
 
 static timeval_t reschedule_head(timeval_t new, timeval_t old) {
@@ -33,20 +20,42 @@ static timeval_t reschedule_head(timeval_t new, timeval_t old) {
   return new;
 }
 
+void invalidate_scheduled_events() {
+  struct sched_entry *cur, *tmp;
+  timeval_t t;
+  t = current_time();
+  disable_interrupts();
+  LIST_FOREACH_SAFE(cur, &schedule, entries, tmp) {
+    /* For now, the hacky way to do this is to just disable the ones with 'val'
+     * set to 1, so still allow current events to stop */
+    if (cur->output_val) {
+      cur->scheduled = 0;
+      cur->fired = 1;
+      LIST_REMOVE(cur, entries);
+    }
+  }
+  if (LIST_EMPTY(&schedule)) {
+    disable_event_timer();
+  } else {
+    reschedule_head(LIST_FIRST(&schedule)->time, t);
+  }
+  enable_interrupts();
+}
+
 timeval_t
 schedule_insert(timeval_t curtime, struct sched_entry *en) {
   struct sched_entry *cur;
+
+  /* If the entry is already in here somewhere, remove it first */
+  if (en->scheduled) {
+    LIST_REMOVE(en, entries);
+  }
 
   if (LIST_EMPTY(&schedule)) {
     LIST_INSERT_HEAD(&schedule, en, entries);
     en->scheduled = 1;
     en->fired = 0;
     return reschedule_head(en->time, curtime);
-  }
-
-  /* If the entry is already in here somewhere, remove it first */
-  if (en->scheduled) {
-    LIST_REMOVE(en, entries);
   }
 
   /* Find where to insert the entry */
@@ -145,6 +154,11 @@ schedule_adc_event(struct output_event *ev, struct decoder *d) {
   max_time = curtime + time_from_rpm_diff(d->rpm, 720);
 
   disable_interrupts();
+  if (time_diff(current_time(), ev->stop.time) < 
+      time_from_rpm_diff(d->rpm, 180)) {
+    enable_interrupts();
+    return 0;
+  }
   if (!time_in_range(firing_time, curtime, max_time)){
     enable_interrupts();
     return 0;

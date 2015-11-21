@@ -9,7 +9,7 @@ CFLAGS+= -D TICKRATE=20000000
 
 .elif PLATFORM=="stm32f4-discovery"
 CC=arm-none-eabi-gcc
-CFLAGS=  -I. -std=c99 -Wall -O2 -Wextra -g
+CFLAGS=  -I. -std=c99 -Wall -O0 -Wextra -g
 CFLAGS+= -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mthumb -mcpu=cortex-m4
 CFLAGS+= -I /opt/libopencm3/arm-none-eabi/include -DSTM32F4
 CFLAGS+= -D TICKRATE=84000000 -D FASTMATH
