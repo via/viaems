@@ -16,7 +16,7 @@ struct table {
   struct table_axis axis[2];
   union {
     float one [MAX_AXIS_SIZE];
-    float two[MAX_AXIS_SIZE][MAX_AXIS_SIZE];
+    float two [MAX_AXIS_SIZE][MAX_AXIS_SIZE];
   } data;
 };
 

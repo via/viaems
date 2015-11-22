@@ -22,16 +22,7 @@ static void decoder_invalidate(void *_d) {
 }
 
 int decoder_valid(struct decoder *d) {
-  if (!d->valid)
-    return 0;
-
-  timeval_t curtime = current_time();
-  if (time_in_range(curtime, d->last_trigger_time, d->expiration)) {
-    return 1;
-  } else {
-    decoder_invalidate(d);
-    return 0;
-  }
+  return d->valid;
 }
 
 /* Assumes idx is less than `max` greater than the bounds of the array */
@@ -62,6 +53,7 @@ void tfi_pip_decoder(struct decoder *d) {
   d->needs_decoding = 0;
   enable_interrupts();
 
+  d->t0_count++;
   prev_t0 = last_times[cur_index];
   cur_index = constrain((cur_index + 1), SAVE_VALS);
   last_times[cur_index] = t0;
@@ -72,9 +64,9 @@ void tfi_pip_decoder(struct decoder *d) {
     d->rpm = rpm_from_time_diff(time_diff(last_times[cur_index], 
           last_times[constrain(cur_index + 2, SAVE_VALS)]), 180);
     valid_time_count = SAVE_VALS;
-    if ((slicerpm <= config.trigger_min_rpm) ||
-        (slicerpm > d->rpm + (d->rpm * config.trigger_max_rpm_change)) ||
-        (slicerpm < d->rpm - (d->rpm * config.trigger_max_rpm_change))) {
+    if ((slicerpm <= d->trigger_min_rpm) ||
+        (slicerpm > d->rpm + (d->rpm * d->trigger_max_rpm_change)) ||
+        (slicerpm < d->rpm - (d->rpm * d->trigger_max_rpm_change))) {
       /* RPM changed too much, or is too low */
       decoder_invalidate(d);
       return;
@@ -104,7 +96,6 @@ void decoder_init(struct decoder *d) {
   d->rpm = 0;
   d->last_trigger_time = 0;
   d->last_trigger_angle = 0;
-  d->offset = config.trigger_offset;
   d->expiration = 0;
 
   expire_event.callback = decoder_invalidate;

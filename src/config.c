@@ -40,11 +40,13 @@ struct config config = {
     {ADC_EVENT, 650, 0, {}, {}},
   },
   .trigger = FORD_TFI,
-  .trigger_offset = 45,
-  .trigger_max_rpm_change = 0.25,
-  .trigger_min_rpm = 80,
-  .t0_pin = 0,
-  .t1_pin = 1,
+  .decoder = {
+    .offset = 45,
+    .trigger_max_rpm_change = 0.25,
+    .trigger_min_rpm = 80,
+    .t0_pin = 0,
+    .t1_pin = 1,
+  },
   .adc = {
     [ADC_MAP] = {1, adc_process_linear, 0.0, 100.0, 0, 0},
     [ADC_IAT] = {2, adc_process_linear, -30.0, 120.0, 0, 0},

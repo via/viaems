@@ -18,8 +18,18 @@ struct decoder {
   unsigned int rpm;
   timeval_t last_trigger_time;
   degrees_t last_trigger_angle;
-  degrees_t offset;
   timeval_t expiration;
+
+  /* Configuration */
+  degrees_t offset;
+  float trigger_max_rpm_change;
+  unsigned int trigger_min_rpm;
+  unsigned int t0_pin;
+  unsigned int t1_pin;
+
+  /* Debug */
+  unsigned int t0_count;
+  unsigned int t1_count;
 };
 
 int decoder_valid(struct decoder *);

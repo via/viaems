@@ -1,6 +1,7 @@
 #ifndef _CONFIG_H
 #define _CONFIG_H
 
+#include "decoder.h"
 #include "util.h"
 #include "scheduler.h"
 #include "table.h"
@@ -21,11 +22,7 @@ struct config {
 
   /* Trigger setup */
   trigger_type trigger;
-  degrees_t trigger_offset;
-  float trigger_max_rpm_change;
-  unsigned int trigger_min_rpm;
-  unsigned int t0_pin;
-  unsigned int t1_pin;
+  struct decoder decoder;
 
   /* Analog inputs */
   struct adc_input adc[MAX_ADC_INPUTS];
