@@ -35,7 +35,7 @@ static uint8_t adc_pins[MAX_ADC_INPUTS];
  *  USART1_RX - PB7 (dma2 stream 5 chan 4)
  */
 
-void platform_init(struct decoder *d, struct analog_inputs *a) {
+void platform_init(struct decoder *d) {
   decoder = d;
 
   /* 168 Mhz clock */
