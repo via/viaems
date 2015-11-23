@@ -54,5 +54,11 @@ struct config config = {
   .timing = &timing_vs_rpm,
   .rpm_stop = 4000,
   .rpm_start = 3800,
+  .console = {
+    .baud = 115200,
+    .stop_bits = 1,
+    .data_bits = 8,
+    .parity = 'N',
+  },
 };
 

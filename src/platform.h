@@ -28,4 +28,6 @@ void enable_interrupts();
 void set_output(int output, char value);
 void adc_gather(void *);
 
+int usart_tx_ready();
+void usart_tx(char *, unsigned short);
 #endif

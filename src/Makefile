@@ -14,7 +14,7 @@ CFLAGS+= -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mthumb -mcpu=cortex-m4
 CFLAGS+= -I /opt/libopencm3/arm-none-eabi/include -DSTM32F4
 CFLAGS+= -D TICKRATE=84000000 -D FASTMATH
 LDFLAGS=  -L/opt/libopencm3/arm-none-eabi/lib
-LDFLAGS+= -lopencm3_stm32f4 -fno-use-linker-plugin
+LDFLAGS+= -lopencm3_stm32f4 -fno-use-linker-plugin -lc -lnosys
 LDFLAGS+= -T platforms/stm32f4-discovery.ld -nostartfiles
 all: tfi
 
@@ -27,8 +27,8 @@ all: tfi.hex lfuse.hex hfuse.hex
 .endif
 
 
-tfi: decoder.o util.o tfi.o scheduler.o config.o table.o adc.o platforms/${PLATFORM}.o
-	${CC} ${CFLAGS} -o tfi tfi.o scheduler.o decoder.o util.o adc.o config.o table.o ${PLATFORM}.o  ${LDFLAGS}
+tfi: decoder.o util.o tfi.o scheduler.o console.o calculations.o config.o table.o adc.o platforms/${PLATFORM}.o
+	${CC} ${CFLAGS} -o tfi tfi.o calculations.o scheduler.o console.o decoder.o util.o adc.o config.o table.o ${PLATFORM}.o  ${LDFLAGS}
 
 
 tfi.hex: tfi

@@ -4,6 +4,7 @@
 #include <libopencm3/stm32/exti.h>
 #include <libopencm3/stm32/dma.h>
 #include <libopencm3/stm32/adc.h>
+#include <libopencm3/stm32/usart.h>
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/cm3/scb.h>
 #include <libopencm3/cm3/cortex.h>
@@ -30,6 +31,8 @@ static uint8_t adc_pins[MAX_ADC_INPUTS];
  *
  *  T0 - Primary Trigger - PB0
  *  T1 - Primary Trigger - PB1
+ *  USART1_TX - PB6 (dma2 stream 7 chan 4)
+ *  USART1_RX - PB7 (dma2 stream 5 chan 4)
  */
 
 void platform_init(struct decoder *d, struct analog_inputs *a) {
@@ -93,16 +96,77 @@ void platform_init(struct decoder *d, struct analog_inputs *a) {
   adc_enable_scan_mode(ADC1);
   adc_set_sample_time_on_all_channels(ADC1, ADC_SMPR_SMP_15CYC);
   adc_power_on(ADC1);
+
+  /* USART initialization */
+	/*nvic_enable_irq(NVIC_USART1_IRQ);*/
+
+	gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO6);
+	gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO7);
+	gpio_set_output_options(GPIOB, GPIO_OTYPE_OD, GPIO_OSPEED_25MHZ, GPIO7);
+
+	/* Setup USART1 TX and RX pin as alternate function. */
+	gpio_set_af(GPIOB, GPIO_AF7, GPIO6);
+	gpio_set_af(GPIOB, GPIO_AF7, GPIO7);
+
+	/* Setup USART2 parameters. */
+  rcc_periph_clock_enable(RCC_USART1);
+	usart_set_baudrate(USART1, config.console.baud);
+	usart_set_databits(USART1, config.console.data_bits);
+  switch (config.console.stop_bits) {
+    case 1:
+      usart_set_stopbits(USART1, USART_STOPBITS_1);
+      break;
+    default:
+      while (1);
+  }
+	usart_set_mode(USART1, USART_MODE_TX_RX);
+  switch (config.console.parity) {
+    case 'N':
+      usart_set_parity(USART1, USART_PARITY_NONE);
+      break;
+    case 'O':
+      usart_set_parity(USART1, USART_PARITY_ODD);
+      break;
+    case 'E':
+      usart_set_parity(USART1, USART_PARITY_EVEN);
+      break;
+  }
+	usart_set_flow_control(USART1, USART_FLOWCONTROL_NONE);
+
+	/* Finally enable the USART. */
+	usart_enable(USART1);
+/*  nvic_enable_irq(NVIC_DMA2_STREAM7_IRQ); */
+
+}
+
+int usart_tx_ready() {
+  return usart_get_flag(USART1, USART_SR_TC);
+}
+
+void usart_tx(char *buf, unsigned short len) {
+  usart_enable_tx_dma(USART1);
+  dma_stream_reset(DMA2, DMA_STREAM7);
+  dma_set_priority(DMA2, DMA_STREAM7, DMA_SxCR_PL_LOW);
+  dma_set_memory_size(DMA2, DMA_STREAM7, DMA_SxCR_MSIZE_8BIT);
+  dma_set_peripheral_size(DMA2, DMA_STREAM7, DMA_SxCR_PSIZE_8BIT);
+  dma_enable_memory_increment_mode(DMA2, DMA_STREAM7);
+  dma_set_transfer_mode(DMA2, DMA_STREAM7, DMA_SxCR_DIR_MEM_TO_PERIPHERAL);
+  dma_set_peripheral_address(DMA2, DMA_STREAM7, (uint32_t) &USART1_DR);
+  dma_set_memory_address(DMA2, DMA_STREAM7, (uint32_t) buf);
+  dma_set_number_of_data(DMA2, DMA_STREAM7, len);
+  dma_enable_transfer_complete_interrupt(DMA2, DMA_STREAM7);
+  dma_channel_select(DMA2, DMA_STREAM7, DMA_SxCR_CHSEL_4);
+  dma_enable_stream(DMA2, DMA_STREAM7);
+
 }
 
 void adc_gather(void *_unused) {
-  set_output(15, 1);
   adc_disable_dma(ADC1);
   adc_enable_dma(ADC1);
   adc_clear_overrun_flag(ADC1);
 
   dma_stream_reset(DMA2, DMA_STREAM0);
-  dma_set_priority(DMA2, DMA_STREAM0, DMA_SxCR_PL_LOW);
+  dma_set_priority(DMA2, DMA_STREAM0, DMA_SxCR_PL_HIGH);
   dma_set_memory_size(DMA2, DMA_STREAM0, DMA_SxCR_MSIZE_16BIT);
   dma_set_peripheral_size(DMA2, DMA_STREAM0, DMA_SxCR_PSIZE_16BIT);
   dma_enable_memory_increment_mode(DMA2, DMA_STREAM0);
@@ -134,7 +198,6 @@ void tim2_isr() {
 void dma2_stream0_isr(void) {
  if (dma_get_interrupt_flag(DMA2, DMA_STREAM0, DMA_TCIF)) {
    dma_clear_interrupt_flags(DMA2, DMA_STREAM0, DMA_TCIF);
-   set_output(15, 0);
    for (int i = 0; i < MAX_ADC_INPUTS; ++i) {
      config.adc[i].raw_value = adc_dma_buf[i];
    }

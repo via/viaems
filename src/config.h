@@ -5,6 +5,7 @@
 #include "util.h"
 #include "scheduler.h"
 #include "table.h"
+#include "console.h"
 #include "adc.h"
 
 #define MAX_EVENTS 24
@@ -35,6 +36,9 @@ struct config {
   /* Cutoffs */
   unsigned int rpm_stop;
   unsigned int rpm_start;
+
+  /* Console config */
+  struct console console;
 };
 
 extern struct config config;
