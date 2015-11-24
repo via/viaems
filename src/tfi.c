@@ -10,7 +10,7 @@
 
 int main() {
   decoder_init(&config.decoder);
-  platform_init(&config.decoder, NULL);
+  platform_init(&config.decoder);
   while (1) {
     adc_process();
     if (config.decoder.needs_decoding) {

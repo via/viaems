@@ -18,9 +18,10 @@ struct table timing_vs_rpm = {
   },
   .data = {
     .two = {
-      {15, 18, 20, 22, 24, 26, 28, 32},
-      {10, 15, 20, 22, 24, 26, 28, 32},
-      {5,   8, 12, 15, 18, 23, 25, 28},
+      {8, 11, 18, 22, 24, 26, 28, 32},
+      {8, 11, 18, 22, 24, 26, 28, 32},
+      {8, 11, 18, 22, 24, 26, 28, 32},
+      /* Map isnt physically hooked up yet */
     },
   },
 };
@@ -28,21 +29,23 @@ struct table timing_vs_rpm = {
 struct config config = {
   .num_events = 10,
   .events = {
-    {IGNITION_EVENT, 0, 14, {}, {}},
-    {IGNITION_EVENT, 90, 13, {}, {}},
-    {IGNITION_EVENT, 180, 12, {}, {}},
-    {IGNITION_EVENT, 270, 11, {}, {}},
+    {IGNITION_EVENT, 0, 0, {}, {}},
+    {IGNITION_EVENT, 0, 14, {}, {}}, /* Red LED once per rev */
+    {IGNITION_EVENT, 90, 0, {}, {}},
+    {IGNITION_EVENT, 180, 0, {}, {}},
+    {IGNITION_EVENT, 270, 0, {}, {}},
     {ADC_EVENT, 290, 0, {}, {}},
-    {IGNITION_EVENT, 360, 14, {}, {}},
-    {IGNITION_EVENT, 450, 13, {}, {}},
-    {IGNITION_EVENT, 540, 12, {}, {}},
-    {IGNITION_EVENT, 630, 11, {}, {}},
+    {IGNITION_EVENT, 360, 0, {}, {}},
+    {IGNITION_EVENT, 360, 14, {}, {}}, /* Red LED once per rev */
+    {IGNITION_EVENT, 450, 0, {}, {}},
+    {IGNITION_EVENT, 540, 0, {}, {}},
+    {IGNITION_EVENT, 630, 0, {}, {}},
     {ADC_EVENT, 650, 0, {}, {}},
   },
   .trigger = FORD_TFI,
   .decoder = {
     .offset = 45,
-    .trigger_max_rpm_change = 0.25,
+    .trigger_max_rpm_change = 0.55, /*Startup sucks with only 90* trigger */
     .trigger_min_rpm = 80,
     .t0_pin = 0,
     .t1_pin = 1,

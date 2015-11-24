@@ -29,8 +29,8 @@ static uint8_t adc_pins[MAX_ADC_INPUTS];
  *
  *  ADC Pin 0-7 - A1-A8
  *
- *  T0 - Primary Trigger - PB0
- *  T1 - Primary Trigger - PB1
+ *  T0 - Primary Trigger - PB3
+ *  T1 - Secondary Trigger - PB4
  *  USART1_TX - PB6 (dma2 stream 7 chan 4)
  *  USART1_RX - PB7 (dma2 stream 5 chan 4)
  */
@@ -44,13 +44,17 @@ void platform_init(struct decoder *d) {
   /* Port D gpio clock */
   rcc_periph_clock_enable(RCC_GPIOD);
   rcc_periph_clock_enable(RCC_GPIOB);
-  gpio_mode_setup(GPIOD, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO10);
-  gpio_mode_setup(GPIOD, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO11);
+  /* IG1 out */
+  gpio_mode_setup(GPIOD, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO0);
+
+  /*LEDs*/
   gpio_mode_setup(GPIOD, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO12);
   gpio_mode_setup(GPIOD, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO13);
   gpio_mode_setup(GPIOD, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO14);
   gpio_mode_setup(GPIOD, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO15);
-  gpio_mode_setup(GPIOB, GPIO_MODE_INPUT, GPIO_PUPD_PULLDOWN, GPIO0);
+  /* Trigger */
+  gpio_mode_setup(GPIOB, GPIO_MODE_INPUT, GPIO_PUPD_PULLDOWN, GPIO3);
+  gpio_mode_setup(GPIOB, GPIO_MODE_INPUT, GPIO_PUPD_PULLDOWN, GPIO4);
 
   /* Set up TIM2 as 32bit clock */
   rcc_periph_clock_enable(RCC_TIM2);
@@ -72,12 +76,12 @@ void platform_init(struct decoder *d) {
   timer_enable_counter(TIM2);
 	nvic_enable_irq(NVIC_TIM2_IRQ);
 
-  /* Set up interrupt on B0 */
+  /* Set up interrupt on B3 */
   rcc_periph_clock_enable(RCC_SYSCFG);
-  nvic_enable_irq(NVIC_EXTI0_IRQ);
-  exti_select_source(EXTI0, GPIOB);
-  exti_set_trigger(EXTI0, EXTI_TRIGGER_FALLING);
-  exti_enable_request(EXTI0);
+  nvic_enable_irq(NVIC_EXTI3_IRQ);
+  exti_select_source(EXTI3, GPIOB);
+  exti_set_trigger(EXTI3, EXTI_TRIGGER_FALLING);
+  exti_enable_request(EXTI3);
 
   /* Set up DMA for the ADC */
   rcc_periph_clock_enable(RCC_DMA2);
@@ -182,8 +186,8 @@ void adc_gather(void *_unused) {
   adc_start_conversion_regular(ADC1);
 }
 
-void exti0_isr() {
-  exti_reset_request(EXTI0);
+void exti3_isr() {
+  exti_reset_request(EXTI3);
   decoder->last_t0 = current_time();
   decoder->needs_decoding = 1;
 }
