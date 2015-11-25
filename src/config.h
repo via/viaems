@@ -16,10 +16,16 @@ typedef enum {
   TOYOTA_24_1_CAS,
 } trigger_type;
 
+typedef enum {
+  DWELL_FIXED_DUTY,
+} dwell_type;
+
 struct config {
   /* Event list */
   unsigned int num_events;
   struct output_event events[MAX_EVENTS];
+  dwell_type dwell;
+  float dwell_duty;
 
   /* Trigger setup */
   trigger_type trigger;

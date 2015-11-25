@@ -3,6 +3,7 @@
 
 struct calculated_values {
   float timing_advance;
+  unsigned int dwell_us;
   int rpm_limit_cut;
 };
 

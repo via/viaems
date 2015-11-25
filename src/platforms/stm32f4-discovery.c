@@ -19,6 +19,8 @@
 static struct decoder *decoder;
 static uint16_t adc_dma_buf[MAX_ADC_INPUTS];
 static uint8_t adc_pins[MAX_ADC_INPUTS];
+static char *usart_rx_dest;
+static int usart_rx_end;
 
 /* Hardware setup:
  *  LD3 - Orange - PD13
@@ -102,7 +104,7 @@ void platform_init(struct decoder *d) {
   adc_power_on(ADC1);
 
   /* USART initialization */
-	/*nvic_enable_irq(NVIC_USART1_IRQ);*/
+/*	nvic_enable_irq(NVIC_USART1_IRQ); */
 
 	gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO6);
 	gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO7);
@@ -139,12 +141,42 @@ void platform_init(struct decoder *d) {
 
 	/* Finally enable the USART. */
 	usart_enable(USART1);
-/*  nvic_enable_irq(NVIC_DMA2_STREAM7_IRQ); */
+/*  usart_rx_reset(); */
+}
 
+void usart_rx_reset() {
+  usart_rx_dest = config.console.rxbuffer;
+  usart_rx_end = 0;
+  usart_enable_rx_interrupt(USART1);
+}
+
+
+void usart1_isr() {
+  if (usart_rx_end) {
+    /* Already have unprocessed line in buffer */
+    return;
+  }
+
+  *usart_rx_dest = usart_recv(USART1);
+  if (*usart_rx_dest == '\n') {
+    usart_rx_end = 1;
+  }
+
+  usart_rx_dest++;
+  if (!usart_rx_end && 
+      usart_rx_dest == config.console.rxbuffer + CONSOLE_BUFFER_SIZE) {
+    /* Buffer full */
+    usart_rx_reset();
+    return;
+  }
 }
 
 int usart_tx_ready() {
   return usart_get_flag(USART1, USART_SR_TC);
+}
+
+int usart_rx_ready() {
+  return usart_rx_end;
 }
 
 void usart_tx(char *buf, unsigned short len) {

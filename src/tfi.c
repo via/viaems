@@ -28,7 +28,8 @@ int main() {
                 continue;
               }
               schedule_ignition_event(&config.events[e], &config.decoder, 
-                  (degrees_t)calculated_values.timing_advance, 2000);
+                  (degrees_t)calculated_values.timing_advance, 
+                  calculated_values.dwell_us);
               break;
             case FUEL_EVENT:
               schedule_fuel_event(&config.events[e], &config.decoder, 0);

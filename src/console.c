@@ -6,7 +6,14 @@
 #include <stdio.h>
 #include <string.h>
 
+static void console_process_rx() {
+}
+
 void console_process() {
+
+  if (usart_rx_ready()) {
+    console_process_rx();
+  }
 
   /*  if tx buffer is usable, print regular status update */
   if (!usart_tx_ready()) {

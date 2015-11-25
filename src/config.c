@@ -18,7 +18,7 @@ struct table timing_vs_rpm = {
   },
   .data = {
     .two = {
-      {0, 3, 5, 8, 12, 14, 16, 20},
+      {0, 0, 5, 10, 18, 20, 20, 20},
       /* Map isnt physically hooked up yet */
     },
   },
@@ -27,18 +27,17 @@ struct table timing_vs_rpm = {
 struct config config = {
   .num_events = 10,
   .events = {
-    {.type=IGNITION_EVENT, .angle=0, .output_id=14},
+    /* {.type=IGNITION_EVENT, .angle=0, .output_id=14}, */
     {.type=IGNITION_EVENT, .angle=0, .output_id=0, .inverted=1},
     {.type=IGNITION_EVENT, .angle=90, .output_id=0, .inverted=1},
     {.type=IGNITION_EVENT, .angle=180, .output_id=0, .inverted=1},
     {.type=IGNITION_EVENT, .angle=270, .output_id=0, .inverted=1},
     {.type=ADC_EVENT, .angle=290},
-    {.type=IGNITION_EVENT, .angle=360, .output_id=14},
+/*    {.type=IGNITION_EVENT, .angle=360, .output_id=14}, */
     {.type=IGNITION_EVENT, .angle=360, .output_id=0, .inverted=1},
     {.type=IGNITION_EVENT, .angle=450, .output_id=0, .inverted=1},
     {.type=IGNITION_EVENT, .angle=540, .output_id=0, .inverted=1},
     {.type=IGNITION_EVENT, .angle=630, .output_id=0, .inverted=1},
-    {.type=IGNITION_EVENT, .angle=450, .output_id=0, .inverted=1},
     {.type=ADC_EVENT, .angle=650},
   },
   .trigger = FORD_TFI,

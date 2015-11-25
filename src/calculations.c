@@ -17,4 +17,9 @@ void calculate_ignition() {
   calculated_values.timing_advance = 
     interpolate_table_twoaxis(config.timing, config.decoder.rpm, 
         config.adc[ADC_MAP].processed_value);
+  switch (config.dwell) {
+    case DWELL_FIXED_DUTY:
+      calculated_values.dwell_us = time_from_rpm_diff(config.decoder.rpm, 45) / 84;
+      break;
+  }
 }
