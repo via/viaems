@@ -33,6 +33,7 @@ struct output_event {
   event_type_t type;
   degrees_t angle;
   unsigned char output_id;
+  unsigned int inverted;
 
   struct sched_entry start;
   struct sched_entry stop;

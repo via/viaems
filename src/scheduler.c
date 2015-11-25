@@ -119,12 +119,12 @@ schedule_ignition_event(struct output_event *ev,
     }
     ev->start.time = start_time;
     ev->start.output_id = ev->output_id;
-    ev->start.output_val = 1;
+    ev->start.output_val = ev->inverted ? 0 : 1;
     schedule_insert(curtime, &ev->start);
 
     ev->stop.time = stop_time;
     ev->stop.output_id = ev->output_id;
-    ev->stop.output_val = 0;
+    ev->stop.output_val = ev->inverted ? 1 : 0;
     schedule_insert(curtime, &ev->stop);
 
   }
