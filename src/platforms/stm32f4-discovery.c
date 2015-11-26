@@ -14,6 +14,7 @@
 #include "scheduler.h"
 #include "limits.h"
 #include "adc.h"
+#include "util.h"
 #include "config.h"
 
 static struct decoder *decoder;
@@ -28,6 +29,8 @@ static int usart_rx_end;
  *  LD5 - Red - PD14
  *  LD6 - Blue - PD15
  *  BUT1 - User - PA0
+ *
+ *  Test trigger out - A0
  *
  *  ADC Pin 0-7 - A1-A8
  *
@@ -278,3 +281,34 @@ void set_output(int output, char value) {
     gpio_clear(GPIOD, (1 << output));
   }
 }
+
+void enable_test_trigger(trigger_type trig, unsigned int rpm) {
+  if (trig != FORD_TFI) {
+    return;
+  }
+
+  timeval_t t = time_from_rpm_diff(rpm, 45);
+
+  /* Set up TIM5 as 32bit clock */
+  rcc_periph_clock_enable(RCC_TIM5);
+	gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO0);
+	gpio_set_af(GPIOA, GPIO_AF2, GPIO0);
+  timer_reset(TIM5);
+  timer_disable_oc_output(TIM5, TIM_OC1);
+  timer_set_mode(TIM5, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
+  timer_set_period(TIM5, (unsigned int)t);
+  timer_set_prescaler(TIM5, 0);
+  timer_disable_preload(TIM5);
+  timer_continuous_mode(TIM5);
+  /* Setup output compare registers */
+  timer_ic_set_input(TIM5,  TIM_IC1, TIM_IC_OUT);
+	timer_disable_oc_clear(TIM5, TIM_OC1);
+	timer_disable_oc_preload(TIM5, TIM_OC1);
+	timer_set_oc_slow_mode(TIM5, TIM_OC1);
+	timer_set_oc_mode(TIM5, TIM_OC1, TIM_OCM_TOGGLE);
+  timer_set_oc_value(TIM5, TIM_OC1, t);
+  timer_set_oc_polarity_high(TIM5, TIM_OC1);
+  timer_enable_oc_output(TIM5, TIM_OC1);
+  timer_enable_counter(TIM5);
+}
+

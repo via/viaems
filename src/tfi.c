@@ -11,6 +11,9 @@
 int main() {
   decoder_init(&config.decoder);
   platform_init(&config.decoder);
+
+  enable_test_trigger(FORD_TFI, 1200);
+
   while (1) {
     adc_process();
     if (config.decoder.needs_decoding) {
