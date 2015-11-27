@@ -1,6 +1,7 @@
 #ifndef _CONFIG_H
 #define _CONFIG_H
 
+#include "platform.h"
 #include "decoder.h"
 #include "util.h"
 #include "scheduler.h"

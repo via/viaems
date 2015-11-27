@@ -28,5 +28,7 @@ void set_output(int output, char value);
 void adc_gather(void *);
 
 int usart_tx_ready();
+int usart_rx_ready();
+void usart_rx_reset();
 void usart_tx(char *, unsigned short);
 #endif

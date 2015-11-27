@@ -19,6 +19,8 @@ struct table timing_vs_rpm = {
   .data = {
     .two = {
       {0, 0, 5, 10, 18, 20, 20, 20},
+      {0, 0, 5, 10, 18, 20, 20, 20},
+      {0, 0, 5, 10, 18, 20, 20, 20},
       /* Map isnt physically hooked up yet */
     },
   },

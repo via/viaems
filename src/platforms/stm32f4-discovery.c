@@ -107,7 +107,7 @@ void platform_init(struct decoder *d) {
   adc_power_on(ADC1);
 
   /* USART initialization */
-/*	nvic_enable_irq(NVIC_USART1_IRQ); */
+	nvic_enable_irq(NVIC_USART1_IRQ);
 
 	gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO6);
 	gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO7);
@@ -144,7 +144,7 @@ void platform_init(struct decoder *d) {
 
 	/* Finally enable the USART. */
 	usart_enable(USART1);
-/*  usart_rx_reset(); */
+  usart_rx_reset();
 }
 
 void usart_rx_reset() {
@@ -157,17 +157,19 @@ void usart_rx_reset() {
 void usart1_isr() {
   if (usart_rx_end) {
     /* Already have unprocessed line in buffer */
+    (void)usart_recv(USART1);
     return;
   }
 
   *usart_rx_dest = usart_recv(USART1);
-  if (*usart_rx_dest == '\n') {
+  if (*usart_rx_dest == '\r') {
+    *(usart_rx_dest + 1) = '\0';
     usart_rx_end = 1;
   }
 
   usart_rx_dest++;
   if (!usart_rx_end && 
-      usart_rx_dest == config.console.rxbuffer + CONSOLE_BUFFER_SIZE) {
+      usart_rx_dest == config.console.rxbuffer + CONSOLE_BUFFER_SIZE - 1) {
     /* Buffer full */
     usart_rx_reset();
     return;
