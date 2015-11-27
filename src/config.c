@@ -1,7 +1,7 @@
 #include "config.h"
 #include "adc.h"
 
-struct table timing_vs_rpm = {
+struct table timing_vs_rpm_and_map = {
   .title = "Timing",
   .num_axis = 2,
   .axis = {
@@ -54,7 +54,7 @@ struct config config = {
     [ADC_MAP] = {1, adc_process_linear, 0.0, 100.0, 0, 0},
     [ADC_IAT] = {2, adc_process_linear, -30.0, 120.0, 0, 0},
   },
-  .timing = &timing_vs_rpm,
+  .timing = &timing_vs_rpm_and_map,
   .rpm_stop = 4000,
   .rpm_start = 3800,
   .console = {

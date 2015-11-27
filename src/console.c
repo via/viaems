@@ -2,6 +2,7 @@
 #include "console.h"
 #include "config.h"
 #include "calculations.h"
+#include "decoder.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,18 +13,27 @@ enum {
   CONSOLE_CMDLINE,
 } console_state = CONSOLE_FEED;
 
-static struct table *console_get_table(const char *tname) {
-  if (!tname) {
-    return NULL;
-  }
+typedef enum {
+  CONFIG_FLOAT,
+  CONFIG_UINT,
+  CONFIG_TABLE,
+} config_type;
 
-  if (strncmp(tname, "timing", 6) == 0) {
-    return config.timing;
-  } else {
-    strcpy(config.console.txbuffer, "Unknown table! Valid tables: timing\r\n");
-    return NULL;
-  }
-}
+struct console_var {
+  char name[32];
+  union {
+    unsigned int *uint_v;
+    float *float_v;
+    struct table *table_v;
+  } value;
+  config_type type;
+};
+static struct console_var vars[] = {
+  {.name="config.timing", .type=CONFIG_TABLE, .value={.table_v=&timing_vs_rpm_and_map}},
+  {.name="config.rpm_stop", .type=CONFIG_UINT, .value={.uint_v=&config.rpm_stop}},
+  {.name="config.offset", .type=CONFIG_UINT, .value={.uint_v=(unsigned int*)&config.decoder.offset}},
+  {.name="config.rpm_start", .type=CONFIG_UINT, .value={.uint_v=&config.rpm_start}},
+};
 
 static int console_get_number(float *val) {
   const char *str;
@@ -39,80 +49,78 @@ static int console_get_number(float *val) {
   return 1;
 }
 
-static void console_set_twotable_cell() {
-  const char *tname;
+static struct console_var *
+get_console_var(const char *var) {
+  for (unsigned int i = 0; i < sizeof(vars) / sizeof(struct console_var); ++i) {
+    if (strncmp(var, vars[i].name, strlen(vars[i].name)) == 0) {
+      return &vars[i];
+    }
+  }
+  return NULL;
+}
+
+static void handle_get_uint(struct console_var *var) {
+  sprintf(config.console.txbuffer, "%s=%d\r\n", var->name, *var->value.uint_v);
+}
+
+static void handle_set_uint(struct console_var *var) {
+  float v;
+
+  if (!console_get_number(&v)) {
+    return;
+  }
+  *var->value.uint_v = (int)v;
+  sprintf(config.console.txbuffer, "%s=%d\r\n", var->name, *var->value.uint_v);
+}
+
+static void handle_get_float(struct console_var *var) {
+  sprintf(config.console.txbuffer, "%s=%f\r\n", var->name, *var->value.float_v);
+}
+
+static void handle_set_float(struct console_var *var) {
+  float v;
+
+  if (!console_get_number(&v)) {
+    return;
+  }
+  *var->value.float_v = v;
+  sprintf(config.console.txbuffer, "%s=%f\r\n", var->name, *var->value.float_v);
+}
+
+static float *get_table_element(char *locstr, struct console_var *var) {
+  struct table *t = var->value.table_v;
+  unsigned int x, y, res;
+  res = sscanf(strtok(NULL, " "), "%d][%d]", &x, &y);
+  if (t->num_axis != res) {
+    return NULL;
+  }
+  switch (t->num_axis) {
+    case 1:
+      if (x >= t->axis[0].num) {
+        return NULL;
+      }
+      sprintf(locstr, "%s(%s=%d)",
+          t->title, t->axis[0].name, t->axis[0].values[(int)x]);
+      return &t->data.one[x];
+      break;
+    case 2:
+      if ((x >= t->axis[0].num) || (y >= t->axis[1].num)) {
+        return NULL;
+      }
+      sprintf(locstr, "%s(%s=%d, %s=%d)",
+          t->title, t->axis[0].name, t->axis[0].values[(int)x],
+          t->axis[1].name, t->axis[1].values[(int)y]);
+      return &t->data.two[y][x];
+      break;
+  }
+  return NULL;
+}
+
+static void handle_get_table_info(struct console_var *var) {
   struct table *t;
-  float xcol, ycol, newval;
-
-  tname = strtok(NULL, " ");
-  t = console_get_table(tname);
-  if (!t) {
-    return;
-  }
-
-  if (!console_get_number(&xcol) ||
-      !console_get_number(&ycol) ||
-      !console_get_number(&newval)) {
-    return;
-  }
-
-  if (((int)xcol < 0) || (int)xcol >= t->axis[0].num) {
-    return;
-  }
-  if (((int)ycol < 0) || (int)ycol >= t->axis[1].num) {
-    return;
-  }
-
-  t->data.two[(int)ycol][(int)xcol] = newval;
-
-  sprintf(config.console.txbuffer, "%s(%s=%d, %s=%d) = %f\r\n",
-      t->title, t->axis[0].name, t->axis[0].values[(int)xcol],
-      t->axis[1].name, t->axis[1].values[(int)ycol],
-      t->data.two[(int)ycol][(int)xcol]);
-}
-
-
-static void console_get_twotable_cell() {
-  const char *tname;
-  const struct table *t;
-  float xcol, ycol;
-
-  tname = strtok(NULL, " ");
-  t = console_get_table(tname);
-  if (!t) {
-    return;
-  }
-
-  if (!console_get_number(&xcol) ||
-      !console_get_number(&ycol)) {
-    return;
-  }
-
-  if (((int)xcol < 0) || (int)xcol >= t->axis[0].num) {
-    return;
-  }
-  if (((int)ycol < 0) || (int)ycol >= t->axis[1].num) {
-    return;
-  }
-
-  sprintf(config.console.txbuffer, "%s(%s=%d, %s=%d) = %f\r\n",
-      t->title, t->axis[0].name, t->axis[0].values[(int)xcol],
-      t->axis[1].name, t->axis[1].values[(int)ycol],
-      t->data.two[(int)ycol][(int)xcol]);
-
-}
-
-static void console_get_table_info() {
-  const char *tname;
-  const struct table *t;
   char fbuf[24];
 
-  tname = strtok(NULL, " ");
-  t = console_get_table(tname);
-  if (!t) {
-    return;
-  }
-
+  t = var->value.table_v;
   sprintf(config.console.txbuffer, "title: %s, num_axis: %d\r\n", 
       t->title, t->num_axis);
   if (t->num_axis == 2) {
@@ -131,36 +139,100 @@ static void console_get_table_info() {
     strcat(config.console.txbuffer, fbuf);
   }
   strcat(config.console.txbuffer, "]\r\n");
+}
 
+static void handle_get_table(struct console_var *var) {
+  char locstr[64];
+  float *val;
+
+  val = get_table_element(locstr, var);
+  if (!val) {
+    return handle_get_table_info(var);
+  }
+  sprintf(config.console.txbuffer, "%s = %f\r\n",
+      locstr, *val);
+}
+
+static void handle_set_table(struct console_var *var) {
+  char locstr[64];
+  float *val;
+  float newval;
+
+  val = get_table_element(locstr, var);
+  if (!val) {
+    return;
+  }
+
+  if (!console_get_number(&newval)) {
+    return;
+  }
+
+  *val = newval;
+  sprintf(config.console.txbuffer, "%s = %f\r\n",
+      locstr, *val);
+}
+
+void console_set_test_trigger() {
+  float rpm;
+  if (!console_get_number(&rpm)) {
+    return;
+  }
+  enable_test_trigger(FORD_TFI, (unsigned int)rpm);
 }
 
 static void console_status() {
   snprintf(config.console.txbuffer, CONSOLE_BUFFER_SIZE,
-      "* rpm=%d sync=%d t0_count=%d map=%f adv=%f\r\n",
+      "* rpm=%d sync=%d t0_count=%d map=%f adv=%f dwell_us=%d\r\n",
       config.decoder.rpm,
       config.decoder.valid,
       config.decoder.t0_count,
       config.adc[ADC_MAP].processed_value,
-      calculated_values.timing_advance);
+      calculated_values.timing_advance,
+      calculated_values.dwell_us);
 }
 
 
 static void console_process_rx() {
   console_state = CONSOLE_CMDLINE;
-  const char *c = strtok(config.console.rxbuffer, " ");
+  const char *c;
+  struct console_var *v;
+
+  c = strtok(config.console.rxbuffer, " ");
   if (c && strncasecmp(c, "feed", 4) == 0) {
     console_state = CONSOLE_FEED;
     usart_rx_reset();
     return;
   }
-  if (c && strncasecmp(c, "gettablecell", 12) == 0) {
-    console_get_twotable_cell();
-  } else if (c && strncasecmp(c, "settablecell", 12) == 0) {
-    console_set_twotable_cell();
-  } else if (c && strncasecmp(c, "gettable", 8) == 0) {
-    console_get_table_info();
+  if (c && strncasecmp(c, "get", 3) == 0) {
+    v = get_console_var(strtok(NULL, " ["));
+    switch(v->type) {
+      case CONFIG_UINT:
+        handle_get_uint(v);
+        break;
+      case CONFIG_FLOAT:
+        handle_get_float(v);
+        break;
+      case CONFIG_TABLE:
+        handle_get_table(v);
+        break;
+    }
+  } else if (c && strncasecmp(c, "set", 3) == 0) {
+    v = get_console_var(strtok(NULL, " ["));
+    switch(v->type) {
+      case CONFIG_UINT:
+        handle_set_uint(v);
+        break;
+      case CONFIG_FLOAT:
+        handle_set_float(v);
+        break;
+      case CONFIG_TABLE:
+        handle_set_table(v);
+        break;
+    }
   } else if (c && strncasecmp(c, "status", 6) == 0) {
     console_status();
+  } else if (c && strncasecmp(c, "testtrigger", 11) == 0) {
+    console_set_test_trigger();
   } else {
     strcpy(config.console.txbuffer, "\r\n");
   }

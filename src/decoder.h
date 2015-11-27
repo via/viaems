@@ -6,6 +6,11 @@
 struct decoder;
 typedef void (*decoder_func)(struct decoder *);
 
+typedef enum {
+  FORD_TFI,
+  TOYOTA_24_1_CAS,
+} trigger_type;
+
 struct decoder {
   /* Unsafe interrupt-written vars */
   volatile timeval_t last_t0;
@@ -34,6 +39,7 @@ struct decoder {
 
 int decoder_valid(struct decoder *);
 void decoder_init(struct decoder *);
+void enable_test_trigger(trigger_type t, unsigned int rpm);
 
 #endif
 

@@ -13,11 +13,6 @@
 #define MAX_ADC_INPUTS 8
 
 typedef enum {
-  FORD_TFI,
-  TOYOTA_24_1_CAS,
-} trigger_type;
-
-typedef enum {
   DWELL_FIXED_DUTY,
 } dwell_type;
 
@@ -49,5 +44,8 @@ struct config {
 };
 
 extern struct config config;
+
+/* Externally make-available tables for console */
+extern struct table timing_vs_rpm_and_map;
 
 #endif
