@@ -1,0 +1,7 @@
+- Refactor makefile
+- Refactor decoder to use simplified state machine
+- Implement frequency-based MAP
+- Implement fuel scheduling
+- Allow reschedule of ignition stop event while dwelling.
+- Make pin setup in platform_init completely automatic based on config.
+- Allow saving of variables to flash
