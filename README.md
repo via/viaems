@@ -147,3 +147,15 @@ offset 0 (400 rpms by default) and 2 (100 kpa) to 20 degrees.
 
 Currently persistence is not supported.
 
+# Compiling
+Requires:
+- Complete arm toolchain with hardware fpu support.
+- BSD Make (bmake or pmake)
+- check (for unit tests)
+
+```
+cd src/
+make clean
+make PLATFORM=stm32f4-discovery
+```
+`tfi` is the resultant executable that can be loaded.

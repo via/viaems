@@ -8,7 +8,7 @@ struct table timing_vs_rpm_and_map = {
     { 
       .name = "RPM", 
       .num = 5,
-      .values = {400, 700, 1000, 3000, 6000}
+      .values = {400, 700, 1000, 2400, 6000}
     },
     {
       .name = "MAP",
@@ -18,9 +18,9 @@ struct table timing_vs_rpm_and_map = {
   },
   .data = {
     .two = {
-      {0, 5, 12, 35, 35},
-      {0, 5, 12, 35, 35},
-      {0, 5, 12, 35, 35},
+      {0, 4, 8, 35, 40},
+      {0, 4, 8, 35, 40},
+      {0, 4, 8, 35, 40},
       /* Map isnt physically hooked up yet */
     },
   },

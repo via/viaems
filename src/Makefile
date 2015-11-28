@@ -27,6 +27,9 @@ all: tfi.hex lfuse.hex hfuse.hex
 .endif
 
 
+OBJS=decoder.o util.o tfi.o scheduler.o console.o calculations.o config.o table.o adc.o platforms/${PLATFORM}.o
+SRCS=decoder.c util.c tfi.c scheduler.c console.c calculations.c config.c table.c adc.c platforms/${PLATFORM}.c
+
 tfi: decoder.o util.o tfi.o scheduler.o console.o calculations.o config.o table.o adc.o platforms/${PLATFORM}.o
 	${CC} ${CFLAGS} -o tfi tfi.o calculations.o scheduler.o console.o decoder.o util.o adc.o config.o table.o ${PLATFORM}.o  ${LDFLAGS}
 
