@@ -7,8 +7,8 @@ struct table timing_vs_rpm_and_map = {
   .axis = {
     { 
       .name = "RPM", 
-      .num = 8,
-      .values = {400, 700, 1000, 1500, 2000, 2500, 3000, 6000}
+      .num = 5,
+      .values = {400, 700, 1000, 3000, 6000}
     },
     {
       .name = "MAP",
@@ -18,9 +18,9 @@ struct table timing_vs_rpm_and_map = {
   },
   .data = {
     .two = {
-      {0, 0, 5, 10, 18, 20, 20, 20},
-      {0, 0, 5, 10, 18, 20, 20, 20},
-      {0, 0, 5, 10, 18, 20, 20, 20},
+      {0, 5, 12, 35, 35},
+      {0, 5, 12, 35, 35},
+      {0, 5, 12, 35, 35},
       /* Map isnt physically hooked up yet */
     },
   },
@@ -47,8 +47,8 @@ struct config config = {
     .offset = 45,
     .trigger_max_rpm_change = 0.55, /*Startup sucks with only 90* trigger */
     .trigger_min_rpm = 80,
-    .t0_pin = 0,
-    .t1_pin = 1,
+    .t0_pin = 3,
+    .t1_pin = 4,
   },
   .adc = {
     [ADC_MAP] = {1, adc_process_linear, 0.0, 100.0, 0, 0},
