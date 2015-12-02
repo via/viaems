@@ -186,7 +186,7 @@ static void console_status() {
       config.decoder.rpm,
       config.decoder.valid,
       config.decoder.t0_count,
-      config.adc[ADC_MAP].processed_value,
+      config.sensors[SENSOR_MAP].processed_value,
       calculated_values.timing_advance,
       calculated_values.dwell_us);
 }

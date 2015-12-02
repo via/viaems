@@ -7,10 +7,9 @@
 #include "scheduler.h"
 #include "table.h"
 #include "console.h"
-#include "adc.h"
+#include "sensors.h"
 
 #define MAX_EVENTS 24
-#define MAX_ADC_INPUTS 8
 
 typedef enum {
   DWELL_FIXED_DUTY,
@@ -28,7 +27,7 @@ struct config {
   struct decoder decoder;
 
   /* Analog inputs */
-  struct adc_input adc[MAX_ADC_INPUTS];
+  struct sensor_input sensors[NUM_SENSORS];
 
   /* Tables */
   struct table *timing;

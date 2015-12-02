@@ -13,13 +13,13 @@
 #include "platform.h"
 #include "scheduler.h"
 #include "limits.h"
-#include "adc.h"
+#include "sensors.h"
 #include "util.h"
 #include "config.h"
 
 static struct decoder *decoder;
-static uint16_t adc_dma_buf[MAX_ADC_INPUTS];
-static uint8_t adc_pins[MAX_ADC_INPUTS];
+static uint16_t adc_dma_buf[NUM_SENSORS];
+static uint8_t adc_pins[NUM_SENSORS];
 static char *usart_rx_dest;
 static int usart_rx_end;
 
@@ -95,9 +95,9 @@ void platform_init(struct decoder *d) {
   /* Set up ADC */
   rcc_periph_clock_enable(RCC_GPIOA);
   rcc_periph_clock_enable(RCC_ADC1);
-  for (int i = 0; i < MAX_ADC_INPUTS; ++i) {
-    if (config.adc[i].pin) {
-      adc_pins[i] = config.adc[i].pin;
+  for (int i = 0; i < NUM_SENSORS; ++i) {
+    if (config.sensors[i].method == SENSOR_ADC) {
+      adc_pins[i] = config.sensors[i].pin;
       gpio_mode_setup(GPIOA, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, (1<<adc_pins[i]));
     }
   }
@@ -239,8 +239,10 @@ void tim2_isr() {
 void dma2_stream0_isr(void) {
  if (dma_get_interrupt_flag(DMA2, DMA_STREAM0, DMA_TCIF)) {
    dma_clear_interrupt_flags(DMA2, DMA_STREAM0, DMA_TCIF);
-   for (int i = 0; i < MAX_ADC_INPUTS; ++i) {
-     config.adc[i].raw_value = adc_dma_buf[i];
+   for (int i = 0; i < NUM_SENSORS; ++i) {
+     if (config.sensors[i].method == SENSORS_ADC) {
+       config.sensors[i].raw_value = adc_dma_buf[i];
+     }
    }
    adc_notify();
  }

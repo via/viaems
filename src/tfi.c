@@ -4,7 +4,7 @@
 #include "scheduler.h"
 #include "config.h"
 #include "table.h"
-#include "adc.h"
+#include "sensors.h"
 #include "calculations.h"
 
 
@@ -15,7 +15,7 @@ int main() {
   enable_test_trigger(FORD_TFI, 1200);
 
   while (1) {
-    adc_process();
+    sensors_process();
     if (config.decoder.needs_decoding) {
       config.decoder.decode(&config.decoder);
 

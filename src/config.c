@@ -1,5 +1,5 @@
 #include "config.h"
-#include "adc.h"
+#include "sensors.h"
 
 struct table timing_vs_rpm_and_map = {
   .title = "Timing",
@@ -50,9 +50,11 @@ struct config config = {
     .t0_pin = 3,
     .t1_pin = 4,
   },
-  .adc = {
-    [ADC_MAP] = {1, adc_process_linear, 0.0, 100.0, 0, 0},
-    [ADC_IAT] = {2, adc_process_linear, -30.0, 120.0, 0, 0},
+  .sensors = {
+    [SENSOR_MAP] = {.pin=1, .method=SENSOR_ADC, .process=sensor_process_linear, 
+      .params={.range={.min=0, .max=100}}},
+    [SENSOR_IAT] = {.pin=2, .method=SENSOR_ADC, .process=sensor_process_linear, 
+      .params={.range={.min=-30.0, .max=120.0}}},
   },
   .timing = &timing_vs_rpm_and_map,
   .rpm_stop = 4000,
