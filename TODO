@@ -1,3 +1,4 @@
+- Properly invalidate events (wrt inverted)
 - Refactor makefile
 - Refactor decoder to use simplified state machine
 - Implement frequency-based MAP
