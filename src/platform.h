@@ -19,7 +19,7 @@ timeval_t get_event_timer();
 void clear_event_timer();
 void disable_event_timer();
 
-void platform_init(struct decoder *);
+void platform_init();
 
 void disable_interrupts();
 void enable_interrupts();

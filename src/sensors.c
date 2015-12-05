@@ -2,21 +2,22 @@
 #include "config.h"
 #include "platform.h"
 
-volatile static int adc_data_ready;
-volatile static int freq_data_ready;
+static volatile int adc_data_ready;
+static volatile int freq_data_ready;
 
 void
 sensor_process_linear(struct sensor_input *in) {
   float partial = in->raw_value / 4096.0f;
-  in->processed_value = in->min + partial * (in->max - in->min);
+  in->processed_value = in->params.range.min + partial * 
+    (in->params.range.max - in->params.range.min);
 }
   
 void
 sensors_process() {
   if (adc_data_ready) {
     adc_data_ready = 0;
-    for (int i = 0; i < MAX_ADC_INPUTS; ++i) {
-      if ((config.sensors[i].method == SENSORS_ADC) &&
+    for (int i = 0; i < NUM_SENSORS; ++i) {
+      if ((config.sensors[i].method == SENSOR_ADC) &&
           config.sensors[i].process) {
         config.sensors[i].process(&config.sensors[i]);
       }

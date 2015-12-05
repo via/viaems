@@ -10,7 +10,7 @@
 
 int main() {
   decoder_init(&config.decoder);
-  platform_init(&config.decoder);
+  platform_init();
 
   enable_test_trigger(FORD_TFI, 1200);
 
@@ -34,9 +34,11 @@ int main() {
                   (degrees_t)calculated_values.timing_advance, 
                   calculated_values.dwell_us);
               break;
+
             case FUEL_EVENT:
               schedule_fuel_event(&config.events[e], &config.decoder, 0);
               break;
+
             case ADC_EVENT:
               schedule_adc_event(&config.events[e], &config.decoder);
               break;

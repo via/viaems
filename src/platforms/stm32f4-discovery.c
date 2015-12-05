@@ -17,52 +17,80 @@
 #include "util.h"
 #include "config.h"
 
-static struct decoder *decoder;
 static uint16_t adc_dma_buf[NUM_SENSORS];
 static uint8_t adc_pins[NUM_SENSORS];
 static char *usart_rx_dest;
 static int usart_rx_end;
 
 /* Hardware setup:
+ *  Discovery board LEDs:
  *  LD3 - Orange - PD13
  *  LD4 - Green - PD12
  *  LD5 - Red - PD14
  *  LD6 - Blue - PD15
- *  BUT1 - User - PA0
  *
- *  Test trigger out - A0
- *
- *  ADC Pin 0-7 - A1-A8
- *
- *  T0 - Primary Trigger - PB3
- *  T1 - Secondary Trigger - PB4
+ *  Fixed pin mapping:
  *  USART1_TX - PB6 (dma2 stream 7 chan 4)
  *  USART1_RX - PB7 (dma2 stream 5 chan 4)
+ *  Test trigger out - A0 (Uses TIM5)
+ *
+ *
+ *  Configurable pin mapping:
+ *  Triggers:
+ *   - 0-4 maps to port B, pins 0-4
+ *  ADC: 
+ *   - 1-7 maps to port A, pins 1-7
+ *  Outputs:
+ *   - 0-15 maps to port D, pins 0-15
+ *  Freq sensor:
+ *   - 1 maps to port A, pin 8
+ *   - 2 maps to port C, pin 6
  */
 
-void platform_init(struct decoder *d) {
-  decoder = d;
-
-  /* 168 Mhz clock */
-  rcc_clock_setup_hse_3v3(&hse_8mhz_3v3[CLOCK_3V3_168MHZ]);
-
-  /* Port D gpio clock */
-  rcc_periph_clock_enable(RCC_GPIOD);
-  rcc_periph_clock_enable(RCC_GPIOB);
-  /* IG1 out */
-  gpio_mode_setup(GPIOD, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO0);
-
-  /*LEDs*/
-  gpio_mode_setup(GPIOD, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO12);
-  gpio_mode_setup(GPIOD, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO13);
-  gpio_mode_setup(GPIOD, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO14);
-  gpio_mode_setup(GPIOD, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO15);
-  /* Trigger */
-  gpio_mode_setup(GPIOB, GPIO_MODE_INPUT, GPIO_PUPD_PULLDOWN, GPIO3);
-  gpio_mode_setup(GPIOB, GPIO_MODE_INPUT, GPIO_PUPD_PULLDOWN, GPIO4);
-
+static void platform_enable_trigger(unsigned char pin) {
+  switch(pin) {
+    case 0:
+      gpio_mode_setup(GPIOB, GPIO_MODE_INPUT, GPIO_PUPD_PULLDOWN, GPIO0);
+      nvic_enable_irq(NVIC_EXTI0_IRQ);
+      exti_select_source(EXTI0, GPIOB);
+      exti_set_trigger(EXTI0, EXTI_TRIGGER_FALLING);
+      exti_enable_request(EXTI0);
+      break;
+    case 1:
+      gpio_mode_setup(GPIOB, GPIO_MODE_INPUT, GPIO_PUPD_PULLDOWN, GPIO1);
+      nvic_enable_irq(NVIC_EXTI1_IRQ);
+      exti_select_source(EXTI1, GPIOB);
+      exti_set_trigger(EXTI1, EXTI_TRIGGER_FALLING);
+      exti_enable_request(EXTI1);
+      break;
+    case 2:
+      gpio_mode_setup(GPIOB, GPIO_MODE_INPUT, GPIO_PUPD_PULLDOWN, GPIO2);
+      nvic_enable_irq(NVIC_EXTI2_IRQ);
+      exti_select_source(EXTI2, GPIOB);
+      exti_set_trigger(EXTI2, EXTI_TRIGGER_FALLING);
+      exti_enable_request(EXTI2);
+      break;
+    case 3:
+      gpio_mode_setup(GPIOB, GPIO_MODE_INPUT, GPIO_PUPD_PULLDOWN, GPIO3);
+      nvic_enable_irq(NVIC_EXTI3_IRQ);
+      exti_select_source(EXTI3, GPIOB);
+      exti_set_trigger(EXTI3, EXTI_TRIGGER_FALLING);
+      exti_enable_request(EXTI3);
+      break;
+    case 4:
+      gpio_mode_setup(GPIOB, GPIO_MODE_INPUT, GPIO_PUPD_PULLDOWN, GPIO4);
+      nvic_enable_irq(NVIC_EXTI4_IRQ);
+      exti_select_source(EXTI4, GPIOB);
+      exti_set_trigger(EXTI4, EXTI_TRIGGER_FALLING);
+      exti_enable_request(EXTI4);
+      break;
+    default:
+      break;
+  }
+}
+      
+static void platform_init_eventtimer() {
   /* Set up TIM2 as 32bit clock */
-  rcc_periph_clock_enable(RCC_TIM2);
   timer_reset(TIM2);
   timer_set_mode(TIM2, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
   timer_set_period(TIM2, 0xFFFFFFFF);
@@ -80,21 +108,18 @@ void platform_init(struct decoder *d) {
 	timer_set_oc_mode(TIM2, TIM_OC1, TIM_OCM_FROZEN);
   timer_enable_counter(TIM2);
 	nvic_enable_irq(NVIC_TIM2_IRQ);
+}
 
-  /* Set up interrupt on B3 */
-  rcc_periph_clock_enable(RCC_SYSCFG);
-  nvic_enable_irq(NVIC_EXTI3_IRQ);
-  exti_select_source(EXTI3, GPIOB);
-  exti_set_trigger(EXTI3, EXTI_TRIGGER_FALLING);
-  exti_enable_request(EXTI3);
+static void platform_init_outputs() {
+  /* IG1 out */
+  gpio_mode_setup(GPIOD, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO0);
+}
 
+static void platform_init_adc() {
   /* Set up DMA for the ADC */
-  rcc_periph_clock_enable(RCC_DMA2);
   nvic_enable_irq(NVIC_DMA2_STREAM0_IRQ);
 
   /* Set up ADC */
-  rcc_periph_clock_enable(RCC_GPIOA);
-  rcc_periph_clock_enable(RCC_ADC1);
   for (int i = 0; i < NUM_SENSORS; ++i) {
     if (config.sensors[i].method == SENSOR_ADC) {
       adc_pins[i] = config.sensors[i].pin;
@@ -105,7 +130,9 @@ void platform_init(struct decoder *d) {
   adc_enable_scan_mode(ADC1);
   adc_set_sample_time_on_all_channels(ADC1, ADC_SMPR_SMP_15CYC);
   adc_power_on(ADC1);
+}
 
+static void platform_init_usart() {
   /* USART initialization */
 	nvic_enable_irq(NVIC_USART1_IRQ);
 
@@ -118,7 +145,6 @@ void platform_init(struct decoder *d) {
 	gpio_set_af(GPIOB, GPIO_AF7, GPIO7);
 
 	/* Setup USART2 parameters. */
-  rcc_periph_clock_enable(RCC_USART1);
 	usart_set_baudrate(USART1, config.console.baud);
 	usart_set_databits(USART1, config.console.data_bits);
   switch (config.console.stop_bits) {
@@ -145,6 +171,31 @@ void platform_init(struct decoder *d) {
 	/* Finally enable the USART. */
 	usart_enable(USART1);
   usart_rx_reset();
+}
+
+void platform_init() {
+
+  /* 168 Mhz clock */
+  rcc_clock_setup_hse_3v3(&hse_8mhz_3v3[CLOCK_3V3_168MHZ]);
+
+  /* Enable clocks for subsystems */
+  rcc_periph_clock_enable(RCC_GPIOA);
+  rcc_periph_clock_enable(RCC_GPIOB);
+  rcc_periph_clock_enable(RCC_GPIOC);
+  rcc_periph_clock_enable(RCC_GPIOD);
+  rcc_periph_clock_enable(RCC_SYSCFG);
+  rcc_periph_clock_enable(RCC_ADC1);
+  rcc_periph_clock_enable(RCC_USART1);
+  rcc_periph_clock_enable(RCC_DMA2);
+  rcc_periph_clock_enable(RCC_TIM2);
+
+  platform_enable_trigger(config.decoder.t0_pin);
+  platform_enable_trigger(config.decoder.t1_pin);
+
+  platform_init_eventtimer();
+  platform_init_adc();
+  platform_init_outputs();
+  platform_init_usart();
 }
 
 void usart_rx_reset() {
@@ -214,19 +265,56 @@ void adc_gather(void *_unused) {
   dma_set_transfer_mode(DMA2, DMA_STREAM0, DMA_SxCR_DIR_PERIPHERAL_TO_MEM);
   dma_set_peripheral_address(DMA2, DMA_STREAM0, (uint32_t) &ADC1_DR);
   dma_set_memory_address(DMA2, DMA_STREAM0, (uint32_t) adc_dma_buf);
-  dma_set_number_of_data(DMA2, DMA_STREAM0, MAX_ADC_INPUTS);
+  dma_set_number_of_data(DMA2, DMA_STREAM0, NUM_SENSORS);
   dma_enable_transfer_complete_interrupt(DMA2, DMA_STREAM0);
   dma_channel_select(DMA2, DMA_STREAM0, DMA_SxCR_CHSEL_0);
   dma_enable_stream(DMA2, DMA_STREAM0);
 
-  adc_set_regular_sequence(ADC1, MAX_ADC_INPUTS, adc_pins);
+  adc_set_regular_sequence(ADC1, NUM_SENSORS, adc_pins);
   adc_start_conversion_regular(ADC1);
 }
 
+static inline void handle_trigger(unsigned char pin, timeval_t t) {
+  if (config.decoder.t0_pin == pin) {
+    config.decoder.last_t0 = t;
+    config.decoder.needs_decoding = 1;
+  }
+  if (config.decoder.t1_pin == pin) {
+    config.decoder.last_t1 = t;
+    config.decoder.needs_decoding = 1;
+  }
+}
+
+
+/* External interrupt handlers */
+void exti0_isr() {
+  timeval_t t = current_time();
+  exti_reset_request(EXTI0);
+  handle_trigger(0, t);
+}
+
+void exti1_isr() {
+  timeval_t t = current_time();
+  exti_reset_request(EXTI1);
+  handle_trigger(1, t);
+}
+
+void exti2_isr() {
+  timeval_t t = current_time();
+  exti_reset_request(EXTI2);
+  handle_trigger(2, t);
+}
+
 void exti3_isr() {
+  timeval_t t = current_time();
   exti_reset_request(EXTI3);
-  decoder->last_t0 = current_time();
-  decoder->needs_decoding = 1;
+  handle_trigger(3, t);
+}
+
+void exti4_isr() {
+  timeval_t t = current_time();
+  exti_reset_request(EXTI4);
+  handle_trigger(4, t);
 }
 
 void tim2_isr() {
@@ -240,11 +328,11 @@ void dma2_stream0_isr(void) {
  if (dma_get_interrupt_flag(DMA2, DMA_STREAM0, DMA_TCIF)) {
    dma_clear_interrupt_flags(DMA2, DMA_STREAM0, DMA_TCIF);
    for (int i = 0; i < NUM_SENSORS; ++i) {
-     if (config.sensors[i].method == SENSORS_ADC) {
+     if (config.sensors[i].method == SENSOR_ADC) {
        config.sensors[i].raw_value = adc_dma_buf[i];
      }
    }
-   adc_notify();
+   sensor_adc_new_data();
  }
 }
 
