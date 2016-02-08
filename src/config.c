@@ -51,7 +51,7 @@ struct config config = {
     .t1_pin = 4,
   },
   .sensors = {
-    [SENSOR_MAP] = {.pin=1, .method=SENSOR_ADC, .process=sensor_process_linear, 
+    [SENSOR_MAP] = {.pin=1, .method=SENSOR_FREQ, .process=sensor_process_freq, 
       .params={.range={.min=0, .max=100}}},
     [SENSOR_IAT] = {.pin=2, .method=SENSOR_ADC, .process=sensor_process_linear, 
       .params={.range={.min=-30.0, .max=120.0}}},

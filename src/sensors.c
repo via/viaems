@@ -11,6 +11,9 @@ sensor_process_linear(struct sensor_input *in) {
   in->processed_value = in->params.range.min + partial * 
     (in->params.range.max - in->params.range.min);
 }
+
+void sensor_process_freq(struct sensor_input *in) {
+}
   
 void
 sensors_process() {

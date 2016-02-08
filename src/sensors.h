@@ -30,12 +30,13 @@ struct sensor_input {
     struct table *table;
   } params;
 
-  uint16_t raw_value;
+  uint32_t raw_value;
   float processed_value;
 };
 
 /* Process functions */
 void sensor_process_linear(struct sensor_input *);
+void sensor_process_freq(struct sensor_input *);
 void sensor_process_table(struct sensor_input *);
 
 void sensors_process();

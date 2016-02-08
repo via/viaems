@@ -34,7 +34,6 @@ static int usart_rx_end;
  *  USART1_RX - PB7 (dma2 stream 5 chan 4)
  *  Test trigger out - A0 (Uses TIM5)
  *
- *
  *  Configurable pin mapping:
  *  Triggers:
  *   - 0-4 maps to port B, pins 0-4
@@ -43,8 +42,8 @@ static int usart_rx_end;
  *  Outputs:
  *   - 0-15 maps to port D, pins 0-15
  *  Freq sensor:
- *   - 1 maps to port A, pin 8
- *   - 2 maps to port C, pin 6
+ *   - 1 maps to port A, pin 8 (TIM1 CH1)
+ *   - 2 maps to port C, pin 6 (TIM3 CH1)
  */
 
 static void platform_enable_trigger(unsigned char pin) {
@@ -88,7 +87,61 @@ static void platform_enable_trigger(unsigned char pin) {
       break;
   }
 }
-      
+
+static void platform_init_freqsensor(unsigned char pin) {
+
+  switch(pin) {
+    case 1:
+      /* TIM1 CH1 */
+      gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO8);
+      gpio_set_af(GPIOA, GPIO_AF1, GPIO8);
+      timer_reset(TIM1);
+      timer_set_mode(TIM1, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
+      timer_set_period(TIM1, 0xFFFFFFFF);
+      timer_disable_preload(TIM1);
+      timer_continuous_mode(TIM1);
+      /* Setup output compare registers */
+      timer_disable_oc_output(TIM2, TIM_OC1);
+      timer_disable_oc_output(TIM1, TIM_OC2);
+      timer_disable_oc_output(TIM1, TIM_OC3);
+      timer_disable_oc_output(TIM1, TIM_OC4);
+
+      /* Set up compare */
+      timer_ic_set_input(TIM1, TIM_IC1, TIM_IC_IN_TI1);
+      timer_ic_set_filter(TIM1, TIM_IC1, TIM_IC_CK_INT_N_8);
+      timer_ic_set_polarity(TIM1, TIM_IC1, TIM_IC_RISING);
+      timer_set_prescaler(TIM1, 0);
+      timer_ic_enable(TIM1, TIM_IC1);
+      timer_slave_set_mode(TIM1, TIM_SMCR_SMS_RM);
+
+      timer_enable_counter(TIM1);
+      timer_enable_irq(TIM1, TIM_DIER_CC1IE);
+      nvic_enable_irq(NVIC_TIM1_CC_IRQ);
+  }
+}
+
+void tim1_cc_isr() {
+  timeval_t t = TIM1_CCR1;
+  timer_clear_flag(TIM1, TIM_SR_CC1IF);
+  for (int i; i < NUM_SENSORS; ++i) {
+    if ((config.sensors[i].method == SENSOR_FREQ) &&
+        (config.sensors[i].pin == 1)) {
+      config.sensors[i].raw_value = t;
+    }
+  }
+}
+
+void tim3_isr() {
+  timeval_t t = TIM3_CCR1;
+  timer_clear_flag(TIM3, TIM_SR_CC1IF);
+  for (int i; i < NUM_SENSORS; ++i) {
+    if ((config.sensors[i].method == SENSOR_FREQ) &&
+        (config.sensors[i].pin == 2)) {
+      config.sensors[i].raw_value = t;
+    }
+  }
+}
+
 static void platform_init_eventtimer() {
   /* Set up TIM2 as 32bit clock */
   timer_reset(TIM2);
@@ -102,12 +155,12 @@ static void platform_init_eventtimer() {
   timer_disable_oc_output(TIM2, TIM_OC2);
   timer_disable_oc_output(TIM2, TIM_OC3);
   timer_disable_oc_output(TIM2, TIM_OC4);
-	timer_disable_oc_clear(TIM2, TIM_OC1);
-	timer_disable_oc_preload(TIM2, TIM_OC1);
-	timer_set_oc_slow_mode(TIM2, TIM_OC1);
-	timer_set_oc_mode(TIM2, TIM_OC1, TIM_OCM_FROZEN);
+  timer_disable_oc_clear(TIM2, TIM_OC1);
+  timer_disable_oc_preload(TIM2, TIM_OC1);
+  timer_set_oc_slow_mode(TIM2, TIM_OC1);
+  timer_set_oc_mode(TIM2, TIM_OC1, TIM_OCM_FROZEN);
   timer_enable_counter(TIM2);
-	nvic_enable_irq(NVIC_TIM2_IRQ);
+  nvic_enable_irq(NVIC_TIM2_IRQ);
 }
 
 static void platform_init_outputs() {
@@ -134,19 +187,19 @@ static void platform_init_adc() {
 
 static void platform_init_usart() {
   /* USART initialization */
-	nvic_enable_irq(NVIC_USART1_IRQ);
+  nvic_enable_irq(NVIC_USART1_IRQ);
 
-	gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO6);
-	gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO7);
-	gpio_set_output_options(GPIOB, GPIO_OTYPE_OD, GPIO_OSPEED_25MHZ, GPIO7);
+  gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO6);
+  gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO7);
+  gpio_set_output_options(GPIOB, GPIO_OTYPE_OD, GPIO_OSPEED_25MHZ, GPIO7);
 
-	/* Setup USART1 TX and RX pin as alternate function. */
-	gpio_set_af(GPIOB, GPIO_AF7, GPIO6);
-	gpio_set_af(GPIOB, GPIO_AF7, GPIO7);
+  /* Setup USART1 TX and RX pin as alternate function. */
+  gpio_set_af(GPIOB, GPIO_AF7, GPIO6);
+  gpio_set_af(GPIOB, GPIO_AF7, GPIO7);
 
-	/* Setup USART2 parameters. */
-	usart_set_baudrate(USART1, config.console.baud);
-	usart_set_databits(USART1, config.console.data_bits);
+  /* Setup USART2 parameters. */
+  usart_set_baudrate(USART1, config.console.baud);
+  usart_set_databits(USART1, config.console.data_bits);
   switch (config.console.stop_bits) {
     case 1:
       usart_set_stopbits(USART1, USART_STOPBITS_1);
@@ -154,7 +207,7 @@ static void platform_init_usart() {
     default:
       while (1);
   }
-	usart_set_mode(USART1, USART_MODE_TX_RX);
+  usart_set_mode(USART1, USART_MODE_TX_RX);
   switch (config.console.parity) {
     case 'N':
       usart_set_parity(USART1, USART_PARITY_NONE);
@@ -166,10 +219,10 @@ static void platform_init_usart() {
       usart_set_parity(USART1, USART_PARITY_EVEN);
       break;
   }
-	usart_set_flow_control(USART1, USART_FLOWCONTROL_NONE);
+  usart_set_flow_control(USART1, USART_FLOWCONTROL_NONE);
 
-	/* Finally enable the USART. */
-	usart_enable(USART1);
+  /* Finally enable the USART. */
+  usart_enable(USART1);
   usart_rx_reset();
 }
 
@@ -187,7 +240,9 @@ void platform_init() {
   rcc_periph_clock_enable(RCC_ADC1);
   rcc_periph_clock_enable(RCC_USART1);
   rcc_periph_clock_enable(RCC_DMA2);
+  rcc_periph_clock_enable(RCC_TIM1);
   rcc_periph_clock_enable(RCC_TIM2);
+  rcc_periph_clock_enable(RCC_TIM3);
 
   platform_enable_trigger(config.decoder.t0_pin);
   platform_enable_trigger(config.decoder.t1_pin);
@@ -196,6 +251,12 @@ void platform_init() {
   platform_init_adc();
   platform_init_outputs();
   platform_init_usart();
+
+  for (int i = 0; i < NUM_SENSORS; ++i) {
+    if (config.sensors[i].method == SENSOR_FREQ) {
+      platform_init_freqsensor(config.sensors[i].pin);
+    }
+  }
 }
 
 void usart_rx_reset() {
@@ -329,7 +390,7 @@ void dma2_stream0_isr(void) {
    dma_clear_interrupt_flags(DMA2, DMA_STREAM0, DMA_TCIF);
    for (int i = 0; i < NUM_SENSORS; ++i) {
      if (config.sensors[i].method == SENSOR_ADC) {
-       config.sensors[i].raw_value = adc_dma_buf[i];
+       config.sensors[i].raw_value = (uint32_t)adc_dma_buf[i];
      }
    }
    sensor_adc_new_data();
@@ -345,8 +406,8 @@ void disable_interrupts() {
 }
 
 void set_event_timer(timeval_t t) {
-	timer_set_oc_value(TIM2, TIM_OC1, t);
-	timer_enable_irq(TIM2, TIM_DIER_CC1IE);
+  timer_set_oc_value(TIM2, TIM_OC1, t);
+  timer_enable_irq(TIM2, TIM_DIER_CC1IE);
 }
 
 timeval_t get_event_timer() {
@@ -358,7 +419,7 @@ void clear_event_timer() {
 }
 
 void disable_event_timer() {
-	timer_disable_irq(TIM2, TIM_DIER_CC1IE);
+  timer_disable_irq(TIM2, TIM_DIER_CC1IE);
   timer_clear_flag(TIM2, TIM_SR_CC1IF);
 }
 
@@ -383,8 +444,8 @@ void enable_test_trigger(trigger_type trig, unsigned int rpm) {
 
   /* Set up TIM5 as 32bit clock */
   rcc_periph_clock_enable(RCC_TIM5);
-	gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO0);
-	gpio_set_af(GPIOA, GPIO_AF2, GPIO0);
+  gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO0);
+  gpio_set_af(GPIOA, GPIO_AF2, GPIO0);
   timer_reset(TIM5);
   timer_disable_oc_output(TIM5, TIM_OC1);
   timer_set_mode(TIM5, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
@@ -394,10 +455,10 @@ void enable_test_trigger(trigger_type trig, unsigned int rpm) {
   timer_continuous_mode(TIM5);
   /* Setup output compare registers */
   timer_ic_set_input(TIM5,  TIM_IC1, TIM_IC_OUT);
-	timer_disable_oc_clear(TIM5, TIM_OC1);
-	timer_disable_oc_preload(TIM5, TIM_OC1);
-	timer_set_oc_slow_mode(TIM5, TIM_OC1);
-	timer_set_oc_mode(TIM5, TIM_OC1, TIM_OCM_TOGGLE);
+  timer_disable_oc_clear(TIM5, TIM_OC1);
+  timer_disable_oc_preload(TIM5, TIM_OC1);
+  timer_set_oc_slow_mode(TIM5, TIM_OC1);
+  timer_set_oc_mode(TIM5, TIM_OC1, TIM_OCM_TOGGLE);
   timer_set_oc_value(TIM5, TIM_OC1, t);
   timer_set_oc_polarity_high(TIM5, TIM_OC1);
   timer_enable_oc_output(TIM5, TIM_OC1);
