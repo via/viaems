@@ -12,7 +12,7 @@ int main() {
   decoder_init(&config.decoder);
   platform_init();
 
-  enable_test_trigger(FORD_TFI, 1200);
+  enable_test_trigger(FORD_TFI, 1300);
 
   while (1) {
     sensors_process();

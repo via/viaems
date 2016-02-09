@@ -110,9 +110,10 @@ static void platform_init_freqsensor(unsigned char pin) {
       timer_ic_set_input(TIM1, TIM_IC1, TIM_IC_IN_TI1);
       timer_ic_set_filter(TIM1, TIM_IC1, TIM_IC_CK_INT_N_8);
       timer_ic_set_polarity(TIM1, TIM_IC1, TIM_IC_RISING);
-      timer_set_prescaler(TIM1, 0);
-      timer_ic_enable(TIM1, TIM_IC1);
+      timer_set_prescaler(TIM1, 0x2000); /* Prescale set to map 10 Hz - 20kHz */
       timer_slave_set_mode(TIM1, TIM_SMCR_SMS_RM);
+      timer_slave_set_trigger(TIM1, TIM_SMCR_TS_IT1FP1);
+      timer_ic_enable(TIM1, TIM_IC1);
 
       timer_enable_counter(TIM1);
       timer_enable_irq(TIM1, TIM_DIER_CC1IE);
@@ -123,23 +124,25 @@ static void platform_init_freqsensor(unsigned char pin) {
 void tim1_cc_isr() {
   timeval_t t = TIM1_CCR1;
   timer_clear_flag(TIM1, TIM_SR_CC1IF);
-  for (int i; i < NUM_SENSORS; ++i) {
+  for (int i = 0; i < NUM_SENSORS; ++i) {
     if ((config.sensors[i].method == SENSOR_FREQ) &&
         (config.sensors[i].pin == 1)) {
       config.sensors[i].raw_value = t;
     }
   }
+  sensor_freq_new_data();
 }
 
 void tim3_isr() {
   timeval_t t = TIM3_CCR1;
   timer_clear_flag(TIM3, TIM_SR_CC1IF);
-  for (int i; i < NUM_SENSORS; ++i) {
+  for (int i = 0; i < NUM_SENSORS; ++i) {
     if ((config.sensors[i].method == SENSOR_FREQ) &&
         (config.sensors[i].pin == 2)) {
       config.sensors[i].raw_value = t;
     }
   }
+  sensor_freq_new_data();
 }
 
 static void platform_init_eventtimer() {

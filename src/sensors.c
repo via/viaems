@@ -13,6 +13,9 @@ sensor_process_linear(struct sensor_input *in) {
 }
 
 void sensor_process_freq(struct sensor_input *in) {
+
+  in->processed_value = 1.0/((in->raw_value*4096)/84000000.0);
+
 }
   
 void
@@ -20,8 +23,17 @@ sensors_process() {
   if (adc_data_ready) {
     adc_data_ready = 0;
     for (int i = 0; i < NUM_SENSORS; ++i) {
-      if ((config.sensors[i].method == SENSOR_ADC) &&
-          config.sensors[i].process) {
+      if (config.sensors[i].process && 
+          config.sensors[i].method == SENSOR_ADC) {
+        config.sensors[i].process(&config.sensors[i]);
+      }
+    }
+  }
+  if (freq_data_ready) {
+    freq_data_ready = 0;
+    for (int i = 0; i < NUM_SENSORS; ++i) {
+      if (config.sensors[i].process && 
+          config.sensors[i].method == SENSOR_FREQ) {
         config.sensors[i].process(&config.sensors[i]);
       }
     }
