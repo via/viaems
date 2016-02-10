@@ -310,7 +310,7 @@ void usart_tx(char *buf, unsigned short len) {
 
 }
 
-void adc_gather(void *_unused) {
+void adc_gather(void *_unused __attribute((unused))) {
   adc_disable_dma(ADC1);
   adc_enable_dma(ADC1);
   adc_clear_overrun_flag(ADC1);
