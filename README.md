@@ -31,7 +31,8 @@ allowance in rpm is controlled by `config.decoder.offset`.
 ## Configuration
 Static configuration is in `config.c`. The main configuration structure is
 `config`, along with any custom table declarations, such as the provided example
-`timing_vs_rpm_and_map`.
+`timing_vs_rpm_and_map`. Pin configurations are platform specific and are
+documented in the platform source.
 
 Member | Meaning
 --- | ---
@@ -41,9 +42,9 @@ Member | Meaning
 `decoder.offset` | Degrees between 'decoder' top-dead-center and 'crank' top-dead-center. TFI units by default emit the falling-edge trigger 45 degrees before they would trigger spark in failsafe mode
 `decoder.trigger_max_rpm_change` | Percentage of rpm change between trigger events. 1.00 would mean the engine speed can double or halve between triggers without sync loss.
 `decoder.trigger_min_rpm` | Minimum RPM for sync.  Should be just below the slowest cranking speed.
-`decoder.t0_pin` | PORTB Pin for primary trigger (Not currently used for autoconfiguration of pins) 
-`decoder.t1_pin` | PORTB Pin for secondary trigger (Doesn't autoconfigure pins currently, and `FORD_TFI` does not use a secondary trigger).
-`adc` | Array of configured analog sensors.  See Sensor Configuration below.
+`decoder.t0_pin` | PORTB Pin for primary trigger
+`decoder.t1_pin` | PORTB Pin for secondary trigger
+`sensors` | Array of configured analog sensors.  See Sensor Configuration below.
 `timing` | Points to table to do MAP/RPM lookup on for timing advance.
 `rpm_stop` | Stop event scheduling above this RPM (rev limiter)
 `rpm_start` | Resume event scheduling when speed falls to this RPM (rev limiter)
@@ -77,7 +78,7 @@ Member | Meaning
 `inverted` | Set to one if active-low
 
 ### Sensor Configuration
-Sensor inputs are controlled by the `adc` config structure member, and is an
+Sensor inputs are controlled by the `sensors` config structure member, and is an
 array of configured inputs.  The indexes into the array for various sensors are
 hardcoded, use the provided enums to reference the sensors.  Each sensor entry
 is a structure describing what pin to use, and how to translate the raw sensor
@@ -85,15 +86,18 @@ value into a usable number:
 
 Member | Meaning
 --- | ---
-`pin` | PORTA pin to use (Autoconfigured)
+`pin` | pin to use (Autoconfigured, see platform source)
 `process` | Processing function to use (see below)
-`min` | For processing, value that lowest raw sensor value reflects
-`max` | For processing, value that highest raw sensor value reflects
+`method` | Type of sensor, currently supported are analog and frequency based.
+`params` | Union used to configure a sensor. Contains `range` used for
+calculated sensors, and `table` for table lookup sensors.
+`params.range.min` | For processing, value that lowest raw sensor value reflects
+`params.range.max` | For processing, value that highest raw sensor value reflects
 
-The process function can point to any function that takes a pointer to the adc
-structure.  Currently the only provided one is `adc_process_linear`, which
-linearly interpolates between `min` and `max`.  TODO is to implement a
-thermistor conversion function, and frequency-based MAP conversion.
+The process function can point to any function that takes a pointer to the
+sensor structure.  Currently the only provided ones are `sensor_process_linear`, which
+linearly interpolates between `min` and `max`, and `sensor_process_freq`, which 
+converts based on measured frequency.
 
 ### Table Configuration
 Tables can be up to 24x24 float values that are bilinearly interpolated. Use
