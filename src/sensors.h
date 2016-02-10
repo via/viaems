@@ -2,6 +2,7 @@
 #define _SENSORS_H
 
 #include "platform.h"
+#define SENSOR_FREQ_DIVIDER 4096
 
 typedef enum {
   SENSOR_MAP,

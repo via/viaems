@@ -43,7 +43,6 @@ static int usart_rx_end;
  *   - 0-15 maps to port D, pins 0-15
  *  Freq sensor:
  *   - 1 maps to port A, pin 8 (TIM1 CH1)
- *   - 2 maps to port C, pin 6 (TIM3 CH1)
  */
 
 static void platform_enable_trigger(unsigned char pin) {
@@ -89,35 +88,42 @@ static void platform_enable_trigger(unsigned char pin) {
 }
 
 static void platform_init_freqsensor(unsigned char pin) {
-
+  uint32_t tim;
   switch(pin) {
     case 1:
       /* TIM1 CH1 */
+      tim = TIM1;
       gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO8);
       gpio_set_af(GPIOA, GPIO_AF1, GPIO8);
-      timer_reset(TIM1);
-      timer_set_mode(TIM1, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
-      timer_set_period(TIM1, 0xFFFFFFFF);
-      timer_disable_preload(TIM1);
-      timer_continuous_mode(TIM1);
-      /* Setup output compare registers */
-      timer_disable_oc_output(TIM2, TIM_OC1);
-      timer_disable_oc_output(TIM1, TIM_OC2);
-      timer_disable_oc_output(TIM1, TIM_OC3);
-      timer_disable_oc_output(TIM1, TIM_OC4);
+      break;
+  };
+  timer_reset(tim);
+  timer_set_mode(tim, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
+  timer_set_period(tim, 0xFFFFFFFF);
+  timer_disable_preload(tim);
+  timer_continuous_mode(tim);
+  /* Setup output compare registers */
+  timer_disable_oc_output(tim, TIM_OC1);
+  timer_disable_oc_output(tim, TIM_OC2);
+  timer_disable_oc_output(tim, TIM_OC3);
+  timer_disable_oc_output(tim, TIM_OC4);
 
-      /* Set up compare */
-      timer_ic_set_input(TIM1, TIM_IC1, TIM_IC_IN_TI1);
-      timer_ic_set_filter(TIM1, TIM_IC1, TIM_IC_CK_INT_N_8);
-      timer_ic_set_polarity(TIM1, TIM_IC1, TIM_IC_RISING);
-      timer_set_prescaler(TIM1, 0x2000); /* Prescale set to map 10 Hz - 20kHz */
-      timer_slave_set_mode(TIM1, TIM_SMCR_SMS_RM);
-      timer_slave_set_trigger(TIM1, TIM_SMCR_TS_IT1FP1);
-      timer_ic_enable(TIM1, TIM_IC1);
+  /* Set up compare */
+  timer_ic_set_input(tim, TIM_IC1, TIM_IC_IN_TI1);
+  timer_ic_set_filter(tim, TIM_IC1, TIM_IC_CK_INT_N_8);
+  timer_ic_set_polarity(tim, TIM_IC1, TIM_IC_RISING);
+  timer_set_prescaler(tim, 2*SENSOR_FREQ_DIVIDER); /* Prescale set to map up to 20kHz */
+  timer_slave_set_mode(tim, TIM_SMCR_SMS_RM);
+  timer_slave_set_trigger(tim, TIM_SMCR_TS_IT1FP1);
+  timer_ic_enable(tim, TIM_IC1);
 
-      timer_enable_counter(TIM1);
-      timer_enable_irq(TIM1, TIM_DIER_CC1IE);
+  timer_enable_counter(tim);
+  timer_enable_irq(tim, TIM_DIER_CC1IE);
+
+  switch(pin) {
+    case 1:
       nvic_enable_irq(NVIC_TIM1_CC_IRQ);
+      break;
   }
 }
 
@@ -127,18 +133,6 @@ void tim1_cc_isr() {
   for (int i = 0; i < NUM_SENSORS; ++i) {
     if ((config.sensors[i].method == SENSOR_FREQ) &&
         (config.sensors[i].pin == 1)) {
-      config.sensors[i].raw_value = t;
-    }
-  }
-  sensor_freq_new_data();
-}
-
-void tim3_isr() {
-  timeval_t t = TIM3_CCR1;
-  timer_clear_flag(TIM3, TIM_SR_CC1IF);
-  for (int i = 0; i < NUM_SENSORS; ++i) {
-    if ((config.sensors[i].method == SENSOR_FREQ) &&
-        (config.sensors[i].pin == 2)) {
       config.sensors[i].raw_value = t;
     }
   }
