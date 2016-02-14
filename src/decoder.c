@@ -13,12 +13,18 @@
 
 static struct sched_entry expire_event;
 
-static void decoder_invalidate(void *_d) {
+static void handle_decoder_invalidate_event(void *_d) {
   struct decoder *d = (struct decoder *)_d;
   d->valid = 0;
   /* Disable all not-yet-fired scheduled events */
   /* But for this moment, just disable events */
   invalidate_scheduled_events();
+}
+
+static void decoder_invalidate(struct decoder *d) {
+  disable_interrupts();
+  handle_decoder_invalidate_event(d);
+  enable_interrupts();
 }
 
 int decoder_valid(struct decoder *d) {
@@ -36,8 +42,8 @@ static inline unsigned char constrain(unsigned char idx,
 }
 
 static void set_expire_event(timeval_t t) {
-  expire_event.time = t;
   disable_interrupts();
+  expire_event.time = t;
   schedule_insert(current_time(), &expire_event);
   enable_interrupts();
 }
@@ -98,7 +104,7 @@ void decoder_init(struct decoder *d) {
   d->last_trigger_angle = 0;
   d->expiration = 0;
 
-  expire_event.callback = decoder_invalidate;
+  expire_event.callback = handle_decoder_invalidate_event;
   expire_event.ptr = d;
 }
 

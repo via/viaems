@@ -28,11 +28,7 @@ int time_in_range(timeval_t val, timeval_t t1, timeval_t t2) {
 }
 
 timeval_t time_diff(timeval_t later, timeval_t earlier) {
-  if (later > earlier) {
-    return later - earlier;
-  } else {
-    return ULONG_MAX - (earlier - later) + 1;
-  }
+  return later - earlier;
 }
 
 degrees_t clamp_angle(int ang, degrees_t max) {

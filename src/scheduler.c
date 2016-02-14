@@ -3,7 +3,6 @@
 #include "decoder.h"
 #include "platform.h"
 #include "scheduler.h"
-#define DIAGNOSTIC
 
 static struct scheduler_head schedule = LIST_HEAD_INITIALIZER(schedule);
 
@@ -24,7 +23,6 @@ void invalidate_scheduled_events() {
   struct sched_entry *cur, *tmp;
   timeval_t t;
   t = current_time();
-  disable_interrupts();
   LIST_FOREACH_SAFE(cur, &schedule, entries, tmp) {
     /* For now, the hacky way to do this is to just disable the ones with 'val'
      * set to 1, so still allow current events to stop */
@@ -39,7 +37,6 @@ void invalidate_scheduled_events() {
   } else {
     reschedule_head(LIST_FIRST(&schedule)->time, t);
   }
-  enable_interrupts();
 }
 
 timeval_t
@@ -179,14 +176,14 @@ scheduler_execute() {
   do {
     clear_event_timer();
     if (en->scheduled) {
+      en->scheduled = 0;
+      LIST_REMOVE(en, entries);
       set_output(en->output_id, en->output_val);
       if (en->callback) {
         en->callback(en->ptr);
       }
     }
     en->fired = 1;
-    en->scheduled = 0;
-    LIST_REMOVE(en, entries);
     en = LIST_FIRST(&schedule);
     if (en == NULL) {
       disable_event_timer();
