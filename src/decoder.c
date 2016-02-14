@@ -21,12 +21,6 @@ static void handle_decoder_invalidate_event(void *_d) {
   invalidate_scheduled_events();
 }
 
-static void decoder_invalidate(struct decoder *d) {
-  disable_interrupts();
-  handle_decoder_invalidate_event(d);
-  enable_interrupts();
-}
-
 int decoder_valid(struct decoder *d) {
   return d->valid;
 }
@@ -74,7 +68,7 @@ void tfi_pip_decoder(struct decoder *d) {
         (slicerpm > d->rpm + (d->rpm * d->trigger_max_rpm_change)) ||
         (slicerpm < d->rpm - (d->rpm * d->trigger_max_rpm_change))) {
       /* RPM changed too much, or is too low */
-      decoder_invalidate(d);
+      handle_decoder_invalidate_event(d);
       return;
     } else {
       d->valid = 1;
@@ -87,7 +81,7 @@ void tfi_pip_decoder(struct decoder *d) {
       set_expire_event(d->expiration);
     }
   } else {
-    decoder_invalidate(d);
+    handle_decoder_invalidate_event(d);
   }
 }
 

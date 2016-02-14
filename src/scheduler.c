@@ -22,6 +22,8 @@ static timeval_t reschedule_head(timeval_t new, timeval_t old) {
 void invalidate_scheduled_events() {
   struct sched_entry *cur, *tmp;
   timeval_t t;
+  int_on = interrupts_enabled();
+  disable_interrupts();
   t = current_time();
   LIST_FOREACH_SAFE(cur, &schedule, entries, tmp) {
     /* For now, the hacky way to do this is to just disable the ones with 'val'
@@ -36,6 +38,9 @@ void invalidate_scheduled_events() {
     disable_event_timer();
   } else {
     reschedule_head(LIST_FIRST(&schedule)->time, t);
+  }
+  if (int_on) {
+    enable_interrupts();
   }
 }
 

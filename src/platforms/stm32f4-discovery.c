@@ -402,6 +402,10 @@ void disable_interrupts() {
   cm_disable_interrupts();
 }
 
+void interrupts_enabled() {
+  return cm_is_masked_interrupts();
+}
+
 void set_event_timer(timeval_t t) {
   timer_set_oc_value(TIM2, TIM_OC1, t);
   timer_enable_irq(TIM2, TIM_DIER_CC1IE);
