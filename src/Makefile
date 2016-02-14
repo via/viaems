@@ -7,7 +7,8 @@ CC=gcc
 CFLAGS+= -I. -std=c99 -Wall -O0 -g
 CFLAGS+= -D TICKRATE=20000000
 
-.elif PLATFORM=="stm32f4-discovery"
+.else
+.if ${PLATFORM} == "stm32f4-discovery"
 CC=arm-none-eabi-gcc
 CFLAGS=  -I. -std=c99 -Wall -O0 -Wextra -g
 CFLAGS+= -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mthumb -mcpu=cortex-m4
@@ -18,12 +19,20 @@ LDFLAGS+= -lopencm3_stm32f4 -fno-use-linker-plugin -lc -lnosys
 LDFLAGS+= -T platforms/stm32f4-discovery.ld -nostartfiles
 all: tfi
 
-.elif PLATFORM="avr"
+.elif ${PLATFORM} == "avr"
 CC=avr-gcc
 CFLAGS=-I. -mmcu=${PLATFORM} -std=c99 -Wall -O3 -Wextra
 CFLAGS+= -D TICKTRATE=16000000
 LDFLAGS=-lgcc
 all: tfi.hex lfuse.hex hfuse.hex
+
+.elif ${PLATFORM} == "hosted"
+CC=gcc
+CFLAGS+= -I. -std=c99 -Wall -O0 -g
+CFLAGS+= -D TICKRATE=1000000000 -D_POSIX_C_SOURCE=199309L -DTIMER64
+LDFLAGS+= -lrt
+all: tfi
+.endif
 .endif
 
 
