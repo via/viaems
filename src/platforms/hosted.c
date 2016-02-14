@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
 #include <signal.h>
 #include <time.h>
 #include <errno.h>
@@ -13,20 +15,22 @@
 #include "config.h"
 
 /* "Hardware" setup:
- * stdin is event list with this format:
- * time (integer microseconds) trigger
- * time (integer microseconds) sensor map 3000
- * time (integer microseconds) sensor iat 58
- *
- * options:
- *  -l logfile -- send console output to logfile
- *  -o outputsfile -- send updates of output status to outputsfile
+ * stdout is the console
+ * event_in is an input file containing events:
+ *   - all times relative to start of run
+ *  "time trigger1"
+ *  "time map 2048"
+ * event_out is a file containing times/events for triggers and outputs
+ *  "time trigger1"
+ *  "time output 4 on"
  */
 
 static timer_t systimer;
 static sigset_t smask;
 static timeval_t ev_timer = 0;
 static timeval_t last_tx = 0;
+
+static int parent_pipe;
 
 static void event_signal(int s __attribute((unused))) {
   scheduler_execute();
@@ -91,6 +95,27 @@ void disable_event_timer() {
   clear_event_timer();
 }
 
+static void interface(pid_t ppid) {
+
+  struct timespec t = {0};
+  t.tv_nsec = 10000000;
+  struct timespec rem;
+
+  sigprocmask(SIG_BLOCK, &smask, 0);
+
+  while(1) {
+    while (nanosleep(&t, &rem) == -1) {
+      t = rem;
+    }
+    kill(ppid, SIGUSR1);
+    t.tv_nsec = 10000000,
+    t.tv_sec = 0;
+  }
+    
+
+}
+
+
 void platform_init() {
 
   /* Set up systimer as the event timer */
@@ -117,6 +142,10 @@ void platform_init() {
   sa.sa_handler = primary_trigger;
   sigaction(SIGUSR1, &sa, NULL);
 
+
+  if(!fork()) {
+    interface(getppid());
+  }
   
 
 }
@@ -157,7 +186,6 @@ void usart_rx_reset() {
 
 void usart_tx(char *str, unsigned short len) {
   last_tx = current_time();
-  str[len] = '\0';
   printf("%s", str);
 }
 
