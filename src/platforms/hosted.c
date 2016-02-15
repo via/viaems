@@ -1,8 +1,11 @@
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/timerfd.h>
 #include <signal.h>
+#include <poll.h>
 #include <time.h>
 #include <errno.h>
 
@@ -30,15 +33,18 @@ static sigset_t smask;
 static timeval_t ev_timer = 0;
 static timeval_t last_tx = 0;
 
-static int parent_pipe;
+static int data_pipe;
 
 static void event_signal(int s __attribute((unused))) {
   scheduler_execute();
 }
 
 static void primary_trigger(int s __attribute((unused))) {
+  char buf[64];
   config.decoder.last_t0 = current_time();
   config.decoder.needs_decoding = 1;
+  sprintf(buf, "%lu trigger1\n", config.decoder.last_t0);
+  write(data_pipe, buf, strlen(buf));
 }
 
 static inline timeval_t timespec_to_ticks(struct timespec *t) {
@@ -95,24 +101,67 @@ void disable_event_timer() {
   clear_event_timer();
 }
 
-static void interface(pid_t ppid) {
+static void interface_settimer(int tfd, timeval_t start, timeval_t time) {
+  struct timespec t;
+  t = ticks_to_timespec(start + time);
+  struct itimerspec ev = {
+    .it_value = t,
+  };
+  timerfd_settime(tfd, TFD_TIMER_ABSTIME, &ev, NULL);
+}
+  
 
-  struct timespec t = {0};
-  t.tv_nsec = 10000000;
-  struct timespec rem;
+static void interface(pid_t ppid) {
+  struct timespec t;
+  int timer_fd;
+  int res;
+  FILE *ev_out_fd, *ev_in_fd;
+  timeval_t start;
+  unsigned long time;
+  char cmdline[128];
+  char command[16];
+  char sensor[16];
+  float val;
+  uint64_t events;
 
   sigprocmask(SIG_BLOCK, &smask, 0);
+  timer_fd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK);
 
-  while(1) {
-    while (nanosleep(&t, &rem) == -1) {
-      t = rem;
+  ev_in_fd = fopen("event_in", "r");
+  ev_out_fd = fopen("event_out", "w");
+
+  fgets(cmdline, 128, ev_in_fd);
+  res = sscanf(cmdline, "%lu %16s %16s %f\n", 
+    &time, command, sensor, &val);
+  clock_gettime(CLOCK_MONOTONIC, &t);
+  start = timespec_to_ticks(&t);
+  interface_settimer(timer_fd, start, time);
+
+  struct pollfd fds[] = {
+    { .fd = timer_fd, .events = POLLIN},
+    { .fd = data_pipe, .events = POLLIN},
+  };
+  while (1) {
+    if (poll(fds, 2, -1) > 0) {
+      if (fds[0].revents & POLLIN) {
+        read(timer_fd, &events, sizeof(uint64_t));
+        /* Timer fired, send signal and move on */
+        kill(ppid, SIGUSR1);
+        if (!fgets(cmdline, 128, ev_in_fd)) {
+          exit(EXIT_SUCCESS);
+	}
+	sscanf(cmdline, "%lu %16s %16s %f\n", 
+          &time, command, sensor, &val);
+	interface_settimer(timer_fd, start, time);
+      } 
+      if (fds[1].revents & POLLIN) {
+        /* Event from ecu, write to log */
+        res = read(data_pipe, cmdline, 127);
+        cmdline[res] = '\0';
+        fputs(cmdline, ev_out_fd);
+      }
     }
-    kill(ppid, SIGUSR1);
-    t.tv_nsec = 10000000,
-    t.tv_sec = 0;
   }
-    
-
 }
 
 
@@ -142,9 +191,17 @@ void platform_init() {
   sa.sa_handler = primary_trigger;
   sigaction(SIGUSR1, &sa, NULL);
 
-
+  /* Set up the channel for event information */
+  int pipes[2];
+  pipe(pipes);
+  
   if(!fork()) {
+    data_pipe = pipes[0];
+    close(pipes[1]);
     interface(getppid());
+  } else {
+    close(pipes[0]);
+    data_pipe = pipes[1];
   }
   
 
@@ -165,7 +222,10 @@ int interrupts_enabled() {
 }
 
 void set_output(int output, char value) {
-
+  char buf[64];
+  int res;
+  res = sprintf(buf, "%lu output %d %d\n", current_time(), output, value);
+  write(data_pipe, buf, res);
 }
 
 void adc_gather(void *_unused) {

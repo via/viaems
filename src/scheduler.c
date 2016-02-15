@@ -186,9 +186,10 @@ scheduler_execute() {
     if (en->scheduled) {
       en->scheduled = 0;
       LIST_REMOVE(en, entries);
-      set_output(en->output_id, en->output_val);
       if (en->callback) {
         en->callback(en->ptr);
+      } else{
+        set_output(en->output_id, en->output_val);
       }
     }
     en->fired = 1;
