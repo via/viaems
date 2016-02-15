@@ -10,6 +10,7 @@
 #include <errno.h>
 
 #include "decoder.h"
+#include "calculations.h"
 #include "platform.h"
 #include "scheduler.h"
 #include "limits.h"
@@ -224,7 +225,8 @@ int interrupts_enabled() {
 void set_output(int output, char value) {
   char buf[64];
   int res;
-  res = sprintf(buf, "%lu output %d %d\n", current_time(), output, value);
+  res = sprintf(buf, "%lu output %d %d %d %f %d\n", current_time(), output, value,
+    config.decoder.rpm, calculated_values.timing_advance, calculated_values.dwell_us);
   write(data_pipe, buf, res);
 }
 
