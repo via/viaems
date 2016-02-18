@@ -3,7 +3,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/mman.h>
 #include <sys/timerfd.h>
+#include <sched.h>
 #include <signal.h>
 #include <poll.h>
 #include <time.h>
@@ -34,19 +36,55 @@ static sigset_t smask;
 static timeval_t ev_timer = 0;
 static timeval_t last_tx = 0;
 
-static int data_pipe;
+struct event {
+  timeval_t time;
+  enum {
+    EVENT_TRIGGER1,
+    EVENT_TRIGGER2,
+    EVENT_OUTPUT,
+  } type;
+  char output;
+  char value;
+  float advance;
+  unsigned int dwell;
+}; 
+static struct event *events_out;
+static const size_t max_events = 1000000;
+static size_t cur_event = 0;
+
+
 
 static void event_signal(int s __attribute((unused))) {
   scheduler_execute();
 }
 
 static void primary_trigger(int s __attribute((unused))) {
-  char buf[64];
   config.decoder.last_t0 = current_time();
   config.decoder.needs_decoding = 1;
-  sprintf(buf, "%lu trigger1\n", config.decoder.last_t0);
-  write(data_pipe, buf, strlen(buf));
+  events_out[cur_event++] = (struct event){
+    .time = config.decoder.last_t0,
+    .type = EVENT_TRIGGER1,
+  }; 
 }
+
+static void setup_realtime(int cpu) {
+  struct sched_param p = {
+    .sched_priority = 1,
+  };
+  cpu_set_t s;
+  CPU_ZERO(&s);
+  CPU_SET(cpu, &s);
+  if (sched_setscheduler(0, SCHED_RR, &p) < 0) {
+    perror("sched_setscheduler");
+  }
+  if (sched_setaffinity(0, sizeof(s), &s) < 0) {
+    perror("sched_setaffinity");
+  }
+  if (mlockall(MCL_CURRENT | MCL_FUTURE) < 0) {
+    perror("mlockall");
+  }
+}
+  
 
 static inline timeval_t timespec_to_ticks(struct timespec *t) {
   return (t->tv_sec * (timeval_t)1e9 + t->tv_nsec);
@@ -140,7 +178,6 @@ static void interface(pid_t ppid) {
 
   struct pollfd fds[] = {
     { .fd = timer_fd, .events = POLLIN},
-    { .fd = data_pipe, .events = POLLIN},
   };
   while (1) {
     if (poll(fds, 2, -1) > 0) {
@@ -149,20 +186,31 @@ static void interface(pid_t ppid) {
         /* Timer fired, send signal and move on */
         kill(ppid, SIGUSR1);
         if (!fgets(cmdline, 128, ev_in_fd)) {
-          exit(EXIT_SUCCESS);
+          break;
 	}
 	sscanf(cmdline, "%lu %16s %16s %f\n", 
           &time, command, sensor, &val);
 	interface_settimer(timer_fd, start, time);
       } 
-      if (fds[1].revents & POLLIN) {
-        /* Event from ecu, write to log */
-        res = read(data_pipe, cmdline, 127);
-        cmdline[res] = '\0';
-        fputs(cmdline, ev_out_fd);
-      }
     }
   }
+
+  /* Dump contents of mmap to output file */
+  for (int i = 0; i < max_events; ++i) {
+    if (events_out[i].time == 0) {
+      break;
+    }
+    if (events_out[i].type == EVENT_TRIGGER1) {
+      fprintf(ev_out_fd, "%lu trigger1\n", events_out[i].time);
+    }
+    if (events_out[i].type == EVENT_OUTPUT) {
+      fprintf(ev_out_fd, "%lu output %d %d %f %d\n", events_out[i].time, 
+        events_out[i].output, events_out[i].value, 
+        events_out[i].advance, events_out[i].dwell);
+    }
+  }
+  kill(ppid, SIGTERM);
+  exit(EXIT_SUCCESS);
 }
 
 
@@ -193,16 +241,18 @@ void platform_init() {
   sigaction(SIGUSR1, &sa, NULL);
 
   /* Set up the channel for event information */
-  int pipes[2];
-  pipe(pipes);
-  
+  events_out = mmap(0, sizeof(struct event) * max_events, 
+    PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS | MAP_POPULATE, -1, 0);
+  memset(events_out, 0, sizeof(struct event) * max_events);
+  if (!events_out) {
+    perror("mmap");
+    exit(EXIT_FAILURE);
+  }
   if(!fork()) {
-    data_pipe = pipes[0];
-    close(pipes[1]);
+    setup_realtime(1);
     interface(getppid());
   } else {
-    close(pipes[0]);
-    data_pipe = pipes[1];
+    setup_realtime(0);
   }
   
 
@@ -223,11 +273,14 @@ int interrupts_enabled() {
 }
 
 void set_output(int output, char value) {
-  char buf[64];
-  int res;
-  res = sprintf(buf, "%lu output %d %d %d %f %d\n", current_time(), output, value,
-    config.decoder.rpm, calculated_values.timing_advance, calculated_values.dwell_us);
-  write(data_pipe, buf, res);
+  events_out[cur_event++] = (struct event){
+    .time = current_time(),
+    .type = EVENT_OUTPUT,
+    .output = output,
+    .value = value,
+    .advance = calculated_values.timing_advance,
+    .dwell = calculated_values.dwell_us,
+  }; 
 }
 
 void adc_gather(void *_unused) {

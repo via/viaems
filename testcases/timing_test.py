@@ -28,15 +28,14 @@ def parse_event(ev):
     return {"type": "trigger1", 
             "time": m.group(1)}
 
-  m = re.match(r"(\d+) output (\d+) (\d+) (\d+) ([\d\.]+) (\d+)\n", ev)
+  m = re.match(r"(\d+) output (\d+) (\d+) ([\d\.]+) (\d+)\n", ev)
   if m is not None:
     return {"type": "output",
             "time": m.group(1),
             "output": m.group(2),
             "value": m.group(3),
-            "rpm": m.group(4),
-            "advance": m.group(5),
-            "dwell": m.group(6)}
+            "advance": m.group(4),
+            "dwell": m.group(5)}
     
 
 events = sys.stdin.readlines()

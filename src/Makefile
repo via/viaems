@@ -29,7 +29,7 @@ all: tfi.hex lfuse.hex hfuse.hex
 .elif ${PLATFORM} == "hosted"
 CC=gcc
 CFLAGS+= -I. -std=c99 -Wall -O0 -g
-CFLAGS+= -D TICKRATE=1000000000 -D_POSIX_C_SOURCE=199309L -DTIMER64
+CFLAGS+= -D TICKRATE=1000000000 -D_POSIX_C_SOURCE=199309L -DTIMER64 -D_GNU_SOURCE
 LDFLAGS+= -lrt
 all: tfi
 .endif
