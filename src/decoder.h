@@ -28,6 +28,7 @@ struct decoder {
   /* Configuration */
   degrees_t offset;
   float trigger_max_rpm_change;
+  float trigger_cur_rpm_change;
   unsigned int trigger_min_rpm;
   unsigned int t0_pin;
   unsigned int t1_pin;

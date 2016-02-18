@@ -7,7 +7,6 @@
 #include "sensors.h"
 #include "calculations.h"
 
-
 int main() {
   decoder_init(&config.decoder);
   platform_init();

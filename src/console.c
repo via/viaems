@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 
 enum {
   CONSOLE_FEED,
@@ -182,9 +183,10 @@ void console_set_test_trigger() {
 
 static void console_status() {
   snprintf(config.console.txbuffer, CONSOLE_BUFFER_SIZE,
-      "* rpm=%d sync=%d t0_count=%d map=%f adv=%f dwell_us=%d\r\n",
+      "* rpm=%d sync=%d variance=%1.3f t0_count=%d map=%3.1f adv=%2.1f dwell_us=%d\r\n",
       config.decoder.rpm,
       config.decoder.valid,
+      config.decoder.trigger_cur_rpm_change,
       config.decoder.t0_count,
       config.sensors[SENSOR_MAP].processed_value,
       calculated_values.timing_advance,

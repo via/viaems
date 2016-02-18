@@ -22,7 +22,7 @@ static timeval_t reschedule_head(timeval_t new, timeval_t old) {
 void invalidate_scheduled_events() {
   struct sched_entry *cur, *tmp;
   timeval_t t;
-  int_on = interrupts_enabled();
+  int int_on = interrupts_enabled();
   disable_interrupts();
   t = current_time();
   LIST_FOREACH_SAFE(cur, &schedule, entries, tmp) {
@@ -178,14 +178,18 @@ scheduler_execute() {
   timeval_t schedtime = get_event_timer();
   timeval_t cur;
   struct sched_entry *en = LIST_FIRST(&schedule);
+  if (en->time != schedtime) {
+    while(1);
+  }
   do {
     clear_event_timer();
     if (en->scheduled) {
       en->scheduled = 0;
       LIST_REMOVE(en, entries);
-      set_output(en->output_id, en->output_val);
       if (en->callback) {
         en->callback(en->ptr);
+      } else{
+        set_output(en->output_id, en->output_val);
       }
     }
     en->fired = 1;

@@ -4,6 +4,8 @@
 #include "scheduler.h"
 #include "config.h"
 
+#include <stdlib.h>
+
 /* This function assumes it will be called at least once every timer
  * wrap-around.  That should be a valid assumption seeing as this should
  * be called in the main loop repeatedly 
@@ -64,6 +66,7 @@ void tfi_pip_decoder(struct decoder *d) {
     d->rpm = rpm_from_time_diff(time_diff(last_times[cur_index], 
           last_times[constrain(cur_index + 2, SAVE_VALS)]), 180);
     valid_time_count = SAVE_VALS;
+    d->trigger_cur_rpm_change = abs(d->rpm - slicerpm) / (float)d->rpm;
     if ((slicerpm <= d->trigger_min_rpm) ||
         (slicerpm > d->rpm + (d->rpm * d->trigger_max_rpm_change)) ||
         (slicerpm < d->rpm - (d->rpm * d->trigger_max_rpm_change))) {
@@ -77,7 +80,7 @@ void tfi_pip_decoder(struct decoder *d) {
       if (d->last_trigger_angle == 720) {
         d->last_trigger_angle = 0;
       }
-      d->expiration = t0 + diff + (diff >> 1); /* 1.5x length of previous slice */
+      d->expiration = t0 + diff * 1.5;
       set_expire_event(d->expiration);
     }
   } else {

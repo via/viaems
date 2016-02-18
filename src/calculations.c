@@ -19,7 +19,7 @@ void calculate_ignition() {
         config.sensors[SENSOR_MAP].processed_value);
   switch (config.dwell) {
     case DWELL_FIXED_DUTY:
-      calculated_values.dwell_us = time_from_rpm_diff(config.decoder.rpm, 45) / 84;
+      calculated_values.dwell_us = time_from_rpm_diff(config.decoder.rpm, 45) / (TICKRATE / 1000000);
       break;
   }
 }
