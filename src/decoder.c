@@ -6,37 +6,14 @@
 
 #include <stdlib.h>
 
-/* This function assumes it will be called at least once every timer
- * wrap-around.  That should be a valid assumption seeing as this should
- * be called in the main loop repeatedly 
- */
-
-#define SAVE_VALS 4 
-static unsigned int valid_time_count = 0;
-
 static struct sched_entry expire_event;
 
 static void handle_decoder_invalidate_event(void *_d) {
   struct decoder *d = (struct decoder *)_d;
   d->valid = 0;
-  valid_time_count = 0;
-  /* Disable all not-yet-fired scheduled events */
-  /* But for this moment, just disable events */
+  d->state = DECODER_NOSYNC;
+  d->current_triggers_rpm = 0;
   invalidate_scheduled_events(config.events, config.num_events);
-}
-
-int decoder_valid(struct decoder *d) {
-  return d->valid;
-}
-
-/* Assumes idx is less than `max` greater than the bounds of the array */
-static inline unsigned char constrain(unsigned char idx, 
-                                      unsigned char max) {
-  if (idx >= max) {
-    return idx - max;
-  } else {
-    return idx;
-  }
 }
 
 static void set_expire_event(timeval_t t) {
@@ -46,44 +23,57 @@ static void set_expire_event(timeval_t t) {
   enable_interrupts();
 }
 
+static void push_time(struct decoder *d, timeval_t t) {
+  for (int i = d->required_triggers_rpm - 1; i > 0; --i) {
+    d->times[i] = d->times[i - 1];
+  }
+  d->times[0] = t;
+}
+
 void tfi_pip_decoder(struct decoder *d) {
-  timeval_t t0, prev_t0;
-  static timeval_t last_times[SAVE_VALS] = {0, 0, 0, 0};
-  static unsigned char cur_index = 0;
+  timeval_t t0;
 
   disable_interrupts();
   t0 = d->last_t0;
   d->needs_decoding = 0;
   enable_interrupts();
 
+  push_time(d, t0);
   d->t0_count++;
-  prev_t0 = last_times[cur_index];
-  cur_index = constrain((cur_index + 1), SAVE_VALS);
-  last_times[cur_index] = t0;
-  valid_time_count++;
-  if (valid_time_count >= SAVE_VALS) {
-    timeval_t diff = time_diff(t0, prev_t0);
-    unsigned int slicerpm = rpm_from_time_diff(diff, 90);
-    d->rpm = rpm_from_time_diff(time_diff(last_times[cur_index], 
-          last_times[constrain(cur_index + 2, SAVE_VALS)]), 180);
-    valid_time_count = SAVE_VALS;
-    d->trigger_cur_rpm_change = abs(d->rpm - slicerpm) / (float)d->rpm;
-    if ((slicerpm <= d->trigger_min_rpm) ||
-        (slicerpm > d->rpm + (d->rpm * d->trigger_max_rpm_change)) ||
-        (slicerpm < d->rpm - (d->rpm * d->trigger_max_rpm_change))) {
-      /* RPM changed too much, or is too low */
-      handle_decoder_invalidate_event(d);
-      return;
-    } else {
-      d->valid = 1;
-      d->last_trigger_time = t0;
-      d->last_trigger_angle += 90;
-      if (d->last_trigger_angle == 720) {
-        d->last_trigger_angle = 0;
+
+  timeval_t diff = d->times[0] - d->times[1];
+  unsigned int slicerpm = rpm_from_time_diff(diff, d->degrees_per_trigger);
+  d->last_trigger_angle += d->degrees_per_trigger;
+  if (d->last_trigger_angle == 720) {
+    d->last_trigger_angle = 0;
+  }
+
+  switch (d->state) {
+    case DECODER_NOSYNC:
+      if (d->current_triggers_rpm >= d->required_triggers_rpm) {
+        d->state = DECODER_RPM;
+      } else { 
+        d->current_triggers_rpm++;  
       }
-      d->expiration = t0 + diff * 1.5;
-      set_expire_event(d->expiration);
-    }
+      break;
+    case DECODER_RPM:
+    case DECODER_SYNC:
+      d->rpm = rpm_from_time_diff(d->times[0] - d->times[2], 
+        d->degrees_per_trigger * 2);
+      if (d->rpm) {
+        d->trigger_cur_rpm_change = abs(d->rpm - slicerpm) / (float)d->rpm;
+      }
+      if ((slicerpm <= d->trigger_min_rpm) ||
+           (slicerpm > d->rpm + (d->rpm * d->trigger_max_rpm_change)) ||
+           (slicerpm < d->rpm - (d->rpm * d->trigger_max_rpm_change))) {
+        handle_decoder_invalidate_event(d);  
+      } else {
+        d->valid = 1;
+        d->last_trigger_time = t0;
+        d->expiration = t0 + diff * 1.5;
+        set_expire_event(d->expiration);
+      }
+      break;
   }
 }
 
@@ -91,17 +81,23 @@ void decoder_init(struct decoder *d) {
   d->last_t0 = 0;
   d->last_t1 = 0;
   d->needs_decoding = 0;
-  if (config.trigger == FORD_TFI) {
-    d->decode = tfi_pip_decoder;
+  switch (config.trigger) {
+    case FORD_TFI:
+      d->decode = tfi_pip_decoder;
+      d->required_triggers_rpm = 3;
+      d->degrees_per_trigger = 90;
+    default:
+      break;
   }
+  d->current_triggers_rpm = 0;
   d->valid = 0;
   d->rpm = 0;
+  d->state = DECODER_NOSYNC;
   d->last_trigger_time = 0;
   d->last_trigger_angle = 0;
   d->expiration = 0;
 
   expire_event.callback = handle_decoder_invalidate_event;
   expire_event.ptr = d;
-  expire_event.safe_to_invalidate = 0;
 }
 

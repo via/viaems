@@ -25,7 +25,6 @@ struct sched_entry {
 
   volatile unsigned char fired;
   volatile unsigned char scheduled;
-  volatile unsigned char safe_to_invalidate;
   LIST_ENTRY(sched_entry) entries;
 };
 LIST_HEAD(scheduler_head, sched_entry);

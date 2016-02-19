@@ -18,7 +18,7 @@ int main() {
     if (config.decoder.needs_decoding) {
       config.decoder.decode(&config.decoder);
 
-      if (decoder_valid(&config.decoder)) {
+      if (config.decoder.valid) {
 
         calculate_ignition();
 

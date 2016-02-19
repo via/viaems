@@ -2,6 +2,7 @@
 #define _DECODER_H
 
 #include "platform.h"
+#define MAX_DECODER_TIMES 4
 
 struct decoder;
 typedef void (*decoder_func)(struct decoder *);
@@ -10,6 +11,12 @@ typedef enum {
   FORD_TFI,
   TOYOTA_24_1_CAS,
 } trigger_type;
+
+typedef enum {
+  DECODER_NOSYNC,
+  DECODER_RPM,
+  DECODER_SYNC,
+} decoder_state;
 
 struct decoder {
   /* Unsafe interrupt-written vars */
@@ -36,9 +43,15 @@ struct decoder {
   /* Debug */
   unsigned int t0_count;
   unsigned int t1_count;
+
+  /* Internal state */
+  decoder_state state;
+  unsigned int required_triggers_rpm;
+  unsigned int current_triggers_rpm;
+  degrees_t degrees_per_trigger;
+  timeval_t times[MAX_DECODER_TIMES];
 };
 
-int decoder_valid(struct decoder *);
 void decoder_init(struct decoder *);
 void enable_test_trigger(trigger_type t, unsigned int rpm);
 

@@ -137,13 +137,11 @@ schedule_ignition_event(struct output_event *ev,
     ev->start.time = start_time;
     ev->start.output_id = ev->output_id;
     ev->start.output_val = ev->inverted ? 0 : 1;
-    ev->start.safe_to_invalidate = 1;
     schedule_insert(curtime, &ev->start);
 
     ev->stop.time = stop_time;
     ev->stop.output_id = ev->output_id;
     ev->stop.output_val = ev->inverted ? 1 : 0;
-    ev->stop.safe_to_invalidate = 0;
     schedule_insert(curtime, &ev->stop);
 
   }
@@ -184,7 +182,6 @@ schedule_adc_event(struct output_event *ev, struct decoder *d) {
   }
   ev->stop.time = firing_time;
   ev->stop.callback = adc_gather;
-  ev->stop.safe_to_invalidate = 1;
   schedule_insert(curtime, &ev->stop);
   enable_interrupts();
   return 1;
