@@ -103,5 +103,6 @@ void decoder_init(struct decoder *d) {
 
   expire_event.callback = handle_decoder_invalidate_event;
   expire_event.ptr = d;
+  expire_event.safe_to_invalidate = 0;
 }
 

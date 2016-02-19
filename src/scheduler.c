@@ -26,9 +26,7 @@ void invalidate_scheduled_events() {
   disable_interrupts();
   t = current_time();
   LIST_FOREACH_SAFE(cur, &schedule, entries, tmp) {
-    /* For now, the hacky way to do this is to just disable the ones with 'val'
-     * set to 1, so still allow current events to stop */
-    if (cur->output_val) {
+    if (cur->safe_to_invalidate) {
       cur->scheduled = 0;
       cur->fired = 1;
       LIST_REMOVE(cur, entries);
@@ -122,11 +120,13 @@ schedule_ignition_event(struct output_event *ev,
     ev->start.time = start_time;
     ev->start.output_id = ev->output_id;
     ev->start.output_val = ev->inverted ? 0 : 1;
+    ev->start.safe_to_invalidate = 1;
     schedule_insert(curtime, &ev->start);
 
     ev->stop.time = stop_time;
     ev->stop.output_id = ev->output_id;
     ev->stop.output_val = ev->inverted ? 1 : 0;
+    ev->start.safe_to_invalidate = 0;
     schedule_insert(curtime, &ev->stop);
 
   }
@@ -167,6 +167,7 @@ schedule_adc_event(struct output_event *ev, struct decoder *d) {
   }
   ev->stop.time = firing_time;
   ev->stop.callback = adc_gather;
+  ev->stop.safe_to_invalidate = 1;
   schedule_insert(curtime, &ev->stop);
   enable_interrupts();
   return 1;
