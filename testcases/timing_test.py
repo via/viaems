@@ -16,12 +16,12 @@ def test_dwell_times(events):
             if ev['value'] == 1 and starts[ev['output']] is not None:
                 time = ev['time'] - starts[ev['output']]
                 starts[ev['output']] = None
-                delta = abs(time / 1000 - ev['dwell'])
+                delta = abs(time / 1000.0 - ev['dwell'])
                 deltas.append(delta)
             if ev['value'] == 0 and starts[ev['output']] is None:
                 starts[ev['output']] = ev['time']
     ndeltas = numpy.array(deltas)
-    print " [I] min: {0} max: {1} mean: {2:.2} stddev: {3:.2}".format(
+    print " [I] min: {0:.2} max: {1:.2} mean: {2:.2} stddev: {3:.2}".format(
         numpy.amin(ndeltas), numpy.amax(ndeltas),
         numpy.mean(ndeltas), numpy.std(ndeltas))
     print
@@ -70,6 +70,7 @@ def parse_event(ev):
             "value": int(m.group(3)),
             "advance": float(m.group(4)),
             "dwell": int(m.group(5))}
+  print ev
     
 
 events = sys.stdin.readlines()
