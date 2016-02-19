@@ -12,15 +12,17 @@
  */
 
 #define SAVE_VALS 4 
+static unsigned int valid_time_count = 0;
 
 static struct sched_entry expire_event;
 
 static void handle_decoder_invalidate_event(void *_d) {
   struct decoder *d = (struct decoder *)_d;
   d->valid = 0;
+  valid_time_count = 0;
   /* Disable all not-yet-fired scheduled events */
   /* But for this moment, just disable events */
-  invalidate_scheduled_events();
+  invalidate_scheduled_events(config.events, config.num_events);
 }
 
 int decoder_valid(struct decoder *d) {
@@ -48,7 +50,6 @@ void tfi_pip_decoder(struct decoder *d) {
   timeval_t t0, prev_t0;
   static timeval_t last_times[SAVE_VALS] = {0, 0, 0, 0};
   static unsigned char cur_index = 0;
-  static unsigned char valid_time_count = 0;
 
   disable_interrupts();
   t0 = d->last_t0;
@@ -83,8 +84,6 @@ void tfi_pip_decoder(struct decoder *d) {
       d->expiration = t0 + diff * 1.5;
       set_expire_event(d->expiration);
     }
-  } else {
-    handle_decoder_invalidate_event(d);
   }
 }
 

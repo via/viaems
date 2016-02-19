@@ -26,7 +26,7 @@ int main() {
           switch(config.events[e].type) {
             case IGNITION_EVENT:
               if (ignition_cut()) {
-                invalidate_scheduled_events();
+                invalidate_scheduled_events(config.events, config.num_events);
                 continue;
               }
               schedule_ignition_event(&config.events[e], &config.decoder, 

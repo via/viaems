@@ -19,17 +19,34 @@ static timeval_t reschedule_head(timeval_t new, timeval_t old) {
   return new;
 }
 
-void invalidate_scheduled_events() {
-  struct sched_entry *cur, *tmp;
+void deschedule_event(struct output_event *ev) {
+  if (ev->start.scheduled) {
+    ev->start.scheduled = 0;
+    LIST_REMOVE(&ev->start, entries);
+  }
+  ev->start.fired = 0;
+
+  if (ev->stop.scheduled) {
+    ev->stop.scheduled = 0;
+    LIST_REMOVE(&ev->stop, entries);
+  }
+  ev->stop.fired = 0;
+}
+
+void invalidate_scheduled_events(struct output_event *evs, int n) {
   timeval_t t;
   int int_on = interrupts_enabled();
   disable_interrupts();
   t = current_time();
-  LIST_FOREACH_SAFE(cur, &schedule, entries, tmp) {
-    if (cur->safe_to_invalidate) {
-      cur->scheduled = 0;
-      cur->fired = 1;
-      LIST_REMOVE(cur, entries);
+  for (int i = 0; i < n; ++i) {
+    switch(evs[i].type) {
+      case IGNITION_EVENT:
+        if (!event_is_active(&evs[i])) {
+          deschedule_event(&evs[i]);
+        }
+        break;
+      default:
+        break;
     }
   }
   if (LIST_EMPTY(&schedule)) {
@@ -126,7 +143,7 @@ schedule_ignition_event(struct output_event *ev,
     ev->stop.time = stop_time;
     ev->stop.output_id = ev->output_id;
     ev->stop.output_val = ev->inverted ? 1 : 0;
-    ev->start.safe_to_invalidate = 0;
+    ev->stop.safe_to_invalidate = 0;
     schedule_insert(curtime, &ev->stop);
 
   }
