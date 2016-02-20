@@ -8,14 +8,20 @@ typedef enum {
   SENSOR_MAP,
   SENSOR_IAT,
   SENSOR_CLT,
+  SENSOR_BRV,
+  SENSOR_TPS,
+  SENSOR_AAP,
+  SENSOR_FRT,
   NUM_SENSORS,
 } sensor_input_type;
 
 typedef enum {
+  SENSOR_NONE,
   SENSOR_ADC,
   SENSOR_FREQ,
   SENSOR_DIGITAL,
   SENSOR_PWM,
+  SENSOR_CONST,
 } sensor_method;
 
 struct sensor_input {
@@ -29,6 +35,7 @@ struct sensor_input {
       float max;
     } range;
     struct table *table;
+    float fixed_value;
   } params;
 
   uint32_t raw_value;

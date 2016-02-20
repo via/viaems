@@ -8,6 +8,7 @@
 #include "table.h"
 #include "console.h"
 #include "sensors.h"
+#include "calculations.h"
 
 #define MAX_EVENTS 24
 
@@ -33,6 +34,12 @@ struct config {
   struct table *timing;
   struct table *iat_timing_adjust;
   struct table *clt_timing_adjust;
+  struct table *ve;
+  struct table *commanded_lambda;
+  struct table *injector_pw_compensation;
+
+  /* Fuel information */
+  struct fueling_config fueling;
 
   /* Cutoffs */
   unsigned int rpm_stop;
