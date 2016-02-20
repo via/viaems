@@ -21,6 +21,7 @@ int main() {
       if (config.decoder.valid) {
 
         calculate_ignition();
+        calculate_fueling();
 
         for (unsigned int e = 0; e < config.num_events; ++e) {
           switch(config.events[e].type) {
@@ -35,7 +36,12 @@ int main() {
               break;
 
             case FUEL_EVENT:
-              schedule_fuel_event(&config.events[e], &config.decoder, 0);
+              if (fuel_cut()) {
+                invalidate_scheduled_events(config.events, config.num_events);
+                continue;
+              }
+              schedule_fuel_event(&config.events[e], &config.decoder, 
+                calculated_values.fueling_us);
               break;
 
             case ADC_EVENT:

@@ -43,6 +43,11 @@ sensors_process() {
       }
     }
   }
+  for (int i = 0; i < NUM_SENSORS; ++i) {
+    if (config.sensors[i].method == SENSOR_CONST) {
+      config.sensors[i].processed_value = config.sensors[i].params.fixed_value;
+    }
+  }
 
 }
 

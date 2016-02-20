@@ -153,7 +153,55 @@ int
 schedule_fuel_event(struct output_event *ev, 
                     struct decoder *d, 
                     unsigned int usecs_pw) {
-  return 0;
+  /* For this initial implementation, the duty cycle of the event relative 
+   * to a complete engine cycle must be small enough such that there is a
+   * decode between when the last event stopped and the next one stops.  This
+   * is due to not having the ability to schedule while an event is active.
+   */
+
+  timeval_t stop_time;
+  timeval_t start_time;
+  timeval_t max_time;
+  timeval_t curtime;
+  int firing_angle;
+
+
+  firing_angle = clamp_angle(ev->angle - d->last_trigger_angle + 
+    d->offset, 720);
+
+  stop_time = d->last_trigger_time + time_from_rpm_diff(d->rpm, firing_angle);
+  start_time = stop_time - (TICKRATE / 1000000) * usecs_pw;
+
+  curtime = current_time();
+  max_time = curtime + time_from_rpm_diff(d->rpm, 720);
+
+  disable_interrupts();
+  if (!event_is_active(ev)) {
+    /* If this even was fired in the last 180 degrees, do not reschedule */
+    if (time_diff(current_time(), ev->stop.time) < 
+        time_from_rpm_diff(d->rpm, 180)) {
+      enable_interrupts();
+      return 0;
+    }
+
+    /* If we cant schedule this event, don't try */
+    if (!time_in_range(start_time, curtime, max_time)) {
+      enable_interrupts();
+      return 0;
+    }
+    ev->start.time = start_time;
+    ev->start.output_id = ev->output_id;
+    ev->start.output_val = ev->inverted ? 0 : 1;
+    schedule_insert(curtime, &ev->start);
+
+    ev->stop.time = stop_time;
+    ev->stop.output_id = ev->output_id;
+    ev->stop.output_val = ev->inverted ? 1 : 0;
+    schedule_insert(curtime, &ev->stop);
+
+  }
+  enable_interrupts();
+  return 1;
 }
 
 int

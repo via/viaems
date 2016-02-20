@@ -27,20 +27,28 @@ struct table timing_vs_rpm_and_map = {
 };
 
 struct config config = {
-  .num_events = 10,
+  .num_events = 18,
   .events = {
-    /* {.type=IGNITION_EVENT, .angle=0, .output_id=14}, */
     {.type=IGNITION_EVENT, .angle=0, .output_id=0, .inverted=1},
     {.type=IGNITION_EVENT, .angle=90, .output_id=0, .inverted=1},
     {.type=IGNITION_EVENT, .angle=180, .output_id=0, .inverted=1},
     {.type=IGNITION_EVENT, .angle=270, .output_id=0, .inverted=1},
     {.type=ADC_EVENT, .angle=290},
-/*    {.type=IGNITION_EVENT, .angle=360, .output_id=14}, */
+
     {.type=IGNITION_EVENT, .angle=360, .output_id=0, .inverted=1},
     {.type=IGNITION_EVENT, .angle=450, .output_id=0, .inverted=1},
     {.type=IGNITION_EVENT, .angle=540, .output_id=0, .inverted=1},
     {.type=IGNITION_EVENT, .angle=630, .output_id=0, .inverted=1},
     {.type=ADC_EVENT, .angle=650},
+
+    {.type=FUEL_EVENT, .angle=630, .output_id=1},
+    {.type=FUEL_EVENT, .angle=0,   .output_id=1},
+    {.type=FUEL_EVENT, .angle=90,  .output_id=1},
+    {.type=FUEL_EVENT, .angle=180, .output_id=1},
+    {.type=FUEL_EVENT, .angle=270, .output_id=1},
+    {.type=FUEL_EVENT, .angle=360, .output_id=1},
+    {.type=FUEL_EVENT, .angle=450, .output_id=1},
+    {.type=FUEL_EVENT, .angle=540, .output_id=1},
   },
   .trigger = FORD_TFI,
   .decoder = {
@@ -51,14 +59,26 @@ struct config config = {
     .t1_pin = 4,
   },
   .sensors = {
+#if 0
     [SENSOR_MAP] = {.pin=1, .method=SENSOR_FREQ, .process=sensor_process_freq, 
       .params={.range={.min=0, .max=100}}},
     [SENSOR_IAT] = {.pin=2, .method=SENSOR_ADC, .process=sensor_process_linear, 
       .params={.range={.min=-30.0, .max=120.0}}},
+#endif
+    [SENSOR_MAP] = {.method=SENSOR_CONST, .params={.fixed_value = 80.0}},
+    [SENSOR_IAT] = {.method=SENSOR_CONST, .params={.fixed_value = 15.0}},
   },
   .timing = &timing_vs_rpm_and_map,
   .rpm_stop = 4000,
   .rpm_start = 3800,
+  .fueling = {
+    .injector_cc_per_minute = 440,
+    .cylinder_cc = 720,
+    .fuel_stoich_ratio = 14.7,
+    .injections_per_cycle = 8, /* All batched */
+    .density_of_fuel = 0.755,
+    .density_of_air_stp = 1.2754e-3,
+  },
   .console = {
     .baud = 115200,
     .stop_bits = 1,
