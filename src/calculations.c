@@ -44,37 +44,49 @@ static float fuel_density(float fuel_celsius) {
 void calculate_fueling() {
   float ve;
   float lambda;
-  float atmos_kpa = 100;
+  float idt;
+  float atmos_kpa = config.sensors[SENSOR_AAP].processed_value;
+  float fueltemp = config.sensors[SENSOR_FRT].processed_value;
+  float iat = config.sensors[SENSOR_IAT].processed_value;
+  float map = config.sensors[SENSOR_MAP].processed_value;
+  float brv = config.sensors[SENSOR_BRV].processed_value;
 
   if (config.ve) {
-    ve = interpolate_table_twoaxis(config.ve, config.decoder.rpm, 
-      config.sensors[SENSOR_MAP].processed_value);
+    ve = interpolate_table_twoaxis(config.ve, config.decoder.rpm, map);
   } else {
-    ve = 100.0;
+    ve = 51.0;
   }
 
   if (config.commanded_lambda) {
     lambda = interpolate_table_twoaxis(config.commanded_lambda, 
-      config.decoder.rpm, config.sensors[SENSOR_MAP].processed_value);
+      config.decoder.rpm, map);
   } else {
     lambda = 1.0;
   }
 
+  if (config.injector_pw_compensation) {
+    idt = interpolate_table_oneaxis(config.injector_pw_compensation, brv);
+  } else {
+    idt = 1000;
+  }
+
   float injested_volume_per_cycle = (ve / 100.0) * 
-    (config.sensors[SENSOR_MAP].processed_value / atmos_kpa) * 
+    (map / atmos_kpa) * 
     config.fueling.cylinder_cc;
 
   float injested_mass_per_cycle = injested_volume_per_cycle *
-    air_density(config.sensors[SENSOR_IAT].processed_value, atmos_kpa);
+    air_density(iat, atmos_kpa);
   config.fueling.airmass_per_cycle = injested_mass_per_cycle;
 
   float required_fuelvolume_per_cycle = injested_mass_per_cycle / 
-    config.fueling.fuel_stoich_ratio / fuel_density(0.0) / lambda;
+    config.fueling.fuel_stoich_ratio / fuel_density(fueltemp) / lambda;
   config.fueling.fuelvol_per_cycle = required_fuelvolume_per_cycle;
 
   float raw_pw_us = required_fuelvolume_per_cycle / 
     config.fueling.injector_cc_per_minute * 60000000 / /* uS per minute */
     config.fueling.injections_per_cycle; /* This many pulses */
   
-  calculated_values.fueling_us = raw_pw_us;
+  config.fueling.injector_dead_time = idt;
+
+  calculated_values.fueling_us = raw_pw_us + idt;
 }

@@ -14,6 +14,7 @@ struct fueling_config {
   /* Intermediate values for debugging below */
   float airmass_per_cycle;
   float fuelvol_per_cycle;
+  float injector_dead_time;
 };
 
 struct calculated_values {
