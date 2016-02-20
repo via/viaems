@@ -402,7 +402,7 @@ void disable_interrupts() {
   cm_disable_interrupts();
 }
 
-void interrupts_enabled() {
+int interrupts_enabled() {
   return cm_is_masked_interrupts();
 }
 
