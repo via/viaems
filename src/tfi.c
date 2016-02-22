@@ -15,7 +15,7 @@ int main() {
 
   while (1) {
     sensors_process();
-    if (config.decoder.needs_decoding) {
+    if (config.decoder.needs_decoding_t0 || config.decoder.needs_decoding_t1) {
       config.decoder.decode(&config.decoder);
 
       if (config.decoder.valid) {

@@ -60,10 +60,19 @@ static void event_signal(int s __attribute((unused))) {
 
 static void primary_trigger(int s __attribute((unused))) {
   config.decoder.last_t0 = current_time();
-  config.decoder.needs_decoding = 1;
+  config.decoder.needs_decoding_t0 = 1;
   events_out[cur_event++] = (struct event){
     .time = config.decoder.last_t0,
     .type = EVENT_TRIGGER1,
+  }; 
+}
+
+static void secondary_trigger(int s __attribute((unused))) {
+  config.decoder.last_t1 = current_time();
+  config.decoder.needs_decoding_t1 = 1;
+  events_out[cur_event++] = (struct event){
+    .time = config.decoder.last_t1,
+    .type = EVENT_TRIGGER2,
   }; 
 }
 
@@ -184,7 +193,11 @@ static void interface(pid_t ppid) {
       if (fds[0].revents & POLLIN) {
         read(timer_fd, &events, sizeof(uint64_t));
         /* Timer fired, send signal and move on */
-        kill(ppid, SIGUSR1);
+        if (strcmp("trigger1", command) == 0) {
+          kill(ppid, SIGUSR1);
+        } else if (strcmp("trigger2", command) == 0) {
+          kill(ppid, SIGUSR2);
+        }
         if (!fgets(cmdline, 128, ev_in_fd)) {
           break;
 	}
@@ -202,6 +215,9 @@ static void interface(pid_t ppid) {
     }
     if (events_out[i].type == EVENT_TRIGGER1) {
       fprintf(ev_out_fd, "%lu trigger1\n", events_out[i].time);
+    }
+    if (events_out[i].type == EVENT_TRIGGER2) {
+      fprintf(ev_out_fd, "%lu trigger2\n", events_out[i].time);
     }
     if (events_out[i].type == EVENT_OUTPUT) {
       fprintf(ev_out_fd, "%lu output %d %d %f %d\n", events_out[i].time, 
@@ -239,6 +255,9 @@ void platform_init() {
   /* Set up t0 and t1 for SIGUSR1 and SIGUSR2 */
   sa.sa_handler = primary_trigger;
   sigaction(SIGUSR1, &sa, NULL);
+
+  sa.sa_handler = secondary_trigger;
+  sigaction(SIGUSR2, &sa, NULL);
 
   /* Set up the channel for event information */
   events_out = mmap(0, sizeof(struct event) * max_events, 

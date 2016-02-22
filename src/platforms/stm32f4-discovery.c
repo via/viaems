@@ -335,11 +335,11 @@ void adc_gather(void *_unused __attribute((unused))) {
 static inline void handle_trigger(unsigned char pin, timeval_t t) {
   if (config.decoder.t0_pin == pin) {
     config.decoder.last_t0 = t;
-    config.decoder.needs_decoding = 1;
+    config.decoder.needs_decoding_t0 = 1;
   }
   if (config.decoder.t1_pin == pin) {
     config.decoder.last_t1 = t;
-    config.decoder.needs_decoding = 1;
+    config.decoder.needs_decoding_t1 = 1;
   }
 }
 

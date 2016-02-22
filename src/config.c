@@ -42,7 +42,7 @@ struct config config = {
     {.type=IGNITION_EVENT, .angle=630, .output_id=0, .inverted=1},
     {.type=ADC_EVENT, .angle=650},
   },
-  .trigger = FORD_TFI,
+  .trigger = TOYOTA_24_1_CAS,
   .decoder = {
     .offset = 45,
     .trigger_max_rpm_change = 0.55, /*Startup sucks with only 90* trigger */

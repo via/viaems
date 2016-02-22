@@ -2,7 +2,7 @@
 #define _DECODER_H
 
 #include "platform.h"
-#define MAX_DECODER_TIMES 4
+#define MAX_DECODER_TIMES 8
 
 struct decoder;
 typedef void (*decoder_func)(struct decoder *);
@@ -22,7 +22,8 @@ struct decoder {
   /* Unsafe interrupt-written vars */
   volatile timeval_t last_t0;
   volatile timeval_t last_t1;
-  volatile char needs_decoding;
+  volatile char needs_decoding_t0;
+  volatile char needs_decoding_t1;
 
   /* Safe, only handled in main loop */
   decoder_func decode;
@@ -37,6 +38,10 @@ struct decoder {
   float trigger_max_rpm_change;
   float trigger_cur_rpm_change;
   unsigned int trigger_min_rpm;
+  unsigned int required_triggers_rpm;
+  unsigned int num_triggers;
+  degrees_t degrees_per_trigger;
+  unsigned int rpm_window_size;
   unsigned int t0_pin;
   unsigned int t1_pin;
 
@@ -46,9 +51,8 @@ struct decoder {
 
   /* Internal state */
   decoder_state state;
-  unsigned int required_triggers_rpm;
   unsigned int current_triggers_rpm;
-  degrees_t degrees_per_trigger;
+  unsigned int triggers_since_last_sync;
   timeval_t times[MAX_DECODER_TIMES];
 };
 
