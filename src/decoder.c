@@ -58,6 +58,8 @@ static void trigger_update(struct decoder *d, timeval_t t) {
     if (d->triggers_since_last_sync > d->num_triggers) {
       d->state = DECODER_NOSYNC;
     }
+    d->expiration = t + diff * 1.5;
+    set_expire_event(d->expiration);
   }
 
 }
@@ -117,8 +119,6 @@ void cam_nplusone_decoder(struct decoder *d) {
   if (d->state == DECODER_SYNC) {
     d->valid = 1;
     d->last_trigger_time = t0;
-    d->expiration = t0 + (t0 - d->times[1]) * 1.5;
-    set_expire_event(d->expiration);
   } else {
     if (oldstate == DECODER_SYNC) {
       /* We lost sync */
