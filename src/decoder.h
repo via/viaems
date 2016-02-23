@@ -18,6 +18,13 @@ typedef enum {
   DECODER_SYNC,
 } decoder_state;
 
+typedef enum {
+  DECODER_VARIATION,
+  DECODER_TRIGGERCOUNT_HIGH,
+  DECODER_TRIGGERCOUNT_LOW,
+  DECODER_EXPIRED,
+} decoder_loss_reason;
+
 struct decoder {
   /* Unsafe interrupt-written vars */
   volatile timeval_t last_t0;
@@ -48,6 +55,7 @@ struct decoder {
   /* Debug */
   unsigned int t0_count;
   unsigned int t1_count;
+  decoder_loss_reason loss;
 
   /* Internal state */
   decoder_state state;

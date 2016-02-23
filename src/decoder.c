@@ -12,6 +12,7 @@ static void handle_decoder_invalidate_event(void *_d) {
   struct decoder *d = (struct decoder *)_d;
   d->valid = 0;
   d->state = DECODER_NOSYNC;
+  d->loss = DECODER_EXPIRED;
   d->current_triggers_rpm = 0;
   invalidate_scheduled_events(config.events, config.num_events);
 }
@@ -54,9 +55,11 @@ static void trigger_update(struct decoder *d, timeval_t t) {
          (slicerpm > d->rpm + (d->rpm * d->trigger_max_rpm_change)) ||
          (slicerpm < d->rpm - (d->rpm * d->trigger_max_rpm_change))) {
       d->state = DECODER_NOSYNC;
+      d->loss = DECODER_VARIATION;
     }
     if (d->triggers_since_last_sync > d->num_triggers) {
       d->state = DECODER_NOSYNC;
+      d->loss = DECODER_TRIGGERCOUNT_HIGH;
     }
     d->expiration = t + diff * 1.5;
     set_expire_event(d->expiration);
@@ -72,6 +75,7 @@ static void sync_update(struct decoder *d) {
       d->last_trigger_angle = 0;
     } else {
       d->state = DECODER_NOSYNC;
+      d->loss = DECODER_TRIGGERCOUNT_LOW;
     }
   }
   d->triggers_since_last_sync = 0;
@@ -93,7 +97,7 @@ void cam_nplusone_decoder(struct decoder *d) {
   d->needs_decoding_t1 = 0;
   enable_interrupts();
 
-  if (d->state == DECODER_NOSYNC) {
+  if (d->state == DECODER_NOSYNC && trigger) {
     if (d->current_triggers_rpm >= d->required_triggers_rpm) {
       d->state = DECODER_RPM;
     } else { 
@@ -129,44 +133,32 @@ void cam_nplusone_decoder(struct decoder *d) {
 
 void tfi_pip_decoder(struct decoder *d) {
   timeval_t t0;
+  decoder_state oldstate = d->state;
 
   disable_interrupts();
   t0 = d->last_t0;
   d->needs_decoding_t0 = 0;
   enable_interrupts();
 
-  push_time(d, t0);
-  d->t0_count++;
-
-  timeval_t diff = d->times[0] - d->times[1];
-  unsigned int slicerpm = rpm_from_time_diff(diff, d->degrees_per_trigger);
-  d->last_trigger_angle += d->degrees_per_trigger;
-  if (d->last_trigger_angle == 720) {
-    d->last_trigger_angle = 0;
+  if (d->state == DECODER_NOSYNC) {
+    if (d->current_triggers_rpm >= d->required_triggers_rpm) {
+      d->state = DECODER_RPM;
+    } else { 
+      d->current_triggers_rpm++;  
+    }
   }
 
-  switch (d->state) {
-    case DECODER_NOSYNC:
-      if (d->current_triggers_rpm >= d->required_triggers_rpm) {
-        d->state = DECODER_RPM;
-      } else { 
-        d->current_triggers_rpm++;  
-      }
-      break;
-    case DECODER_RPM:
-    case DECODER_SYNC:
-      d->rpm = rpm_from_time_diff(d->times[0] - d->times[2], 
-        d->degrees_per_trigger * 2);
-      if (d->rpm) {
-        d->trigger_cur_rpm_change = abs(d->rpm - slicerpm) / (float)d->rpm;
-      }
-      if ((slicerpm <= d->trigger_min_rpm) ||
-           (slicerpm > d->rpm + (d->rpm * d->trigger_max_rpm_change)) ||
-           (slicerpm < d->rpm - (d->rpm * d->trigger_max_rpm_change))) {
-        handle_decoder_invalidate_event(d);  
-      } else {
-      }
-      break;
+  trigger_update(d, t0);
+  if (d->state == DECODER_RPM || d->state == DECODER_SYNC) {
+    d->state = DECODER_SYNC;
+    d->valid = 1;
+    d->last_trigger_time = t0;
+    d->triggers_since_last_sync = 0; /* There is no sync */;
+  } else {
+    if (oldstate == DECODER_SYNC) {
+      /* We lost sync */
+      handle_decoder_invalidate_event(d);
+    }
   }
 }
 
