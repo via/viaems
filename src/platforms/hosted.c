@@ -73,7 +73,7 @@ static void secondary_trigger(int s __attribute((unused))) {
   events_out[cur_event++] = (struct event){
     .time = config.decoder.last_t1,
     .type = EVENT_TRIGGER2,
-  }; 
+  };
 }
 
 static void setup_realtime(int cpu) {

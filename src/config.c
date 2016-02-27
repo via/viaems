@@ -57,7 +57,7 @@ struct config config = {
       .params={.range={.min=-30.0, .max=120.0}}},
   },
   .timing = &timing_vs_rpm_and_map,
-  .rpm_stop = 40000,
+  .rpm_stop = 4000,
   .rpm_start = 3800,
   .console = {
     .baud = 115200,

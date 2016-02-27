@@ -100,8 +100,8 @@ void cam_nplusone_decoder(struct decoder *d) {
   if (d->state == DECODER_NOSYNC && trigger) {
     if (d->current_triggers_rpm >= d->required_triggers_rpm) {
       d->state = DECODER_RPM;
-    } else { 
-      d->current_triggers_rpm++;  
+    } else {
+      d->current_triggers_rpm++;
     }
   }
 
@@ -119,7 +119,7 @@ void cam_nplusone_decoder(struct decoder *d) {
   } else {
     sync_update(d);
   }
-  
+
   if (d->state == DECODER_SYNC) {
     d->valid = 1;
     d->last_trigger_time = t0;
@@ -143,8 +143,8 @@ void tfi_pip_decoder(struct decoder *d) {
   if (d->state == DECODER_NOSYNC) {
     if (d->current_triggers_rpm >= d->required_triggers_rpm) {
       d->state = DECODER_RPM;
-    } else { 
-      d->current_triggers_rpm++;  
+    } else {
+      d->current_triggers_rpm++;
     }
   }
 
