@@ -403,7 +403,7 @@ void disable_interrupts() {
 }
 
 int interrupts_enabled() {
-  return cm_is_masked_interrupts();
+  return !cm_is_masked_interrupts();
 }
 
 void set_event_timer(timeval_t t) {
