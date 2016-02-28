@@ -6,13 +6,18 @@
 #include <check.h>
 #include "queue.h"
 
+#include "check_platform.h"
+
 struct decoder_event {
   timeval_t time;
   int valid;
   int rpm;
 }; 
 
-void tfi_pip_decoder(struct decoder *);
+static int value_within(int percent, float value, float target) {
+  float diff = (target - value) / target;
+  return (diff * 100) <= percent;
+}
 
 void validate_decoder_sequence(struct decoder *d, struct decoder_event *ev, 
                                int num) {
@@ -28,29 +33,6 @@ void validate_decoder_sequence(struct decoder *d, struct decoder_event *ev,
   }
 }
 
-void disable_interrupts() {
-}
-
-void enable_interrupts() {
-}
-
-timeval_t current_time() {
-  return 0;
-}
-
-void set_event_timer(timeval_t t) {
-}
-
-timeval_t get_event_timer() {
-  return 0;
-}
-
-void clear_event_timer() {
-}
-void disable_event_timer() {
-}
-void set_output(int output, char value) {
-}
 
 START_TEST(check_decoder_startup_rough) {
 } END_TEST
@@ -138,18 +120,18 @@ START_TEST(check_decoder_normal_regain_sync) {
 
 START_TEST(check_rpm_from_time_diff) {
   /* 360 degrees for 0.005 s is 6000 rpm */
-  ck_assert_int_eq(rpm_from_time_diff(100000, 180), 6000);
+  ck_assert(value_within(1, rpm_from_time_diff(500000, 180), 6000));
 
   /* 90 degrees for 0.00125 s is 6000 rpm */
-  ck_assert_int_eq(rpm_from_time_diff(25000, 45), 6000);
+  ck_assert(value_within(1, rpm_from_time_diff(125000, 45), 6000));
 } END_TEST
 
 START_TEST(check_time_from_rpm_diff) {
   /* 6000 RPMS, 360 degrees = 0.005 s */
-  ck_assert_int_eq(time_from_rpm_diff(6000, 180), 100000);
+  ck_assert(value_within(1, time_from_rpm_diff(6000, 180), 5000));
 
   /* 6000 RPMS, 90 is 0.00125 s */
-  ck_assert_int_eq(time_from_rpm_diff(6000, 45), 25000);
+  ck_assert(value_within(1, time_from_rpm_diff(6000, 45), 1250));
 } END_TEST
 
 START_TEST(check_time_in_range) {
@@ -193,44 +175,44 @@ START_TEST(check_time_diff) {
 } END_TEST
 
 START_TEST(check_scheduler_inserts) {
- struct scheduler_head s = LIST_HEAD_INITIALIZER(sched_entry);
- struct sched_entry a[] = {
-   {5000, 0, 0, 0, 0},
-   {8000, 0, 0, 0, 0},
-   {6000, 0, 0, 0, 0},
-   {2000, 0, 0, 0, 0},
- };
- timeval_t ret;
-
- ret = schedule_insert(&s, 0, &a[0]);
- ck_assert(LIST_FIRST(&s) == &a[0]);
- ck_assert(ret == 5000);
-
- ret = schedule_insert(&s, 0, &a[1]);
- ck_assert(LIST_FIRST(&s) == &a[0]);
- ck_assert(LIST_NEXT(LIST_FIRST(&s), entries) = &a[1]);
- ck_assert(ret == 5000);
-
- ret = schedule_insert(&s, 0, &a[2]);
- ck_assert(LIST_FIRST(&s) == &a[0]);
- ck_assert(LIST_NEXT(LIST_FIRST(&s), entries) == &a[2]);
- ck_assert(LIST_NEXT(LIST_NEXT(LIST_FIRST(&s), entries), entries) == &a[1]);
- ck_assert(ret == 5000);
-
- ret = schedule_insert(&s, 0, &a[3]);
- ck_assert(LIST_FIRST(&s) == &a[3]);
- ck_assert(LIST_NEXT(LIST_FIRST(&s), entries) == &a[0]);
- ck_assert(LIST_NEXT(LIST_NEXT(LIST_FIRST(&s), entries), entries) == &a[2]);
- ck_assert(LIST_NEXT(LIST_NEXT(LIST_NEXT(LIST_FIRST(&s), entries), entries), entries) == &a[1]);
- ck_assert(ret == 2000);
-
- a[2].time = 1000;
- ret = schedule_insert(&s, 0, &a[2]);
- ck_assert(LIST_FIRST(&s) == &a[2]);
- ck_assert(LIST_NEXT(LIST_FIRST(&s), entries) == &a[3]);
- ck_assert(LIST_NEXT(LIST_NEXT(LIST_FIRST(&s), entries), entries) == &a[0]);
- ck_assert(LIST_NEXT(LIST_NEXT(LIST_NEXT(LIST_FIRST(&s), entries), entries), entries) == &a[1]);
- ck_assert(ret == 1000);
+  check_platform_reset();
+  struct sched_entry a[] = {
+    {5000},
+    {8000},
+    {6000},
+    {2000},
+  };
+  timeval_t ret;
+ 
+  ret = schedule_insert(0, &a[0]);
+  ck_assert(LIST_FIRST(check_get_schedule()) == &a[0]);
+  ck_assert(ret == 5000);
+ 
+  ret = schedule_insert(0, &a[1]);
+  ck_assert(LIST_FIRST(check_get_schedule()) == &a[0]);
+  ck_assert(LIST_NEXT(LIST_FIRST(check_get_schedule()), entries) = &a[1]);
+  ck_assert(ret == 5000);
+ 
+  ret = schedule_insert(0, &a[2]);
+  ck_assert(LIST_FIRST(check_get_schedule()) == &a[0]);
+  ck_assert(LIST_NEXT(LIST_FIRST(check_get_schedule()), entries) == &a[2]);
+  ck_assert(LIST_NEXT(LIST_NEXT(LIST_FIRST(check_get_schedule()), entries), entries) == &a[1]);
+  ck_assert(ret == 5000);
+ 
+  ret = schedule_insert(0, &a[3]);
+  ck_assert(LIST_FIRST(check_get_schedule()) == &a[3]);
+  ck_assert(LIST_NEXT(LIST_FIRST(check_get_schedule()), entries) == &a[0]);
+  ck_assert(LIST_NEXT(LIST_NEXT(LIST_FIRST(check_get_schedule()), entries), entries) == &a[2]);
+  ck_assert(LIST_NEXT(LIST_NEXT(LIST_NEXT(LIST_FIRST(check_get_schedule()), entries), entries), entries) == &a[1]);
+  ck_assert(ret == 2000);
+ 
+  a[2].time = 1000;
+  ret = schedule_insert(0, &a[2]);
+  ck_assert(LIST_FIRST(check_get_schedule()) == &a[2]);
+  ck_assert(LIST_NEXT(LIST_FIRST(check_get_schedule()), entries) == &a[3]);
+  ck_assert(LIST_NEXT(LIST_NEXT(LIST_FIRST(check_get_schedule()), entries), entries) == &a[0]);
+  ck_assert(LIST_NEXT(LIST_NEXT(LIST_NEXT(LIST_FIRST(check_get_schedule()), entries), entries), entries) == &a[1]);
+  ck_assert(ret == 1000);
 
 } END_TEST
 

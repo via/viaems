@@ -220,3 +220,10 @@ scheduler_execute() {
   } while (time_in_range(en->time, schedtime, cur));
 
 }
+
+#ifdef UNITTEST
+struct scheduler_head *check_get_schedule() {
+  return &schedule;
+}
+#endif
+

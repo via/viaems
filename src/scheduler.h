@@ -52,7 +52,9 @@ void scheduler_execute();
 unsigned char event_is_active(struct output_event *);
 void invalidate_scheduled_events(struct output_event *, int);
 
-
+#ifdef UNITTEST
+struct scheduler_head *check_get_schedule();
+#endif
 
 #endif 
 
