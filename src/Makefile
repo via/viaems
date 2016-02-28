@@ -1,11 +1,11 @@
-PLATFORM?=attiny861
+PLATFORM?=stm32f4-discovery
 
 .ifmake check
 CFLAGS!=pkg-config --cflags check
 LDFLAGS!=pkg-config --libs check
 CC=gcc
 CFLAGS+= -I. -std=c99 -Wall -O0 -g
-CFLAGS+= -D TICKRATE=20000000
+CFLAGS+= -D TICKRATE=1000000
 
 .else
 .if ${PLATFORM} == "stm32f4-discovery"
@@ -19,13 +19,6 @@ LDFLAGS+= -lopencm3_stm32f4 -fno-use-linker-plugin -lc -lnosys
 LDFLAGS+= -T platforms/stm32f4-discovery.ld -nostartfiles
 all: tfi
 
-.elif ${PLATFORM} == "avr"
-CC=avr-gcc
-CFLAGS=-I. -mmcu=${PLATFORM} -std=c99 -Wall -O3 -Wextra
-CFLAGS+= -D TICKTRATE=16000000
-LDFLAGS=-lgcc
-all: tfi.hex lfuse.hex hfuse.hex
-
 .elif ${PLATFORM} == "hosted"
 CC=gcc
 CFLAGS+= -I. -std=c99 -Wall -O0 -g
@@ -36,27 +29,14 @@ all: tfi
 .endif
 
 
-OBJS=decoder.o util.o tfi.o scheduler.o console.o calculations.o config.o table.o sensors.o platforms/${PLATFORM}.o
-SRCS=decoder.c util.c tfi.c scheduler.c console.c calculations.c config.c table.c sensors.c platforms/${PLATFORM}.c
+OBJS=decoder.o util.o tfi.o scheduler.o console.o calculations.o config.o table.o sensors.o
 
-tfi: decoder.o util.o tfi.o scheduler.o console.o calculations.o config.o table.o sensors.o platforms/${PLATFORM}.o
-	${CC} ${CFLAGS} -o tfi tfi.o calculations.o scheduler.o console.o decoder.o util.o sensors.o config.o table.o ${PLATFORM}.o  ${LDFLAGS}
+tfi: ${OBJS} platforms/${PLATFORM}.o
+	${CC} ${CFLAGS} -o tfi ${OBJS} ${PLATFORM}.o  ${LDFLAGS}
 
 
-tfi.hex: tfi
-	avr-objcopy -j .text -j .data -O ihex tfi tfi.hex
-
-fuses.hex: tfi
-	avr-objcopy -j .fuse -O ihex tfi fuses.hex --change-section-lma .fuse=0
-
-lfuse.hex: fuses.hex
-	srec_cat fuses.hex -Intel -crop 0x00 0x01 -offset  0x00 -O lfuse.hex -Intel
-
-hfuse.hex: fuses.hex
-	srec_cat fuses.hex -Intel -crop 0x01 0x02 -offset  -0x01 -O hfuse.hex -Intel
-
-check: decoder.o util.o scheduler.o test/check.o
-	${CC} ${CFLAGS} -o check check.o decoder.o util.o scheduler.o ${LDFLAGS}
+check: ${OBJS} test/check.o
+	${CC} ${CFLAGS} -o check check.o ${OBJS} ${LDFLAGS}
 
 
 clean:
