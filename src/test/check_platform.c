@@ -7,6 +7,7 @@
 static timeval_t curtime = 0;
 static timeval_t cureventtime = 0;
 static int int_on = 1;
+static int output_state = 0;
 
 void check_platform_reset() {
   LIST_INIT(check_get_schedule());
@@ -50,6 +51,11 @@ int interrupts_enabled() {
 }
 
 void set_output(int output, char value) {
+  output_state = value;  
+}
+
+int get_output() {
+  return output_state;
 }
 
 void adc_gather(void *_adc) {
