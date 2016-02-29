@@ -21,7 +21,7 @@ START_TEST(check_scheduler_inserts) {
  
   ret = schedule_insert(0, &a[1]);
   ck_assert(LIST_FIRST(check_get_schedule()) == &a[0]);
-  ck_assert(LIST_NEXT(LIST_FIRST(check_get_schedule()), entries) = &a[1]);
+  ck_assert(LIST_NEXT(LIST_FIRST(check_get_schedule()), entries) == &a[1]);
   ck_assert(ret == 5000);
  
   ret = schedule_insert(0, &a[2]);
