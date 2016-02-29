@@ -35,8 +35,8 @@ tfi: ${OBJS} tfi.o platforms/${PLATFORM}.o
 	${CC} ${CFLAGS} -o tfi tfi.o ${OBJS} ${PLATFORM}.o  ${LDFLAGS}
 
 
-check: ${OBJS} test/check.o test/check_platform.o
-	${CC} ${CFLAGS} -o check check.o check_platform.o ${OBJS} ${LDFLAGS}
+check: ${OBJS} test/check.o test/check_platform.o test/check_decoder.o test/check_scheduler.o
+	${CC} ${CFLAGS} -o check check.o check_platform.o check_decoder.o check_scheduler.o ${OBJS} ${LDFLAGS}
 
 
 clean:

@@ -8,115 +8,12 @@
 
 #include "check_platform.h"
 
-struct decoder_event {
-  timeval_t time;
-  int valid;
-  int rpm;
-}; 
 
 static int value_within(int percent, float value, float target) {
   float diff = (target - value) / target;
   return (diff * 100) <= percent;
 }
 
-void validate_decoder_sequence(struct decoder *d, struct decoder_event *ev, 
-                               int num) {
-  int i;
-  for (i = 0; i < num; ++i) {
-    d->last_t0 = ev[i].time;
-    tfi_pip_decoder(d);
-    ck_assert_msg(d->valid == ev[i].valid, "expected: {%d, %d, %d} got: {%d, %d, %d}",
-        ev[i].time, ev[i].valid, ev[i].rpm, d->last_trigger_time, d->valid, d->rpm);
-    if (ev[i].valid) {
-      ck_assert_int_eq(d->rpm, ev[i].rpm);
-    }
-  }
-}
-
-
-START_TEST(check_decoder_startup_rough) {
-} END_TEST
-
-START_TEST(check_decoder_startup_normal) {
-  struct decoder d1;
-  struct decoder_event ev1[] = {
-    {18000, 0, 0},
-    {25000, 0, 0},
-    {50000, 0, 0},
-    {75000, 0, 0},
-    {100000, 1, 6000},
-    {125000, 1, 6000},
-  };
-
-  validate_decoder_sequence(&d1, ev1, 6);
-
-  struct decoder d2;
-  struct decoder_event ev2[] = {
-    {0xFFFD6000, 0, 0},
-    {0xFFFDE000, 0, 0},
-    {0xFFFE6000, 0, 0},
-    {0xFFFEE000, 1, 4577},
-    {0xFFFF6000, 1, 4577},
-    {0xFFFFE000, 1, 4577},
-    {0x00006000, 1, 4577},
-    {0x0000E000, 1, 4577},
-  };
-
-  validate_decoder_sequence(&d2, ev2, 8);
-
-} END_TEST
-
-START_TEST(check_decoder_normal_running) {
-  struct decoder d;
-  struct decoder_event ev[] = {
-    {0, 0, 0},
-    {25000, 0, 0},
-    {50000, 0, 0},
-    {75000, 1, 6000},
-    {100000, 1, 6000},
-    {125000, 1, 6000},
-    {150000, 1, 6000},
-    {175000, 1, 6000},
-    {200000, 1, 6000},
-    {225000, 1, 6000},
-  };
-
-  validate_decoder_sequence(&d, ev, 10);
-} END_TEST
-
-START_TEST(check_decoder_normal_running_weird_clocks) {
-  struct decoder d;
-  struct decoder_event ev[] = {
-    {0, 0, 0},
-    {20000, 0, 0},
-    {51500, 0, 0},
-    {76200, 1, 5905},
-    {103000, 1, 5421},
-    {128240, 1, 5863},
-    {153720, 1, 5804},
-    {178370, 1, 5970},
-    {202850, 1, 6031},
-    {227440, 1, 6104},
-  };
-  validate_decoder_sequence(&d, ev, 10);
-} END_TEST
-
-START_TEST(check_decoder_normal_regain_sync) {
-  struct decoder d;
-  struct decoder_event ev[] = {
-    {0, 0, 0},
-    {20000, 0, 0},
-    {51500, 0, 0},
-    {76200, 1, 5905},
-    {103000, 1, 5421},
-    {130240, 0, 5863},
-    {153720, 0, 5804},
-    {178370, 1, 5970},
-    {202850, 1, 6197},
-    {227440, 1, 6104},
-  };
-  validate_decoder_sequence(&d, ev, 10);
-} END_TEST
 
 START_TEST(check_rpm_from_time_diff) {
   /* 360 degrees for 0.005 s is 6000 rpm */
@@ -156,6 +53,11 @@ START_TEST(check_time_in_range) {
   val = 0x0000FFFF;
   t2 = 0x40000000;
   ck_assert_int_eq(time_in_range(val, t1, t2), 1);
+
+  t1 = 0x1000;
+  val = 0x2000;
+  t2 = 0x1000;
+  ck_assert_int_eq(time_in_range(val, t1, t2), 0);
 } END_TEST
 
 START_TEST(check_time_diff) {
@@ -174,73 +76,32 @@ START_TEST(check_time_diff) {
   ck_assert_int_eq(time_diff(t2, t1), 0);
 } END_TEST
 
-START_TEST(check_scheduler_inserts) {
-  check_platform_reset();
-  struct sched_entry a[] = {
-    {5000},
-    {8000},
-    {6000},
-    {2000},
-  };
-  timeval_t ret;
- 
-  ret = schedule_insert(0, &a[0]);
-  ck_assert(LIST_FIRST(check_get_schedule()) == &a[0]);
-  ck_assert(ret == 5000);
- 
-  ret = schedule_insert(0, &a[1]);
-  ck_assert(LIST_FIRST(check_get_schedule()) == &a[0]);
-  ck_assert(LIST_NEXT(LIST_FIRST(check_get_schedule()), entries) = &a[1]);
-  ck_assert(ret == 5000);
- 
-  ret = schedule_insert(0, &a[2]);
-  ck_assert(LIST_FIRST(check_get_schedule()) == &a[0]);
-  ck_assert(LIST_NEXT(LIST_FIRST(check_get_schedule()), entries) == &a[2]);
-  ck_assert(LIST_NEXT(LIST_NEXT(LIST_FIRST(check_get_schedule()), entries), entries) == &a[1]);
-  ck_assert(ret == 5000);
- 
-  ret = schedule_insert(0, &a[3]);
-  ck_assert(LIST_FIRST(check_get_schedule()) == &a[3]);
-  ck_assert(LIST_NEXT(LIST_FIRST(check_get_schedule()), entries) == &a[0]);
-  ck_assert(LIST_NEXT(LIST_NEXT(LIST_FIRST(check_get_schedule()), entries), entries) == &a[2]);
-  ck_assert(LIST_NEXT(LIST_NEXT(LIST_NEXT(LIST_FIRST(check_get_schedule()), entries), entries), entries) == &a[1]);
-  ck_assert(ret == 2000);
- 
-  a[2].time = 1000;
-  ret = schedule_insert(0, &a[2]);
-  ck_assert(LIST_FIRST(check_get_schedule()) == &a[2]);
-  ck_assert(LIST_NEXT(LIST_FIRST(check_get_schedule()), entries) == &a[3]);
-  ck_assert(LIST_NEXT(LIST_NEXT(LIST_FIRST(check_get_schedule()), entries), entries) == &a[0]);
-  ck_assert(LIST_NEXT(LIST_NEXT(LIST_NEXT(LIST_FIRST(check_get_schedule()), entries), entries), entries) == &a[1]);
-  ck_assert(ret == 1000);
-
+START_TEST(check_clamp_angle) {
+  ck_assert_int_eq(clamp_angle(0, 720), 0);
+  ck_assert_int_eq(clamp_angle(-360, 720), 360);
+  ck_assert_int_eq(clamp_angle(-1080, 720), 360);
+  ck_assert_int_eq(clamp_angle(720, 720), 0);
+  ck_assert_int_eq(clamp_angle(1080, 720), 360);
 } END_TEST
+
 
 int main(void) {
 
   Suite *tfi_suite = suite_create("TFI");
-  TCase *decoder_tests = tcase_create("tfi_pip_decoder");
   TCase *util_tests = tcase_create("util");
-  TCase *scheduler_tests = tcase_create("scheduler");
 
-  tcase_add_test(decoder_tests, check_decoder_startup_rough);
-  tcase_add_test(decoder_tests, check_decoder_startup_normal);
-  tcase_add_test(decoder_tests, check_decoder_normal_running);
-  tcase_add_test(decoder_tests, check_decoder_normal_running_weird_clocks);
-  tcase_add_test(decoder_tests, check_decoder_normal_regain_sync);
 
   tcase_add_test(util_tests, check_rpm_from_time_diff);
   tcase_add_test(util_tests, check_time_from_rpm_diff);
   tcase_add_test(util_tests, check_time_in_range);
   tcase_add_test(util_tests, check_time_diff);
+  tcase_add_test(util_tests, check_clamp_angle);
 
-  tcase_add_test(scheduler_tests, check_scheduler_inserts);
-
-  suite_add_tcase(tfi_suite, decoder_tests);
   suite_add_tcase(tfi_suite, util_tests);
-  suite_add_tcase(tfi_suite, scheduler_tests);
+  suite_add_tcase(tfi_suite, setup_decoder_tests());
+  suite_add_tcase(tfi_suite, setup_scheduler_tests());
   SRunner *sr = srunner_create(tfi_suite);
-  srunner_run_all(sr, CK_NORMAL);
+  srunner_run_all(sr, CK_VERBOSE);
   return 0;
 }
 

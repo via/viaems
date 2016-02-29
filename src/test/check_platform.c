@@ -5,6 +5,7 @@
 
 
 static timeval_t curtime = 0;
+static timeval_t cureventtime = 0;
 static int int_on = 1;
 
 void check_platform_reset() {
@@ -24,17 +25,24 @@ timeval_t current_time() {
   return curtime;
 }
 
+void set_current_time(timeval_t t) {
+  curtime = t;
+}
+
 void set_event_timer(timeval_t t) {
+  cureventtime = t;
 }
 
 timeval_t get_event_timer() {
-  return 0;
+  return cureventtime;
 }
 
 void clear_event_timer() {
+  cureventtime = 0;
 }
 
 void disable_event_timer() {
+  cureventtime = 0;
 }
 
 int interrupts_enabled() {
