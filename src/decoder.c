@@ -8,13 +8,17 @@
 
 static struct sched_entry expire_event;
 
-static void handle_decoder_invalidate_event(void *_d) {
-  struct decoder *d = (struct decoder *)_d;
-  d->valid = 0;
-  d->state = DECODER_NOSYNC;
-  d->loss = DECODER_EXPIRED;
-  d->current_triggers_rpm = 0;
+static void invalidate_decoder() {
+  config.decoder.valid = 0;
+  config.decoder.state = DECODER_NOSYNC;
+  config.decoder.current_triggers_rpm = 0;
   invalidate_scheduled_events(config.events, config.num_events);
+}
+
+static void handle_decoder_expire(void *_d) {
+  struct decoder *d = (struct decoder *)_d;
+  d->loss = DECODER_EXPIRED;
+  invalidate_decoder();
 }
 
 static void set_expire_event(timeval_t t) {
@@ -126,7 +130,7 @@ void cam_nplusone_decoder(struct decoder *d) {
   } else {
     if (oldstate == DECODER_SYNC) {
       /* We lost sync */
-      handle_decoder_invalidate_event(d);
+      invalidate_decoder();
     }
   }
 }
@@ -157,7 +161,7 @@ void tfi_pip_decoder(struct decoder *d) {
   } else {
     if (oldstate == DECODER_SYNC) {
       /* We lost sync */
-      handle_decoder_invalidate_event(d);
+      invalidate_decoder();
     }
   }
 }
@@ -194,7 +198,7 @@ void decoder_init(struct decoder *d) {
   d->triggers_since_last_sync = 0;
   d->expiration = 0;
 
-  expire_event.callback = handle_decoder_invalidate_event;
+  expire_event.callback = handle_decoder_expire;
   expire_event.ptr = d;
 }
 

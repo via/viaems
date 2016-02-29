@@ -14,7 +14,7 @@ timeval_t time_from_rpm_diff(unsigned int rpm, degrees_t deg) {
 }
 
 int time_in_range(timeval_t val, timeval_t t1, timeval_t t2) {
-  if (t2 > t1) {
+  if (t2 >= t1) {
     /* No timer wrap */
     if ((val >= t1) && (val < t2)) {
       return 1;
