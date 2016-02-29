@@ -202,3 +202,9 @@ void decoder_init(struct decoder *d) {
   expire_event.ptr = d;
 }
 
+#ifdef UNITTEST
+void check_handle_decoder_expire(void *_d) {
+  handle_decoder_expire(_d);
+}
+#endif
+
