@@ -15,7 +15,11 @@ sensor_process_linear(struct sensor_input *in) {
 void sensor_process_freq(struct sensor_input *in) {
 
   float tickrate = TICKRATE;
-  in->processed_value = 1.0/((in->raw_value*SENSOR_FREQ_DIVIDER)/tickrate);
+  if (in->raw_value) {
+    in->processed_value = 1.0/((in->raw_value*SENSOR_FREQ_DIVIDER)/tickrate);
+  } else {
+    in->processed_value = 0.0; /* Prevent Div by Zero */
+  }
 
 }
   
