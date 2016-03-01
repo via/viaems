@@ -1,9 +1,12 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "platform.h"
 #include "util.h"
 #include "decoder.h"
 #include "sensors.h"
 #include "table.h"
+#include "config.h"
+#include "calculations.h"
 #include "scheduler.h"
 #include <check.h>
 #include "queue.h"
@@ -179,12 +182,57 @@ START_TEST(check_table_twoaxis_clamp) {
   ck_assert(interpolate_table_twoaxis(&t2, 30, -45) == 205);
 } END_TEST
 
+START_TEST(check_calculate_ignition_cut) {
+  config.rpm_stop = 5000;
+  config.rpm_start = 4500;
+
+  config.decoder.rpm = 1000;
+  ck_assert_int_eq(ignition_cut(), 0);
+  ck_assert_int_eq(calculated_values.rpm_limit_cut, 0);
+
+  config.decoder.rpm = 5500;
+  ck_assert_int_eq(ignition_cut(), 1);
+  ck_assert_int_eq(calculated_values.rpm_limit_cut, 1);
+
+  config.decoder.rpm = 4000;
+  ck_assert_int_eq(ignition_cut(), 0);
+  ck_assert_int_eq(calculated_values.rpm_limit_cut, 0);
+
+  config.decoder.rpm = 4800;
+  ck_assert_int_eq(ignition_cut(), 0);
+  ck_assert_int_eq(calculated_values.rpm_limit_cut, 0);
+
+  config.decoder.rpm = 5500;
+  ck_assert_int_eq(ignition_cut(), 1);
+  ck_assert_int_eq(calculated_values.rpm_limit_cut, 1);
+} END_TEST
+
+START_TEST(check_calculate_ignition_fixedduty) {
+  struct table t = { 
+    .num_axis = 2,
+    .axis = { { .num = 2, .values = {5, 10} }, { .num = 2, .values = {5, 10}} },
+    .data = { .two = { {10, 10}, {10, 10} } },
+  };
+  config.timing = &t;
+  config.dwell = DWELL_FIXED_DUTY;
+  config.decoder.rpm = 6000;
+
+  calculate_ignition();
+  
+  ck_assert(calculated_values.timing_advance == 10);
+  /* 10 ms per rev, dwell should be 1/8 of rotation,
+   * fuzzy estimate because math */
+  ck_assert(abs(calculated_values.dwell_us - (10000 / 8)) < 5);
+} END_TEST
+    
+
 int main(void) {
 
   Suite *tfi_suite = suite_create("TFI");
   TCase *util_tests = tcase_create("util");
   TCase *sensor_tests = tcase_create("sensors");
   TCase *table_tests = tcase_create("tables");
+  TCase *calc_tests = tcase_create("calculations");
 
 
   tcase_add_test(util_tests, check_rpm_from_time_diff);
@@ -201,9 +249,13 @@ int main(void) {
   tcase_add_test(table_tests, check_table_twoaxis_interpolate);
   tcase_add_test(table_tests, check_table_twoaxis_clamp);
 
+  tcase_add_test(calc_tests, check_calculate_ignition_cut);
+  tcase_add_test(calc_tests, check_calculate_ignition_fixedduty);
+
   suite_add_tcase(tfi_suite, util_tests);
   suite_add_tcase(tfi_suite, sensor_tests);
   suite_add_tcase(tfi_suite, table_tests);
+  suite_add_tcase(tfi_suite, calc_tests);
   suite_add_tcase(tfi_suite, setup_decoder_tests());
   suite_add_tcase(tfi_suite, setup_scheduler_tests());
   SRunner *sr = srunner_create(tfi_suite);
