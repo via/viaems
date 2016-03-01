@@ -45,3 +45,4 @@ clean:
 	-rm test/*.o
 	-rm check
 	-rm *.hex
+	-rm *.gcov *.gcno *.gcda

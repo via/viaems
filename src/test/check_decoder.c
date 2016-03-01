@@ -26,8 +26,6 @@ static struct decoder_event tfi_startup_events[] = {
 
 void validate_decoder_sequence(struct decoder_event *ev, int num) {
   int i;
-  int correct_rpm;
-  timeval_t correct_expire;
   for (i = 0; i < num; ++i) {
     if (ev[i].t0) {
       config.decoder.last_t0 = ev[i].time;
