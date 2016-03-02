@@ -93,8 +93,7 @@ Member | Meaning
 `pin` | pin to use (Autoconfigured, see platform source)
 `process` | Processing function to use (see below)
 `method` | Type of sensor, currently supported are analog and frequency based.
-`params` | Union used to configure a sensor. Contains `range` used for
-calculated sensors, and `table` for table lookup sensors.
+`params` | Union used to configure a sensor. Contains `range` used for calculated sensors, and `table` for table lookup sensors.
 `params.range.min` | For processing, value that lowest raw sensor value reflects
 `params.range.max` | For processing, value that highest raw sensor value reflects
 
