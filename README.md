@@ -8,6 +8,7 @@ if a decoder is written.
 
 ## Decoding
 
+### EEC-IV TFI
 EEE-IV TFI modules came in a few flavors. Currently only the
 Grey(Pushstart) mounted-on-distributor varient is supported.  This
 module controls dwell based on RPM, and allows ECM timing control via
@@ -46,6 +47,9 @@ Member | Meaning
 `decoder.t1_pin` | PORTB Pin for secondary trigger
 `sensors` | Array of configured analog sensors.  See Sensor Configuration below.
 `timing` | Points to table to do MAP/RPM lookup on for timing advance.
+`ve` | Points to table for volumetric efficiency lookups
+`commanded_lambda` | Points to table containing target lambda
+`injector_pw_compensation` | Points to table containing Voltage vs dead time
 `rpm_stop` | Stop event scheduling above this RPM (rev limiter)
 `rpm_start` | Resume event scheduling when speed falls to this RPM (rev limiter)
 `console.baud` | Serial console baud
@@ -123,7 +127,8 @@ The serial interface provides a (barbaric) means of setting some things
 dynamically.  At startup, the serial interface will provide a constant stream of
 data points:
 ```
-* rpm=934 sync=1 t0_count=4613 map=7.934570 adv=19.559999
+* rpm=0 sync=1 loss=0 variance=0.000 t0_count=0 t1_count=0 map=60.0 adv=0.0 dwell_us=0 pw_us=0
+
 ```
 
 Sending any command (or empty line) will drop to a command prompt. The data
@@ -163,3 +168,11 @@ make clean
 make PLATFORM=stm32f4-discovery
 ```
 `tfi` is the resultant executable that can be loaded.
+
+To run the unit tests:
+```
+cd src/
+make clean
+make check
+./check
+```
