@@ -223,29 +223,22 @@ schedule_fuel_event(struct output_event *ev,
 int
 schedule_adc_event(struct output_event *ev, struct decoder *d) {
   int firing_angle;
-  timeval_t firing_time;
+  timeval_t stop_time;
   timeval_t curtime;
-  timeval_t max_time;
 
   firing_angle = clamp_angle(ev->angle - d->last_trigger_angle + 
-      d->offset, 720);
-  firing_time = d->last_trigger_time + 
-    time_from_rpm_diff(d->rpm, (degrees_t)firing_angle);
-  curtime = current_time();
-  max_time = curtime + time_from_rpm_diff(d->rpm, 720);
+    d->offset, 720);
 
-  disable_interrupts();
+  stop_time = d->last_trigger_time + time_from_rpm_diff(d->rpm, firing_angle);
+
   if (time_diff(current_time(), ev->stop.time) < 
       time_from_rpm_diff(d->rpm, 180)) {
-    enable_interrupts();
     return 0;
   }
-  if (!time_in_range(firing_time, curtime, max_time)){
-    enable_interrupts();
-    return 0;
-  }
-  ev->stop.time = firing_time;
+
+  ev->stop.time = stop_time;
   ev->stop.callback = adc_gather;
+  disable_interrupts();
   schedule_insert(curtime, &ev->stop);
   enable_interrupts();
   return 1;
@@ -257,9 +250,6 @@ scheduler_execute() {
   timeval_t schedtime = get_event_timer();
   timeval_t cur;
   struct sched_entry *en = LIST_FIRST(&schedule);
-  if (en->time != schedtime) {
-    while(1);
-  }
   do {
     clear_event_timer();
     if (en->scheduled) {
