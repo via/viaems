@@ -17,6 +17,16 @@ struct fueling_config {
   float injector_dead_time;
 };
 
+typedef enum {
+  DWELL_FIXED_DUTY,
+} dwell_type;
+
+struct ignition_config {
+  dwell_type dwell;
+  float dwell_duty;
+  int min_fire_time_us;
+};
+
 struct calculated_values {
   float timing_advance;
   unsigned int fueling_us;

@@ -3,6 +3,7 @@
 #include "decoder.h"
 #include "platform.h"
 #include "scheduler.h"
+#include "config.h"
 
 static struct scheduler_head schedule = LIST_HEAD_INITIALIZER(schedule);
 
@@ -120,32 +121,57 @@ schedule_ignition_event(struct output_event *ev,
   curtime = current_time();
   max_time = curtime + time_from_rpm_diff(d->rpm, 720);
 
+  /* Different scenarios:
+   *   Event is not currently active:
+   * - Has min fire time passed? if not, do not schedule.
+   * - Reschedule completely into the future 
+   *    Schedule as normal
+   * - Reschedule completely earlier, but still in the future
+   *    Schedule as normal
+   * - Reschedule completely earlier, but entirely in the past
+   *    Schedule as normal, it'll never happen (looks like far future)
+   * - Reschedule partially earlier, where it has already started
+   *    schedule now->newstop 
+   *
+   *   Event has started already:
+   * - Reschedule with new stop time
+   *   (ignore new start time completely). 
+   */
+ 
+  if (!event_is_active(ev)) {
+    if (time_in_range(curtime, start_time, stop_time)) {
+      /* New event is already upon us */
+      start_time = curtime;
+    }
+    if (time_diff(start_time, ev->stop.time) < 
+      time_from_us(config.ignition.min_fire_time_us)) {
+      /* Too little time since last fire */
+      return 0;
+    }
+  } else {
+    /* If an active event stops earlier than now, make a 
+     * best effort to fire asap */
+    if (time_in_range(stop_time, ev->start.time, curtime)) {
+      stop_time = curtime;
+    }
+  }
+  
   disable_interrupts();
   if (!event_is_active(ev)) {
-    /* If this even was fired in the last 180 degrees, do not reschedule */
-    if (time_diff(current_time(), ev->stop.time) < 
-        time_from_rpm_diff(d->rpm, 180)) {
-      enable_interrupts();
-      return 0;
-    }
-
-    /* If we cant schedule this event, don't try */
-    if (!time_in_range(start_time, curtime, max_time)) {
-      enable_interrupts();
-      return 0;
-    }
     ev->start.time = start_time;
     ev->start.output_id = ev->output_id;
     ev->start.output_val = ev->inverted ? 0 : 1;
     schedule_insert(curtime, &ev->start);
-
-    ev->stop.time = stop_time;
-    ev->stop.output_id = ev->output_id;
-    ev->stop.output_val = ev->inverted ? 1 : 0;
-    schedule_insert(curtime, &ev->stop);
-
   }
   enable_interrupts();
+  /* It is safe to let events occur here */
+  disable_interrupts();
+  ev->stop.time = stop_time;
+  ev->stop.output_id = ev->output_id;
+  ev->stop.output_val = ev->inverted ? 1 : 0;
+  schedule_insert(curtime, &ev->stop);
+  enable_interrupts();
+
   return 1;
 }
 

@@ -12,16 +12,10 @@
 
 #define MAX_EVENTS 24
 
-typedef enum {
-  DWELL_FIXED_DUTY,
-} dwell_type;
-
 struct config {
   /* Event list */
   unsigned int num_events;
   struct output_event events[MAX_EVENTS];
-  dwell_type dwell;
-  float dwell_duty;
 
   /* Trigger setup */
   trigger_type trigger;
@@ -40,6 +34,7 @@ struct config {
 
   /* Fuel information */
   struct fueling_config fueling;
+  struct ignition_config ignition;
 
   /* Cutoffs */
   unsigned int rpm_stop;
