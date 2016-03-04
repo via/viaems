@@ -262,6 +262,31 @@ START_TEST(check_event_is_active) {
   ck_assert(!event_is_active(&oev));
 } END_TEST
 
+START_TEST(check_event_has_fired) {
+
+  /* Event has been scheduled, not fired, sets both fired=0, scheduled=1*/
+  oev.start.scheduled = 1;
+  oev.start.fired = 0;
+  oev.stop.scheduled = 1;
+  oev.stop.fired = 0;
+  ck_assert(!event_has_fired(&oev));
+
+  /* Event has been scheduled, started*/
+  oev.start.scheduled = 0;
+  oev.start.fired = 1;
+  oev.stop.scheduled = 1;
+  oev.stop.fired = 0;
+  ck_assert(!event_has_fired(&oev));
+
+  /* Event has been scheduled, started, stopped*/
+  oev.start.scheduled = 0;
+  oev.start.fired = 1;
+  oev.stop.scheduled = 0;
+  oev.stop.fired = 1;
+  ck_assert(event_has_fired(&oev));
+
+} END_TEST
+
 START_TEST(check_invalidate_events) {
   set_current_time(time_from_rpm_diff(6000, 270));
   schedule_ignition_event(&oev, &config.decoder, 10, 1000);
@@ -370,6 +395,7 @@ TCase *setup_scheduler_tests() {
   tcase_add_test(scheduler_tests, check_schedule_ignition_reschedule_active_earlier);
   tcase_add_test(scheduler_tests, check_schedule_ignition_reschedule_after_finished);
   tcase_add_test(scheduler_tests, check_event_is_active);
+  tcase_add_test(scheduler_tests, check_event_has_fired);
   tcase_add_test(scheduler_tests, check_invalidate_events);
   tcase_add_test(scheduler_tests, check_invalidate_events_when_active);
   tcase_add_test(scheduler_tests, check_deschedule_event);

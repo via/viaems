@@ -49,7 +49,8 @@ timeval_t schedule_insert(timeval_t, struct sched_entry *);
 
 void scheduler_execute();
 
-unsigned char event_is_active(struct output_event *);
+int event_is_active(struct output_event *);
+int event_has_fired(struct output_event *);
 void invalidate_scheduled_events(struct output_event *, int);
 
 #ifdef UNITTEST

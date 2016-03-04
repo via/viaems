@@ -7,8 +7,13 @@
 
 static struct scheduler_head schedule = LIST_HEAD_INITIALIZER(schedule);
 
-unsigned char event_is_active(struct output_event *ev) {
+int event_is_active(struct output_event *ev) {
   return (ev->start.fired && !ev->stop.fired);
+}
+
+int event_has_fired(struct output_event *ev) {
+  return ((!ev->stop.scheduled && ev->stop.fired) &&
+          (!ev->start.scheduled && ev->start.fired));
 }
 
 static timeval_t reschedule_head(timeval_t new, timeval_t old) {
@@ -126,6 +131,7 @@ schedule_ignition_event(struct output_event *ev,
    * - Has min fire time passed? if not, do not schedule.
    * - Reschedule completely into the future 
    *    Schedule as normal
+   *      * Stop could trigger in first crit region
    * - Reschedule completely earlier, but still in the future
    *    Schedule as normal
    * - Reschedule completely earlier, but entirely in the past
@@ -157,19 +163,21 @@ schedule_ignition_event(struct output_event *ev,
   }
   
   disable_interrupts();
-  if (!event_is_active(ev)) {
+  if (!event_is_active(ev) && !event_has_fired(ev)) {
     ev->start.time = start_time;
     ev->start.output_id = ev->output_id;
     ev->start.output_val = ev->inverted ? 0 : 1;
     schedule_insert(curtime, &ev->start);
-  }
+  } 
   enable_interrupts();
   /* It is safe to let events occur here */
   disable_interrupts();
-  ev->stop.time = stop_time;
-  ev->stop.output_id = ev->output_id;
-  ev->stop.output_val = ev->inverted ? 1 : 0;
-  schedule_insert(curtime, &ev->stop);
+  if (!event_has_fired(ev)) {
+    ev->stop.time = stop_time;
+    ev->stop.output_id = ev->output_id;
+    ev->stop.output_val = ev->inverted ? 1 : 0;
+    schedule_insert(curtime, &ev->stop);
+  }
   enable_interrupts();
 
   return 1;
