@@ -25,8 +25,7 @@ static void schedule(struct output_event *ev) {
         return;
       }
       schedule_fuel_event(ev, &config.decoder, 
-//        calculated_values.fueling_us);
-          3800);
+        calculated_values.fueling_us);
       break;
 
     case ADC_EVENT:

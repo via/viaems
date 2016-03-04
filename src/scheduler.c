@@ -238,6 +238,7 @@ schedule_adc_event(struct output_event *ev, struct decoder *d) {
 
   ev->stop.time = stop_time;
   ev->stop.callback = adc_gather;
+  curtime = current_time();
   disable_interrupts();
   schedule_insert(curtime, &ev->stop);
   enable_interrupts();
