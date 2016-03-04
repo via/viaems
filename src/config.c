@@ -103,6 +103,11 @@ struct config config = {
     .density_of_fuel = 0.755,
     .density_of_air_stp = 1.2754e-3,
   },
+  .ignition = {
+    .dwell = DWELL_FIXED_DUTY,
+    .dwell_duty = 0.5,
+    .min_fire_time_us = 1000,
+  },
   .console = {
     .baud = 115200,
     .stop_bits = 1,

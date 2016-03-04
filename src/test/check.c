@@ -36,6 +36,11 @@ START_TEST(check_time_from_rpm_diff) {
   ck_assert(value_within(1, time_from_rpm_diff(6000, 45), 1250));
 } END_TEST
 
+START_TEST(check_time_from_us) {
+  ck_assert_int_eq(time_from_us(0), 0);
+  ck_assert_int_eq(time_from_us(1000), 1000 * (TICKRATE / 1000000));
+} END_TEST
+
 START_TEST(check_time_in_range) {
   timeval_t t1, t2, val;
 
@@ -63,6 +68,11 @@ START_TEST(check_time_in_range) {
   val = 0x2000;
   t2 = 0x1000;
   ck_assert_int_eq(time_in_range(val, t1, t2), 0);
+
+  t1 = 0x1000;
+  val = 0x1000;
+  t2 = 0x1000;
+  ck_assert_int_eq(time_in_range(val, t1, t2), 1);
 } END_TEST
 
 START_TEST(check_time_diff) {
@@ -214,7 +224,7 @@ START_TEST(check_calculate_ignition_fixedduty) {
     .data = { .two = { {10, 10}, {10, 10} } },
   };
   config.timing = &t;
-  config.dwell = DWELL_FIXED_DUTY;
+  config.ignition.dwell = DWELL_FIXED_DUTY;
   config.decoder.rpm = 6000;
 
   calculate_ignition();
@@ -240,6 +250,7 @@ int main(void) {
   tcase_add_test(util_tests, check_time_in_range);
   tcase_add_test(util_tests, check_time_diff);
   tcase_add_test(util_tests, check_clamp_angle);
+  tcase_add_test(util_tests, check_time_from_us);
 
   tcase_add_test(sensor_tests, check_sensor_process_linear);
   tcase_add_test(sensor_tests, check_sensor_process_freq);

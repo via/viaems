@@ -163,6 +163,8 @@ static void platform_init_eventtimer() {
 static void platform_init_outputs() {
   /* IG1 out */
   gpio_mode_setup(GPIOD, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO0);
+  gpio_mode_setup(GPIOD, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO1);
+  gpio_mode_setup(GPIOD, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO2);
 }
 
 static void platform_init_adc() {
@@ -226,7 +228,7 @@ static void platform_init_usart() {
 void platform_init() {
 
   /* 168 Mhz clock */
-  rcc_clock_setup_hse_3v3(&hse_8mhz_3v3[CLOCK_3V3_168MHZ]);
+  rcc_clock_setup_hse_3v3(&rcc_hse_8mhz_3v3[RCC_CLOCK_3V3_168MHZ]);
 
   /* Enable clocks for subsystems */
   rcc_periph_clock_enable(RCC_GPIOA);
@@ -396,10 +398,12 @@ void dma2_stream0_isr(void) {
 
 void enable_interrupts() {
   cm_enable_interrupts();
+  gpio_clear(GPIOD, GPIO2);
 }
 
 void disable_interrupts() {
   cm_disable_interrupts();
+  gpio_set(GPIOD, GPIO2);
 }
 
 int interrupts_enabled() {
