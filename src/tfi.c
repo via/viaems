@@ -25,7 +25,8 @@ static void schedule(struct output_event *ev) {
         return;
       }
       schedule_fuel_event(ev, &config.decoder, 
-        calculated_values.fueling_us);
+//        calculated_values.fueling_us);
+          3800);
       break;
 
     case ADC_EVENT:
@@ -56,13 +57,11 @@ int main() {
     } else {
       /* Check to see if any events have fired. These should be rescheduled
        * now to allow 100% duty utilization */
-#if 0
       for (unsigned int e = 0; e < config.num_events; ++e) {
         if (event_has_fired(&config.events[e])) {
           schedule(&config.events[e]);
         }
       }
-#endif
     }
    
     console_process();

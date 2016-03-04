@@ -181,15 +181,9 @@ int
 schedule_fuel_event(struct output_event *ev, 
                     struct decoder *d, 
                     unsigned int usecs_pw) {
-  /* For this initial implementation, the duty cycle of the event relative 
-   * to a complete engine cycle must be small enough such that there is a
-   * decode between when the last event stopped and the next one stops.  This
-   * is due to not having the ability to schedule while an event is active.
-   */
 
   timeval_t stop_time;
   timeval_t start_time;
-  timeval_t max_time;
   timeval_t curtime;
   int firing_angle;
 
@@ -200,35 +194,29 @@ schedule_fuel_event(struct output_event *ev,
   stop_time = d->last_trigger_time + time_from_rpm_diff(d->rpm, firing_angle);
   start_time = stop_time - (TICKRATE / 1000000) * usecs_pw;
 
-  curtime = current_time();
-  max_time = curtime + time_from_rpm_diff(d->rpm, 720);
-
-  disable_interrupts();
-  if (!event_is_active(ev)) {
-    /* If this even was fired in the last 180 degrees, do not reschedule */
-    if (time_diff(current_time(), ev->stop.time) < 
-        time_from_rpm_diff(d->rpm, 180)) {
-      enable_interrupts();
-      return 0;
-    }
-
-    /* If we cant schedule this event, don't try */
-    if (!time_in_range(start_time, curtime, max_time)) {
-      enable_interrupts();
-      return 0;
-    }
-    ev->start.time = start_time;
-    ev->start.output_id = ev->output_id;
-    ev->start.output_val = ev->inverted ? 0 : 1;
-    schedule_insert(curtime, &ev->start);
-
-    ev->stop.time = stop_time;
-    ev->stop.output_id = ev->output_id;
-    ev->stop.output_val = ev->inverted ? 1 : 0;
-    schedule_insert(curtime, &ev->stop);
-
+  if (event_has_fired(ev)) {
+    ev->start.fired = 0;
+    ev->stop.fired = 0;
   }
-  enable_interrupts();
+
+  curtime = current_time();
+
+  if (!event_is_active(ev)) {
+    if (time_in_range(curtime, start_time, stop_time)) {
+      /* New event is already upon us, try to preserve pw */
+      stop_time += time_diff(curtime, start_time);
+      start_time = curtime;
+    }
+  } else {
+    /* If an active event stops earlier than now, make a 
+     * best effort to fire asap */
+    if (time_in_range(stop_time, ev->start.time, curtime)) {
+      stop_time = curtime;
+    }
+  }
+
+  schedule_output_event_safely(ev, start_time, stop_time, curtime);
+
   return 1;
 }
 
