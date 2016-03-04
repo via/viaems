@@ -398,10 +398,12 @@ void dma2_stream0_isr(void) {
 
 void enable_interrupts() {
   cm_enable_interrupts();
+  gpio_clear(GPIOD, GPIO2);
 }
 
 void disable_interrupts() {
   cm_disable_interrupts();
+  gpio_set(GPIOD, GPIO2);
 }
 
 int interrupts_enabled() {

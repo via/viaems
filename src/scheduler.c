@@ -147,6 +147,11 @@ schedule_ignition_event(struct output_event *ev,
     time_from_rpm_diff(d->rpm, (degrees_t)firing_angle);
   start_time = stop_time - time_from_us(usecs_dwell);
 
+  if (event_has_fired(ev)) {
+    ev->start.fired = 0;
+    ev->stop.fired = 0;
+  }
+
   curtime = current_time();
 
   if (!event_is_active(ev)) {

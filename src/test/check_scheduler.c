@@ -268,13 +268,18 @@ START_TEST(check_schedule_ignition_reschedule_after_finished) {
   scheduler_execute();
   ck_assert_int_eq(get_output(), 0);
 
+  ck_assert(!oev.start.scheduled);
+  ck_assert(!oev.stop.scheduled);
+  ck_assert(oev.start.fired);
+  ck_assert(oev.stop.fired);
+
   /* Reschedule 10* later */
   schedule_ignition_event(&oev, &config.decoder, 0, 1000);
 
   ck_assert(!oev.start.scheduled);
   ck_assert(!oev.stop.scheduled);
-  ck_assert(oev.start.fired);
-  ck_assert(oev.stop.fired);
+  ck_assert(!oev.start.fired);
+  ck_assert(!oev.stop.fired);
 
   ck_assert_int_eq(get_output(), 0);
   ck_assert_int_eq(get_event_timer(), 0); /*Disabled*/
