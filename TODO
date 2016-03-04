@@ -1,7 +1,2 @@
-- Implement fuel scheduling
-- Implement smarter scheduler_insert code
-  * Keep off interrupts for smaller period
-  * Allow scheduling next event while current still ongoing
-- Allow reschedule of ignition stop event while dwelling.
 - Allow saving of variables to flash
 - Evaluate converting to input capture for trigger

@@ -101,6 +101,32 @@ schedule_insert(timeval_t curtime, struct sched_entry *en) {
   return reschedule_head(LIST_FIRST(&schedule)->time, curtime);
 }
 
+/* Schedules an output event in a hazard-free manner, assuming 
+ * that the start and stop times occur at least after curtime
+ */
+void schedule_output_event_safely(struct output_event *ev,
+                                 timeval_t start,
+                                 timeval_t stop,
+                                 timeval_t curtime) {
+
+  disable_interrupts();
+  if (!event_is_active(ev) && !event_has_fired(ev)) {
+    ev->start.time = start;
+    ev->start.output_id = ev->output_id;
+    ev->start.output_val = ev->inverted ? 0 : 1;
+    schedule_insert(curtime, &ev->start);
+  } 
+  enable_interrupts();
+  /* It is safe to let events occur here */
+  disable_interrupts();
+  if (!event_has_fired(ev)) {
+    ev->stop.time = stop;
+    ev->stop.output_id = ev->output_id;
+    ev->stop.output_val = ev->inverted ? 1 : 0;
+    schedule_insert(curtime, &ev->stop);
+  }
+  enable_interrupts();
+}
 
 int
 schedule_ignition_event(struct output_event *ev, 
@@ -110,7 +136,6 @@ schedule_ignition_event(struct output_event *ev,
   
   timeval_t stop_time;
   timeval_t start_time;
-  timeval_t max_time;
   timeval_t curtime;
   int firing_angle;
 
@@ -120,30 +145,10 @@ schedule_ignition_event(struct output_event *ev,
 
   stop_time = d->last_trigger_time + 
     time_from_rpm_diff(d->rpm, (degrees_t)firing_angle);
-    /*Fix to handle wrapping angle */
-  start_time = stop_time - (TICKRATE / 1000000) * usecs_dwell;
+  start_time = stop_time - time_from_us(usecs_dwell);
 
   curtime = current_time();
-  max_time = curtime + time_from_rpm_diff(d->rpm, 720);
 
-  /* Different scenarios:
-   *   Event is not currently active:
-   * - Has min fire time passed? if not, do not schedule.
-   * - Reschedule completely into the future 
-   *    Schedule as normal
-   *      * Stop could trigger in first crit region
-   * - Reschedule completely earlier, but still in the future
-   *    Schedule as normal
-   * - Reschedule completely earlier, but entirely in the past
-   *    Schedule as normal, it'll never happen (looks like far future)
-   * - Reschedule partially earlier, where it has already started
-   *    schedule now->newstop 
-   *
-   *   Event has started already:
-   * - Reschedule with new stop time
-   *   (ignore new start time completely). 
-   */
- 
   if (!event_is_active(ev)) {
     if (time_in_range(curtime, start_time, stop_time)) {
       /* New event is already upon us */
@@ -162,23 +167,7 @@ schedule_ignition_event(struct output_event *ev,
     }
   }
   
-  disable_interrupts();
-  if (!event_is_active(ev) && !event_has_fired(ev)) {
-    ev->start.time = start_time;
-    ev->start.output_id = ev->output_id;
-    ev->start.output_val = ev->inverted ? 0 : 1;
-    schedule_insert(curtime, &ev->start);
-  } 
-  enable_interrupts();
-  /* It is safe to let events occur here */
-  disable_interrupts();
-  if (!event_has_fired(ev)) {
-    ev->stop.time = stop_time;
-    ev->stop.output_id = ev->output_id;
-    ev->stop.output_val = ev->inverted ? 1 : 0;
-    schedule_insert(curtime, &ev->stop);
-  }
-  enable_interrupts();
+  schedule_output_event_safely(ev, start_time, stop_time, curtime);
 
   return 1;
 }

@@ -163,6 +163,8 @@ static void platform_init_eventtimer() {
 static void platform_init_outputs() {
   /* IG1 out */
   gpio_mode_setup(GPIOD, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO0);
+  gpio_mode_setup(GPIOD, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO1);
+  gpio_mode_setup(GPIOD, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO2);
 }
 
 static void platform_init_adc() {

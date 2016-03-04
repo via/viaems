@@ -62,6 +62,38 @@ START_TEST(check_scheduler_inserts_sorted) {
 
 } END_TEST
 
+/* Different scenarios:
+ *   Event is not currently active:
+ * - Has min fire time passed? if not, do not schedule.
+ * - Reschedule completely into the future 
+ *    Schedule as normal
+ * - Reschedule completely earlier, but still in the future
+ *    Schedule as normal
+ * - Reschedule completely earlier, but entirely in the past
+ *    Schedule as normal, it'll never happen (looks like far future)
+ * - Reschedule partially earlier, where it has already started
+ *    schedule now->newstop 
+ *
+ *   Event has started already:
+ * - Reschedule with new stop time
+ *   (ignore new start time completely). 
+ *
+ * Interrupt-guarded insertion of event:
+ *  - Either a start or stop trigger for the old event can fire
+ *    between calculations and scheduling of start, or between
+ *    scheduling of start and scheduling of stop.
+ *  - Combination of event_has_fired and event_is_active to determine
+ *    if this has happened, do not reschedule the event if so.
+ *  - Relies on specific meanings of scheduled and fired:
+ *    * scheduled means the event is queued to fire
+ *    * fired is set by scheduler_execute only.
+ *      - if fired is set and scheduled is not, it means the event has fired
+ *        and a (successful) reschedule has not occured for the event yet
+ *      - useful for determining if the event fired since earlier in the
+ *        function, such as since calculations.
+ */
+ 
+
 START_TEST(check_schedule_ignition) {
 
   /* Set our current position at 270* for an event at 360* */
