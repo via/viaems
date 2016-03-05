@@ -48,5 +48,6 @@ extern struct config config;
 
 /* Externally make-available tables for console */
 extern struct table timing_vs_rpm_and_map;
+extern struct table injector_dead_time;
 
 #endif

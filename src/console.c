@@ -30,10 +30,19 @@ struct console_var {
   config_type type;
 };
 static struct console_var vars[] = {
-  {.name="config.timing", .type=CONFIG_TABLE, .value={.table_v=&timing_vs_rpm_and_map}},
-  {.name="config.rpm_stop", .type=CONFIG_UINT, .value={.uint_v=&config.rpm_stop}},
-  {.name="config.offset", .type=CONFIG_UINT, .value={.uint_v=(unsigned int*)&config.decoder.offset}},
-  {.name="config.rpm_start", .type=CONFIG_UINT, .value={.uint_v=&config.rpm_start}},
+  {.name="conf.table.timing", .type=CONFIG_TABLE, .value={.table_v=&timing_vs_rpm_and_map}},
+  {.name="conf.table.deadtime", .type=CONFIG_TABLE, .value={.table_v=&injector_dead_time}},
+  {.name="conf.table.iat_timing", .type=CONFIG_TABLE, .value={.table_v=NULL}},
+  {.name="conf.table.clt_timing", .type=CONFIG_TABLE, .value={.table_v=NULL}},
+  {.name="conf.table.ve", .type=CONFIG_TABLE, .value={.table_v=NULL}},
+  {.name="conf.table.lambda", .type=CONFIG_TABLE, .value={.table_v=NULL}},
+
+  {.name="conf.decoder.offset", .type=CONFIG_UINT, .value={.uint_v=(unsigned int*)&config.decoder.offset}},
+  {.name="conf.decoder.max_variation", .type=CONFIG_FLOAT, .value={.float_v=&config.decoder.trigger_max_rpm_change}},
+  {.name="conf.decoder.min_rpm", .type=CONFIG_UINT, .value={.uint_v=&config.decoder.trigger_min_rpm}},
+
+  {.name="conf.rpm_cut_high", .type=CONFIG_UINT, .value={.uint_v=&config.rpm_stop}},
+  {.name="conf.rpm_cut_low", .type=CONFIG_UINT, .value={.uint_v=&config.rpm_start}},
 };
 
 static int console_get_number(float *val) {
@@ -197,6 +206,16 @@ static void console_status() {
 }
 
 
+static void list_variables() {
+  strcpy(config.console.txbuffer, "Available variables:\r\n\r\n");
+
+  unsigned int i;
+  for (i = 0; i < sizeof(vars) / sizeof(struct console_var); ++i) {
+    strcat(config.console.txbuffer, vars[i].name);
+    strcat(config.console.txbuffer, "\r\n");
+  }
+}
+
 static void console_process_rx() {
   console_state = CONSOLE_CMDLINE;
   const char *c;
@@ -210,7 +229,10 @@ static void console_process_rx() {
   }
   if (c && strncasecmp(c, "get", 3) == 0) {
     v = get_console_var(strtok(NULL, " ["));
-    switch(v->type) {
+    if (!v) {
+      list_variables();
+    } else {
+      switch(v->type) {
       case CONFIG_UINT:
         handle_get_uint(v);
         break;
@@ -221,18 +243,23 @@ static void console_process_rx() {
         handle_get_table(v);
         break;
     }
+    }
   } else if (c && strncasecmp(c, "set", 3) == 0) {
     v = get_console_var(strtok(NULL, " ["));
-    switch(v->type) {
-      case CONFIG_UINT:
-        handle_set_uint(v);
-        break;
-      case CONFIG_FLOAT:
-        handle_set_float(v);
-        break;
-      case CONFIG_TABLE:
-        handle_set_table(v);
-        break;
+    if (!v) {
+      list_variables();
+    } else {
+      switch(v->type) {
+        case CONFIG_UINT:
+          handle_set_uint(v);
+          break;
+        case CONFIG_FLOAT:
+          handle_set_float(v);
+          break;
+        case CONFIG_TABLE:
+          handle_set_table(v);
+          break;
+      }
     }
   } else if (c && strncasecmp(c, "status", 6) == 0) {
     console_status();
