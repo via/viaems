@@ -61,6 +61,9 @@ static int console_get_number(float *val) {
 
 static struct console_var *
 get_console_var(const char *var) {
+  if (!var) {
+    return NULL;
+  }
   for (unsigned int i = 0; i < sizeof(vars) / sizeof(struct console_var); ++i) {
     if (strncmp(var, vars[i].name, strlen(vars[i].name)) == 0) {
       return &vars[i];
@@ -100,7 +103,11 @@ static void handle_set_float(struct console_var *var) {
 static float *get_table_element(char *locstr, struct console_var *var) {
   struct table *t = var->value.table_v;
   unsigned int x, y, res;
-  res = sscanf(strtok(NULL, " "), "%d][%d]", &x, &y);
+  const char *remain = strtok(NULL, " ");
+  if (!remain) {
+    return NULL;
+  }
+  res = sscanf(remain, "%d][%d]", &x, &y);
   if (t->num_axis != res) {
     return NULL;
   }
