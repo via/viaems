@@ -45,7 +45,7 @@ static int usart_rx_end;
  *   - 1 maps to port A, pin 8 (TIM1 CH1)
  */
 
-static void platform_enable_trigger(unsigned char pin) {
+static void platform_enable_trigger(int pin) {
   switch(pin) {
     case 0:
       gpio_mode_setup(GPIOB, GPIO_MODE_INPUT, GPIO_PUPD_PULLDOWN, GPIO0);
@@ -243,8 +243,12 @@ void platform_init() {
   rcc_periph_clock_enable(RCC_TIM2);
   rcc_periph_clock_enable(RCC_TIM3);
 
-  platform_enable_trigger(config.decoder.t0_pin);
-  platform_enable_trigger(config.decoder.t1_pin);
+  if (config.decoder.t0_pin >= 0) {
+    platform_enable_trigger(config.decoder.t0_pin);
+  }
+  if (config.decoder.t1_pin >= 0) {
+    platform_enable_trigger(config.decoder.t1_pin);
+  }
 
   platform_init_eventtimer();
   platform_init_adc();

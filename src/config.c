@@ -73,7 +73,7 @@ struct config config = {
     .trigger_max_rpm_change = 0.55, /*Startup sucks with only 90* trigger */
     .trigger_min_rpm = 80,
     .t0_pin = 3,
-    .t1_pin = 4,
+    .t1_pin = -1, /* Not used */
   },
   .sensors = {
 #if 0
