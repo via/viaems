@@ -337,7 +337,7 @@ void usart_rx_reset() {
 
 void usart_tx(char *str, unsigned short len) {
   last_tx = current_time();
-  printf("%s", str);
+  write(STDOUT_FILENO, str, len);
 }
 
 void enable_test_trigger(trigger_type trig, unsigned int rpm) {
