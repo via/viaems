@@ -1,7 +1,7 @@
 #include "config.h"
 #include "sensors.h"
 
-struct table timing_vs_rpm_and_map = {
+struct table timing_vs_rpm_and_map __attribute__((section(".configdata"))) = {
   .title = "Timing",
   .num_axis = 2,
   .axis = {
@@ -26,7 +26,7 @@ struct table timing_vs_rpm_and_map = {
   },
 };
 
-struct table injector_dead_time = {
+struct table injector_dead_time __attribute__((section(".configdata"))) = {
   .title = "Dead Time",
   .num_axis = 1,
   .axis = {
@@ -43,7 +43,7 @@ struct table injector_dead_time = {
   },
 };
 
-struct config config = {
+struct config config __attribute__((section(".configdata"))) = {
   .num_events = 18,
   .events = {
     {.type=IGNITION_EVENT, .angle=0, .output_id=0, .inverted=1},

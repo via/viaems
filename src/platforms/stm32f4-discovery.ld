@@ -23,10 +23,22 @@
 /* Define memory regions. */
 MEMORY
 {
-	rom (rx) : ORIGIN = 0x08000000, LENGTH = 1024K
+	rom (rx) : ORIGIN = 0x08010000, LENGTH = 960K
+	configrom (rx) : ORIGIN = 0x08000000, LENGTH = 64K
 	ram (rwx) : ORIGIN = 0x20000000, LENGTH = 128K
 }
 
 /* Include the common ld script. */
 INCLUDE libopencm3_stm32f4.ld
 
+SECTIONS {
+
+  .configdata : {
+    _sconfigdata = .;
+    *(.configdata*)
+    . = ALIGN(4);
+    _econfigdata = .;
+  } >ram AT >configrom
+  _configdata_loadaddr = LOADADDR(.configdata);
+
+}
