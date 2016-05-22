@@ -487,9 +487,15 @@ void platform_load_config() {
 
 void platform_save_config() {
   volatile unsigned *src, *dest;
-
+  int n_sectors, conf_bytes;
   flash_unlock();
-  flash_erase_sector(1, 2);
+
+  /* configrom is sectors 1 through 3, each 16k,
+   * compute how many we need to erase */
+  conf_bytes = ((char*)&_econfigdata - (char*)&_sconfigdata);
+  n_sectors = (conf_bytes + 16385) / 16386;
+
+  flash_erase_sector(n_sectors, 2);
   for (dest = &_configdata_loadaddr, src = &_sconfigdata;
       src < &_econfigdata;
       src++, dest++) {
