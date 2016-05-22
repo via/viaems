@@ -35,6 +35,7 @@ static void schedule(struct output_event *ev) {
 }
 
 int main() {
+  platform_load_config();
   decoder_init(&config.decoder);
   platform_init();
 

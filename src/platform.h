@@ -37,5 +37,8 @@ int usart_rx_ready();
 void usart_rx_reset();
 void usart_tx(char *, unsigned short);
 
+void platform_load_config();
+void platform_save_config();
+
 #endif
 

@@ -5,6 +5,7 @@
 #include <libopencm3/stm32/dma.h>
 #include <libopencm3/stm32/adc.h>
 #include <libopencm3/stm32/usart.h>
+#include <libopencm3/stm32/flash.h>
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/cm3/scb.h>
 #include <libopencm3/cm3/cortex.h>
@@ -474,3 +475,26 @@ void enable_test_trigger(trigger_type trig, unsigned int rpm) {
   timer_enable_counter(TIM5);
 }
 
+extern unsigned _configdata_loadaddr, _sconfigdata, _econfigdata;
+void platform_load_config() {
+  volatile unsigned *src, *dest;
+  for (src = &_configdata_loadaddr, dest = &_sconfigdata;
+      dest < &_econfigdata;
+      src++, dest++) {
+    *dest = *src;
+  }
+}
+
+void platform_save_config() {
+  volatile unsigned *src, *dest;
+
+  flash_unlock();
+  flash_erase_sector(1, 2);
+  for (dest = &_configdata_loadaddr, src = &_sconfigdata;
+      src < &_econfigdata;
+      src++, dest++) {
+    flash_program_word((uint32_t)dest, *src);
+  }
+
+  flash_lock();
+}

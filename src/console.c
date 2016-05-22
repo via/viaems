@@ -223,6 +223,10 @@ static void list_variables() {
   }
 }
 
+static void console_save_to_flash() {
+  platform_save_config();
+}
+
 static void console_process_rx() {
   console_state = CONSOLE_CMDLINE;
   const char *c;
@@ -272,6 +276,8 @@ static void console_process_rx() {
     console_status();
   } else if (c && strncasecmp(c, "testtrigger", 11) == 0) {
     console_set_test_trigger();
+  } else if (c && strncasecmp(c, "save", 4) == 0) {
+    console_save_to_flash();
   } else {
     strcpy(config.console.txbuffer, "\r\n");
   }
