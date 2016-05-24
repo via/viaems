@@ -44,6 +44,10 @@ static int usart_rx_end;
  *   - 0-15 maps to port D, pins 0-15
  *  Freq sensor:
  *   - 1 maps to port A, pin 8 (TIM1 CH1)
+ *  PWM Outputs
+ *   - 0-PC6  1-PC7 2-PC8 TIM3 channel 1-3
+ *  GPIO (Digital Sensor or Output)
+ *   - 0-7 maps to Port B 8-15
  */
 
 static void platform_enable_trigger(int pin) {
