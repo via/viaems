@@ -139,7 +139,6 @@ schedule_ignition_event(struct output_event *ev,
   timeval_t curtime;
   int firing_angle;
 
-
   firing_angle = clamp_angle(ev->angle - advance - 
       d->last_trigger_angle + d->offset, 720);
 
@@ -245,6 +244,7 @@ schedule_adc_event(struct output_event *ev, struct decoder *d) {
   return 1;
 }
 
+
 void
 scheduler_execute() {
 
@@ -257,9 +257,10 @@ scheduler_execute() {
       en->scheduled = 0;
       LIST_REMOVE(en, entries);
       if (en->callback) {
-        en->callback(en->ptr);
+        en->callback();
       } else{
         set_output(en->output_id, en->output_val);
+        en->jitter = current_time() - en->time;
       }
     }
     en->fired = 1;
@@ -273,7 +274,6 @@ scheduler_execute() {
     /* Has that time already passed? */
     cur = current_time();
   } while (time_in_range(en->time, schedtime, cur));
-
 }
 
 #ifdef UNITTEST

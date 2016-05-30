@@ -14,10 +14,9 @@ typedef enum {
 struct sched_entry {
   /* scheduled time of an event */
   timeval_t time;
-
+  int32_t jitter;
   /* Treat event as a callback */
-  void (*callback)(void *);
-  void *ptr;
+  void (*callback)();
 
   /* Otherwise an output change */
   unsigned char output_id;
@@ -26,7 +25,7 @@ struct sched_entry {
   volatile unsigned char fired;
   volatile unsigned char scheduled;
   LIST_ENTRY(sched_entry) entries;
-};
+}__attribute__((aligned(8)));
 LIST_HEAD(scheduler_head, sched_entry);
 
 struct output_event {

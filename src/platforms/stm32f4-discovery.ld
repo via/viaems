@@ -27,6 +27,7 @@ MEMORY
 	configrom (rx) : ORIGIN = 0x08004000, LENGTH = 48K
 	rom (rx) : ORIGIN = 0x08010000, LENGTH = 960K
 	ram (rwx) : ORIGIN = 0x20000000, LENGTH = 128K
+	ccm (rw) : ORIGIN = 0x10000000, LENGTH = 64K
 }
 
 EXTERN (vector_table)
@@ -91,13 +92,13 @@ SECTIONS {
 	} >ram AT >rom
 	_data_loadaddr = LOADADDR(.data);
 
-  .configdata : {
-    _sconfigdata = .;
-    *(.configdata*)
-    . = ALIGN(4);
-    _econfigdata = .;
-  } >ram AT >configrom
-  _configdata_loadaddr = LOADADDR(.configdata);
+	.configdata : {
+		_sconfigdata = .;
+		*(.configdata*)
+		. = ALIGN(4);
+		_econfigdata = .;
+	} >ram AT >configrom
+	_configdata_loadaddr = LOADADDR(.configdata);
 
 	.bss : {
 		*(.bss*)	/* Read-write zero initialized data */

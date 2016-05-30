@@ -15,9 +15,8 @@ static void invalidate_decoder() {
   invalidate_scheduled_events(config.events, config.num_events);
 }
 
-static void handle_decoder_expire(void *_d) {
-  struct decoder *d = (struct decoder *)_d;
-  d->loss = DECODER_EXPIRED;
+static void handle_decoder_expire() {
+  config.decoder.loss = DECODER_EXPIRED;
   invalidate_decoder();
 }
 
@@ -199,7 +198,6 @@ void decoder_init(struct decoder *d) {
   d->expiration = 0;
 
   expire_event.callback = handle_decoder_expire;
-  expire_event.ptr = d;
 }
 
 #ifdef UNITTEST

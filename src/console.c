@@ -197,9 +197,36 @@ void console_set_test_trigger() {
   enable_test_trigger(FORD_TFI, (unsigned int)rpm);
 }
 
+
 static void console_status() {
+  int min = 10000;
+  int max = -10000;
+  float mean = 0;
+  int n = 0;
+  
+  int i;
+  for (i = 0; i < config.num_events; ++i) {
+    if (config.events[i].type == ADC_EVENT)
+      continue;
+    if (config.events[i].stop.jitter > max) 
+      max = config.events[i].stop.jitter;
+    if (config.events[i].stop.jitter < min) 
+      min = config.events[i].stop.jitter;
+    if (config.events[i].start.jitter > max) 
+      max = config.events[i].start.jitter;
+    if (config.events[i].start.jitter < min) 
+      min = config.events[i].start.jitter;
+    mean += config.events[i].stop.jitter;
+    mean += config.events[i].start.jitter;
+    n += 2;
+  }
+  if (n == 0)
+    mean = 0;
+  else
+    mean = mean / n;
+
   snprintf(config.console.txbuffer, CONSOLE_BUFFER_SIZE,
-      "* rpm=%d sync=%d loss=%d variance=%1.3f t0_count=%d t1_count=%d map=%3.1f adv=%2.1f dwell_us=%d pw_us=%d\r\n",
+      "* rpm=%d sync=%d loss=%d variance=%1.3f t0_count=%d t1_count=%d map=%3.1f adv=%2.1f dwell_us=%d pw_us=%d jit=%d/%d/%d\r\n",
       config.decoder.rpm,
       config.decoder.valid,
       config.decoder.loss,
@@ -209,7 +236,8 @@ static void console_status() {
       config.sensors[SENSOR_MAP].processed_value,
       calculated_values.timing_advance,
       calculated_values.dwell_us,
-      calculated_values.fueling_us);
+      calculated_values.fueling_us,
+      min, max, (int)mean);
 }
 
 
