@@ -25,7 +25,7 @@ struct sched_entry {
   volatile unsigned char fired;
   volatile unsigned char scheduled;
   LIST_ENTRY(sched_entry) entries;
-}__attribute__((aligned(8)));
+};
 LIST_HEAD(scheduler_head, sched_entry);
 
 struct output_event {
