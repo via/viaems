@@ -17,7 +17,6 @@ timeval_t time_from_us(unsigned int us) {
   timeval_t ticks = us * (TICKRATE / 1000000);
   return ticks;
 }
-
 int time_in_range(timeval_t val, timeval_t t1, timeval_t t2) {
   if (t2 >= t1) {
     /* No timer wrap */
@@ -31,7 +30,6 @@ int time_in_range(timeval_t val, timeval_t t1, timeval_t t2) {
   }
   return 0;
 }
-
 timeval_t time_diff(timeval_t later, timeval_t earlier) {
   return later - earlier;
 }

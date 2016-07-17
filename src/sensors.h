@@ -5,13 +5,13 @@
 #define SENSOR_FREQ_DIVIDER 4096
 
 typedef enum {
-  SENSOR_MAP,
-  SENSOR_IAT,
-  SENSOR_CLT,
-  SENSOR_BRV,
-  SENSOR_TPS,
-  SENSOR_AAP,
-  SENSOR_FRT,
+  SENSOR_MAP, /* Manifold Absolute Pressure */
+  SENSOR_IAT, /* Intake Air Temperature */
+  SENSOR_CLT, /* Coolant Temperature */
+  SENSOR_BRV, /* Battery Reference Voltage */
+  SENSOR_TPS, /* Throttle Position */
+  SENSOR_AAP, /* Atmospheric Absolute Pressure */
+  SENSOR_FRT, /* Fuel Rail Temperature */
   NUM_SENSORS,
 } sensor_input_type;
 

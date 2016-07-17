@@ -14,10 +14,9 @@ typedef enum {
 struct sched_entry {
   /* scheduled time of an event */
   timeval_t time;
-
+  int32_t jitter;
   /* Treat event as a callback */
-  void (*callback)(void *);
-  void *ptr;
+  void (*callback)();
 
   /* Otherwise an output change */
   unsigned char output_id;

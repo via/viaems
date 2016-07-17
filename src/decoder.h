@@ -49,8 +49,6 @@ struct decoder {
   unsigned int num_triggers;
   degrees_t degrees_per_trigger;
   unsigned int rpm_window_size;
-  int t0_pin;
-  int t1_pin;
 
   /* Debug */
   unsigned int t0_count;

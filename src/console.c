@@ -30,10 +30,19 @@ struct console_var {
   config_type type;
 };
 static struct console_var vars[] = {
-  {.name="config.timing", .type=CONFIG_TABLE, .value={.table_v=&timing_vs_rpm_and_map}},
-  {.name="config.rpm_stop", .type=CONFIG_UINT, .value={.uint_v=&config.rpm_stop}},
-  {.name="config.offset", .type=CONFIG_UINT, .value={.uint_v=(unsigned int*)&config.decoder.offset}},
-  {.name="config.rpm_start", .type=CONFIG_UINT, .value={.uint_v=&config.rpm_start}},
+  {.name="conf.table.timing", .type=CONFIG_TABLE, .value={.table_v=&timing_vs_rpm_and_map}},
+  {.name="conf.table.deadtime", .type=CONFIG_TABLE, .value={.table_v=&injector_dead_time}},
+  {.name="conf.table.iat_timing", .type=CONFIG_TABLE, .value={.table_v=NULL}},
+  {.name="conf.table.clt_timing", .type=CONFIG_TABLE, .value={.table_v=NULL}},
+  {.name="conf.table.ve", .type=CONFIG_TABLE, .value={.table_v=NULL}},
+  {.name="conf.table.lambda", .type=CONFIG_TABLE, .value={.table_v=NULL}},
+
+  {.name="conf.decoder.offset", .type=CONFIG_UINT, .value={.uint_v=(unsigned int*)&config.decoder.offset}},
+  {.name="conf.decoder.max_variation", .type=CONFIG_FLOAT, .value={.float_v=&config.decoder.trigger_max_rpm_change}},
+  {.name="conf.decoder.min_rpm", .type=CONFIG_UINT, .value={.uint_v=&config.decoder.trigger_min_rpm}},
+
+  {.name="conf.rpm_cut_high", .type=CONFIG_UINT, .value={.uint_v=&config.rpm_stop}},
+  {.name="conf.rpm_cut_low", .type=CONFIG_UINT, .value={.uint_v=&config.rpm_start}},
 };
 
 static int console_get_number(float *val) {
@@ -52,6 +61,9 @@ static int console_get_number(float *val) {
 
 static struct console_var *
 get_console_var(const char *var) {
+  if (!var) {
+    return NULL;
+  }
   for (unsigned int i = 0; i < sizeof(vars) / sizeof(struct console_var); ++i) {
     if (strncmp(var, vars[i].name, strlen(vars[i].name)) == 0) {
       return &vars[i];
@@ -91,7 +103,11 @@ static void handle_set_float(struct console_var *var) {
 static float *get_table_element(char *locstr, struct console_var *var) {
   struct table *t = var->value.table_v;
   unsigned int x, y, res;
-  res = sscanf(strtok(NULL, " "), "%d][%d]", &x, &y);
+  const char *remain = strtok(NULL, " ");
+  if (!remain) {
+    return NULL;
+  }
+  res = sscanf(remain, "%d][%d]", &x, &y);
   if (t->num_axis != res) {
     return NULL;
   }
@@ -181,9 +197,36 @@ void console_set_test_trigger() {
   enable_test_trigger(FORD_TFI, (unsigned int)rpm);
 }
 
+
 static void console_status() {
+  int min = 10000;
+  int max = -10000;
+  float mean = 0;
+  int n = 0;
+  
+  int i;
+  for (i = 0; i < config.num_events; ++i) {
+    if (config.events[i].type == ADC_EVENT)
+      continue;
+    if (config.events[i].stop.jitter > max) 
+      max = config.events[i].stop.jitter;
+    if (config.events[i].stop.jitter < min) 
+      min = config.events[i].stop.jitter;
+    if (config.events[i].start.jitter > max) 
+      max = config.events[i].start.jitter;
+    if (config.events[i].start.jitter < min) 
+      min = config.events[i].start.jitter;
+    mean += config.events[i].stop.jitter;
+    mean += config.events[i].start.jitter;
+    n += 2;
+  }
+  if (n == 0)
+    mean = 0;
+  else
+    mean = mean / n;
+
   snprintf(config.console.txbuffer, CONSOLE_BUFFER_SIZE,
-      "* rpm=%d sync=%d loss=%d variance=%1.3f t0_count=%d t1_count=%d map=%3.1f adv=%2.1f dwell_us=%d pw_us=%d\r\n",
+      "* rpm=%d sync=%d loss=%d variance=%1.3f t0_count=%d t1_count=%d map=%3.1f adv=%2.1f dwell_us=%d pw_us=%d jit=%d/%d/%d\r\n",
       config.decoder.rpm,
       config.decoder.valid,
       config.decoder.loss,
@@ -193,9 +236,24 @@ static void console_status() {
       config.sensors[SENSOR_MAP].processed_value,
       calculated_values.timing_advance,
       calculated_values.dwell_us,
-      calculated_values.fueling_us);
+      calculated_values.fueling_us,
+      min, max, (int)mean);
 }
 
+
+static void list_variables() {
+  strcpy(config.console.txbuffer, "Available variables:\r\n\r\n");
+
+  unsigned int i;
+  for (i = 0; i < sizeof(vars) / sizeof(struct console_var); ++i) {
+    strcat(config.console.txbuffer, vars[i].name);
+    strcat(config.console.txbuffer, "\r\n");
+  }
+}
+
+static void console_save_to_flash() {
+  platform_save_config();
+}
 
 static void console_process_rx() {
   console_state = CONSOLE_CMDLINE;
@@ -210,7 +268,10 @@ static void console_process_rx() {
   }
   if (c && strncasecmp(c, "get", 3) == 0) {
     v = get_console_var(strtok(NULL, " ["));
-    switch(v->type) {
+    if (!v) {
+      list_variables();
+    } else {
+      switch(v->type) {
       case CONFIG_UINT:
         handle_get_uint(v);
         break;
@@ -221,23 +282,30 @@ static void console_process_rx() {
         handle_get_table(v);
         break;
     }
+    }
   } else if (c && strncasecmp(c, "set", 3) == 0) {
     v = get_console_var(strtok(NULL, " ["));
-    switch(v->type) {
-      case CONFIG_UINT:
-        handle_set_uint(v);
-        break;
-      case CONFIG_FLOAT:
-        handle_set_float(v);
-        break;
-      case CONFIG_TABLE:
-        handle_set_table(v);
-        break;
+    if (!v) {
+      list_variables();
+    } else {
+      switch(v->type) {
+        case CONFIG_UINT:
+          handle_set_uint(v);
+          break;
+        case CONFIG_FLOAT:
+          handle_set_float(v);
+          break;
+        case CONFIG_TABLE:
+          handle_set_table(v);
+          break;
+      }
     }
   } else if (c && strncasecmp(c, "status", 6) == 0) {
     console_status();
   } else if (c && strncasecmp(c, "testtrigger", 11) == 0) {
     console_set_test_trigger();
+  } else if (c && strncasecmp(c, "save", 4) == 0) {
+    console_save_to_flash();
   } else {
     strcpy(config.console.txbuffer, "\r\n");
   }

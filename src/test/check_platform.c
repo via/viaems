@@ -78,3 +78,11 @@ void usart_tx(char *s, unsigned short len) {
 
 void enable_test_trigger(trigger_type trig, unsigned int rpm) {
 }
+
+void platform_save_config() {
+
+}
+
+void platform_load_config() {
+
+}

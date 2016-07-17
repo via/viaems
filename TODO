@@ -1,2 +1,11 @@
 - Allow saving of variables to flash
 - Evaluate converting to input capture for trigger
+- PWM and Digital IO
+  + Pluggable generic system for driving these from the main loop
+    for non-timing-critical things:
+    - Boost control
+    - Fan control
+    - Idle Control
+    - Fuel Pump Control (FP disable when engine stop)
+- Priming
+- Tip in Enrich

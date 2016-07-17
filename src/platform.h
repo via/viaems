@@ -30,12 +30,17 @@ void enable_interrupts();
 int interrupts_enabled();
 
 void set_output(int output, char value);
-void adc_gather(void *);
+void set_gpio(int output, char value);
+void set_pwm(int output, float value);
+void adc_gather();
 
 int usart_tx_ready();
 int usart_rx_ready();
 void usart_rx_reset();
 void usart_tx(char *, unsigned short);
+
+void platform_load_config();
+void platform_save_config();
 
 #endif
 

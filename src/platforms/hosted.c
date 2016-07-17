@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <sys/types.h>
 #include <sys/mman.h>
 #include <sys/timerfd.h>
@@ -35,6 +36,7 @@ static timer_t systimer;
 static sigset_t smask;
 static timeval_t ev_timer = 0;
 static timeval_t last_tx = 0;
+static char *usart_rx_dest;
 
 struct event {
   timeval_t time;
@@ -232,6 +234,10 @@ static void interface(pid_t ppid) {
 
 void platform_init() {
 
+  /* Set stdin nonblock */
+  fcntl(STDIN_FILENO, F_SETFL, fcntl(STDIN_FILENO, F_GETFL) | O_NONBLOCK);
+  usart_rx_reset();
+
   /* Set up systimer as the event timer */
   int ret = timer_create(CLOCK_MONOTONIC, NULL, &systimer);
   if (ret) {
@@ -311,16 +317,27 @@ int usart_tx_ready() {
 }
 
 int usart_rx_ready() {
-  return 0;
+  char inchar;
+  ssize_t s;
+
+  while ((s = read(STDIN_FILENO, &inchar, 1)) > 0) {
+    *usart_rx_dest++ = inchar;
+    if ((inchar == '\n') || (usart_rx_dest - config.console.rxbuffer > 
+      sizeof(config.console.rxbuffer))) {
+      *usart_rx_dest = '\0';
+      return 1;
+    }
+  }
+  return 0;   
 }
 
 void usart_rx_reset() {
-
+  usart_rx_dest = config.console.rxbuffer;
 }
 
 void usart_tx(char *str, unsigned short len) {
   last_tx = current_time();
-  printf("%s", str);
+  write(STDOUT_FILENO, str, len);
 }
 
 void enable_test_trigger(trigger_type trig, unsigned int rpm) {

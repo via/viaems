@@ -35,10 +35,11 @@ static void schedule(struct output_event *ev) {
 }
 
 int main() {
+  platform_load_config();
   decoder_init(&config.decoder);
   platform_init();
 
-  enable_test_trigger(FORD_TFI, 1900);
+  enable_test_trigger(FORD_TFI, 350);
 
   while (1) {
     sensors_process();

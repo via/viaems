@@ -1,7 +1,7 @@
 #include "config.h"
 #include "sensors.h"
 
-struct table timing_vs_rpm_and_map = {
+struct table timing_vs_rpm_and_map __attribute__((section(".configdata"))) = {
   .title = "Timing",
   .num_axis = 2,
   .axis = {
@@ -26,7 +26,7 @@ struct table timing_vs_rpm_and_map = {
   },
 };
 
-struct table injector_dead_time = {
+struct table injector_dead_time __attribute__((section(".configdata"))) = {
   .title = "Dead Time",
   .num_axis = 1,
   .axis = {
@@ -43,37 +43,36 @@ struct table injector_dead_time = {
   },
 };
 
-struct config config = {
-  .num_events = 18,
+struct config config __attribute__((section(".configdata"))) = {
+  .num_events = 17,
   .events = {
     {.type=IGNITION_EVENT, .angle=0, .output_id=0, .inverted=1},
     {.type=IGNITION_EVENT, .angle=90, .output_id=0, .inverted=1},
     {.type=IGNITION_EVENT, .angle=180, .output_id=0, .inverted=1},
     {.type=IGNITION_EVENT, .angle=270, .output_id=0, .inverted=1},
-    {.type=ADC_EVENT, .angle=290},
+    {.type=IGNITION_EVENT, .angle=270, .output_id=2, .inverted=1},
+    {.type=ADC_EVENT, .angle=270},
 
     {.type=IGNITION_EVENT, .angle=360, .output_id=0, .inverted=1},
     {.type=IGNITION_EVENT, .angle=450, .output_id=0, .inverted=1},
     {.type=IGNITION_EVENT, .angle=540, .output_id=0, .inverted=1},
     {.type=IGNITION_EVENT, .angle=630, .output_id=0, .inverted=1},
-    {.type=ADC_EVENT, .angle=650},
+    {.type=ADC_EVENT, .angle=630},
 
-    {.type=FUEL_EVENT, .angle=630, .output_id=1},
-    {.type=FUEL_EVENT, .angle=0,   .output_id=1},
-    {.type=FUEL_EVENT, .angle=90,  .output_id=1},
-    {.type=FUEL_EVENT, .angle=180, .output_id=1},
-    {.type=FUEL_EVENT, .angle=270, .output_id=1},
-    {.type=FUEL_EVENT, .angle=360, .output_id=1},
-    {.type=FUEL_EVENT, .angle=450, .output_id=1},
-    {.type=FUEL_EVENT, .angle=540, .output_id=1},
+    {.type=FUEL_EVENT, .angle=90, .output_id=1},
+    {.type=FUEL_EVENT, .angle=90,   .output_id=6},
+    {.type=FUEL_EVENT, .angle=90,  .output_id=7},
+    {.type=FUEL_EVENT, .angle=90, .output_id=8},
+    {.type=FUEL_EVENT, .angle=90, .output_id=9},
+    {.type=FUEL_EVENT, .angle=90, .output_id=10},
+    {.type=FUEL_EVENT, .angle=90, .output_id=11},
+    {.type=FUEL_EVENT, .angle=90, .output_id=12},
   },
   .trigger = FORD_TFI,
   .decoder = {
-    .offset = 45,
+    .offset = 38,
     .trigger_max_rpm_change = 0.55, /*Startup sucks with only 90* trigger */
     .trigger_min_rpm = 80,
-    .t0_pin = 3,
-    .t1_pin = -1, /* Not used */
   },
   .sensors = {
 #if 0
@@ -82,7 +81,8 @@ struct config config = {
     [SENSOR_IAT] = {.pin=2, .method=SENSOR_ADC, .process=sensor_process_linear, 
       .params={.range={.min=-30.0, .max=120.0}}},
 #else
-    [SENSOR_MAP] = {.method=SENSOR_CONST, .params={.fixed_value = 60.0}},
+    [SENSOR_MAP] = {.pin=7, .method=SENSOR_ADC, .process=sensor_process_linear,
+      .params={.range={.min=0, .max=100}}},
     [SENSOR_AAP] = {.method=SENSOR_CONST, .params={.fixed_value = 102.0}},
     [SENSOR_IAT] = {.method=SENSOR_CONST, .params={.fixed_value = 29.0}},
     [SENSOR_FRT] = {.method=SENSOR_CONST, .params={.fixed_value = 0.0}},
@@ -93,8 +93,8 @@ struct config config = {
   },
   .timing = &timing_vs_rpm_and_map,
   .injector_pw_compensation = &injector_dead_time,
-  .rpm_stop = 4000,
-  .rpm_start = 3800,
+  .rpm_stop = 7000,
+  .rpm_start = 6800,
   .fueling = {
     .injector_cc_per_minute = 550,
     .cylinder_cc = 500,
