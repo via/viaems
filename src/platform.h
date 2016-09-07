@@ -30,6 +30,7 @@ void enable_interrupts();
 int interrupts_enabled();
 
 void set_output(int output, char value);
+int get_output(int output);
 void set_gpio(int output, char value);
 void set_pwm(int output, float value);
 void adc_gather();
@@ -41,6 +42,10 @@ void usart_tx(char *, unsigned short);
 
 void platform_load_config();
 void platform_save_config();
+
+timeval_t init_output_thread(uint32_t *buf0, uint32_t *buf1, uint32_t len);
+int current_output_buffer();
+int current_output_slot();
 
 #endif
 

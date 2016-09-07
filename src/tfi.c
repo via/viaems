@@ -7,6 +7,9 @@
 #include "sensors.h"
 #include "calculations.h"
 
+#include <libopencm3/stm32/gpio.h>
+#include <libopencm3/stm32/timer.h>
+
 static void schedule(struct output_event *ev) {
   switch(ev->type) {
     case IGNITION_EVENT:
@@ -38,10 +41,12 @@ int main() {
   platform_load_config();
   decoder_init(&config.decoder);
   platform_init();
+  initialize_scheduler();
 
-  enable_test_trigger(FORD_TFI, 350);
+  enable_test_trigger(FORD_TFI, 5100);
 
-  while (1) {
+  while (1) {                   
+
     sensors_process();
     if (config.decoder.needs_decoding_t0 || config.decoder.needs_decoding_t1) {
       config.decoder.decode(&config.decoder);
@@ -58,7 +63,7 @@ int main() {
       /* Check to see if any events have fired. These should be rescheduled
        * now to allow 100% duty utilization */
       for (unsigned int e = 0; e < config.num_events; ++e) {
-        if (event_has_fired(&config.events[e])) {
+        if (config.decoder.valid && event_has_fired(&config.events[e])) {
           schedule(&config.events[e]);
         }
       }

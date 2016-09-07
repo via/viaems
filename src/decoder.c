@@ -23,7 +23,7 @@ static void handle_decoder_expire() {
 static void set_expire_event(timeval_t t) {
   disable_interrupts();
   expire_event.time = t;
-  schedule_insert(current_time(), &expire_event);
+//  schedule_insert(current_time(), &expire_event);
   enable_interrupts();
 }
 

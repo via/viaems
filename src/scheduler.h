@@ -23,10 +23,17 @@ struct sched_entry {
   unsigned char output_val;
 
   volatile unsigned char fired;
-  volatile unsigned char scheduled;
-  LIST_ENTRY(sched_entry) entries;
+  volatile unsigned char scheduled; /* current time is valid */
+  struct output_buffer *buffer;
 };
-LIST_HEAD(scheduler_head, sched_entry);
+
+/* Meaning of scheduled/fired:
+ *   fired   |  scheduled  |  meaning
+ *     0     |      0      |  new event
+ *     1     |      1      |  event fired, time not updated since
+ *     0     |      1      |  time updated, waiting to fire
+ *     1     |      0      |  event fired, not meaningful
+ */
 
 struct output_event {
   event_type_t type;
@@ -44,16 +51,16 @@ int schedule_fuel_event(struct output_event *, struct decoder *d,
     unsigned int usecs_pw);
 int schedule_adc_event(struct output_event *, struct decoder *);
 void deschedule_event(struct output_event *);
-timeval_t schedule_insert(timeval_t, struct sched_entry *);
+//timeval_t schedule_insert(timeval_t, timeval_t, struct sched_entry *);
 
 void scheduler_execute();
+void initialize_scheduler();
+void scheduler_buffer_swap();
 
 int event_is_active(struct output_event *);
 int event_has_fired(struct output_event *);
 void invalidate_scheduled_events(struct output_event *, int);
-
 #ifdef UNITTEST
-struct scheduler_head *check_get_schedule();
 #endif
 
 #endif 

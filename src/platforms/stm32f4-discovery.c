@@ -10,6 +10,7 @@
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/cm3/scb.h>
 #include <libopencm3/cm3/cortex.h>
+#include "libopencm3/cm3/dwt.h"
 
 #include "decoder.h"
 #include "platform.h"
@@ -19,8 +20,8 @@
 #include "util.h"
 #include "config.h"
 
-static uint16_t adc_dma_buf[NUM_SENSORS];
-static uint8_t adc_pins[NUM_SENSORS];
+#include <assert.h>
+
 static char *usart_rx_dest;
 static int usart_rx_end;
 
@@ -32,24 +33,26 @@ static int usart_rx_end;
  *  LD6 - Blue - PD15
  *
  *  Fixed pin mapping:
- *  USART1_TX - PB6 (dma2 stream 7 chan 4)
- *  USART1_RX - PB7 (dma2 stream 5 chan 4)
+ *  USART2_TX - PA2 (dma1 stream 6 chan 4)
+ *  USART2_RX - PA3 (dma1 stream 5 chan 4)
  *  Test trigger out - A0 (Uses TIM5)
+ *  Event timer TIM2 slaved off TIM8
  *  Trigger 0 - PB3 (TIM2_CH2)
  *  Trigger 1 - PB10 (TIM2_CH3)
  *  Trigger 2 - PB11 (TIM2_CH4)
  *
  *  Configurable pin mapping:
  *  ADC: 
- *   - 1-7 maps to port A, pins 1-7
+ *   - 1-8 maps to port A pins 4-7, port C 0-3
  *  Scheduled Outputs:
  *   - 0-15 maps to port D, pins 0-15
  *  Freq sensor:
- *   - 1 maps to port A, pin 8 (TIM1 CH1)
+ *   - 1-4 maps to port A, pin 8-11 (TIM1 CH1-4)
  *  PWM Outputs
  *   - 0-PC6  1-PC7 2-PC8 3-PC9 TIM3 channel 1-4
  *  GPIO (Digital Sensor or Output)
  *   - 0-15 Maps to Port E
+ *
  */
 
 static void platform_init_freqsensor(unsigned char pin) {
@@ -60,6 +63,24 @@ static void platform_init_freqsensor(unsigned char pin) {
       tim = TIM1;
       gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO8);
       gpio_set_af(GPIOA, GPIO_AF1, GPIO8);
+      break;
+    case 2:
+      /* TIM1 CH2 */
+      tim = TIM1;
+      gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO9);
+      gpio_set_af(GPIOA, GPIO_AF1, GPIO9);
+      break;
+    case 3:
+      /* TIM1 CH3 */
+      tim = TIM1;
+      gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO10);
+      gpio_set_af(GPIOA, GPIO_AF1, GPIO10);
+      break;
+    case 4:
+      /* TIM1 CH4 */
+      tim = TIM1;
+      gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO11);
+      gpio_set_af(GPIOA, GPIO_AF1, GPIO11);
       break;
   };
   timer_reset(tim);
@@ -87,6 +108,9 @@ static void platform_init_freqsensor(unsigned char pin) {
 
   switch(pin) {
     case 1:
+    case 2:
+    case 3:
+    case 4:
       nvic_enable_irq(NVIC_TIM1_CC_IRQ);
       nvic_set_priority(NVIC_TIM1_CC_IRQ, 64);
       break;
@@ -96,6 +120,7 @@ static void platform_init_freqsensor(unsigned char pin) {
 void tim1_cc_isr() {
   timeval_t t = TIM1_CCR1;
   timer_clear_flag(TIM1, TIM_SR_CC1IF);
+  /*TODO: Handle pins 1-4 */
   for (int i = 0; i < NUM_SENSORS; ++i) {
     if ((config.sensors[i].method == SENSOR_FREQ) &&
         (config.sensors[i].pin == 1)) {
@@ -106,9 +131,13 @@ void tim1_cc_isr() {
 }
 
 static void platform_init_eventtimer() {
-  /* Set up TIM2 as 32bit clock */
+  /* Set up TIM2 as 32bit clock that is slaved off TIM8*/
+
+
   timer_reset(TIM2);
   timer_set_mode(TIM2, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
+  timer_slave_set_mode(TIM2, TIM_SMCR_SMS_ECM1);
+  timer_slave_set_trigger(TIM2, TIM_SMCR_TS_ITR1); /* TIM2 slaved off TIM8 */
   timer_set_period(TIM2, 0xFFFFFFFF);
   timer_set_prescaler(TIM2, 0);
   timer_disable_preload(TIM2);
@@ -150,6 +179,77 @@ static void platform_init_eventtimer() {
   timer_enable_irq(TIM2, TIM_DIER_CC4IE);
   nvic_enable_irq(NVIC_TIM2_IRQ);
   nvic_set_priority(NVIC_TIM2_IRQ, 0);
+
+  /* Set debug unit to stop the timer on halt */
+  *((volatile uint32_t *)0xE0042008) |= 9; /*TIM2 and TIM5 */
+  *((volatile uint32_t *)0xE004200C) |= 2; /* TIM8 stop */
+
+  timer_reset(TIM8);
+  timer_set_mode(TIM8, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
+  timer_set_period(TIM8, 41); /* 0.25 uS */
+  timer_set_prescaler(TIM8, 0);
+  timer_disable_preload(TIM8);
+  timer_continuous_mode(TIM8);
+  timer_disable_oc_output(TIM8, TIM_OC1);
+  timer_disable_oc_output(TIM8, TIM_OC2);
+  timer_disable_oc_output(TIM8, TIM_OC3);
+  timer_disable_oc_output(TIM8, TIM_OC4);
+  timer_set_master_mode(TIM8, TIM_CR2_MMS_UPDATE);
+  timer_enable_counter(TIM8);
+  timer_enable_update_event(TIM8);
+  timer_update_on_overflow(TIM8);
+  timer_set_dma_on_update_event(TIM8);
+  TIM8_DIER |= TIM_DIER_UDE; /* Enable update dma */
+}
+
+
+static uint32_t output_buffer_len;
+/* Give two buffers of len size, dma will start reading from buf0 and double
+ * buffer between buf0 and buf0.
+ * Returns the time that buf0 starts at
+ */
+timeval_t init_output_thread(uint32_t *buf0, uint32_t *buf1, uint32_t len) {
+  timeval_t start;
+
+  output_buffer_len = len;
+  /* dma2 stream 1, channel 7*/
+  dma_stream_reset(DMA2, DMA_STREAM1);
+  dma_set_priority(DMA2, DMA_STREAM1, DMA_SxCR_PL_HIGH);
+  dma_enable_double_buffer_mode(DMA2, DMA_STREAM1);
+  dma_set_memory_size(DMA2, DMA_STREAM1, DMA_SxCR_MSIZE_32BIT);
+  dma_set_peripheral_size(DMA2, DMA_STREAM1, DMA_SxCR_PSIZE_32BIT);
+  dma_enable_memory_increment_mode(DMA2, DMA_STREAM1);
+  dma_set_transfer_mode(DMA2, DMA_STREAM1, DMA_SxCR_DIR_MEM_TO_PERIPHERAL);
+  dma_enable_circular_mode(DMA2, DMA_STREAM1);
+  dma_set_peripheral_address(DMA2, DMA_STREAM1, (uint32_t) &GPIOD_BSRR);
+  dma_set_memory_address(DMA2, DMA_STREAM1, (uint32_t)buf0);
+  dma_set_memory_address_1(DMA2, DMA_STREAM1, (uint32_t)buf1);
+  dma_set_number_of_data(DMA2, DMA_STREAM1, len);
+  dma_channel_select(DMA2, DMA_STREAM1, DMA_SxCR_CHSEL_7);
+  dma_enable_direct_mode(DMA2, DMA_STREAM1);
+  dma_enable_transfer_complete_interrupt(DMA2, DMA_STREAM1);
+
+  timer_disable_counter(TIM8);
+  dma_enable_stream(DMA2, DMA_STREAM1);
+  start = timer_get_counter(TIM2);
+  timer_enable_counter(TIM8);
+
+  nvic_enable_irq(NVIC_DMA2_STREAM1_IRQ);
+
+  return start;
+}
+
+/* Returns 0 if buf0 is active */
+int current_output_buffer() {
+  return dma_get_target(DMA2, DMA_STREAM1);
+}
+
+/* Returns the current slot that DMA is pointing at.
+ * Note that the slot returned is the one queued to output next, but is already
+ * in the FIFO so is considered 'done'
+ */
+int current_output_slot() {
+  return output_buffer_len - DMA2_S1NDTR;
 }
 
 static void platform_init_pwm() {
@@ -226,89 +326,110 @@ void set_pwm(int output, float value) {
 }
 
 static void platform_init_scheduled_outputs() {
-  gpio_mode_setup(GPIOD, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, 0xFF);
-  gpio_set_output_options(GPIOD, GPIO_OTYPE_PP, GPIO_OSPEED_100MHZ, 0xFF);
+  gpio_clear(GPIOD, 0xFFFF);
+  int i;
+  for (i = 0; i < config.num_events; ++i) {
+    if (config.events[i].inverted && config.events[i].type) {
+      set_output(config.events[i].output_id, 1);
+    }
+  }
+  gpio_mode_setup(GPIOD, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, 0xFFFF & ~GPIO5);
+  gpio_set_output_options(GPIOD, GPIO_OTYPE_PP, GPIO_OSPEED_100MHZ, 0xFFFF & ~GPIO5);
   gpio_mode_setup(GPIOE, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, 0xFF);
   gpio_set_output_options(GPIOE, GPIO_OTYPE_PP, GPIO_OSPEED_100MHZ, 0xFF);
 }
 
 static void platform_init_adc() {
   /* Set up DMA for the ADC */
-  nvic_enable_irq(NVIC_DMA2_STREAM0_IRQ);
-  nvic_set_priority(NVIC_DMA2_STREAM0_IRQ, 64);
+  nvic_enable_irq(NVIC_ADC_IRQ);
+  nvic_set_priority(NVIC_ADC_IRQ, 64);
 
   /* Set up ADC */
-  for (int i = 0; i < NUM_SENSORS; ++i) {
-    if (config.sensors[i].method == SENSOR_ADC) {
-      adc_pins[i] = config.sensors[i].pin;
-      gpio_mode_setup(GPIOA, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, (1<<adc_pins[i]));
-    }
-  }
+  gpio_mode_setup(GPIOA, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, 
+      GPIO4 | GPIO5 | GPIO6 | GPIO7);
+  gpio_mode_setup(GPIOC, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, 
+      GPIO0 | GPIO1 | GPIO2 | GPIO3 | GPIO4 | GPIO5);
+  
   adc_off(ADC1);
+  adc_off(ADC2);
+  adc_off(ADC3);
+
   adc_enable_scan_mode(ADC1);
+  adc_enable_scan_mode(ADC2);
+  adc_enable_scan_mode(ADC3);
+
   adc_set_sample_time_on_all_channels(ADC1, ADC_SMPR_SMP_15CYC);
+  adc_set_sample_time_on_all_channels(ADC2, ADC_SMPR_SMP_15CYC);
+  adc_set_sample_time_on_all_channels(ADC3, ADC_SMPR_SMP_15CYC);
+
+  adc_disable_automatic_injected_group_conversion(ADC1);
+  adc_disable_automatic_injected_group_conversion(ADC2);
+  adc_disable_automatic_injected_group_conversion(ADC3);
+
+  adc_enable_eoc_interrupt_injected(ADC1);
+  adc_enable_eoc_interrupt_injected(ADC2);
+  adc_enable_eoc_interrupt_injected(ADC3);
+
+  adc_eoc_after_group(ADC1);
+  adc_eoc_after_group(ADC2);
+  adc_eoc_after_group(ADC3);
+
   adc_power_on(ADC1);
+  adc_power_on(ADC2);
+  adc_power_on(ADC3);
+  adc_set_multi_mode(ADC_CCR_MULTI_TRIPLE_INJECTED_SIMUL);
 
-  adc_disable_dma(ADC1);
-  adc_enable_dma(ADC1);
   adc_clear_overrun_flag(ADC1);
-  adc_set_dma_continue(ADC1);
+  adc_clear_overrun_flag(ADC2);
+  adc_clear_overrun_flag(ADC3);
 
-  dma_stream_reset(DMA2, DMA_STREAM0);
-  dma_set_priority(DMA2, DMA_STREAM0, DMA_SxCR_PL_HIGH);
-  dma_set_memory_size(DMA2, DMA_STREAM0, DMA_SxCR_MSIZE_16BIT);
-  dma_set_peripheral_size(DMA2, DMA_STREAM0, DMA_SxCR_PSIZE_16BIT);
-  dma_enable_memory_increment_mode(DMA2, DMA_STREAM0);
-  dma_set_transfer_mode(DMA2, DMA_STREAM0, DMA_SxCR_DIR_PERIPHERAL_TO_MEM);
-  dma_enable_circular_mode(DMA2, DMA_STREAM0);
-  dma_set_peripheral_address(DMA2, DMA_STREAM0, (uint32_t) &ADC1_DR);
-  dma_set_memory_address(DMA2, DMA_STREAM0, (uint32_t) adc_dma_buf);
-  dma_set_number_of_data(DMA2, DMA_STREAM0, NUM_SENSORS);
-  dma_enable_transfer_complete_interrupt(DMA2, DMA_STREAM0);
-  dma_channel_select(DMA2, DMA_STREAM0, DMA_SxCR_CHSEL_0);
-  dma_enable_stream(DMA2, DMA_STREAM0);
-  adc_set_regular_sequence(ADC1, NUM_SENSORS, adc_pins);
+  uint8_t seq1[] = {4, 5, 6, 7};
+  uint8_t seq2[] = {10, 11, 12, 13};
+  uint8_t seq3[] = {14, 15}; /*TODO: these pins don't work with ADC3 */
+  adc_set_injected_sequence(ADC1, 4, seq1);
+  adc_set_injected_sequence(ADC2, 4, seq2);
+  adc_set_injected_sequence(ADC3, 2, seq3);
 }
 
 static void platform_init_usart() {
   /* USART initialization */
-  nvic_enable_irq(NVIC_USART1_IRQ);
-  nvic_set_priority(NVIC_USART1_IRQ, 64);
+  nvic_enable_irq(NVIC_USART2_IRQ);
+  nvic_set_priority(NVIC_USART2_IRQ, 64);
 
-  gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO6);
-  gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO7);
-  gpio_set_output_options(GPIOB, GPIO_OTYPE_OD, GPIO_OSPEED_25MHZ, GPIO7);
+  gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO2);
+  gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO3);
+  gpio_set_output_options(GPIOA, GPIO_OTYPE_OD, GPIO_OSPEED_25MHZ, GPIO3);
 
-  /* Setup USART1 TX and RX pin as alternate function. */
-  gpio_set_af(GPIOB, GPIO_AF7, GPIO6);
-  gpio_set_af(GPIOB, GPIO_AF7, GPIO7);
+  /* Setup USART2 TX and RX pin as alternate function. */
+  gpio_set_af(GPIOA, GPIO_AF7, GPIO2);
+  gpio_set_af(GPIOA, GPIO_AF7, GPIO3);
 
   /* Setup USART2 parameters. */
-  usart_set_baudrate(USART1, config.console.baud);
-  usart_set_databits(USART1, config.console.data_bits);
+  usart_set_baudrate(USART2, config.console.baud);
+  usart_set_databits(USART2, config.console.data_bits);
   switch (config.console.stop_bits) {
     case 1:
-      usart_set_stopbits(USART1, USART_STOPBITS_1);
+      usart_set_stopbits(USART2, USART_STOPBITS_1);
       break;
     default:
       while (1);
   }
-  usart_set_mode(USART1, USART_MODE_TX_RX);
+  usart_set_mode(USART2, USART_MODE_TX_RX);
   switch (config.console.parity) {
     case 'N':
-      usart_set_parity(USART1, USART_PARITY_NONE);
+      usart_set_parity(USART2, USART_PARITY_NONE);
       break;
     case 'O':
-      usart_set_parity(USART1, USART_PARITY_ODD);
+      usart_set_parity(USART2, USART_PARITY_ODD);
       break;
     case 'E':
-      usart_set_parity(USART1, USART_PARITY_EVEN);
+      usart_set_parity(USART2, USART_PARITY_EVEN);
       break;
   }
-  usart_set_flow_control(USART1, USART_FLOWCONTROL_NONE);
+  usart_set_flow_control(USART2, USART_FLOWCONTROL_NONE);
 
   /* Finally enable the USART. */
-  usart_enable(USART1);
+  usart_enable(USART2);
   usart_rx_reset();
 }
 
@@ -325,16 +446,20 @@ void platform_init() {
   rcc_periph_clock_enable(RCC_GPIOE);
   rcc_periph_clock_enable(RCC_SYSCFG);
   rcc_periph_clock_enable(RCC_ADC1);
-  rcc_periph_clock_enable(RCC_USART1);
+  rcc_periph_clock_enable(RCC_ADC2);
+  rcc_periph_clock_enable(RCC_ADC3);
+  rcc_periph_clock_enable(RCC_USART2);
+  rcc_periph_clock_enable(RCC_DMA1);
   rcc_periph_clock_enable(RCC_DMA2);
   rcc_periph_clock_enable(RCC_TIM1);
   rcc_periph_clock_enable(RCC_TIM2);
   rcc_periph_clock_enable(RCC_TIM3);
+  rcc_periph_clock_enable(RCC_TIM8);
 
   scb_set_priority_grouping(SCB_AIRCR_PRIGROUP_GROUP16_NOSUB);
+  platform_init_scheduled_outputs();
   platform_init_eventtimer();
   platform_init_adc();
-  platform_init_scheduled_outputs();
   platform_init_usart();
   platform_init_pwm();
 
@@ -347,23 +472,24 @@ void platform_init() {
           (1 << config.sensors[i].pin));
     }
   }
+  dwt_enable_cycle_counter();
 }
 
 void usart_rx_reset() {
   usart_rx_dest = config.console.rxbuffer;
   usart_rx_end = 0;
-  usart_enable_rx_interrupt(USART1);
+  usart_enable_rx_interrupt(USART2);
 }
 
 
-void usart1_isr() {
+void usart2_isr() {
   if (usart_rx_end) {
     /* Already have unprocessed line in buffer */
-    (void)usart_recv(USART1);
+    (void)usart_recv(USART2);
     return;
   }
 
-  *usart_rx_dest = usart_recv(USART1);
+  *usart_rx_dest = usart_recv(USART2);
   if (*usart_rx_dest == '\r') {
     *(usart_rx_dest + 1) = '\0';
     usart_rx_end = 1;
@@ -379,7 +505,7 @@ void usart1_isr() {
 }
 
 int usart_tx_ready() {
-  return usart_get_flag(USART1, USART_SR_TC);
+  return usart_get_flag(USART2, USART_SR_TC);
 }
 
 int usart_rx_ready() {
@@ -387,30 +513,30 @@ int usart_rx_ready() {
 }
 
 void usart_tx(char *buf, unsigned short len) {
-  usart_enable_tx_dma(USART1);
-  dma_stream_reset(DMA2, DMA_STREAM7);
-  dma_set_priority(DMA2, DMA_STREAM7, DMA_SxCR_PL_LOW);
-  dma_set_memory_size(DMA2, DMA_STREAM7, DMA_SxCR_MSIZE_8BIT);
-  dma_set_peripheral_size(DMA2, DMA_STREAM7, DMA_SxCR_PSIZE_8BIT);
-  dma_enable_memory_increment_mode(DMA2, DMA_STREAM7);
-  dma_set_transfer_mode(DMA2, DMA_STREAM7, DMA_SxCR_DIR_MEM_TO_PERIPHERAL);
-  dma_set_peripheral_address(DMA2, DMA_STREAM7, (uint32_t) &USART1_DR);
-  dma_set_memory_address(DMA2, DMA_STREAM7, (uint32_t) buf);
-  dma_set_number_of_data(DMA2, DMA_STREAM7, len);
-  dma_enable_transfer_complete_interrupt(DMA2, DMA_STREAM7);
-  dma_channel_select(DMA2, DMA_STREAM7, DMA_SxCR_CHSEL_4);
-  dma_enable_stream(DMA2, DMA_STREAM7);
+  usart_enable_tx_dma(USART2);
+  dma_stream_reset(DMA1, DMA_STREAM6);
+  dma_set_priority(DMA1, DMA_STREAM6, DMA_SxCR_PL_LOW);
+  dma_set_memory_size(DMA1, DMA_STREAM6, DMA_SxCR_MSIZE_8BIT);
+  dma_set_peripheral_size(DMA1, DMA_STREAM6, DMA_SxCR_PSIZE_8BIT);
+  dma_enable_memory_increment_mode(DMA1, DMA_STREAM6);
+  dma_set_transfer_mode(DMA1, DMA_STREAM6, DMA_SxCR_DIR_MEM_TO_PERIPHERAL);
+  dma_set_peripheral_address(DMA1, DMA_STREAM6, (uint32_t) &USART2_DR);
+  dma_set_memory_address(DMA1, DMA_STREAM6, (uint32_t) buf);
+  dma_set_number_of_data(DMA1, DMA_STREAM6, len);
+  dma_enable_transfer_complete_interrupt(DMA1, DMA_STREAM6);
+  dma_channel_select(DMA1, DMA_STREAM6, DMA_SxCR_CHSEL_4);
+  dma_enable_stream(DMA1, DMA_STREAM6);
 
 }
 
 void adc_gather() {
-  adc_start_conversion_regular(ADC1);
+  adc_start_conversion_injected(ADC1);
 }
 
 void tim2_isr() {
   if (timer_get_flag(TIM2, TIM_SR_CC1IF)) {
     timer_clear_flag(TIM2, TIM_SR_CC1IF);
-    scheduler_execute();
+    //scheduler_execute();
   }
   if (timer_get_flag(TIM2, TIM_SR_CC2IF)) {
     timer_clear_flag(TIM2, TIM_SR_CC2IF);
@@ -424,16 +550,40 @@ void tim2_isr() {
   }
 }
 
-void dma2_stream0_isr(void) {
- if (dma_get_interrupt_flag(DMA2, DMA_STREAM0, DMA_TCIF)) {
-   dma_clear_interrupt_flags(DMA2, DMA_STREAM0, DMA_TCIF);
-   for (int i = 0; i < NUM_SENSORS; ++i) {
-     if (config.sensors[i].method == SENSOR_ADC) {
-       config.sensors[i].raw_value = (uint32_t)adc_dma_buf[i];
-     }
-   }
-   sensor_adc_new_data();
- }
+
+void adc_isr(void) {
+  uint16_t adc_inputs[10];
+
+  ADC1_SR &= ~(ADC_SR_JEOC);
+  ADC2_SR &= ~(ADC_SR_JEOC);
+  ADC3_SR &= ~(ADC_SR_JEOC);
+
+  adc_inputs[0] = adc_read_injected(ADC1, 1);
+  adc_inputs[1] = adc_read_injected(ADC1, 2);
+  adc_inputs[2] = adc_read_injected(ADC1, 3);
+  adc_inputs[3] = adc_read_injected(ADC1, 4);
+  adc_inputs[4] = adc_read_injected(ADC2, 1);
+  adc_inputs[5] = adc_read_injected(ADC2, 2);
+  adc_inputs[6] = adc_read_injected(ADC2, 3);
+  adc_inputs[7] = adc_read_injected(ADC2, 4);
+  adc_inputs[8] = adc_read_injected(ADC2, 1);
+  adc_inputs[9] = adc_read_injected(ADC2, 2);
+
+  for (int i = 0; i < NUM_SENSORS; ++i) {
+    if (config.sensors[i].method == SENSOR_ADC) {
+      config.sensors[i].raw_value = 
+        (uint32_t)adc_inputs[config.sensors[i].pin - 1];
+    }
+  }
+
+  sensor_adc_new_data();
+}
+
+void dma2_stream1_isr(void) {
+  if (dma_get_interrupt_flag(DMA2, DMA_STREAM1, DMA_TCIF)) {
+      dma_clear_interrupt_flags(DMA2, DMA_STREAM1, DMA_TCIF);
+    scheduler_buffer_swap();
+  }
 }
 
 void enable_interrupts() {
@@ -470,6 +620,10 @@ timeval_t current_time() {
   return timer_get_counter(TIM2);
 }
 
+int get_output(int output) {
+  return gpio_get(GPIOD, (1 << output)) != 0;
+}
+
 void set_output(int output, char value) {
   if (value) {
     gpio_set(GPIOD, (1 << output));
@@ -501,7 +655,7 @@ void enable_test_trigger(trigger_type trig, unsigned int rpm) {
   timer_disable_oc_output(TIM5, TIM_OC1);
   timer_set_mode(TIM5, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
   timer_set_period(TIM5, (unsigned int)t);
-  timer_set_prescaler(TIM5, 0);
+  timer_set_prescaler(TIM5, 20); /* Primary clock is still 168 Mhz */
   timer_disable_preload(TIM5);
   timer_continuous_mode(TIM5);
   /* Setup output compare registers */

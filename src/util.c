@@ -17,6 +17,13 @@ timeval_t time_from_us(unsigned int us) {
   timeval_t ticks = us * (TICKRATE / 1000000);
   return ticks;
 }
+
+/* True if n is before x */
+int time_before(timeval_t n, timeval_t x) {
+  signed int res = n - x;
+  return (res < 0);
+}
+
 int time_in_range(timeval_t val, timeval_t t1, timeval_t t2) {
   if (t2 >= t1) {
     /* No timer wrap */
