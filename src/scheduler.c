@@ -60,7 +60,7 @@ static struct output_buffer *buffer_for_time(timeval_t time) {
   return buf;
 }
 
-int schedule_remove(struct sched_entry *s, timeval_t time) {
+static int schedule_remove(struct sched_entry *s, timeval_t time) {
   int success = 1;
   struct output_buffer *buf = buffer_for_time(time);
 
@@ -70,19 +70,15 @@ int schedule_remove(struct sched_entry *s, timeval_t time) {
                                      &buf->slots[slot].off_mask;
     uint16_t value = *addr &= ~(1 << s->output_id);
 
-    struct output_buffer *curbuf = &output_buffers[current_output_buffer()];
-    int before_slot = current_output_slot();
+    timeval_t before_time = current_time();
     *addr = value;
-    int after_slot = current_output_slot();
-    struct output_buffer *otherbuf = &output_buffers[current_output_buffer()];
+    timeval_t after_time = current_time();
 
-  /* This depends on at most one slot passing during the write */
-    if (((curbuf == buf) || (otherbuf == buf)) && 
-        ((before_slot == slot) || (after_slot == slot))) {
+    if (time_in_range(time, before_time, after_time)) {
       set_output(s->output_id, s->output_val);
       success = 0;
     }
-    if (time_before(time, curbuf->start + before_slot)) {
+    if (time_before(time, before_time)) {
       success = 0;
     }
   }
@@ -96,7 +92,6 @@ int schedule_remove(struct sched_entry *s, timeval_t time) {
   }
   return success;
 }
-
 
 void deschedule_event(struct output_event *ev) {
   int desched_failure;
@@ -122,29 +117,24 @@ void invalidate_scheduled_events(struct output_event *evs, int n) {
   }
 }
 
-
-
 static int buffer_insert(struct output_buffer *obuf, struct sched_entry *en, timeval_t time) {
 
   int slot = time - obuf->start;
   int success = 1;
-
   assert((slot >= 0) && (slot < 512));
+
   uint16_t *addr = en->output_val ? &obuf->slots[slot].on_mask : 
                                     &obuf->slots[slot].off_mask;
   uint16_t value = *addr |= (1 << en->output_id);
-  struct output_buffer *curbuf = &output_buffers[current_output_buffer()];
-  int before_slot = current_output_slot();
-  *addr = value;
-  int after_slot = current_output_slot();
-  struct output_buffer *otherbuf = &output_buffers[current_output_buffer()];
 
-  /* This depends on at most one slot passing during the write */
-  if (((curbuf == obuf) || (otherbuf == obuf)) && 
-      ((before_slot == slot) || (after_slot == slot))) {
+  timeval_t before_time = current_time();
+  *addr = value;
+  timeval_t after_time = current_time();
+
+  if (time_in_range(time, before_time, after_time)) {
     set_output(en->output_id, en->output_val);
   }
-  if (time_before(time, curbuf->start + before_slot)) {
+  if (time_before(time, before_time)) {
     success = 0;
   }
   if (success && (en->time == time)) {
