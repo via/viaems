@@ -44,28 +44,28 @@ struct table injector_dead_time __attribute__((section(".configdata"))) = {
 };
 
 struct config config __attribute__((section(".configdata"))) = {
-  .num_events = 9,
+  .num_events = 16,
   .events = {
     {.type=IGNITION_EVENT, .angle=0, .output_id=12, .inverted=1},
-    {.type=IGNITION_EVENT, .angle=90, .output_id=12, .inverted=1},
-    {.type=IGNITION_EVENT, .angle=180, .output_id=12, .inverted=1},
-    {.type=IGNITION_EVENT, .angle=270, .output_id=12, .inverted=1},
+    {.type=IGNITION_EVENT, .angle=90, .output_id=13, .inverted=1},
+    {.type=IGNITION_EVENT, .angle=180, .output_id=14, .inverted=1},
+    {.type=IGNITION_EVENT, .angle=270, .output_id=15, .inverted=1},
  //   {.type=ADC_EVENT, .angle=270},
 
     {.type=IGNITION_EVENT, .angle=360, .output_id=12, .inverted=1},
-    {.type=IGNITION_EVENT, .angle=450, .output_id=12, .inverted=1},
-    {.type=IGNITION_EVENT, .angle=540, .output_id=12, .inverted=1},
-    {.type=IGNITION_EVENT, .angle=630, .output_id=12, .inverted=1},
+    {.type=IGNITION_EVENT, .angle=450, .output_id=13, .inverted=1},
+    {.type=IGNITION_EVENT, .angle=540, .output_id=14, .inverted=1},
+    {.type=IGNITION_EVENT, .angle=630, .output_id=15, .inverted=1},
 //    {.type=ADC_EVENT, .angle=630},
 
-    {.type=FUEL_EVENT, .angle=90, .output_id=13},
-//    {.type=FUEL_EVENT, .angle=90,   .output_id=6},
-//    {.type=FUEL_EVENT, .angle=90,  .output_id=7},
-//    {.type=FUEL_EVENT, .angle=90, .output_id=8},
-//    {.type=FUEL_EVENT, .angle=90, .output_id=9},
-//    {.type=FUEL_EVENT, .angle=90, .output_id=10},
-//    {.type=FUEL_EVENT, .angle=90, .output_id=11},
-//    {.type=FUEL_EVENT, .angle=90, .output_id=12},
+    {.type=FUEL_EVENT, .angle=90, .output_id=0},
+    {.type=FUEL_EVENT, .angle=90,   .output_id=1},
+    {.type=FUEL_EVENT, .angle=90,  .output_id=2},
+    {.type=FUEL_EVENT, .angle=90, .output_id=3},
+    {.type=FUEL_EVENT, .angle=450, .output_id=0},
+    {.type=FUEL_EVENT, .angle=450, .output_id=1},
+    {.type=FUEL_EVENT, .angle=450, .output_id=2},
+    {.type=FUEL_EVENT, .angle=450, .output_id=3},
   },
   .trigger = FORD_TFI,
   .decoder = {
