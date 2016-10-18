@@ -10,7 +10,6 @@ static int int_on = 1;
 static int output_state = 0;
 
 void check_platform_reset() {
-  LIST_INIT(check_get_schedule());
   curtime = 0;
 }
 
@@ -54,7 +53,7 @@ void set_output(int output, char value) {
   output_state = value;  
 }
 
-int get_output() {
+int get_output(int output) {
   return output_state;
 }
 
@@ -73,6 +72,14 @@ void usart_rx_reset() {
 }
 
 void usart_tx(char *s, unsigned short len) {
+}
+
+int current_output_buffer() {
+  return 0;
+}
+
+timeval_t init_output_thread(uint32_t *b0, uint32_t *b1, uint32_t len) {
+  return 0;
 }
 
 
