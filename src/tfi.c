@@ -43,7 +43,7 @@ int main() {
   platform_init();
   initialize_scheduler();
 
-  enable_test_trigger(FORD_TFI, 5100);
+  enable_test_trigger(FORD_TFI, 300);
 
   while (1) {                   
 

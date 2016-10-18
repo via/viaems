@@ -9,7 +9,7 @@
 #include <assert.h>
 
 #define OUTPUT_BUFFER_LEN (512)
-struct output_buffer {
+static struct output_buffer {
   timeval_t start;
   struct output_slot {
     uint16_t on_mask;   /* On little endian arch, most-significant */
@@ -146,7 +146,6 @@ static int buffer_insert(struct output_buffer *obuf, struct sched_entry *en, tim
 
 static int
 schedule_insert(struct sched_entry *en, timeval_t newtime) {
-  int desched_fail;
   struct output_buffer *buf = NULL;
   int success = 0;
 
@@ -375,5 +374,20 @@ initialize_scheduler() {
   output_buffers[1].start = output_buffers[0].start + OUTPUT_BUFFER_LEN;
 }
 
+#ifdef UNITTEST
+int introspect_buffer(timeval_t t, uint16_t *on, uint16_t *off) {
+  struct output_buffer *buf = buffer_for_time(t);
+  if (!buf) {
+    return 0;
+  }
+  if (on) {
+    *on = buf->slots[t - buf->start].on_mask;
+  }
+  if (off) {
+    *off = buf->slots[t - buf->start].off_mask;
+  }
+  return 1;
+}
 
+#endif
 

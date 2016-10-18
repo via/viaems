@@ -4,6 +4,7 @@
 #include "check_platform.h"
 
 #include <check.h>
+#include <stdio.h>
 
 static struct output_event oev;
 
@@ -36,16 +37,49 @@ START_TEST(check_schedule_ignition) {
   ck_assert_int_eq(oev.stop.time, 
     time_from_rpm_diff(config.decoder.rpm, 
     oev.angle + config.decoder.offset - 10));
-  ck_assert_int_eq(get_output(0), 0);
-  ck_assert_int_eq(get_event_timer(), oev.start.time);
+  ck_assert_int_eq(introspect_buffer(oev.stop.time, NULL, NULL), 0);
+  ck_assert_int_eq(introspect_buffer(oev.start.time, NULL, NULL), 0);
+} END_TEST
 
+START_TEST(check_schedule_ignition_to_buffer) {
+
+  uint16_t on, off;
+  /* Determine angle we need to have start time be 
+   * 0 < time < 512 slots from now */
+  timeval_t t = time_from_rpm_diff(6000, oev.angle - 10) - 
+    time_from_us(1000) - 200;
+  set_current_time(t);
+
+  schedule_ignition_event(&oev, &config.decoder, 10, 1000);
+  ck_assert(oev.start.scheduled);
+  ck_assert(oev.stop.scheduled);
+  ck_assert(!oev.start.fired);
+  ck_assert(!oev.stop.fired);
+
+  ck_assert_int_eq(oev.stop.time - oev.start.time, 
+    1000 * (TICKRATE / 1000000));
+  ck_assert_int_eq(oev.stop.time, 
+    time_from_rpm_diff(config.decoder.rpm, 
+    oev.angle + config.decoder.offset - 10));
+
+  ck_assert_int_eq(introspect_buffer(oev.start.time, &on, &off), 1);
+  ck_assert_int_eq(on, 1);
+  ck_assert_int_eq(off, 0);
+  ck_assert_int_eq(introspect_buffer(oev.stop.time, NULL, NULL), 0);
 } END_TEST
 
 START_TEST(check_schedule_ignition_reschedule_completely_later) {
 
+  timeval_t old_start, old_stop;
+
   set_current_time(time_from_rpm_diff(6000, 270));
   schedule_ignition_event(&oev, &config.decoder, 10, 1000);
+
+  set_current_time(oev.start.time - 100);
+
   /* Reschedule 10 degrees later */
+  old_start = oev.start.time;
+  old_stop = oev.stop.time;
   schedule_ignition_event(&oev, &config.decoder, 0, 1000);
 
   ck_assert(oev.start.scheduled);
@@ -58,8 +92,10 @@ START_TEST(check_schedule_ignition_reschedule_completely_later) {
   ck_assert_int_eq(oev.stop.time, 
     time_from_rpm_diff(config.decoder.rpm, 
     oev.angle + config.decoder.offset));
-  ck_assert_int_eq(get_output(0), 0);
-  ck_assert_int_eq(get_event_timer(), oev.start.time);
+
+  /* Make sure it was descheduled */
+  ck_assert_int_eq(introspect_buffer(old_start, NULL, NULL), 0);
+  ck_assert_int_eq(introspect_buffer(old_stop, NULL, NULL), 0);
 
 } END_TEST
 
@@ -80,8 +116,6 @@ START_TEST(check_schedule_ignition_reschedule_completely_earlier_still_future) {
   ck_assert_int_eq(oev.stop.time, 
     time_from_rpm_diff(config.decoder.rpm, 
     oev.angle + config.decoder.offset - 50));
-  ck_assert_int_eq(get_output(0), 0);
-  ck_assert_int_eq(get_event_timer(), oev.start.time);
 
 } END_TEST
 
@@ -90,19 +124,14 @@ START_TEST(check_schedule_ignition_reschedule_onto_now) {
   set_current_time(time_from_rpm_diff(6000, 340));
   schedule_ignition_event(&oev, &config.decoder, 15, 1000);
 
+  /* Should have failed to schedule */
   ck_assert(!oev.start.scheduled);
-  ck_assert(oev.stop.scheduled);
-  ck_assert(oev.start.fired);
+  ck_assert(!oev.stop.scheduled);
+  ck_assert(!oev.start.fired);
   ck_assert(!oev.stop.fired);
 
-  ck_assert((oev.stop.time - oev.start.time) <
-    (1000 * (TICKRATE / 1000000)));
-  ck_assert_int_eq(oev.stop.time, 
-    time_from_rpm_diff(config.decoder.rpm, 
-    oev.angle + config.decoder.offset - 15));
-  ck_assert_int_eq(oev.start.time, current_time());
-  ck_assert_int_eq(get_output(0), 1);
-  ck_assert_int_eq(get_event_timer(), oev.stop.time);
+  ck_assert_int_eq(oev.start.time, 0);
+  ck_assert_int_eq(oev.stop.time, 0);
 
 } END_TEST
 
@@ -116,6 +145,8 @@ START_TEST(check_schedule_ignition_reschedule_too_soon) {
 
   /* Emulate firing of the event */
 
+  set_current_time(oev.stop.time + 1);
+
   /* Reschedule 10* later */
   schedule_ignition_event(&oev, &config.decoder, 0, 1000);
 
@@ -125,7 +156,6 @@ START_TEST(check_schedule_ignition_reschedule_too_soon) {
   ck_assert_int_eq(oev.start.time, prev_start);
 
   ck_assert_int_eq(get_output(0), 0);
-  ck_assert_int_eq(get_event_timer(), 0);
 
 } END_TEST
 
@@ -252,6 +282,7 @@ TCase *setup_scheduler_tests() {
   TCase *scheduler_tests = tcase_create("scheduler");
   tcase_add_checked_fixture(scheduler_tests, check_scheduler_setup, NULL);
   tcase_add_test(scheduler_tests, check_schedule_ignition);
+  tcase_add_test(scheduler_tests, check_schedule_ignition_to_buffer);
   tcase_add_test(scheduler_tests, check_schedule_ignition_reschedule_completely_later);
   tcase_add_test(scheduler_tests, check_schedule_ignition_reschedule_completely_earlier_still_future);
   tcase_add_test(scheduler_tests, check_schedule_ignition_reschedule_onto_now);

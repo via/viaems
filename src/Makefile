@@ -5,7 +5,7 @@ CFLAGS!=pkg-config --cflags check
 LDFLAGS!=pkg-config --libs check
 CC=gcc
 CFLAGS+= -I. -Itest -std=c99 -Wall -O0 -g
-CFLAGS+= -D TICKRATE=100000000 -DUNITTEST
+CFLAGS+= -D TICKRATE=4000000 -DUNITTEST
 
 .else
 .if ${PLATFORM} == "stm32f4-discovery"

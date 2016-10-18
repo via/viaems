@@ -60,7 +60,9 @@ void scheduler_buffer_swap();
 int event_is_active(struct output_event *);
 int event_has_fired(struct output_event *);
 void invalidate_scheduled_events(struct output_event *, int);
+
 #ifdef UNITTEST
+int introspect_buffer(timeval_t t, uint16_t *on, uint16_t *off);
 #endif
 
 #endif 
