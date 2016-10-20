@@ -32,7 +32,7 @@ void set_current_time(timeval_t t) {
   curtime = t;
 
   /* Swap buffers until we're at time t */
-  while (c < t) {
+  while (c < ((t / 512) * 512)) {
     current_buffer = (current_buffer + 1) % 2;
     scheduler_buffer_swap();
     c += 512;

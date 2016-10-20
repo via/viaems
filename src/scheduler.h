@@ -62,7 +62,8 @@ int event_has_fired(struct output_event *);
 void invalidate_scheduled_events(struct output_event *, int);
 
 #ifdef UNITTEST
-int introspect_buffer(timeval_t t, uint16_t *on, uint16_t *off);
+#include <check.h>
+void check_add_buffer_tests(TCase *);
 #endif
 
 #endif 

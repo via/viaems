@@ -129,7 +129,6 @@ START_TEST(check_sensor_process_freq) {
 
   si.raw_value = 1000.0;
   sensor_process_freq(&si); 
-  printf("%f\n", si.processed_value);
   ck_assert(value_within(1, si.processed_value, 0.976562));
 
   si.raw_value = 0.0;
