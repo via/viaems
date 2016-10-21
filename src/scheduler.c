@@ -226,7 +226,7 @@ void schedule_output_event_safely(struct output_event *ev,
     if (success && (oldstart != newstart)) {
       schedule_remove(&ev->start, oldstart);
     }
-    if (success || preserve_duration) {
+    if (time_before(ev->start.time, newstop) || preserve_duration) {
       reschedule_end(&ev->stop, oldstop, newstop);
     }
   }
