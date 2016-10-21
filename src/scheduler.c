@@ -17,6 +17,9 @@ static struct output_buffer {
   } __attribute__((packed)) slots[OUTPUT_BUFFER_LEN];
 } output_buffers[2];
 
+#define MAX_CALLBACKS 32
+struct timed_callback *callbacks[MAX_CALLBACKS];
+static int n_callbacks = 0;
 
 static int sched_entry_has_fired(struct sched_entry *en) {
   int ret = 0;
@@ -223,9 +226,9 @@ void schedule_output_event_safely(struct output_event *ev,
     if (success && (oldstart != newstart)) {
       schedule_remove(&ev->start, oldstart);
     }
-//    if (success || preserve_duration) {
+    if (success || preserve_duration) {
       reschedule_end(&ev->stop, oldstop, newstop);
- //   }
+    }
   }
   else {
     success = schedule_remove(&ev->start, oldstart);
@@ -310,23 +313,97 @@ schedule_fuel_event(struct output_event *ev,
 int
 schedule_adc_event(struct output_event *ev, struct decoder *d) {
   int firing_angle;
-  timeval_t stop_time;
-  timeval_t curtime;
+  timeval_t collect_time;
 
   firing_angle = clamp_angle(ev->angle - d->last_trigger_angle + 
     d->offset, 720);
 
-  stop_time = d->last_trigger_time + time_from_rpm_diff(d->rpm, firing_angle);
+  collect_time = d->last_trigger_time + time_from_rpm_diff(d->rpm, firing_angle);
 
-  if (time_diff(current_time(), ev->stop.time) < 
-      time_from_rpm_diff(d->rpm, 180)) {
-    return 0;
+  ev->callback.callback = adc_gather;
+
+  schedule_callback(&ev->callback, collect_time);
+
+  return 1;
+}
+
+static void callback_remove(struct timed_callback *tcb) {
+  int i;
+  int tcb_pos;
+  for (i = 0; i < n_callbacks; ++i) {
+    if (tcb == callbacks[i]) {
+      break;
+    }
+  }
+  tcb_pos = i;
+  assert(tcb_pos < n_callbacks);
+
+
+  for (i = tcb_pos; i < n_callbacks - 1; ++i) {
+    callbacks[i] = callbacks[i + 1];
+  }
+  callbacks[n_callbacks - 1] = NULL;
+  n_callbacks--;
+
+  tcb->scheduled = 0;
+}
+
+static void callback_insert(struct timed_callback *tcb) {
+
+  int i;
+  int tcb_pos;
+  for (i = 0; i < n_callbacks; ++i) {
+    if (time_before(tcb->time, callbacks[i]->time)) {
+      break;
+    }
+  }
+  tcb_pos = i;
+
+  for (i = n_callbacks; i > tcb_pos; --i) {
+    callbacks[i] = callbacks[i - 1];
   }
 
-  ev->stop.time = stop_time;
-  ev->stop.callback = adc_gather;
-  curtime = current_time();
-  return 1;
+  callbacks[tcb_pos] = tcb;
+  n_callbacks++;
+  tcb->scheduled = 1;
+}
+
+int schedule_callback(struct timed_callback *tcb, timeval_t time) {
+
+  disable_interrupts();
+  if (tcb->scheduled) {
+    callback_remove(tcb);
+  }
+
+  tcb->time = time;
+  callback_insert(tcb);
+
+  if (callbacks[0]->time != get_event_timer()) {
+    set_event_timer(callbacks[0]->time);
+
+    if (time_before(callbacks[0]->time, current_time())) {
+      /* Handle now */
+      scheduler_callback_timer_execute();
+    }
+  }
+  enable_interrupts();
+
+  return 0;
+}
+
+void scheduler_callback_timer_execute() {
+  while (n_callbacks && time_before(callbacks[0]->time, current_time())) {
+    if (callbacks[0]->callback) {
+      callbacks[0]->callback(callbacks[0]->data);
+    }
+    clear_event_timer();
+    callback_remove(callbacks[0]);
+    if (!n_callbacks) {
+      disable_event_timer();
+    } else {
+      set_event_timer(callbacks[0]->time);
+    }
+  }
 }
 
 void scheduler_buffer_swap() {
@@ -556,6 +633,112 @@ START_TEST(check_buffer_insert_active_earlier_preserve_duration) {
 
 } END_TEST
 
+START_TEST(check_callback_insert) {
+
+  struct timed_callback tc1 = {
+    .time = 50
+  };
+  struct timed_callback tc2 = {
+    .time = 100
+  };
+  struct timed_callback tc3 = {
+    .time = 150
+  };
+
+  callback_insert(&tc2);
+  ck_assert_int_eq(tc2.scheduled, 1);
+  ck_assert_int_eq(n_callbacks, 1);
+  ck_assert(callbacks[0] == &tc2);
+
+  callback_insert(&tc1);
+  ck_assert_int_eq(n_callbacks, 2);
+  ck_assert(callbacks[0] == &tc1);
+  ck_assert(callbacks[1] == &tc2);
+
+  callback_insert(&tc3);
+  ck_assert_int_eq(n_callbacks, 3);
+  ck_assert(callbacks[0] == &tc1);
+  ck_assert(callbacks[1] == &tc2);
+  ck_assert(callbacks[2] == &tc3);
+
+} END_TEST
+
+START_TEST(check_callback_remove) {
+
+  struct timed_callback tc1 = {
+    .time = 50
+  };
+  struct timed_callback tc2 = {
+    .time = 100
+  };
+  struct timed_callback tc3 = {
+    .time = 150
+  };
+
+  callback_insert(&tc1);
+  callback_insert(&tc2);
+  callback_insert(&tc3);
+  ck_assert_int_eq(n_callbacks, 3);
+
+  callback_remove(&tc2);
+  ck_assert_int_eq(n_callbacks, 2);
+  ck_assert_int_eq(tc2.scheduled, 0);
+  ck_assert(callbacks[0] == &tc1);
+  ck_assert(callbacks[1] == &tc3);
+
+  callback_remove(&tc3);
+  ck_assert_int_eq(n_callbacks, 1);
+  ck_assert(callbacks[0] == &tc1);
+  
+  callback_remove(&tc1);
+  ck_assert_int_eq(n_callbacks, 0);
+
+} END_TEST
+
+START_TEST(check_callback_execute) {
+
+  int count = 0;
+
+  void _increase_count(void *_c) {
+    int *c = (int *)_c;
+    (*c)++;
+  }
+
+  struct timed_callback tc1 = {
+    .time = 95,
+    .callback = _increase_count,
+    .data = &count,
+  };
+  struct timed_callback tc2 = {
+    .time = 100,
+    .callback = _increase_count,
+    .data = &count,
+  };
+  struct timed_callback tc3 = {
+    .time = 150,
+    .callback = _increase_count,
+    .data = &count,
+  };
+
+  callback_insert(&tc1);
+  callback_insert(&tc2);
+  callback_insert(&tc3);
+
+  set_current_time(101);
+  scheduler_callback_timer_execute();
+
+  ck_assert_int_eq(count, 2);
+  ck_assert_int_eq(n_callbacks, 1);
+  ck_assert(callbacks[0] == &tc3);
+
+  set_current_time(151);
+
+  scheduler_callback_timer_execute();
+  ck_assert_int_eq(count, 3);
+  ck_assert_int_eq(n_callbacks, 0);
+
+} END_TEST
+
 
 void check_add_buffer_tests(TCase *tc) {
   tcase_add_test(tc, check_buffer_insert_totally_after);
@@ -570,6 +753,10 @@ void check_add_buffer_tests(TCase *tc) {
   tcase_add_test(tc, check_buffer_insert_active_earlier);
   tcase_add_test(tc, check_buffer_insert_active_earlier_not_yet_started);
   tcase_add_test(tc, check_buffer_insert_active_earlier_preserve_duration);
+
+  tcase_add_test(tc, check_callback_insert);
+  tcase_add_test(tc, check_callback_remove);
+  tcase_add_test(tc, check_callback_execute);
 }
 #endif
 

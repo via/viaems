@@ -536,7 +536,7 @@ void adc_gather() {
 void tim2_isr() {
   if (timer_get_flag(TIM2, TIM_SR_CC1IF)) {
     timer_clear_flag(TIM2, TIM_SR_CC1IF);
-    //scheduler_execute();
+    scheduler_callback_timer_execute();
   }
   if (timer_get_flag(TIM2, TIM_SR_CC2IF)) {
     timer_clear_flag(TIM2, TIM_SR_CC2IF);

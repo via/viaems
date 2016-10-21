@@ -6,7 +6,7 @@
 
 #include <stdlib.h>
 
-static struct sched_entry expire_event;
+static struct timed_callback expire_event;
 
 static void invalidate_decoder() {
   config.decoder.valid = 0;
@@ -21,10 +21,7 @@ static void handle_decoder_expire() {
 }
 
 static void set_expire_event(timeval_t t) {
-  disable_interrupts();
-  expire_event.time = t;
-//  schedule_insert(current_time(), &expire_event);
-  enable_interrupts();
+  schedule_callback(&expire_event, t);
 }
 
 static void push_time(struct decoder *d, timeval_t t) {
