@@ -145,10 +145,7 @@ START_TEST(check_invalidate_events_when_active) {
  
   invalidate_scheduled_events(&oev, 1);
 
-  ck_assert(!oev.start.scheduled);
   ck_assert(oev.stop.scheduled);
-  ck_assert(oev.start.fired);
-  ck_assert(!oev.stop.fired);
 
 } END_TEST
 
