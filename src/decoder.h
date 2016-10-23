@@ -34,7 +34,7 @@ struct decoder {
 
   /* Safe, only handled in main loop */
   decoder_func decode;
-  unsigned char valid;
+  volatile unsigned char valid;
   unsigned int rpm;
   timeval_t last_trigger_time;
   degrees_t last_trigger_angle;

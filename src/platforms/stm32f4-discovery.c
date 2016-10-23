@@ -152,21 +152,21 @@ static void platform_init_eventtimer() {
   timer_set_oc_slow_mode(TIM2, TIM_OC1);
   timer_set_oc_mode(TIM2, TIM_OC1, TIM_OCM_FROZEN);
   /* Setup input captures for CH2-4 Triggers */
-  gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO3);
+  gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_PULLDOWN, GPIO3);
   gpio_set_af(GPIOB, GPIO_AF1, GPIO3);
   timer_ic_set_input(TIM2, TIM_IC2, TIM_IC_IN_TI2);
   timer_ic_set_filter(TIM2, TIM_IC2, TIM_IC_CK_INT_N_2);
   timer_ic_set_polarity(TIM2, TIM_IC2, TIM_IC_FALLING);
   timer_ic_enable(TIM2, TIM_IC2);
 
-  gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO10);
+  gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_PULLDOWN, GPIO10);
   gpio_set_af(GPIOB, GPIO_AF1, GPIO10);
   timer_ic_set_input(TIM2, TIM_IC3, TIM_IC_IN_TI3);
   timer_ic_set_filter(TIM2, TIM_IC3, TIM_IC_CK_INT_N_2);
   timer_ic_set_polarity(TIM2, TIM_IC3, TIM_IC_FALLING);
   timer_ic_enable(TIM2, TIM_IC3);
 
-  gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO11);
+  gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_PULLDOWN, GPIO11);
   gpio_set_af(GPIOB, GPIO_AF1, GPIO11);
   timer_ic_set_input(TIM2, TIM_IC4, TIM_IC_IN_TI4);
   timer_ic_set_filter(TIM2, TIM_IC4, TIM_IC_CK_INT_N_2);
@@ -235,6 +235,7 @@ timeval_t init_output_thread(uint32_t *buf0, uint32_t *buf1, uint32_t len) {
   timer_enable_counter(TIM8);
 
   nvic_enable_irq(NVIC_DMA2_STREAM1_IRQ);
+  nvic_set_priority(NVIC_DMA2_STREAM1_IRQ, 32);
 
   return start;
 }
@@ -327,7 +328,7 @@ void set_pwm(int output, float value) {
 
 static void platform_init_scheduled_outputs() {
   gpio_clear(GPIOD, 0xFFFF);
-  int i;
+  unsigned int i;
   for (i = 0; i < config.num_events; ++i) {
     if (config.events[i].inverted && config.events[i].type) {
       set_output(config.events[i].output_id, 1);

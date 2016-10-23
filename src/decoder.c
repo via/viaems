@@ -12,6 +12,7 @@ static void invalidate_decoder() {
   config.decoder.valid = 0;
   config.decoder.state = DECODER_NOSYNC;
   config.decoder.current_triggers_rpm = 0;
+  config.decoder.triggers_since_last_sync = 0;
   invalidate_scheduled_events(config.events, config.num_events);
 }
 

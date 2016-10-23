@@ -97,9 +97,9 @@ static int schedule_remove(struct sched_entry *s, timeval_t time) {
 }
 
 void deschedule_event(struct output_event *ev) {
-  int desched_failure;
-  desched_failure = schedule_remove(&ev->start, ev->start.time);
-  if (!desched_failure) {
+  int success;
+  success = schedule_remove(&ev->start, ev->start.time);
+  if (success) {
     ev->start.fired = 0;
     schedule_remove(&ev->stop, ev->stop.time);
     ev->stop.fired = 0;
@@ -110,9 +110,8 @@ void invalidate_scheduled_events(struct output_event *evs, int n) {
   for (int i = 0; i < n; ++i) {
     switch(evs[i].type) {
       case IGNITION_EVENT:
-        if (!event_is_active(&evs[i])) {
-          deschedule_event(&evs[i]);
-        }
+      case FUEL_EVENT:
+        deschedule_event(&evs[i]);
         break;
       default:
         break;
@@ -393,10 +392,10 @@ int schedule_callback(struct timed_callback *tcb, timeval_t time) {
 
 void scheduler_callback_timer_execute() {
   while (n_callbacks && time_before(callbacks[0]->time, current_time())) {
+    clear_event_timer();
     if (callbacks[0]->callback) {
       callbacks[0]->callback(callbacks[0]->data);
     }
-    clear_event_timer();
     callback_remove(callbacks[0]);
     if (!n_callbacks) {
       disable_event_timer();
