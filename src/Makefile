@@ -20,11 +20,10 @@ LDFLAGS+= -lopencm3_stm32f4 -lc -lnosys -flto
 LDFLAGS+= -T platforms/stm32f4-discovery.ld -nostartfiles
 all: tfi
 
-.elif ${PLATFORM} == "hosted"
+.elif ${PLATFORM} == "hosted2"
 CC=gcc
-CFLAGS+= -I. -std=c99 -Wall -O0 -g
-CFLAGS+= -D TICKRATE=1000000000 -D_POSIX_C_SOURCE=199309L -DTIMER64 -D_GNU_SOURCE
-LDFLAGS+= -lrt
+CFLAGS+= -I. -std=c99 -Wall -O2 -ggdb -lrt -DSUPPORTS_POSIX_TIMERS
+CFLAGS+= -D TICKRATE=1000000 -D_POSIX_C_SOURCE=199309L -D_GNU_SOURCE
 all: tfi
 .endif
 .endif
@@ -51,3 +50,4 @@ clean:
 	-rm check
 	-rm *.hex
 	-rm *.gcov *.gcno *.gcda
+	-rm tfi.sock

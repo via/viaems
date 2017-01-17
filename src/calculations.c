@@ -57,7 +57,7 @@ void calculate_fueling() {
   if (config.ve) {
     ve = interpolate_table_twoaxis(config.ve, config.decoder.rpm, map);
   } else {
-    ve = 51.0;
+    ve = 100.0;
   }
 
   if (config.commanded_lambda) {

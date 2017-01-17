@@ -484,7 +484,8 @@ static void platform_init_usart() {
   usart_rx_reset();
 }
 
-void platform_init() {
+void platform_init(int argv __attribute((unused)), 
+    char *argv[] __attribute((unused))) {
 
   /* 168 Mhz clock */
   rcc_clock_setup_hse_3v3(&rcc_hse_8mhz_3v3[RCC_CLOCK_3V3_168MHZ]);
