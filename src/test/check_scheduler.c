@@ -118,6 +118,24 @@ START_TEST(check_schedule_ignition_reschedule_active_later) {
 
 } END_TEST
 
+/* Special case where rescheduling before last trigger is
+ * reinterpretted as future */
+START_TEST(check_schedule_ignition_reschedule_active_too_early) {
+  oev.angle = 40;
+  set_current_time(time_from_rpm_diff(6000, 0));
+  schedule_ignition_event(&oev, &config.decoder, 0, 1000);
+  /* Emulate firing of the event */
+  set_current_time(oev.start.time + 5);
+
+  timeval_t old_stop = oev.stop.time;
+  /* Reschedule 45* earlier, now in past*/
+  schedule_ignition_event(&oev, &config.decoder, 45, 1000);
+
+  ck_assert(oev.stop.scheduled);
+  ck_assert_int_eq(oev.stop.time, old_stop);
+
+} END_TEST
+
 START_TEST(check_event_is_active) {
   ck_assert(!event_is_active(&oev));
 
@@ -162,6 +180,7 @@ TCase *setup_scheduler_tests() {
   tcase_add_test(scheduler_tests, check_schedule_ignition_reschedule_completely_earlier_still_future);
   tcase_add_test(scheduler_tests, check_schedule_ignition_reschedule_onto_now);
   tcase_add_test(scheduler_tests, check_schedule_ignition_reschedule_active_later);
+  tcase_add_test(scheduler_tests, check_schedule_ignition_reschedule_active_too_early);
   tcase_add_test(scheduler_tests, check_event_is_active);
   tcase_add_test(scheduler_tests, check_event_has_fired);
   tcase_add_test(scheduler_tests, check_invalidate_events_when_active);

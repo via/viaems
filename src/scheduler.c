@@ -269,6 +269,15 @@ schedule_ignition_event(struct output_event *ev,
     ev->stop.scheduled = 0;
   }
 
+  /* Don't let the stop time move more than 90* 
+   * forward once it is scheduled */
+  if (ev->stop.scheduled &&
+      time_before(ev->stop.time, stop_time) &&
+      ((time_diff(stop_time, ev->stop.time) > 
+       time_from_rpm_diff(d->rpm, 90)))) {
+    return 0;
+  }
+
   if (time_diff(start_time, ev->stop.time) < 
       time_from_us(config.ignition.min_fire_time_us)) {
     /* Too little time since last fire */
