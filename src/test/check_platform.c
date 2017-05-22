@@ -12,6 +12,7 @@ static int current_buffer = 0;
 
 void check_platform_reset() {
   curtime = 0;
+  current_buffer = 0;
   initialize_scheduler();
 }
 

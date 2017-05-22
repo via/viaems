@@ -63,46 +63,114 @@ static struct output_buffer *buffer_for_time(timeval_t time) {
   return buf;
 }
 
-static int schedule_remove(struct sched_entry *s, timeval_t time) {
-  int success = 1;
+/* Modifies the output buffer to not have the event, returns 0 if event is in the 
+ * past. 
+ * 
+ * Return of 1 means event has not fired. 0 means it couldn't be removed in
+ * time.
+ *
+ * Does no bookkeeping but can set fired flag */
+static int sched_entry_disable(const struct sched_entry *en, timeval_t time) {
+
+  /* before either buffer starts */
+  if (time_before(time, output_buffers[current_output_buffer()].start)) {
+    return 0;
+  }
+
   struct output_buffer *buf = buffer_for_time(time);
 
-  if (buf) {
-    int slot = time - buf->start;
-    uint16_t *addr = s->output_val ? &buf->slots[slot].on_mask : 
-                                     &buf->slots[slot].off_mask;
-    uint16_t value = *addr &= ~(1 << s->output_id);
+  /* In the future, bail out successfully */
+  if (!buf) {
+    return 1;
+  }
 
-    timeval_t before_time = current_time();
-    *addr = value;
-    timeval_t after_time = current_time();
+  int slot = time - buf->start;
+  assert((slot >= 0) && (slot < 512));
 
-    if (time_in_range(time, before_time, after_time)) {
-      set_output(s->output_id, s->output_val);
-      success = 0;
-    }
-    if (time_before(time, before_time)) {
-      success = 0;
-    }
+  uint16_t *addr = en->output_val ? &buf->slots[slot].on_mask : 
+                                    &buf->slots[slot].off_mask;
+  assert(*addr & (1 << en->output_id));
+  uint16_t value = *addr & ~(1 << en->output_id);
+
+  timeval_t before_time = current_time();
+  *addr = value;
+  timeval_t after_time = current_time();
+
+  if (time_in_range(time, before_time, after_time)) {
+    set_output(en->output_id, en->output_val);
+    return 0;
   }
-  if (s->fired) {
-    success = 0;
+  if (time_before(time, before_time) || en->fired) {
+    return 0;
   }
-  if (time == s->time) {
-    s->scheduled = 0;
-    s->buffer = NULL;
-    s->fired = s->fired || !success;
+
+  return 1;
+}
+
+/* Modifies the output buffer to have the event, returns 0 if event is in the 
+ * past. 
+ *
+ * Return of 0 means the event did not fire.
+ *
+ * Does no bookkeeping of sched_entry */
+static int sched_entry_enable(const struct sched_entry *en, timeval_t time) {
+
+  /* before either buffer starts */
+  if (time_before(time, output_buffers[current_output_buffer()].start)) {
+    return 0;
   }
-  return success;
+
+  struct output_buffer *buf = buffer_for_time(time);
+
+  /* In the future, bail out successfully */
+  if (!buf) {
+    return 1;
+  }
+
+  int slot = time - buf->start;
+  assert((slot >= 0) && (slot < 512));
+
+  uint16_t *addr = en->output_val ? &buf->slots[slot].on_mask : 
+                                    &buf->slots[slot].off_mask;
+  assert(!(*addr & (1 << en->output_id)));
+  uint16_t value = *addr | (1 << en->output_id);
+
+  timeval_t before_time = current_time();
+  *addr = value;
+  timeval_t after_time = current_time();
+
+  if (time_in_range(time, before_time, after_time)) {
+    set_output(en->output_id, en->output_val);
+  }
+
+  if (time_before(time, before_time)) {
+    return 0;
+  }
+
+  return 1;
+}
+
+static void sched_entry_update(struct sched_entry *en, timeval_t time) {
+  en->buffer = buffer_for_time(time);
+  en->scheduled = 1;
+  en->time = time;
+}
+
+static void sched_entry_off(struct sched_entry *en) {
+  en->scheduled = 0;
+  en->buffer = NULL;
 }
 
 void deschedule_event(struct output_event *ev) {
   int success;
-  success = schedule_remove(&ev->start, ev->start.time);
+  success = sched_entry_disable(&ev->start, ev->start.time);
   if (success) {
     ev->start.fired = 0;
-    schedule_remove(&ev->stop, ev->stop.time);
+    sched_entry_disable(&ev->stop, ev->stop.time);
     ev->stop.fired = 0;
+
+    sched_entry_off(&ev->start);
+    sched_entry_off(&ev->stop);
   }
 }
 
@@ -119,65 +187,19 @@ void invalidate_scheduled_events(struct output_event *evs, int n) {
   }
 }
 
-static int buffer_insert(struct output_buffer *obuf, struct sched_entry *en, timeval_t time) {
-
-  int slot = time - obuf->start;
-  int success = 1;
-  assert((slot >= 0) && (slot < 512));
-
-  uint16_t *addr = en->output_val ? &obuf->slots[slot].on_mask : 
-                                    &obuf->slots[slot].off_mask;
-  uint16_t value = *addr |= (1 << en->output_id);
-
-  timeval_t before_time = current_time();
-  *addr = value;
-  timeval_t after_time = current_time();
-
-  if (time_in_range(time, before_time, after_time)) {
-    set_output(en->output_id, en->output_val);
-  }
-  if (time_before(time, before_time)) {
-    success = 0;
-  }
-  if (success && (en->time == time)) {
-    en->buffer = obuf;
-  }
-  return success;
-}
-
-
-static int
-schedule_insert(struct sched_entry *en, timeval_t newtime) {
-  struct output_buffer *buf = NULL;
-  int success = 0;
-
-
-  buf = buffer_for_time(newtime);
-  if (buf) {
-    success = buffer_insert(buf, en, newtime);
-  } else {
-    success = !time_before(newtime, output_buffers[current_output_buffer()].start);
-  }
-  if (en->time == newtime) {
-    en->scheduled = success;
-  }
-
-  return success;
-}
-
-
 static void reschedule_end(struct sched_entry *s, timeval_t old, timeval_t new) {
   if (new == old) return;
 
   int success;
-  s->time = new;
-  success = schedule_insert(s, new);
+  success = sched_entry_enable(s, new);
   if (success) {
-    success = schedule_remove(s, old);
+    success = sched_entry_disable(s, old);
     if (!success) {
-      s->time = old;
-      schedule_remove(s, new);
-    } 
+      sched_entry_disable(s, new);
+      sched_entry_update(s, old);
+    } else {
+      sched_entry_update(s, new);
+    }
   }
 }
 
@@ -202,42 +224,48 @@ void schedule_output_event_safely(struct output_event *ev,
   if (!ev->start.scheduled && !ev->stop.scheduled) {
     disable_interrupts();
     ev->stop.time = newstop;
-    if (schedule_insert(&ev->stop, newstop)) {
-      ev->start.time = newstart;
-      if (!schedule_insert(&ev->start, newstart)) {
-        schedule_remove(&ev->stop, newstop);
-      }
+    if (sched_entry_enable(&ev->stop, newstop)) {
+        sched_entry_update(&ev->stop, newstop);
+        if (sched_entry_enable(&ev->start, newstart)) {
+          sched_entry_update(&ev->start, newstart);
+        } else {
+          sched_entry_off(&ev->start);
+          sched_entry_disable(&ev->stop, newstart);
+          sched_entry_off(&ev->stop);
+        }
     }
     enable_interrupts();
     return;
   }
 
   disable_interrupts();
-  if ((oldstart == newstart) || time_before(newstart, oldstart)) {
-    ev->start.time = newstart;
-    success = schedule_insert(&ev->start, newstart);
+  if (oldstart == newstart) {
+    if (time_before(ev->start.time, newstop) || preserve_duration) {
+      reschedule_end(&ev->stop, oldstop, newstop);
+    }
+  } else if (time_before(newstart, oldstart)) {
+    success = sched_entry_enable(&ev->start, newstart);
     if (!success && preserve_duration) {
       newstop += oldstart - newstart;
     }
-    if (!success) {
-      ev->start.time = oldstart;
-    }
-    if (success && (oldstart != newstart)) {
-      schedule_remove(&ev->start, oldstart);
+    if (success) {
+      sched_entry_disable(&ev->start, oldstart);
+      sched_entry_update(&ev->start, newstart);
+    } else {
+      sched_entry_disable(&ev->start, newstart);
     }
     if (time_before(ev->start.time, newstop) || preserve_duration) {
       reschedule_end(&ev->stop, oldstop, newstop);
     }
-  }
-  else {
-    success = schedule_remove(&ev->start, oldstart);
+  } else {
+    success = sched_entry_disable(&ev->start, oldstart);
     if (!success && preserve_duration) {
       newstop += oldstart - newstart;
     }
     reschedule_end(&ev->stop, oldstop, newstop);
     if (success) {
-      ev->start.time = newstart;
-      schedule_insert(&ev->start, newstart);
+      sched_entry_enable(&ev->start, newstart);
+      sched_entry_update(&ev->start, newstart);
     }
   }
 
@@ -418,10 +446,6 @@ void scheduler_buffer_swap() {
   int newbuf = (current_output_buffer() + 1) % 2;
   struct output_buffer *obuf = &output_buffers[newbuf];
 
-  memset(obuf->slots, 0, sizeof(struct output_slot) * OUTPUT_BUFFER_LEN);
-  obuf->start += 2 * OUTPUT_BUFFER_LEN;  
-
-  timeval_t end = obuf->start + OUTPUT_BUFFER_LEN - 1;
 
   struct output_event *oev;
   int i;
@@ -437,15 +461,24 @@ void scheduler_buffer_swap() {
       oev->stop.buffer = NULL;
       oev->stop.fired = 1;
     }
+  }
 
+  memset(obuf->slots, 0, sizeof(struct output_slot) * OUTPUT_BUFFER_LEN);
+  obuf->start += 2 * OUTPUT_BUFFER_LEN;  
+  timeval_t end = obuf->start + OUTPUT_BUFFER_LEN - 1;
+
+  for (i = 0; i < MAX_EVENTS; ++i) {
+    oev = &config.events[i];
     /* Is this an event that is scheduled for this time window? */
     if (oev->start.scheduled && 
         time_in_range(oev->start.time, obuf->start, end)) {
-      buffer_insert(obuf, &oev->start, oev->start.time);
+      sched_entry_enable(&oev->start, oev->start.time);
+      sched_entry_update(&oev->start, oev->start.time);
     }
     if (oev->stop.scheduled && 
         time_in_range(oev->stop.time, obuf->start, end)) {
-      buffer_insert(obuf, &oev->stop, oev->stop.time);
+      sched_entry_enable(&oev->stop, oev->stop.time);
+      sched_entry_update(&oev->stop, oev->stop.time);
     }
   }
 }
@@ -459,6 +492,8 @@ initialize_scheduler() {
       (uint32_t *)output_buffers[1].slots,
       OUTPUT_BUFFER_LEN);
   output_buffers[1].start = output_buffers[0].start + OUTPUT_BUFFER_LEN;
+
+  n_callbacks = 0;
 }
 
 #ifdef UNITTEST
@@ -475,12 +510,16 @@ START_TEST(check_buffer_insert_totally_after) {
   ck_assert_int_eq(output_buffers[0].slots[40].off_mask, 0);
   ck_assert_int_eq(output_buffers[0].slots[80].on_mask, 1);
   ck_assert_int_eq(output_buffers[0].slots[100].off_mask, 1);
+  ck_assert_int_eq(oev.start.scheduled, 1);
+  ck_assert_int_eq(oev.stop.scheduled, 1);
 
   schedule_output_event_safely(&oev, 100, 150, 1); 
   ck_assert_int_eq(output_buffers[0].slots[80].on_mask, 0);
   ck_assert_int_eq(output_buffers[0].slots[100].off_mask, 0);
   ck_assert_int_eq(output_buffers[0].slots[100].on_mask, 1);
   ck_assert_int_eq(output_buffers[0].slots[150].off_mask, 1);
+  ck_assert_int_eq(oev.start.scheduled, 1);
+  ck_assert_int_eq(oev.stop.scheduled, 1);
 } END_TEST
 
 START_TEST(check_buffer_insert_totally_before) {
@@ -493,12 +532,16 @@ START_TEST(check_buffer_insert_totally_before) {
   ck_assert_int_eq(output_buffers[0].slots[100].off_mask, 0);
   ck_assert_int_eq(output_buffers[0].slots[20].on_mask, 1);
   ck_assert_int_eq(output_buffers[0].slots[40].off_mask, 1);
+  ck_assert_int_eq(oev.start.scheduled, 1);
+  ck_assert_int_eq(oev.stop.scheduled, 1);
 
   schedule_output_event_safely(&oev, 10, 15, 1); 
   ck_assert_int_eq(output_buffers[0].slots[20].on_mask, 0);
   ck_assert_int_eq(output_buffers[0].slots[40].off_mask, 0);
   ck_assert_int_eq(output_buffers[0].slots[10].on_mask, 1);
   ck_assert_int_eq(output_buffers[0].slots[15].off_mask, 1);
+  ck_assert_int_eq(oev.start.scheduled, 1);
+  ck_assert_int_eq(oev.stop.scheduled, 1);
 } END_TEST
 
 START_TEST(check_buffer_insert_totally_inside) {
@@ -511,16 +554,22 @@ START_TEST(check_buffer_insert_totally_inside) {
   ck_assert_int_eq(output_buffers[0].slots[100].off_mask, 0);
   ck_assert_int_eq(output_buffers[0].slots[30].on_mask, 1);
   ck_assert_int_eq(output_buffers[0].slots[90].off_mask, 1);
+  ck_assert_int_eq(oev.start.scheduled, 1);
+  ck_assert_int_eq(oev.stop.scheduled, 1);
 
   schedule_output_event_safely(&oev, 30, 80, 0); 
   ck_assert_int_eq(output_buffers[0].slots[90].off_mask, 0);
   ck_assert_int_eq(output_buffers[0].slots[30].on_mask, 1);
   ck_assert_int_eq(output_buffers[0].slots[80].off_mask, 1);
+  ck_assert_int_eq(oev.start.scheduled, 1);
+  ck_assert_int_eq(oev.stop.scheduled, 1);
 
   schedule_output_event_safely(&oev, 40, 80, 0); 
   ck_assert_int_eq(output_buffers[0].slots[30].on_mask, 0);
   ck_assert_int_eq(output_buffers[0].slots[40].on_mask, 1);
   ck_assert_int_eq(output_buffers[0].slots[80].off_mask, 1);
+  ck_assert_int_eq(oev.start.scheduled, 1);
+  ck_assert_int_eq(oev.stop.scheduled, 1);
 
 } END_TEST
 
@@ -534,16 +583,22 @@ START_TEST(check_buffer_insert_totally_outside) {
   ck_assert_int_eq(output_buffers[0].slots[80].off_mask, 0);
   ck_assert_int_eq(output_buffers[0].slots[30].on_mask, 1);
   ck_assert_int_eq(output_buffers[0].slots[90].off_mask, 1);
+  ck_assert_int_eq(oev.start.scheduled, 1);
+  ck_assert_int_eq(oev.stop.scheduled, 1);
 
   schedule_output_event_safely(&oev, 30, 100, 0); 
   ck_assert_int_eq(output_buffers[0].slots[90].off_mask, 0);
   ck_assert_int_eq(output_buffers[0].slots[30].on_mask, 1);
   ck_assert_int_eq(output_buffers[0].slots[100].off_mask, 1);
+  ck_assert_int_eq(oev.start.scheduled, 1);
+  ck_assert_int_eq(oev.stop.scheduled, 1);
 
   schedule_output_event_safely(&oev, 20, 100, 0); 
   ck_assert_int_eq(output_buffers[0].slots[30].on_mask, 0);
   ck_assert_int_eq(output_buffers[0].slots[20].on_mask, 1);
   ck_assert_int_eq(output_buffers[0].slots[100].off_mask, 1);
+  ck_assert_int_eq(oev.start.scheduled, 1);
+  ck_assert_int_eq(oev.stop.scheduled, 1);
 
 } END_TEST
 
@@ -557,6 +612,8 @@ START_TEST(check_buffer_insert_partially_later) {
   ck_assert_int_eq(output_buffers[0].slots[80].off_mask, 0);
   ck_assert_int_eq(output_buffers[0].slots[50].on_mask, 1);
   ck_assert_int_eq(output_buffers[0].slots[90].off_mask, 1);
+  ck_assert_int_eq(oev.start.scheduled, 1);
+  ck_assert_int_eq(oev.stop.scheduled, 1);
 
 } END_TEST
 
@@ -570,6 +627,8 @@ START_TEST(check_buffer_insert_partially_earlier) {
   ck_assert_int_eq(output_buffers[0].slots[80].off_mask, 0);
   ck_assert_int_eq(output_buffers[0].slots[30].on_mask, 1);
   ck_assert_int_eq(output_buffers[0].slots[70].off_mask, 1);
+  ck_assert_int_eq(oev.start.scheduled, 1);
+  ck_assert_int_eq(oev.stop.scheduled, 1);
 
 } END_TEST
 
@@ -583,6 +642,7 @@ START_TEST(check_buffer_insert_active_later) {
   schedule_output_event_safely(&oev, 100, 120, 0); 
   ck_assert_int_eq(output_buffers[0].slots[80].off_mask, 0);
   ck_assert_int_eq(output_buffers[0].slots[120].off_mask, 1);
+  ck_assert_int_eq(oev.stop.scheduled, 1);
 
 } END_TEST
 
@@ -597,6 +657,7 @@ START_TEST(check_buffer_insert_active_later_preserve_duration) {
   schedule_output_event_safely(&oev, 100, 120, 1); 
   ck_assert_int_eq(output_buffers[0].slots[60].off_mask, 1);
   ck_assert_int_eq(output_buffers[0].slots[100].on_mask, 0);
+  ck_assert_int_eq(oev.stop.scheduled, 1);
 
 } END_TEST
 
@@ -609,8 +670,60 @@ START_TEST(check_buffer_insert_active_earlier) {
   /* Currently in this situation we give up, leave it the same.
    * The naive fix to this causes errors in other situations */
   schedule_output_event_safely(&oev, 30, 70, 0); 
+  ck_assert_int_eq(output_buffers[0].slots[40].off_mask, 0);
   ck_assert_int_eq(output_buffers[0].slots[80].off_mask, 0);
   ck_assert_int_eq(output_buffers[0].slots[70].off_mask, 1);
+  ck_assert_int_eq(oev.stop.scheduled, 1);
+
+} END_TEST
+
+START_TEST(check_buffer_insert_active_earlier_repeated) {
+  struct output_event oev = {0};
+
+  schedule_output_event_safely(&oev, 40, 80, 0); 
+
+  set_current_time(50); 
+  schedule_output_event_safely(&oev, 30, 70, 0); 
+  ck_assert_int_eq(output_buffers[0].slots[40].off_mask, 0);
+  ck_assert_int_eq(output_buffers[0].slots[80].off_mask, 0);
+  ck_assert_int_eq(output_buffers[0].slots[70].off_mask, 1);
+//  ck_assert_int_eq(oev.stop.scheduled, 1);
+
+  set_current_time(55); 
+  schedule_output_event_safely(&oev, 30, 60, 0); 
+  ck_assert_int_eq(output_buffers[0].slots[70].off_mask, 0);
+  ck_assert_int_eq(output_buffers[0].slots[60].off_mask, 1);
+ // ck_assert_int_eq(oev.stop.scheduled, 1);
+
+  set_current_time(58); 
+  schedule_output_event_safely(&oev, 30, 55, 0); 
+  ck_assert_int_eq(output_buffers[0].slots[60].off_mask, 1);
+  //ck_assert_int_eq(oev.stop.scheduled, 1);
+
+} END_TEST
+
+START_TEST(check_buffer_insert_active_earlier_longer) {
+  struct output_event oev = {0};
+
+  schedule_output_event_safely(&oev, 40, 80, 0); 
+
+  set_current_time(50); 
+  schedule_output_event_safely(&oev, 30, 90, 0); 
+  ck_assert_int_eq(output_buffers[0].slots[80].off_mask, 0);
+  ck_assert_int_eq(output_buffers[0].slots[90].off_mask, 1);
+  ck_assert_int_eq(oev.stop.scheduled, 1);
+
+} END_TEST
+
+START_TEST(check_buffer_insert_active_too_earlier) {
+  struct output_event oev = {0};
+
+  schedule_output_event_safely(&oev, 40, 80, 0); 
+
+  set_current_time(50); 
+  schedule_output_event_safely(&oev, 30, 45, 0); 
+  ck_assert_int_eq(output_buffers[0].slots[80].off_mask, 1);
+  ck_assert_int_eq(oev.stop.scheduled, 1);
 
 } END_TEST
 
@@ -623,6 +736,7 @@ START_TEST(check_buffer_insert_active_earlier_not_yet_started) {
   schedule_output_event_safely(&oev, 60, 70, 0); 
   ck_assert_int_eq(output_buffers[0].slots[80].off_mask, 0);
   ck_assert_int_eq(output_buffers[0].slots[70].off_mask, 1);
+  ck_assert_int_eq(oev.stop.scheduled, 1);
 
 } END_TEST
 
@@ -638,6 +752,7 @@ START_TEST(check_buffer_insert_active_earlier_preserve_duration) {
   ck_assert_int_eq(output_buffers[0].slots[80].off_mask, 0);
   ck_assert_int_eq(output_buffers[0].slots[60].off_mask, 0);
   ck_assert_int_eq(output_buffers[0].slots[70].off_mask, 1);
+  ck_assert_int_eq(oev.stop.scheduled, 1);
 
 } END_TEST
 
@@ -759,6 +874,9 @@ void check_add_buffer_tests(TCase *tc) {
   tcase_add_test(tc, check_buffer_insert_active_later);
   tcase_add_test(tc, check_buffer_insert_active_later_preserve_duration);
   tcase_add_test(tc, check_buffer_insert_active_earlier);
+  tcase_add_test(tc, check_buffer_insert_active_earlier_repeated);
+  tcase_add_test(tc, check_buffer_insert_active_earlier_longer);
+  tcase_add_test(tc, check_buffer_insert_active_too_earlier);
   tcase_add_test(tc, check_buffer_insert_active_earlier_not_yet_started);
   tcase_add_test(tc, check_buffer_insert_active_earlier_preserve_duration);
 
