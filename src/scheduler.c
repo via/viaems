@@ -63,6 +63,11 @@ static struct output_buffer *buffer_for_time(timeval_t time) {
   return buf;
 }
 
+static int fired_if_failed(struct sched_entry *en, int success) {
+  en->fired = !success;
+  return success;
+}
+
 /* Modifies the output buffer to not have the event, returns 0 if event is in the 
  * past. 
  * 
@@ -163,11 +168,9 @@ static void sched_entry_off(struct sched_entry *en) {
 
 void deschedule_event(struct output_event *ev) {
   int success;
-  success = sched_entry_disable(&ev->start, ev->start.time);
+  success = fired_if_failed(&ev->start, sched_entry_disable(&ev->start, ev->start.time));
   if (success) {
-    ev->start.fired = 0;
-    sched_entry_disable(&ev->stop, ev->stop.time);
-    ev->stop.fired = 0;
+    fired_if_failed(&ev->stop, sched_entry_disable(&ev->stop, ev->stop.time));
 
     sched_entry_off(&ev->start);
     sched_entry_off(&ev->stop);
@@ -193,7 +196,7 @@ static void reschedule_end(struct sched_entry *s, timeval_t old, timeval_t new) 
   int success;
   success = sched_entry_enable(s, new);
   if (success) {
-    success = sched_entry_disable(s, old);
+    success = fired_if_failed(s, sched_entry_disable(s, old));
     if (!success) {
       sched_entry_disable(s, new);
       sched_entry_update(s, old);
@@ -223,7 +226,6 @@ void schedule_output_event_safely(struct output_event *ev,
 
   if (!ev->start.scheduled && !ev->stop.scheduled) {
     disable_interrupts();
-    ev->stop.time = newstop;
     if (sched_entry_enable(&ev->stop, newstop)) {
         sched_entry_update(&ev->stop, newstop);
         if (sched_entry_enable(&ev->start, newstart)) {
@@ -252,13 +254,13 @@ void schedule_output_event_safely(struct output_event *ev,
       sched_entry_disable(&ev->start, oldstart);
       sched_entry_update(&ev->start, newstart);
     } else {
-      sched_entry_disable(&ev->start, newstart);
+      fired_if_failed(&ev->start, sched_entry_disable(&ev->start, newstart));
     }
     if (time_before(ev->start.time, newstop) || preserve_duration) {
       reschedule_end(&ev->stop, oldstop, newstop);
     }
   } else {
-    success = sched_entry_disable(&ev->start, oldstart);
+    success = fired_if_failed(&ev->start, sched_entry_disable(&ev->start, oldstart));
     if (!success && preserve_duration) {
       newstop += oldstart - newstart;
     }
