@@ -19,11 +19,13 @@ struct fueling_config {
 
 typedef enum {
   DWELL_FIXED_DUTY,
+  DWELL_FIXED_TIME,
 } dwell_type;
 
 struct ignition_config {
   dwell_type dwell;
   float dwell_duty;
+  float dwell_us;
   int min_fire_time_us;
 };
 

@@ -26,6 +26,9 @@ void calculate_ignition() {
       calculated_values.dwell_us = 
         time_from_rpm_diff(config.decoder.rpm, 45) / (TICKRATE / 1000000);
       break;
+    case DWELL_FIXED_TIME:
+      calculated_values.dwell_us = config.ignition.dwell_us;
+      break;
   }
 }
 
