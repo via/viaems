@@ -167,18 +167,33 @@ static void sched_entry_off(struct sched_entry *en) {
 }
 
 void deschedule_event(struct output_event *ev) {
+  int ints_en = interrupts_enabled();
+
+  if (ints_en) {
+    disable_interrupts();
+  }
+  if (ev->start.fired) {
+    enable_interrupts();
+    return;
+  }
+
   int success;
   success = fired_if_failed(&ev->start, sched_entry_disable(&ev->start, ev->start.time));
   if (success) {
     fired_if_failed(&ev->stop, sched_entry_disable(&ev->stop, ev->stop.time));
-
     sched_entry_off(&ev->start);
     sched_entry_off(&ev->stop);
+  }
+  if (ints_en) {
+    enable_interrupts();
   }
 }
 
 void invalidate_scheduled_events(struct output_event *evs, int n) {
   for (int i = 0; i < n; ++i) {
+    if (!evs[i].start.scheduled) {
+      continue;
+    }
     switch(evs[i].type) {
       case IGNITION_EVENT:
       case FUEL_EVENT:
@@ -231,8 +246,9 @@ void schedule_output_event_safely(struct output_event *ev,
         if (sched_entry_enable(&ev->start, newstart)) {
           sched_entry_update(&ev->start, newstart);
         } else {
+          sched_entry_disable(&ev->start, newstart);
           sched_entry_off(&ev->start);
-          sched_entry_disable(&ev->stop, newstart);
+          sched_entry_disable(&ev->stop, newstop);
           sched_entry_off(&ev->stop);
         }
     }
