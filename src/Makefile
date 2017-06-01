@@ -1,11 +1,12 @@
 PLATFORM?=stm32f4-discovery
 
-.ifmake check
+.ifmake check || coverage
 CFLAGS!=pkg-config --cflags check
 LDFLAGS!=pkg-config --libs check
 CC=gcc
 CFLAGS+= -I. -Itest -std=c99 -Wall -O0 -g
 CFLAGS+= -D TICKRATE=4000000 -DUNITTEST
+CFLAGS+= -fprofile-arcs -ftest-coverage 
 
 .else
 .if ${PLATFORM} == "stm32f4-discovery"
@@ -37,6 +38,10 @@ tfi: ${OBJS} tfi.o platforms/${PLATFORM}.o
 
 check: ${OBJS} test/check.o test/check_platform.o test/check_scheduler.o test/check_decoder.o
 	${CC} ${CFLAGS} -o check check.o check_platform.o check_scheduler.o check_decoder.o  ${OBJS} ${LDFLAGS}
+
+coverage: check
+	./check
+	gcovr -r .
 
 
 clean:
