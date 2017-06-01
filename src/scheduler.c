@@ -56,10 +56,6 @@ static struct output_buffer *buffer_for_time(timeval_t time) {
         output_buffers[1].start + OUTPUT_BUFFER_LEN - 1)) {
     buf = &output_buffers[1];
   }
-  /* Make sure we're not selecting an expired buffer */
-  if (buf && time_before(buf->start, output_buffers[current_output_buffer()].start)) {
-    buf = NULL;
-  }
   return buf;
 }
 
@@ -94,7 +90,6 @@ static int sched_entry_disable(const struct sched_entry *en, timeval_t time) {
 
   uint16_t *addr = en->output_val ? &buf->slots[slot].on_mask : 
                                     &buf->slots[slot].off_mask;
-  assert(*addr & (1 << en->output_id));
   uint16_t value = *addr & ~(1 << en->output_id);
 
   timeval_t before_time = current_time();
@@ -137,7 +132,6 @@ static int sched_entry_enable(const struct sched_entry *en, timeval_t time) {
 
   uint16_t *addr = en->output_val ? &buf->slots[slot].on_mask : 
                                     &buf->slots[slot].off_mask;
-  assert(!(*addr & (1 << en->output_id)));
   uint16_t value = *addr | (1 << en->output_id);
 
   timeval_t before_time = current_time();
@@ -309,6 +303,13 @@ schedule_ignition_event(struct output_event *ev,
   start_time = stop_time - time_from_us(usecs_dwell);
 
   if (ev->start.fired && ev->stop.fired) {
+
+    /* Don't reschedule until we've passed at least 90*/
+    if ((time_diff(stop_time, ev->stop.time) < 
+         time_from_rpm_diff(d->rpm, 90))) {
+      return 0;
+    }
+
     ev->start.fired = 0;
     ev->stop.fired = 0;
     ev->start.scheduled = 0;
@@ -320,7 +321,7 @@ schedule_ignition_event(struct output_event *ev,
   if (ev->stop.scheduled &&
       time_before(ev->stop.time, stop_time) &&
       ((time_diff(stop_time, ev->stop.time) > 
-       time_from_rpm_diff(d->rpm, 90)))) {
+       time_from_rpm_diff(d->rpm, 360)))) {
     return 0;
   }
 
@@ -352,6 +353,13 @@ schedule_fuel_event(struct output_event *ev,
   start_time = stop_time - (TICKRATE / 1000000) * usecs_pw;
 
   if (ev->start.fired && ev->stop.fired) {
+
+    /* Don't reschedule until we've passed at least 90*/
+    if ((time_diff(stop_time, ev->stop.time) < 
+         time_from_rpm_diff(d->rpm, 90))) {
+      return 0;
+    }
+
     ev->start.fired = 0;
     ev->stop.fired = 0;
     ev->start.scheduled = 0;
