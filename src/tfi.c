@@ -7,9 +7,6 @@
 #include "sensors.h"
 #include "calculations.h"
 
-#include <libopencm3/stm32/gpio.h>
-#include <libopencm3/stm32/timer.h>
-
 static void schedule(struct output_event *ev) {
   switch(ev->type) {
     case IGNITION_EVENT:
