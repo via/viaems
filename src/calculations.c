@@ -14,7 +14,7 @@ int ignition_cut() {
 }
 
 int fuel_cut() {
-  return 0;
+  return ignition_cut();
 }
 
 void calculate_ignition() {

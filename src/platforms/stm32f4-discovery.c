@@ -178,7 +178,7 @@ static void platform_init_eventtimer() {
   timer_enable_irq(TIM2, TIM_DIER_CC3IE);
   timer_enable_irq(TIM2, TIM_DIER_CC4IE);
   nvic_enable_irq(NVIC_TIM2_IRQ);
-  nvic_set_priority(NVIC_TIM2_IRQ, 0);
+  nvic_set_priority(NVIC_TIM2_IRQ, 32);
 
   /* Set debug unit to stop the timer on halt */
   *((volatile uint32_t *)0xE0042008) |= 9; /*TIM2 and TIM5 */
@@ -534,6 +534,12 @@ void adc_gather() {
   adc_start_conversion_injected(ADC1);
 }
 
+/* This can be set as a higher priority interrupt than the swap_buffers
+ * interrupt once it is verified there are no races between the descheduling
+ * callback and the buffer swaps.  Its not an urgent fix as currently the swap
+ * takes 13 uS, which means we might be delayed up to about a degree in
+ * recording decoder information.  This isn't an issue until we're dealing with
+ * more than 100 teeth on a wheel */
 void tim2_isr() {
   if (timer_get_flag(TIM2, TIM_SR_CC1IF)) {
     timer_clear_flag(TIM2, TIM_SR_CC1IF);
