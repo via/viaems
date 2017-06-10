@@ -713,18 +713,18 @@ START_TEST(check_buffer_insert_active_earlier_repeated) {
   ck_assert_int_eq(output_buffers[0].slots[40].off_mask, 0);
   ck_assert_int_eq(output_buffers[0].slots[80].off_mask, 0);
   ck_assert_int_eq(output_buffers[0].slots[70].off_mask, 1);
-//  ck_assert_int_eq(oev.stop.scheduled, 1);
+  ck_assert_int_eq(oev.stop.scheduled, 1);
 
   set_current_time(55); 
   schedule_output_event_safely(&oev, 30, 60, 0); 
   ck_assert_int_eq(output_buffers[0].slots[70].off_mask, 0);
   ck_assert_int_eq(output_buffers[0].slots[60].off_mask, 1);
- // ck_assert_int_eq(oev.stop.scheduled, 1);
+  ck_assert_int_eq(oev.stop.scheduled, 1);
 
   set_current_time(58); 
   schedule_output_event_safely(&oev, 30, 55, 0); 
   ck_assert_int_eq(output_buffers[0].slots[60].off_mask, 1);
-  //ck_assert_int_eq(oev.stop.scheduled, 1);
+  ck_assert_int_eq(oev.stop.scheduled, 1);
 
 } END_TEST
 
