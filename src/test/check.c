@@ -22,10 +22,10 @@ static int value_within(int percent, float value, float target) {
 
 START_TEST(check_rpm_from_time_diff) {
   /* 360 degrees for 0.005 s is 6000 rpm */
-  ck_assert(value_within(1, rpm_from_time_diff(500000, 180), 6000));
+  ck_assert(value_within(1, rpm_from_time_diff(2000, 180), 6000));
 
   /* 90 degrees for 0.00125 s is 6000 rpm */
-  ck_assert(value_within(1, rpm_from_time_diff(125000, 45), 6000));
+  ck_assert(value_within(1, rpm_from_time_diff(5000, 45), 6000));
 } END_TEST
 
 START_TEST(check_time_from_rpm_diff) {
@@ -125,11 +125,11 @@ START_TEST(check_sensor_process_freq) {
 
   si.raw_value = 100.0;
   sensor_process_freq(&si);  
-  ck_assert(si.processed_value == 244.140625);
+  ck_assert(value_within(1, si.processed_value, 9.765625));
 
   si.raw_value = 1000.0;
   sensor_process_freq(&si); 
-  ck_assert(si.processed_value == 24.4140625);
+  ck_assert(value_within(1, si.processed_value, 0.976562));
 
   si.raw_value = 0.0;
   sensor_process_freq(&si);  

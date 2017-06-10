@@ -14,7 +14,7 @@ int ignition_cut() {
 }
 
 int fuel_cut() {
-  return 0;
+  return ignition_cut();
 }
 
 void calculate_ignition() {
@@ -25,6 +25,9 @@ void calculate_ignition() {
     case DWELL_FIXED_DUTY:
       calculated_values.dwell_us = 
         time_from_rpm_diff(config.decoder.rpm, 45) / (TICKRATE / 1000000);
+      break;
+    case DWELL_FIXED_TIME:
+      calculated_values.dwell_us = config.ignition.dwell_us;
       break;
   }
 }

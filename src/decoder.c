@@ -6,12 +6,13 @@
 
 #include <stdlib.h>
 
-static struct sched_entry expire_event;
+static struct timed_callback expire_event;
 
 static void invalidate_decoder() {
   config.decoder.valid = 0;
   config.decoder.state = DECODER_NOSYNC;
   config.decoder.current_triggers_rpm = 0;
+  config.decoder.triggers_since_last_sync = 0;
   invalidate_scheduled_events(config.events, config.num_events);
 }
 
@@ -21,10 +22,7 @@ static void handle_decoder_expire() {
 }
 
 static void set_expire_event(timeval_t t) {
-  disable_interrupts();
-  expire_event.time = t;
-  schedule_insert(current_time(), &expire_event);
-  enable_interrupts();
+  schedule_callback(&expire_event, t);
 }
 
 static void push_time(struct decoder *d, timeval_t t) {

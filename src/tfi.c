@@ -38,10 +38,12 @@ int main() {
   platform_load_config();
   decoder_init(&config.decoder);
   platform_init();
+  initialize_scheduler();
 
-  enable_test_trigger(FORD_TFI, 350);
+  enable_test_trigger(FORD_TFI, 300);
 
-  while (1) {
+  while (1) {                   
+
     sensors_process();
     if (config.decoder.needs_decoding_t0 || config.decoder.needs_decoding_t1) {
       config.decoder.decode(&config.decoder);
@@ -58,7 +60,7 @@ int main() {
       /* Check to see if any events have fired. These should be rescheduled
        * now to allow 100% duty utilization */
       for (unsigned int e = 0; e < config.num_events; ++e) {
-        if (event_has_fired(&config.events[e])) {
+        if (config.decoder.valid && event_has_fired(&config.events[e])) {
           schedule(&config.events[e]);
         }
       }
