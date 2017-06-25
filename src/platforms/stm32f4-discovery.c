@@ -7,6 +7,7 @@
 #include <libopencm3/stm32/usart.h>
 #include <libopencm3/stm32/flash.h>
 #include <libopencm3/stm32/syscfg.h>
+#include <libopencm3/stm32/spi.h>
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/cm3/scb.h>
 #include <libopencm3/cm3/cortex.h>
@@ -21,9 +22,6 @@
 #include "config.h"
 
 #include <assert.h>
-
-static char *usart_rx_dest;
-static int usart_rx_end;
 
 /* Hardware setup:
  *  Discovery board LEDs:
@@ -41,9 +39,11 @@ static int usart_rx_end;
  *  Trigger 1 - PB10 (TIM2_CH3)
  *  Trigger 2 - PB11 (TIM2_CH4)
  *
+ *  TLC2543 on SPI2 (PB12-15) CS, SCK, MISO, MOSI
+ *    TX uses TIM6 dma1 stream 1 chan 7
+ *    RX uses SPI2 dma1 stream 3 chan 0
+ *
  *  Configurable pin mapping:
- *  ADC: 
- *   - 1-8 maps to port A pins 4-7, port C 0-3
  *  Scheduled Outputs:
  *   - 0-15 maps to port D, pins 0-15
  *  Freq sensor:
@@ -54,6 +54,10 @@ static int usart_rx_end;
  *   - 0-15 Maps to Port E
  *
  */
+
+static char *usart_rx_dest;
+static int usart_rx_end;
+static volatile uint16_t spi_rx_raw_adc[10] = {0};
 
 static void platform_init_freqsensor(unsigned char pin) {
   uint32_t tim;
@@ -181,7 +185,7 @@ static void platform_init_eventtimer() {
   nvic_set_priority(NVIC_TIM2_IRQ, 32);
 
   /* Set debug unit to stop the timer on halt */
-  *((volatile uint32_t *)0xE0042008) |= 9; /*TIM2 and TIM5 */
+  *((volatile uint32_t *)0xE0042008) |= 19; /*TIM2, TIM5, and TIM6 */
   *((volatile uint32_t *)0xE004200C) |= 2; /* TIM8 stop */
 
   timer_reset(TIM8);
@@ -340,56 +344,102 @@ static void platform_init_scheduled_outputs() {
   gpio_set_output_options(GPIOE, GPIO_OTYPE_PP, GPIO_OSPEED_100MHZ, 0xFF);
 }
 
-static void platform_init_adc() {
-  /* Set up DMA for the ADC */
-  nvic_enable_irq(NVIC_ADC_IRQ);
-  nvic_set_priority(NVIC_ADC_IRQ, 64);
 
-  /* Set up ADC */
-  gpio_mode_setup(GPIOA, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, 
-      GPIO4 | GPIO5 | GPIO6 | GPIO7);
-  gpio_mode_setup(GPIOC, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, 
-      GPIO0 | GPIO1 | GPIO2 | GPIO3 | GPIO4 | GPIO5);
-  
-  adc_off(ADC1);
-  adc_off(ADC2);
-  adc_off(ADC3);
 
-  adc_enable_scan_mode(ADC1);
-  adc_enable_scan_mode(ADC2);
-  adc_enable_scan_mode(ADC3);
+/* We use TIM6 to control the sample rate.  It is set up to trigger a DMA event
+ * on counter update to TX on SPI2.  When the full 16 bits is transmitted and
+ * the SPI RX buffer is filled, the RX DMA event will fill, and populate
+ * spi_rx_raw_adc.
+ *
+ * Currently using 10 inputs, spi_tx_list contains the 16bit data words to
+ * trigger reads on AIN0-AIN09 on the TLC2543.  DMA is set up in circular mode
+ * such that each channel is sampled in order continuously.  DMA RX is set up
+ * accordingly, but note that because the TLC2543 returns the previous sample
+ * result each time, command 1 in spi_tx_list corresponds to response 2 in
+ * spi_rx_raw_adc, and so forth.
+ *
+ * Currently sample rate is about 50 khz, with a SPI bus frequency of 1.3ish MHz
+ *
+ * TODO: Initialize CS
+ */
+static void platform_init_spi_tlc2543() {
+  static uint16_t spi_tx_list[] =
+    {0x0C00,
+     0x1C00,
+     0x2C00,
+     0x3C00,
+     0x4C00,
+     0x5C00,
+     0x6C00,
+     0x7C00,
+     0x8C00,
+     0x9C00
+    };
 
-  adc_set_sample_time_on_all_channels(ADC1, ADC_SMPR_SMP_15CYC);
-  adc_set_sample_time_on_all_channels(ADC2, ADC_SMPR_SMP_15CYC);
-  adc_set_sample_time_on_all_channels(ADC3, ADC_SMPR_SMP_15CYC);
+  /* Configure SPI output */
+  gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO13 | GPIO14 | GPIO15);
+  gpio_set_af(GPIOB, GPIO_AF5, GPIO13 | GPIO14 | GPIO15);
+  spi_disable(SPI2);
+  spi_reset(SPI2);
+  spi_enable_software_slave_management(SPI2);
+  spi_set_nss_high(SPI2);
+  spi_init_master(SPI2, SPI_CR1_BAUDRATE_FPCLK_DIV_32,  SPI_CR1_CPOL_CLK_TO_0_WHEN_IDLE,
+                SPI_CR1_CPHA_CLK_TRANSITION_1, SPI_CR1_DFF_16BIT,
+                SPI_CR1_MSBFIRST);
 
-  adc_disable_automatic_injected_group_conversion(ADC1);
-  adc_disable_automatic_injected_group_conversion(ADC2);
-  adc_disable_automatic_injected_group_conversion(ADC3);
+  spi_enable_rx_dma(SPI2);
+  spi_enable(SPI2);
 
-  adc_enable_eoc_interrupt_injected(ADC1);
-  adc_enable_eoc_interrupt_injected(ADC2);
-  adc_enable_eoc_interrupt_injected(ADC3);
+  /* Configure DMA for SPI RX*/
+  dma_enable_stream(DMA1, DMA_STREAM3);
+  dma_stream_reset(DMA1, DMA_STREAM3);
+  dma_set_priority(DMA1, DMA_STREAM3, DMA_SxCR_PL_LOW);
+  dma_set_memory_size(DMA1, DMA_STREAM3, DMA_SxCR_MSIZE_16BIT);
+  dma_set_peripheral_size(DMA1, DMA_STREAM3, DMA_SxCR_PSIZE_16BIT);
+  dma_enable_memory_increment_mode(DMA1, DMA_STREAM3);
+  dma_set_transfer_mode(DMA1, DMA_STREAM3, DMA_SxCR_DIR_PERIPHERAL_TO_MEM);
+  dma_enable_circular_mode(DMA1, DMA_STREAM3);
+  dma_set_peripheral_address(DMA1, DMA_STREAM3, (uint32_t) &SPI2_DR);
+  dma_set_memory_address(DMA1, DMA_STREAM3, (uint32_t)spi_rx_raw_adc);
+  dma_set_number_of_data(DMA1, DMA_STREAM3, 10);
+  dma_channel_select(DMA1, DMA_STREAM3, DMA_SxCR_CHSEL_0);
+  dma_enable_direct_mode(DMA1, DMA_STREAM3);
+  dma_enable_stream(DMA1, DMA_STREAM3);
 
-  adc_eoc_after_group(ADC1);
-  adc_eoc_after_group(ADC2);
-  adc_eoc_after_group(ADC3);
+  /* Set up DMA for SPI TX */
+  dma_stream_reset(DMA1, DMA_STREAM1);
+  dma_set_priority(DMA1, DMA_STREAM1, DMA_SxCR_PL_LOW);
+  dma_set_memory_size(DMA1, DMA_STREAM1, DMA_SxCR_MSIZE_16BIT);
+  dma_set_peripheral_size(DMA1, DMA_STREAM1, DMA_SxCR_PSIZE_16BIT);
+  dma_enable_memory_increment_mode(DMA1, DMA_STREAM1);
+  dma_set_transfer_mode(DMA1, DMA_STREAM1, DMA_SxCR_DIR_MEM_TO_PERIPHERAL);
+  dma_enable_circular_mode(DMA1, DMA_STREAM1);
+  dma_set_peripheral_address(DMA1, DMA_STREAM1, (uint32_t) &SPI2_DR);
+  dma_set_memory_address(DMA1, DMA_STREAM1, (uint32_t)spi_tx_list);
+  dma_set_number_of_data(DMA1, DMA_STREAM1, 10);
+  dma_channel_select(DMA1, DMA_STREAM1, DMA_SxCR_CHSEL_7);
+  dma_enable_direct_mode(DMA1, DMA_STREAM1);
 
-  adc_power_on(ADC1);
-  adc_power_on(ADC2);
-  adc_power_on(ADC3);
-  adc_set_multi_mode(ADC_CCR_MULTI_TRIPLE_INJECTED_SIMUL);
+  /* Configure TIM6 to drive DMA for SPI */
+  timer_reset(TIM6);
+  timer_set_mode(TIM6, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
+  timer_set_period(TIM6, 1800); /* Approx 50 khz sampling rate */
+  timer_disable_preload(TIM6);
+  timer_continuous_mode(TIM6);
+  /* Setup output compare registers */
+  timer_disable_oc_output(TIM6, TIM_OC1);
+  timer_disable_oc_output(TIM6, TIM_OC2);
+  timer_disable_oc_output(TIM6, TIM_OC3);
+  timer_disable_oc_output(TIM6, TIM_OC4);
 
-  adc_clear_overrun_flag(ADC1);
-  adc_clear_overrun_flag(ADC2);
-  adc_clear_overrun_flag(ADC3);
+  timer_set_prescaler(TIM6, 0); 
+  timer_enable_counter(TIM6);
+  timer_enable_update_event(TIM6);
+  timer_update_on_overflow(TIM6);
+  timer_set_dma_on_update_event(TIM6);
+  TIM6_DIER |= TIM_DIER_UDE; /* Enable update dma */
+  dma_enable_stream(DMA1, DMA_STREAM1);
 
-  uint8_t seq1[] = {4, 5, 6, 7};
-  uint8_t seq2[] = {10, 11, 12, 13};
-  uint8_t seq3[] = {14, 15}; /*TODO: these pins don't work with ADC3 */
-  adc_set_injected_sequence(ADC1, 4, seq1);
-  adc_set_injected_sequence(ADC2, 4, seq2);
-  adc_set_injected_sequence(ADC3, 2, seq3);
 }
 
 static void platform_init_usart() {
@@ -446,21 +496,20 @@ void platform_init() {
   rcc_periph_clock_enable(RCC_GPIOD);
   rcc_periph_clock_enable(RCC_GPIOE);
   rcc_periph_clock_enable(RCC_SYSCFG);
-  rcc_periph_clock_enable(RCC_ADC1);
-  rcc_periph_clock_enable(RCC_ADC2);
-  rcc_periph_clock_enable(RCC_ADC3);
   rcc_periph_clock_enable(RCC_USART2);
   rcc_periph_clock_enable(RCC_DMA1);
   rcc_periph_clock_enable(RCC_DMA2);
   rcc_periph_clock_enable(RCC_TIM1);
   rcc_periph_clock_enable(RCC_TIM2);
   rcc_periph_clock_enable(RCC_TIM3);
+  rcc_periph_clock_enable(RCC_TIM6);
   rcc_periph_clock_enable(RCC_TIM8);
+  rcc_periph_clock_enable(RCC_SPI2);
 
   scb_set_priority_grouping(SCB_AIRCR_PRIGROUP_GROUP16_NOSUB);
   platform_init_scheduled_outputs();
   platform_init_eventtimer();
-  platform_init_adc();
+  platform_init_spi_tlc2543();
   platform_init_usart();
   platform_init_pwm();
 
@@ -531,7 +580,16 @@ void usart_tx(char *buf, unsigned short len) {
 }
 
 void adc_gather() {
-  adc_start_conversion_injected(ADC1);
+  for (int i = 0; i < NUM_SENSORS; ++i) {
+    if (config.sensors[i].method == SENSOR_ADC) {
+      int pin = (config.sensors[i].pin + 1) % 10;
+      config.sensors[i].raw_value = 
+        spi_rx_raw_adc[pin] >> 4; /* 12 bit value is left justified */
+    }
+  }
+  /* With SPI ADC, data is always copied from the raw dma buffer 
+   * synchronously */
+  sensor_adc_new_data();
 }
 
 /* This can be set as a higher priority interrupt than the swap_buffers
@@ -555,35 +613,6 @@ void tim2_isr() {
     config.decoder.last_t1 = TIM2_CCR3;
     config.decoder.needs_decoding_t1 = 1;
   }
-}
-
-
-void adc_isr(void) {
-  uint16_t adc_inputs[10];
-
-  ADC1_SR &= ~(ADC_SR_JEOC);
-  ADC2_SR &= ~(ADC_SR_JEOC);
-  ADC3_SR &= ~(ADC_SR_JEOC);
-
-  adc_inputs[0] = adc_read_injected(ADC1, 1);
-  adc_inputs[1] = adc_read_injected(ADC1, 2);
-  adc_inputs[2] = adc_read_injected(ADC1, 3);
-  adc_inputs[3] = adc_read_injected(ADC1, 4);
-  adc_inputs[4] = adc_read_injected(ADC2, 1);
-  adc_inputs[5] = adc_read_injected(ADC2, 2);
-  adc_inputs[6] = adc_read_injected(ADC2, 3);
-  adc_inputs[7] = adc_read_injected(ADC2, 4);
-  adc_inputs[8] = adc_read_injected(ADC2, 1);
-  adc_inputs[9] = adc_read_injected(ADC2, 2);
-
-  for (int i = 0; i < NUM_SENSORS; ++i) {
-    if (config.sensors[i].method == SENSOR_ADC) {
-      config.sensors[i].raw_value = 
-        (uint32_t)adc_inputs[config.sensors[i].pin - 1];
-    }
-  }
-
-  sensor_adc_new_data();
 }
 
 void dma2_stream1_isr(void) {
