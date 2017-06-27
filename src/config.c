@@ -80,7 +80,7 @@ struct config config __attribute__((section(".configdata"))) = {
     [SENSOR_IAT] = {.pin=2, .method=SENSOR_ADC, .process=sensor_process_linear, 
       .params={.range={.min=-30.0, .max=120.0}}},
 #else
-    [SENSOR_MAP] = {.pin=7, .method=SENSOR_ADC, .process=sensor_process_linear,
+    [SENSOR_MAP] = {.pin=0, .method=SENSOR_ADC, .process=sensor_process_linear,
       .params={.range={.min=0, .max=100}}},
     [SENSOR_AAP] = {.method=SENSOR_CONST, .params={.fixed_value = 102.0}},
     [SENSOR_IAT] = {.method=SENSOR_CONST, .params={.fixed_value = 29.0}},

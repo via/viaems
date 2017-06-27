@@ -2,9 +2,9 @@
 An Ignition controller for gasoline spark ignition engines.
 
 Currently it supports the Ford EEC-IV Thin Film Integration module as a decoder
-and ignitor, using the STM32F4-Discovery Cortex-M4 Board from ST. It should be
-fairly generic to any engine, with any number of ignition outputs, 
-if a decoder is written.
+and ignitor, using the STM32F4-Discovery Cortex-M4 Board from ST, and a TLC2543
+ADC from TI. It should be fairly generic to any engine, with any number of
+ignition outputs, if a decoder is written.
 
 ## Decoding
 
@@ -90,7 +90,7 @@ value into a usable number:
 
 Member | Meaning
 --- | ---
-`pin` | pin to use (Autoconfigured, see platform source)
+`pin` | pin to use on TLC2543
 `process` | Processing function to use (see below)
 `method` | Type of sensor, currently supported are analog and frequency based.
 `params` | Union used to configure a sensor. Contains `range` used for calculated sensors, and `table` for table lookup sensors.
@@ -101,6 +101,9 @@ The process function can point to any function that takes a pointer to the
 sensor structure.  Currently the only provided ones are `sensor_process_linear`, which
 linearly interpolates between `min` and `max`, and `sensor_process_freq`, which 
 converts based on measured frequency.
+
+The onboard ADC is not used. Instead a TLC2543 external ADC should be connected
+to SPI2 (PB12-PB15).  Currently the first 10 inputs are supported.
 
 ### Table Configuration
 Tables can be up to 24x24 float values that are bilinearly interpolated. Use

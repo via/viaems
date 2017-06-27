@@ -64,6 +64,12 @@ int main() {
           schedule(&config.events[e]);
         }
       }
+
+      /* We want to continue adc sampling when the engine isn't spinning.
+       * TODO: do this more infrequently */
+      if (!config.decoder.valid) {
+        adc_gather();
+      }
     }
    
     console_process();
