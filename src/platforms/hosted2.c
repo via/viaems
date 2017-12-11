@@ -64,7 +64,7 @@ void disable_interrupts() {
   sigaddset(&sm, SIGVTALRM);
   sigprocmask(SIG_BLOCK, &sm, NULL);
 }
-  
+
 void enable_interrupts() {
   sigset_t sm;
   sigemptyset(&sm);
@@ -117,8 +117,8 @@ void platform_save_config() {
 }
 
 timeval_t init_output_thread(uint32_t *buf0, uint32_t *buf1, uint32_t len) {
-  output_slots[0] = (struct slot *)buf0; 
-  output_slots[1] = (struct slot *)buf1; 
+  output_slots[0] = (struct slot *)buf0;
+  output_slots[1] = (struct slot *)buf1;
   max_slots = len;
   return 0;
 }
@@ -141,7 +141,7 @@ static void hosted_send_trigger() {
 
 static void hosted_platform_timer() {
   /* - Increase "time"
-   * - Trigger appropriate interrupts 
+   * - Trigger appropriate interrupts
    *     timer event
    *     input event
    *     dma buffer swap
@@ -230,8 +230,6 @@ static void bind_control_socket(const char *path) {
   }
 
 }
-  
-
 
 void platform_init(int argc, char *argv[]) {
 
@@ -254,7 +252,7 @@ void platform_init(int argc, char *argv[]) {
 
   timer_t timer;
   if (timer_create(CLOCK_MONOTONIC, &sev, &timer) == -1) {
-    perror("timer_create"); 
+    perror("timer_create");
   }
   struct itimerspec interval = {
     .it_interval = {
