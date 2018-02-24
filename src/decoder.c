@@ -3,6 +3,7 @@
 #include "util.h"
 #include "scheduler.h"
 #include "config.h"
+#include "stats.h"
 
 #include <stdlib.h>
 
@@ -133,6 +134,7 @@ void cam_nplusone_decoder(struct decoder *d) {
 }
 
 void tfi_pip_decoder(struct decoder *d) {
+  stats_start_timing(STATS_DECODE_TIME);
   timeval_t t0;
   decoder_state oldstate = d->state;
 
@@ -161,6 +163,7 @@ void tfi_pip_decoder(struct decoder *d) {
       invalidate_decoder();
     }
   }
+  stats_finish_timing(STATS_DECODE_TIME);
 }
 
 void decoder_init(struct decoder *d) {

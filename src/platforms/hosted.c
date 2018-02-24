@@ -12,6 +12,11 @@
 #include "platform.h"
 #include "scheduler.h"
 #include "config.h"
+#include "stats.h"
+
+#if __x86_64__
+#include <x86intrin.h>
+#endif
 
 /* A platform that runs on a hosted OS, preferably one that supports posix 
  * timers.  Sends console to stdout, and creates a control socket on tfi.sock.
@@ -42,7 +47,13 @@ sigset_t smask;
 uint16_t cur_outputs = 0;
 
 timeval_t current_time() {
-	return curtime;
+  return curtime;
+}
+
+timeval_t cycle_count() {
+#if __x86_64__
+  return (timeval_t)__rdtsc();
+#endif
 }
 
 void set_event_timer(timeval_t t) {
@@ -58,14 +69,19 @@ void clear_event_timer() {
 void disable_event_timer() {
 }
 
+static int interrupts_disabled = 0;
 void disable_interrupts() {
   sigset_t sm;
   sigemptyset(&sm);
   sigaddset(&sm, SIGVTALRM);
   sigprocmask(SIG_BLOCK, &sm, NULL);
+  interrupts_disabled = 1;
+  stats_start_timing(STATS_INT_DISABLE_TIME);
 }
 
 void enable_interrupts() {
+  interrupts_disabled = 0;
+  stats_finish_timing(STATS_INT_DISABLE_TIME);
   sigset_t sm;
   sigemptyset(&sm);
   sigaddset(&sm, SIGVTALRM);
@@ -73,7 +89,7 @@ void enable_interrupts() {
 }
 
 int interrupts_enabled() {
-  return 0;
+  return !interrupts_disabled;
 }
 
 void set_output(int output, char value) {
@@ -149,6 +165,9 @@ static void hosted_platform_timer() {
    * - Set outputs from buffer
    */
 
+  stats_increment_counter(STATS_INT_RATE);
+  stats_start_timing(STATS_INT_TOTAL_TIME);
+
   static uint16_t old_outputs = 0;
   static timeval_t run_until_time = 0;
   curtime++;
@@ -156,7 +175,9 @@ static void hosted_platform_timer() {
   if (cur_slot == max_slots) {
     cur_buffer = (cur_buffer + 1) % 2;
     cur_slot = 0;
+    stats_start_timing(STATS_INT_BUFFERSWAP_TIME);
     scheduler_buffer_swap();
+    stats_finish_timing(STATS_INT_BUFFERSWAP_TIME);
   }
 
   cur_outputs |= output_slots[cur_buffer][cur_slot].on_mask;
@@ -199,6 +220,7 @@ static void hosted_platform_timer() {
     }
   }
 
+  stats_finish_timing(STATS_INT_TOTAL_TIME);
 }
 
 static void bind_control_socket(const char *path) {
@@ -279,6 +301,6 @@ void platform_init(int argc, char *argv[]) {
   };
   setitimer(ITIMER_VIRTUAL, &t, NULL);
 #endif
-
+  stats_init(2900000);
 
 }

@@ -1,6 +1,6 @@
 #include "config.h"
 #include "calculations.h"
-
+#include "stats.h"
 struct calculated_values calculated_values;
 
 int ignition_cut() {
@@ -45,6 +45,7 @@ static float fuel_density(float fuel_celsius) {
 }
 
 void calculate_fueling() {
+  stats_start_timing(STATS_FUELCALC_TIME);
   float ve;
   float lambda;
   float idt;
@@ -92,4 +93,5 @@ void calculate_fueling() {
   config.fueling.injector_dead_time = idt;
 
   calculated_values.fueling_us = raw_pw_us + idt;
+  stats_finish_timing(STATS_FUELCALC_TIME);
 }
