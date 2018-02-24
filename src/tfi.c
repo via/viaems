@@ -34,10 +34,10 @@ static void schedule(struct output_event *ev) {
   }
 }
 
-int main() {
+int main(int argc, char *argv[]) {
   platform_load_config();
   decoder_init(&config.decoder);
-  platform_init();
+  platform_init(argc, argv);
   initialize_scheduler();
 
   enable_test_trigger(FORD_TFI, 300);

@@ -23,7 +23,7 @@ timeval_t get_event_timer();
 void clear_event_timer();
 void disable_event_timer();
 
-void platform_init();
+void platform_init(int, char*[]);
 
 void disable_interrupts();
 void enable_interrupts();
