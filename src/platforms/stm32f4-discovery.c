@@ -41,7 +41,8 @@
  *  Trigger 2 - PB11 (TIM2_CH4)
  *
  *  TLC2543 on SPI2 (PB12-15) CS, SCK, MISO, MOSI
- *    TX uses TIM6 dma1 stream 1 chan 7
+ *    TIM5 is used to control sensor sampling rate (160 hz)
+ *    TX uses TIM5 dma1 stream 1 chan 7
  *    RX uses SPI2 dma1 stream 3 chan 0
  *
  *  Configurable pin mapping:

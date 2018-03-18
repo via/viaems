@@ -74,7 +74,7 @@ get_console_var(const char *var) {
 }
 
 static void handle_get_uint(struct console_var *var) {
-  sprintf(config.console.txbuffer, "%s=%d\r\n", var->name, *var->value.uint_v);
+  sprintf(config.console.txbuffer, " * %s=%d\r\n", var->name, *var->value.uint_v);
 }
 
 static void handle_set_uint(struct console_var *var) {
@@ -84,11 +84,11 @@ static void handle_set_uint(struct console_var *var) {
     return;
   }
   *var->value.uint_v = (int)v;
-  sprintf(config.console.txbuffer, "%s=%d\r\n", var->name, *var->value.uint_v);
+  sprintf(config.console.txbuffer, " * %s=%d\r\n", var->name, *var->value.uint_v);
 }
 
 static void handle_get_float(struct console_var *var) {
-  sprintf(config.console.txbuffer, "%s=%f\r\n", var->name, *var->value.float_v);
+  sprintf(config.console.txbuffer, " * %s=%f\r\n", var->name, *var->value.float_v);
 }
 
 static void handle_set_float(struct console_var *var) {
@@ -98,7 +98,7 @@ static void handle_set_float(struct console_var *var) {
     return;
   }
   *var->value.float_v = v;
-  sprintf(config.console.txbuffer, "%s=%f\r\n", var->name, *var->value.float_v);
+  sprintf(config.console.txbuffer, " * %s=%f\r\n", var->name, *var->value.float_v);
 }
 
 static float *get_table_element(char *locstr, struct console_var *var) {
@@ -117,7 +117,7 @@ static float *get_table_element(char *locstr, struct console_var *var) {
       if (x >= t->axis[0].num) {
         return NULL;
       }
-      sprintf(locstr, "%s(%s=%d)",
+      sprintf(locstr, " * %s(%s=%d)",
           t->title, t->axis[0].name, t->axis[0].values[(int)x]);
       return &t->data.one[x];
       break;
@@ -125,7 +125,7 @@ static float *get_table_element(char *locstr, struct console_var *var) {
       if ((x >= t->axis[0].num) || (y >= t->axis[1].num)) {
         return NULL;
       }
-      sprintf(locstr, "%s(%s=%d, %s=%d)",
+      sprintf(locstr, " * %s(%s=%d, %s=%d)",
           t->title, t->axis[0].name, t->axis[0].values[(int)x],
           t->axis[1].name, t->axis[1].values[(int)y]);
       return &t->data.two[y][x];
@@ -139,19 +139,21 @@ static void handle_get_table_info(struct console_var *var) {
   char fbuf[24];
 
   t = var->value.table_v;
-  sprintf(config.console.txbuffer, "title: %s, num_axis: %d\r\n", 
+  sprintf(config.console.txbuffer, " * title: %s, num_axis: %d\r\n", 
       t->title, t->num_axis);
   if (t->num_axis == 2) {
+    strcat(config.console.txbuffer, " * ");
     strcat(config.console.txbuffer, t->axis[1].name);
     strcat(config.console.txbuffer, ": [ ");
     for (int i = 0; i < t->axis[1].num; ++i) {
       snprintf(fbuf, 24, "%d ", t->axis[1].values[i]);
       strcat(config.console.txbuffer, fbuf);
     }
-    strcat(config.console.txbuffer, "]\r\n");
   }
+  strcat(config.console.txbuffer, "]\r\n");
+  strcat(config.console.txbuffer, " * ");
   strcat(config.console.txbuffer, t->axis[0].name);
-    strcat(config.console.txbuffer, ": [ ");
+  strcat(config.console.txbuffer, ": [ ");
   for (int i = 0; i < t->axis[0].num; ++i) {
     snprintf(fbuf, 24, "%d ", t->axis[0].values[i]);
     strcat(config.console.txbuffer, fbuf);
@@ -167,7 +169,7 @@ static void handle_get_table(struct console_var *var) {
   if (!val) {
     return handle_get_table_info(var);
   }
-  sprintf(config.console.txbuffer, "%s = %f\r\n",
+  sprintf(config.console.txbuffer, " * %s = %f\r\n",
       locstr, *val);
 }
 
@@ -186,7 +188,7 @@ static void handle_set_table(struct console_var *var) {
   }
 
   *val = newval;
-  sprintf(config.console.txbuffer, "%s = %f\r\n",
+  sprintf(config.console.txbuffer, " * %s = %f\r\n",
       locstr, *val);
 }
 
@@ -199,21 +201,35 @@ void console_set_test_trigger() {
 }
 
 
-static void console_status() {
-  
+static void console_csv_log_line() {
+
+  static int first = 1;
+  if (first) {
+    sprintf(config.console.txbuffer, "rpm,sync,loss,variance,t0_count,t1_count,"
+      "map,iat,clt,brv,tps,aap,frt,"
+      "adv,dwell_us,pw_us\r\n");
+    first = 0;
+    return;
+  }
+
   snprintf(config.console.txbuffer, CONSOLE_BUFFER_SIZE,
-      "* rpm=%d sync=%d loss=%d variance=%1.3f t0_count=%d t1_count=%d iat=%3.1f clt=%3.1f ego=%3.1f brv=%3.1f map=%3.1f adv=%2.1f dwell_us=%d pw_us=%d\r\n",
+      "%d,%d,%d,%1.3f,%d,%d,%3.1f,%3.1f,%3.1f,%3.1f,%3.1f,%3.1f,%3.1f,%3.1f,%2.1f,%d,%d\r\n",
       config.decoder.rpm,
       config.decoder.valid,
       config.decoder.loss,
       config.decoder.trigger_cur_rpm_change,
       config.decoder.t0_count,
       config.decoder.t1_count,
+
+      config.sensors[SENSOR_MAP].processed_value,
       config.sensors[SENSOR_IAT].processed_value,
       config.sensors[SENSOR_CLT].processed_value,
-      config.sensors[SENSOR_EGO].processed_value,
       config.sensors[SENSOR_BRV].processed_value,
-      config.sensors[SENSOR_MAP].processed_value,
+      config.sensors[SENSOR_TPS].processed_value,
+      config.sensors[SENSOR_EGO].processed_value,
+      config.sensors[SENSOR_AAP].processed_value,
+      config.sensors[SENSOR_FRT].processed_value,
+
       calculated_values.timing_advance,
       calculated_values.dwell_us,
       calculated_values.fueling_us);
@@ -221,10 +237,11 @@ static void console_status() {
 
 
 static void list_variables() {
-  strcpy(config.console.txbuffer, "Available variables:\r\n\r\n");
+  strcpy(config.console.txbuffer, " * Available variables:\r\n\r\n");
 
   unsigned int i;
   for (i = 0; i < sizeof(vars) / sizeof(struct console_var); ++i) {
+    strcat(config.console.txbuffer, " * ");
     strcat(config.console.txbuffer, vars[i].name);
     strcat(config.console.txbuffer, "\r\n");
   }
@@ -280,7 +297,7 @@ static void console_process_rx() {
       }
     }
   } else if (c && strncasecmp(c, "status", 6) == 0) {
-    console_status();
+    console_csv_log_line();
   } else if (c && strncasecmp(c, "testtrigger", 11) == 0) {
     console_set_test_trigger();
   } else if (c && strncasecmp(c, "save", 4) == 0) {
@@ -308,7 +325,7 @@ void console_process() {
   }
 
   if (console_state == CONSOLE_FEED) {
-    console_status();
+    console_csv_log_line();
     usart_tx(config.console.txbuffer, strlen(config.console.txbuffer));
   }
 
