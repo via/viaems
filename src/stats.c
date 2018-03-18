@@ -97,11 +97,6 @@ void stats_start_timing(stats_field_t type) {
 
 void stats_finish_timing(stats_field_t type) {
   timeval_t time = cycle_count();
-  if (!entries[type].is_interrupt) {
-    printf("%u %u\n", (interrupt_time - entries[type].cur_interrupt_time),
-          time);
-//    time -= (interrupt_time - entries[type].cur_interrupt_time);
-  }
   time -= entries[type]._window;
   stats_update(type, time);
 

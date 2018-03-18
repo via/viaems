@@ -91,7 +91,7 @@ struct config config __attribute__((section(".configdata"))) = {
     [SENSOR_EGO] = {.pin=4, .method=SENSOR_ADC, .process=sensor_process_linear,
       .params={.range={.min=0, .max=100}}},
     [SENSOR_BRV] = {.pin=0, .method=SENSOR_ADC, .process=sensor_process_linear,
-      .params={.range={.min=0, .max=24}}},
+      .params={.range={.min=0, .max=24.5}}},
     [SENSOR_AAP] = {.method=SENSOR_CONST, .params={.fixed_value = 102.0}},
     [SENSOR_FRT] = {.method=SENSOR_CONST, .params={.fixed_value = 0.0}},
 #endif
@@ -115,7 +115,7 @@ struct config config __attribute__((section(".configdata"))) = {
     .min_fire_time_us = 100,
   },
   .console = {
-    .baud = 115200,
+    .baud = 230400,
     .stop_bits = 1,
     .data_bits = 8,
     .parity = 'N',

@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
   platform_init(argc, argv);
   initialize_scheduler();
 
-  enable_test_trigger(FORD_TFI, 3000);
+  enable_test_trigger(FORD_TFI, 3200);
 
   while (1) {                   
     stats_increment_counter(STATS_MAINLOOP_RATE);
