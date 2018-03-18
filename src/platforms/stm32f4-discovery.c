@@ -484,7 +484,7 @@ static void platform_init_usart() {
   usart_rx_reset();
 }
 
-void platform_init(int argv __attribute((unused)),
+void platform_init(int argc __attribute((unused)),
     char *argv[] __attribute((unused))) {
 
   /* 168 Mhz clock */
