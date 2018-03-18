@@ -25,6 +25,12 @@ typedef enum {
   SENSOR_CONST,
 } sensor_method;
 
+typedef enum {
+  FAULT_NONE,
+  FAULT_RANGE,
+  FAULT_CONN,
+} sensor_fault;
+
 struct sensor_input {
   int pin;
   sensor_method method;
@@ -41,6 +47,7 @@ struct sensor_input {
 
   uint32_t raw_value;
   float processed_value;
+  sensor_fault fault;
 };
 
 /* Process functions */
