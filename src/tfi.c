@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "platform.h"
 #include "util.h"
 #include "decoder.h"
@@ -6,6 +7,7 @@
 #include "table.h"
 #include "sensors.h"
 #include "calculations.h"
+#include "stats.h"
 
 static void schedule(struct output_event *ev) {
   switch(ev->type) {
@@ -40,9 +42,10 @@ int main(int argc, char *argv[]) {
   platform_init(argc, argv);
   initialize_scheduler();
 
-  enable_test_trigger(FORD_TFI, 300);
+  enable_test_trigger(FORD_TFI, 3000);
 
   while (1) {                   
+    stats_increment_counter(STATS_MAINLOOP_RATE);
 
     sensors_process();
     if (config.decoder.needs_decoding_t0 || config.decoder.needs_decoding_t1) {
@@ -51,19 +54,23 @@ int main(int argc, char *argv[]) {
       if (config.decoder.valid) {
         calculate_ignition();
         calculate_fueling();
+        stats_start_timing(STATS_SCHED_TOTAL_TIME);
         for (unsigned int e = 0; e < config.num_events; ++e) {
           schedule(&config.events[e]);
         }
+        stats_finish_timing(STATS_SCHED_TOTAL_TIME);
       }
 
     } else {
       /* Check to see if any events have fired. These should be rescheduled
        * now to allow 100% duty utilization */
+      stats_start_timing(STATS_SCHED_FIRED_TIME);
       for (unsigned int e = 0; e < config.num_events; ++e) {
         if (config.decoder.valid && event_has_fired(&config.events[e])) {
           schedule(&config.events[e]);
         }
       }
+      stats_finish_timing(STATS_SCHED_FIRED_TIME);
 
       /* We want to continue adc sampling when the engine isn't spinning.
        * TODO: do this more infrequently */

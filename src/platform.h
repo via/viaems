@@ -16,6 +16,7 @@ typedef uint16_t degrees_t;
 /* timeval_t is gauranteed to be 32 bits */
 
 timeval_t current_time();
+timeval_t cycle_count();
 
 void set_event_timer(timeval_t);
 timeval_t get_event_timer();

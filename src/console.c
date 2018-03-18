@@ -3,6 +3,7 @@
 #include "config.h"
 #include "calculations.h"
 #include "decoder.h"
+#include "stats.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -295,12 +296,14 @@ static void console_process_rx() {
 
 void console_process() {
 
+  stats_start_timing(STATS_CONSOLE_TIME);
   if (usart_rx_ready()) {
     console_process_rx();
   }
 
   /*  if tx buffer is usable, print regular status update */
   if (!usart_tx_ready()) {
+    stats_finish_timing(STATS_CONSOLE_TIME);
     return;
   }
 
@@ -309,5 +312,5 @@ void console_process() {
     usart_tx(config.console.txbuffer, strlen(config.console.txbuffer));
   }
 
-
+  stats_finish_timing(STATS_CONSOLE_TIME);
 }

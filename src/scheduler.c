@@ -4,6 +4,7 @@
 #include "platform.h"
 #include "scheduler.h"
 #include "config.h"
+#include "stats.h"
 
 #include <string.h>
 #include <assert.h>
@@ -223,6 +224,7 @@ void schedule_output_event_safely(struct output_event *ev,
                                  timeval_t newstop,
                                  int preserve_duration) {
 
+  stats_start_timing(STATS_SCHED_SINGLE_TIME);
   int success;
   
   timeval_t oldstart = ev->start.time;
@@ -247,6 +249,7 @@ void schedule_output_event_safely(struct output_event *ev,
         }
     }
     enable_interrupts();
+    stats_finish_timing(STATS_SCHED_SINGLE_TIME);
     return;
   }
 
@@ -282,6 +285,7 @@ void schedule_output_event_safely(struct output_event *ev,
   }
 
   enable_interrupts();
+  stats_finish_timing(STATS_SCHED_SINGLE_TIME);
 
 }
 

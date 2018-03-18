@@ -20,6 +20,7 @@
 #include "sensors.h"
 #include "util.h"
 #include "config.h"
+#include "stats.h"
 
 #include <assert.h>
 
@@ -122,6 +123,9 @@ static void platform_init_freqsensor(unsigned char pin) {
 }
 
 void tim1_cc_isr() {
+  stats_increment_counter(STATS_INT_RATE);
+  stats_increment_counter(STATS_INT_PWM_RATE);
+  stats_start_timing(STATS_INT_TOTAL_TIME);
   timeval_t t = TIM1_CCR1;
   timer_clear_flag(TIM1, TIM_SR_CC1IF);
   /*TODO: Handle pins 1-4 */
@@ -132,6 +136,7 @@ void tim1_cc_isr() {
     }
   }
   sensor_freq_new_data();
+  stats_finish_timing(STATS_INT_TOTAL_TIME);
 }
 
 static void platform_init_eventtimer() {
@@ -528,6 +533,7 @@ void platform_init(int argc __attribute((unused)),
     }
   }
   dwt_enable_cycle_counter();
+  stats_init(168000000);
 }
 
 void usart_rx_reset() {
@@ -536,11 +542,18 @@ void usart_rx_reset() {
   usart_enable_rx_interrupt(USART2);
 }
 
+uint32_t cycle_count() {
+  return dwt_read_cycle_counter();
+}
 
 void usart2_isr() {
+  stats_increment_counter(STATS_INT_RATE);
+  stats_increment_counter(STATS_INT_USART_RATE);
+  stats_start_timing(STATS_INT_TOTAL_TIME);
   if (usart_rx_end) {
     /* Already have unprocessed line in buffer */
     (void)usart_recv(USART2);
+    stats_finish_timing(STATS_INT_TOTAL_TIME);
     return;
   }
 
@@ -555,8 +568,10 @@ void usart2_isr() {
       usart_rx_dest == config.console.rxbuffer + CONSOLE_BUFFER_SIZE - 1) {
     /* Buffer full */
     usart_rx_reset();
+    stats_finish_timing(STATS_INT_TOTAL_TIME);
     return;
   }
+  stats_finish_timing(STATS_INT_TOTAL_TIME);
 }
 
 int usart_tx_ready() {
@@ -604,6 +619,9 @@ void adc_gather() {
  * recording decoder information.  This isn't an issue until we're dealing with
  * more than 100 teeth on a wheel */
 void tim2_isr() {
+  stats_increment_counter(STATS_INT_RATE);
+  stats_increment_counter(STATS_INT_EVENTTIMER_RATE);
+  stats_start_timing(STATS_INT_TOTAL_TIME);
   if (timer_get_flag(TIM2, TIM_SR_CC1IF)) {
     timer_clear_flag(TIM2, TIM_SR_CC1IF);
     scheduler_callback_timer_execute();
@@ -618,21 +636,30 @@ void tim2_isr() {
     config.decoder.last_t1 = TIM2_CCR3;
     config.decoder.needs_decoding_t1 = 1;
   }
+  stats_finish_timing(STATS_INT_TOTAL_TIME);
 }
 
 void dma2_stream1_isr(void) {
+  stats_increment_counter(STATS_INT_RATE);
+  stats_increment_counter(STATS_INT_BUFFERSWAP_RATE);
+  stats_start_timing(STATS_INT_TOTAL_TIME);
   if (dma_get_interrupt_flag(DMA2, DMA_STREAM1, DMA_TCIF)) {
-      dma_clear_interrupt_flags(DMA2, DMA_STREAM1, DMA_TCIF);
+    dma_clear_interrupt_flags(DMA2, DMA_STREAM1, DMA_TCIF);
+    stats_start_timing(STATS_INT_BUFFERSWAP_TIME);
     scheduler_buffer_swap();
+    stats_finish_timing(STATS_INT_BUFFERSWAP_TIME);
   }
+  stats_finish_timing(STATS_INT_TOTAL_TIME);
 }
 
 void enable_interrupts() {
+  stats_finish_timing(STATS_INT_DISABLE_TIME);
   cm_enable_interrupts();
 }
 
 void disable_interrupts() {
   cm_disable_interrupts();
+  stats_start_timing(STATS_INT_DISABLE_TIME);
 }
 
 int interrupts_enabled() {

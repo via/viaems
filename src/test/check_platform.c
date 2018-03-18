@@ -28,6 +28,10 @@ timeval_t current_time() {
   return curtime;
 }
 
+timeval_t cycle_count() {
+  return 0;
+}
+
 void set_current_time(timeval_t t) {
   timeval_t c = curtime;
   curtime = t;
