@@ -379,6 +379,9 @@ static void platform_init_spi_tlc2543() {
   /* Configure SPI output */
   gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO13 | GPIO14 | GPIO15);
   gpio_set_af(GPIOB, GPIO_AF5, GPIO13 | GPIO14 | GPIO15);
+  gpio_mode_setup(GPIOB, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO12);
+  gpio_set_output_options(GPIOB, GPIO_OTYPE_PP, GPIO_OSPEED_100MHZ, GPIO12);
+  gpio_set(GPIOB, GPIO12);
   spi_disable(SPI2);
   spi_reset(SPI2);
   spi_enable_software_slave_management(SPI2);
@@ -421,6 +424,7 @@ static void platform_init_spi_tlc2543() {
   dma_enable_direct_mode(DMA1, DMA_STREAM1);
 
   /* Configure TIM6 to drive DMA for SPI */
+  gpio_clear(GPIOB, GPIO12);
   timer_reset(TIM6);
   timer_set_mode(TIM6, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
   timer_set_period(TIM6, 1800); /* Approx 50 khz sampling rate */

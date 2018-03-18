@@ -201,13 +201,17 @@ void console_set_test_trigger() {
 static void console_status() {
   
   snprintf(config.console.txbuffer, CONSOLE_BUFFER_SIZE,
-      "* rpm=%d sync=%d loss=%d variance=%1.3f t0_count=%d t1_count=%d map=%3.1f adv=%2.1f dwell_us=%d pw_us=%d\r\n",
+      "* rpm=%d sync=%d loss=%d variance=%1.3f t0_count=%d t1_count=%d iat=%3.1f clt=%3.1f ego=%3.1f brv=%3.1f map=%3.1f adv=%2.1f dwell_us=%d pw_us=%d\r\n",
       config.decoder.rpm,
       config.decoder.valid,
       config.decoder.loss,
       config.decoder.trigger_cur_rpm_change,
       config.decoder.t0_count,
       config.decoder.t1_count,
+      config.sensors[SENSOR_IAT].processed_value,
+      config.sensors[SENSOR_CLT].processed_value,
+      config.sensors[SENSOR_EGO].processed_value,
+      config.sensors[SENSOR_BRV].processed_value,
       config.sensors[SENSOR_MAP].processed_value,
       calculated_values.timing_advance,
       calculated_values.dwell_us,
