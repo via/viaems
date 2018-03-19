@@ -41,9 +41,10 @@
  *  Trigger 2 - PB11 (TIM2_CH4)
  *
  *  TLC2543 on SPI2 (PB12-15) CS, SCK, MISO, MOSI
- *    TIM5 is used to control sensor sampling rate (160 hz)
- *    TX uses TIM5 dma1 stream 1 chan 7
- *    RX uses SPI2 dma1 stream 3 chan 0
+ *    - Uses TIM5 dma1 stream 1 chan 7 to trigger DMA at about 40 khz for 10
+ *     inputs
+ *    - RX uses SPI2 dma1 stream 3 chan 0
+ *    - On end of RX dma, trigger interrupt
  *
  *  Configurable pin mapping:
  *  Scheduled Outputs:
@@ -59,7 +60,7 @@
 
 static char *usart_rx_dest;
 static int usart_rx_end;
-static volatile uint16_t spi_rx_raw_adc[10] = {0};
+static volatile uint16_t spi_rx_raw_adc[13] = {0};
 
 static void platform_init_freqsensor(unsigned char pin) {
   uint32_t tim;
@@ -358,30 +359,19 @@ static void platform_init_scheduled_outputs() {
  * spi_rx_raw_adc.
  *
  * Currently using 10 inputs, spi_tx_list contains the 16bit data words to
- * trigger reads on AIN0-AIN09 on the TLC2543.  DMA is set up in circular mode
- * such that each channel is sampled in order continuously.  DMA RX is set up
+ * trigger reads on AIN0-AIN10 and vref/2 on the TLC2543.  DMA is set up
+ * such that each channel is sampled in order.  DMA RX is set up
  * accordingly, but note that because the TLC2543 returns the previous sample
  * result each time, command 1 in spi_tx_list corresponds to response 2 in
  * spi_rx_raw_adc, and so forth.
  *
  * Currently sample rate is about 50 khz, with a SPI bus frequency of 1.3ish MHz
  *
- * TODO: Initialize CS
+ * Each call to adc_gather reconfigures TX DMA, resets and starts TIM6, and
+ * lowers CS Once all 13 receives are complete, RX dma completes, notifies
+ * completion, and raises CS.
  */
 static void platform_init_spi_tlc2543() {
-  static uint16_t spi_tx_list[] =
-    {0x0C00,
-     0x1C00,
-     0x2C00,
-     0x3C00,
-     0x4C00,
-     0x5C00,
-     0x6C00,
-     0x7C00,
-     0x8C00,
-     0x9C00
-    };
-
   /* Configure SPI output */
   gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO13 | GPIO14 | GPIO15);
   gpio_set_af(GPIOB, GPIO_AF5, GPIO13 | GPIO14 | GPIO15);
@@ -407,30 +397,20 @@ static void platform_init_spi_tlc2543() {
   dma_set_peripheral_size(DMA1, DMA_STREAM3, DMA_SxCR_PSIZE_16BIT);
   dma_enable_memory_increment_mode(DMA1, DMA_STREAM3);
   dma_set_transfer_mode(DMA1, DMA_STREAM3, DMA_SxCR_DIR_PERIPHERAL_TO_MEM);
-  dma_enable_circular_mode(DMA1, DMA_STREAM3);
   dma_set_peripheral_address(DMA1, DMA_STREAM3, (uint32_t) &SPI2_DR);
+  dma_enable_circular_mode(DMA1, DMA_STREAM3);
   dma_set_memory_address(DMA1, DMA_STREAM3, (uint32_t)spi_rx_raw_adc);
-  dma_set_number_of_data(DMA1, DMA_STREAM3, 10);
+  dma_set_number_of_data(DMA1, DMA_STREAM3, 13);
   dma_channel_select(DMA1, DMA_STREAM3, DMA_SxCR_CHSEL_0);
   dma_enable_direct_mode(DMA1, DMA_STREAM3);
+  dma_enable_transfer_complete_interrupt(DMA1, DMA_STREAM3);
   dma_enable_stream(DMA1, DMA_STREAM3);
 
-  /* Set up DMA for SPI TX */
-  dma_stream_reset(DMA1, DMA_STREAM1);
-  dma_set_priority(DMA1, DMA_STREAM1, DMA_SxCR_PL_LOW);
-  dma_set_memory_size(DMA1, DMA_STREAM1, DMA_SxCR_MSIZE_16BIT);
-  dma_set_peripheral_size(DMA1, DMA_STREAM1, DMA_SxCR_PSIZE_16BIT);
-  dma_enable_memory_increment_mode(DMA1, DMA_STREAM1);
-  dma_set_transfer_mode(DMA1, DMA_STREAM1, DMA_SxCR_DIR_MEM_TO_PERIPHERAL);
-  dma_enable_circular_mode(DMA1, DMA_STREAM1);
-  dma_set_peripheral_address(DMA1, DMA_STREAM1, (uint32_t) &SPI2_DR);
-  dma_set_memory_address(DMA1, DMA_STREAM1, (uint32_t)spi_tx_list);
-  dma_set_number_of_data(DMA1, DMA_STREAM1, 10);
-  dma_channel_select(DMA1, DMA_STREAM1, DMA_SxCR_CHSEL_7);
-  dma_enable_direct_mode(DMA1, DMA_STREAM1);
+  nvic_enable_irq(NVIC_DMA1_STREAM3_IRQ);
+  nvic_set_priority(NVIC_DMA1_STREAM3_IRQ, 64);
+
 
   /* Configure TIM6 to drive DMA for SPI */
-  gpio_clear(GPIOB, GPIO12);
   timer_reset(TIM6);
   timer_set_mode(TIM6, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
   timer_set_period(TIM6, 1800); /* Approx 50 khz sampling rate */
@@ -443,12 +423,6 @@ static void platform_init_spi_tlc2543() {
   timer_disable_oc_output(TIM6, TIM_OC4);
 
   timer_set_prescaler(TIM6, 0); 
-  timer_enable_counter(TIM6);
-  timer_enable_update_event(TIM6);
-  timer_update_on_overflow(TIM6);
-  timer_set_dma_on_update_event(TIM6);
-  TIM6_DIER |= TIM_DIER_UDE; /* Enable update dma */
-  dma_enable_stream(DMA1, DMA_STREAM1);
 
 }
 
@@ -600,17 +574,81 @@ void usart_tx(char *buf, unsigned short len) {
 
 }
 
+static volatile int adc_gather_in_progress = 0;
 void adc_gather() {
+  static uint16_t spi_tx_list[] =
+    {0x0C00,
+     0x1C00,
+     0x2C00,
+     0x3C00,
+     0x4C00,
+     0x5C00,
+     0x6C00,
+     0x7C00,
+     0x8C00,
+     0x9C00,
+     0xAC00,
+     0xBC00, /* Check value (Vref+ + Vref-) / 2 */
+     0xBC00, /* Duplicated to actually get previous read */
+    };
+
+  if (adc_gather_in_progress) {
+    return; /* Don't start another until RX completes */
+  }
+  adc_gather_in_progress = 1;
+
+  timer_set_counter(TIM6, 0);
+  /* CS low */
+  gpio_clear(GPIOB, GPIO12);
+
+  /* Set up DMA for SPI TX */
+  dma_stream_reset(DMA1, DMA_STREAM1);
+  dma_set_priority(DMA1, DMA_STREAM1, DMA_SxCR_PL_LOW);
+  dma_set_memory_size(DMA1, DMA_STREAM1, DMA_SxCR_MSIZE_16BIT);
+  dma_set_peripheral_size(DMA1, DMA_STREAM1, DMA_SxCR_PSIZE_16BIT);
+  dma_enable_memory_increment_mode(DMA1, DMA_STREAM1);
+  dma_set_transfer_mode(DMA1, DMA_STREAM1, DMA_SxCR_DIR_MEM_TO_PERIPHERAL);
+  dma_set_peripheral_address(DMA1, DMA_STREAM1, (uint32_t) &SPI2_DR);
+  dma_set_memory_address(DMA1, DMA_STREAM1, (uint32_t)spi_tx_list);
+  dma_set_number_of_data(DMA1, DMA_STREAM1, 13);
+  dma_channel_select(DMA1, DMA_STREAM1, DMA_SxCR_CHSEL_7);
+  dma_enable_direct_mode(DMA1, DMA_STREAM1);
+  dma_enable_stream(DMA1, DMA_STREAM1);
+
+  timer_enable_counter(TIM6);
+  timer_enable_update_event(TIM6);
+  timer_update_on_overflow(TIM6);
+  timer_set_dma_on_update_event(TIM6);
+  TIM6_DIER |= TIM_DIER_UDE; /* Enable update dma */
+}
+
+void dma1_stream3_isr(void) {
+  if (!dma_get_interrupt_flag(DMA1, DMA_STREAM3, DMA_TCIF)) {
+    return;
+  }
+  dma_clear_interrupt_flags(DMA1, DMA_STREAM3, DMA_TCIF);
+
+  /* CS high */
+  gpio_set(GPIOB, GPIO12);
+  timer_disable_counter(TIM6);
+
+  int fault = 0;
+  if (((spi_rx_raw_adc[12] >> 4) > (2048 + 10)) ||
+      ((spi_rx_raw_adc[12] >> 4) < (2048 - 10))) {
+    fault = 1; /* Check value is vref/2 */
+  }
+
   for (int i = 0; i < NUM_SENSORS; ++i) {
     if (config.sensors[i].method == SENSOR_ADC) {
       int pin = (config.sensors[i].pin + 1) % 10;
+      config.sensors[i].fault = fault ? FAULT_CONN : FAULT_NONE;
       config.sensors[i].raw_value = 
         spi_rx_raw_adc[pin] >> 4; /* 12 bit value is left justified */
     }
   }
-  /* With SPI ADC, data is always copied from the raw dma buffer 
-   * synchronously */
+  
   sensor_adc_new_data();
+  adc_gather_in_progress = 0;
 }
 
 /* This can be set as a higher priority interrupt than the swap_buffers
