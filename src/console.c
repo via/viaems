@@ -207,13 +207,13 @@ static void console_csv_log_line() {
   if (first) {
     sprintf(config.console.txbuffer, "rpm,sync,loss,variance,t0_count,t1_count,"
       "map,iat,clt,brv,tps,aap,frt,"
-      "adv,dwell_us,pw_us\r\n");
+      "adv,dwell_us,pw_us,senfault\r\n");
     first = 0;
     return;
   }
 
   snprintf(config.console.txbuffer, CONSOLE_BUFFER_SIZE,
-      "%d,%d,%d,%1.3f,%d,%d,%3.1f,%3.1f,%3.1f,%3.1f,%3.1f,%3.1f,%3.1f,%3.1f,%2.1f,%d,%d\r\n",
+      "%d,%d,%d,%1.3f,%d,%d,%3.1f,%3.1f,%3.1f,%3.1f,%3.1f,%3.1f,%3.1f,%3.1f,%2.1f,%d,%d,%lu\r\n",
       config.decoder.rpm,
       config.decoder.valid,
       config.decoder.loss,
@@ -232,7 +232,8 @@ static void console_csv_log_line() {
 
       calculated_values.timing_advance,
       calculated_values.dwell_us,
-      calculated_values.fueling_us);
+      calculated_values.fueling_us,
+      sensor_fault_status());
 }
 
 

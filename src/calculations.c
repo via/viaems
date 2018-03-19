@@ -34,7 +34,7 @@ void calculate_ignition() {
 
 static float air_density(float iat_celsius, float atmos_kpa) {
   const float kelvin_offset = 273.15;
-  float temp_factor =  kelvin_offset / (iat_celsius - kelvin_offset);
+  float temp_factor =  kelvin_offset / (iat_celsius - kelvin_offset); // Wrong?
   return (atmos_kpa / 100) * config.fueling.density_of_air_stp / temp_factor;
 }
 

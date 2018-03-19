@@ -132,7 +132,7 @@ void tim1_cc_isr() {
   timer_clear_flag(TIM1, TIM_SR_CC1IF);
   /*TODO: Handle pins 1-4 */
   for (int i = 0; i < NUM_SENSORS; ++i) {
-    if ((config.sensors[i].method == SENSOR_FREQ) &&
+    if ((config.sensors[i].source == SENSOR_FREQ) &&
         (config.sensors[i].pin == 1)) {
       config.sensors[i].raw_value = t;
     }
@@ -499,10 +499,10 @@ void platform_init(int argc __attribute((unused)),
   platform_init_pwm();
 
   for (int i = 0; i < NUM_SENSORS; ++i) {
-    if (config.sensors[i].method == SENSOR_FREQ) {
+    if (config.sensors[i].source == SENSOR_FREQ) {
       platform_init_freqsensor(config.sensors[i].pin);
     }
-    if (config.sensors[i].method == SENSOR_DIGITAL) {
+    if (config.sensors[i].source == SENSOR_DIGITAL) {
       gpio_mode_setup(GPIOE, GPIO_MODE_INPUT, GPIO_PUPD_PULLDOWN, 
           (1 << config.sensors[i].pin));
     }
@@ -639,7 +639,7 @@ void dma1_stream3_isr(void) {
   }
 
   for (int i = 0; i < NUM_SENSORS; ++i) {
-    if (config.sensors[i].method == SENSOR_ADC) {
+    if (config.sensors[i].source == SENSOR_ADC) {
       int pin = (config.sensors[i].pin + 1) % 10;
       config.sensors[i].fault = fault ? FAULT_CONN : FAULT_NONE;
       config.sensors[i].raw_value = 
