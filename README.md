@@ -165,7 +165,9 @@ Requires:
 - check (for unit tests)
 
 ```
-cd src/
+cd libopencm3
+make
+cd ../src/
 make clean
 make PLATFORM=stm32f4-discovery
 ```

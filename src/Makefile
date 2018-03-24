@@ -11,11 +11,11 @@ CFLAGS+= -fprofile-arcs -ftest-coverage
 .else
 .if ${PLATFORM} == "stm32f4-discovery"
 CC=arm-none-eabi-gcc
-CFLAGS=  -I. -std=c99 -Wall -O3 -Wextra -g
+OPENCM3_DIR=../libopencm3
+CFLAGS=  -I. -std=c99 -Wall -O3 -Wextra -g -flto
 CFLAGS+= -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mthumb -mcpu=cortex-m4
-CFLAGS+= -I /opt/libopencm3/arm-none-eabi/include -DSTM32F4
-CFLAGS+= -D TICKRATE=4000000 -D FASTMATH -flto
-LDFLAGS=  -L/opt/libopencm3/arm-none-eabi/lib
+CFLAGS+= -D TICKRATE=4000000
+CFLAGS+=  -L${OPENCM3_DIR}/lib -I${OPENCM3_DIR}/include -DSTM32F4
 LDFLAGS+= -lopencm3_stm32f4 -lc -lnosys -flto
 LDFLAGS+= -T platforms/stm32f4-discovery.ld -nostartfiles
 all: tfi
