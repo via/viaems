@@ -5,16 +5,17 @@
 static volatile int adc_data_ready;
 static volatile int freq_data_ready;
 
-static float sensor_convert_linear(struct sensor_input *in) {
-  float partial = in->raw_value / 4096.0f;
+static float sensor_convert_linear(struct sensor_input *in, float raw) {
+  float partial = raw / 4096.0f;
   return in->params.range.min + partial * 
     (in->params.range.max - in->params.range.min);
 }
 
-static float sensor_convert_freq(struct sensor_input *in) {
+/* Returns 0 - 4095 for 0 Hz - 2 kHz */
+static float sensor_convert_freq(float raw) {
   float tickrate = TICKRATE;
-  if (in->raw_value) {
-    return 1.0/((in->raw_value*SENSOR_FREQ_DIVIDER)/tickrate);
+  if (raw) {
+    return 40.96f * 1.0 / ((raw * SENSOR_FREQ_DIVIDER )/ tickrate);
   } else {
     return 0.0; /* Prevent Div by Zero */
   }
@@ -35,13 +36,29 @@ static void sensor_convert(struct sensor_input *in) {
     return;
   }
 
+  float raw;
+  switch (in->source) {
+    case SENSOR_ADC:
+      raw = in->raw_value;
+      break;
+    case SENSOR_FREQ:
+      raw = sensor_convert_freq(in->raw_value);
+      break;
+    case SENSOR_CONST:
+      in->processed_value = in->params.fixed_value;
+      return;
+    default:
+      raw = 0.0;
+      break;
+  }
+
   float old_value = in->processed_value;
   switch (in->method) {
     case METHOD_LINEAR:
-      in->processed_value = sensor_convert_linear(in);
+      in->processed_value = sensor_convert_linear(in, raw);
       break;
     case METHOD_TABLE:
-      in->processed_value = interpolate_table_oneaxis(in->params.table, in->raw_value);
+      in->processed_value = interpolate_table_oneaxis(in->params.table, raw);
       break;
   }
 
@@ -54,21 +71,25 @@ static void sensor_convert(struct sensor_input *in) {
   
 void
 sensors_process() {
-  if (adc_data_ready) {
-    adc_data_ready = 0;
-    for (int i = 0; i < NUM_SENSORS; ++i) {
-      if (config.sensors[i].source == SENSOR_ADC) {
+  for (int i = 0; i < NUM_SENSORS; ++i) {
+    switch(config.sensors[i].source) {
+      case SENSOR_ADC:
+        if (adc_data_ready) {
+          sensor_convert(&config.sensors[i]);
+        }
+        break;
+      case SENSOR_FREQ:
+        if (freq_data_ready) {
+          sensor_convert(&config.sensors[i]);
+        }
+        break;
+      case SENSOR_DIGITAL:
+      case SENSOR_PWM:
+      case SENSOR_CONST:
         sensor_convert(&config.sensors[i]);
-      }
-    }
-  }
-  if (freq_data_ready) {
-    freq_data_ready = 0;
-    for (int i = 0; i < NUM_SENSORS; ++i) {
-      if (config.sensors[i].source == SENSOR_FREQ) {
-        /* TODO: fix freq */
-        sensor_convert(&config.sensors[i]);
-      }
+        break;
+      default:
+        break;
     }
   }
   for (int i = 0; i < NUM_SENSORS; ++i) {
@@ -108,27 +129,22 @@ START_TEST(check_sensor_convert_linear) {
   };
 
   si.raw_value = 0;
-  ck_assert(sensor_convert_linear(&si) == -10.0);
+  ck_assert(sensor_convert_linear(&si, si.raw_value) == -10.0);
 
   si.raw_value = 4096.0;
-  ck_assert(sensor_convert_linear(&si) == 10.0);
+  ck_assert(sensor_convert_linear(&si, si.raw_value) == 10.0);
 
   si.raw_value = 2048.0;
-  ck_assert(sensor_convert_linear(&si) == 0.0);
+  ck_assert(sensor_convert_linear(&si, si.raw_value) == 0.0);
 
 } END_TEST
 
 START_TEST(check_sensor_convert_freq) {
-  struct sensor_input si;
+  ck_assert_float_eq_tol(sensor_convert_freq(100.0), 400, .1);
 
-  si.raw_value = 100.0;
-  ck_assert_float_eq_tol(sensor_convert_freq(&si), 9.765625, .1);
+  ck_assert_float_eq_tol(sensor_convert_freq(1000.0), 40, .1);
 
-  si.raw_value = 1000.0;
-  ck_assert_float_eq_tol(sensor_convert_freq(&si), 0.976562, .1);
-
-  si.raw_value = 0.0;
-  ck_assert_float_eq_tol(sensor_convert_freq(&si), 0.0, 0.01);
+  ck_assert_float_eq_tol(sensor_convert_freq(0.0), 0.0, 0.01);
 
 } END_TEST
 

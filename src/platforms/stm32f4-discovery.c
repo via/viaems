@@ -62,82 +62,109 @@ static char *usart_rx_dest;
 static int usart_rx_end;
 static volatile uint16_t spi_rx_raw_adc[13] = {0};
 
-static void platform_init_freqsensor(unsigned char pin) {
-  uint32_t tim;
-  switch(pin) {
-    case 1:
-      /* TIM1 CH1 */
-      tim = TIM1;
-      gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO8);
-      gpio_set_af(GPIOA, GPIO_AF1, GPIO8);
-      break;
-    case 2:
-      /* TIM1 CH2 */
-      tim = TIM1;
-      gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO9);
-      gpio_set_af(GPIOA, GPIO_AF1, GPIO9);
-      break;
-    case 3:
-      /* TIM1 CH3 */
-      tim = TIM1;
-      gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO10);
-      gpio_set_af(GPIOA, GPIO_AF1, GPIO10);
-      break;
-    case 4:
-      /* TIM1 CH4 */
-      tim = TIM1;
-      gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO11);
-      gpio_set_af(GPIOA, GPIO_AF1, GPIO11);
-      break;
-  };
-  timer_reset(tim);
-  timer_set_mode(tim, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
-  timer_set_period(tim, 0xFFFFFFFF);
-  timer_disable_preload(tim);
-  timer_continuous_mode(tim);
+
+
+static void platform_init_freqsensor() {
+  timer_reset(TIM1);
+  timer_set_mode(TIM1, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
+  timer_set_period(TIM1, 0xFFFFFFFF);
+  timer_disable_preload(TIM1);
+  timer_continuous_mode(TIM1);
   /* Setup output compare registers */
-  timer_disable_oc_output(tim, TIM_OC1);
-  timer_disable_oc_output(tim, TIM_OC2);
-  timer_disable_oc_output(tim, TIM_OC3);
-  timer_disable_oc_output(tim, TIM_OC4);
+  timer_disable_oc_output(TIM1, TIM_OC1);
+  timer_disable_oc_output(TIM1, TIM_OC2);
+  timer_disable_oc_output(TIM1, TIM_OC3);
+  timer_disable_oc_output(TIM1, TIM_OC4);
 
   /* Set up compare */
-  timer_ic_set_input(tim, TIM_IC1, TIM_IC_IN_TI1);
-  timer_ic_set_filter(tim, TIM_IC1, TIM_IC_CK_INT_N_8);
-  timer_ic_set_polarity(tim, TIM_IC1, TIM_IC_RISING);
-  timer_set_prescaler(tim, 2*SENSOR_FREQ_DIVIDER); /* Prescale set to map up to 20kHz */
-  timer_slave_set_mode(tim, TIM_SMCR_SMS_RM);
-  timer_slave_set_trigger(tim, TIM_SMCR_TS_TI1FP1);
-  timer_ic_enable(tim, TIM_IC1);
+  timer_ic_set_input(TIM1, TIM_IC1, TIM_IC_IN_TI1);
+  timer_ic_set_filter(TIM1, TIM_IC1, TIM_IC_CK_INT_N_8);
+  timer_ic_set_polarity(TIM1, TIM_IC1, TIM_IC_RISING);
+  timer_ic_enable(TIM1, TIM_IC1);
 
-  timer_enable_counter(tim);
-  timer_enable_irq(tim, TIM_DIER_CC1IE);
+  timer_ic_set_input(TIM1, TIM_IC2, TIM_IC_IN_TI2);
+  timer_ic_set_filter(TIM1, TIM_IC2, TIM_IC_CK_INT_N_8);
+  timer_ic_set_polarity(TIM1, TIM_IC2, TIM_IC_RISING);
+  timer_ic_enable(TIM1, TIM_IC2);
 
-  switch(pin) {
-    case 1:
-    case 2:
-    case 3:
-    case 4:
-      nvic_enable_irq(NVIC_TIM1_CC_IRQ);
-      nvic_set_priority(NVIC_TIM1_CC_IRQ, 64);
-      break;
-  }
+  timer_ic_set_input(TIM1, TIM_IC3, TIM_IC_IN_TI3);
+  timer_ic_set_filter(TIM1, TIM_IC3, TIM_IC_CK_INT_N_8);
+  timer_ic_set_polarity(TIM1, TIM_IC3, TIM_IC_RISING);
+  timer_ic_enable(TIM1, TIM_IC3);
+
+  timer_ic_set_input(TIM1, TIM_IC4, TIM_IC_IN_TI4);
+  timer_ic_set_filter(TIM1, TIM_IC4, TIM_IC_CK_INT_N_8);
+  timer_ic_set_polarity(TIM1, TIM_IC4, TIM_IC_RISING);
+  timer_ic_enable(TIM1, TIM_IC4);
+
+  timer_set_prescaler(TIM1, 2*SENSOR_FREQ_DIVIDER); /* Prescale set to map up to 20kHz */
+
+  timer_enable_counter(TIM1);
+  timer_enable_irq(TIM1, TIM_DIER_CC1IE | 
+                         TIM_DIER_CC2IE |
+                         TIM_DIER_CC3IE | 
+                         TIM_DIER_CC4IE);
+
+  nvic_enable_irq(NVIC_TIM1_CC_IRQ);
+  nvic_set_priority(NVIC_TIM1_CC_IRQ, 64);
 }
 
 void tim1_cc_isr() {
+  static struct {
+    uint16_t value;
+    uint32_t time;
+  } prev[4] = {0};
+
   stats_increment_counter(STATS_INT_RATE);
   stats_increment_counter(STATS_INT_PWM_RATE);
   stats_start_timing(STATS_INT_TOTAL_TIME);
-  timeval_t t = TIM1_CCR1;
-  timer_clear_flag(TIM1, TIM_SR_CC1IF);
-  /*TODO: Handle pins 1-4 */
+
+
+  /* TODO: Doesn't detect connection fault if the interrupt doesn't get called,
+   * e.g. only if another freq input is still working will it detect another
+   * faulting */
   for (int i = 0; i < NUM_SENSORS; ++i) {
-    if ((config.sensors[i].source == SENSOR_FREQ) &&
-        (config.sensors[i].pin == 1)) {
-      config.sensors[i].raw_value = t;
+    if ((config.sensors[i].source != SENSOR_FREQ)) {
+      continue;
+    }
+    volatile uint32_t timer_flag;
+    volatile uint32_t *timer_ccr;
+    uint32_t pin = config.sensors[i].pin;
+    switch (pin) {
+      case 1:
+        timer_flag = TIM_SR_CC1IF;
+        timer_ccr = &TIM1_CCR1;
+        break;
+      case 2:
+        timer_flag = TIM_SR_CC2IF;
+        timer_ccr = &TIM1_CCR2;
+        break;
+      case 3:
+        timer_flag = TIM_SR_CC3IF;
+        timer_ccr = &TIM1_CCR3;
+        break;
+      case 4:
+        timer_flag = TIM_SR_CC4IF;
+        timer_ccr = &TIM1_CCR4;
+        break;
+      default:
+        continue;
+    }
+
+    if (timer_get_flag(TIM1, timer_flag)) {
+      uint16_t cur = *timer_ccr;
+      config.sensors[i].raw_value = cur - prev[pin - 1].value;
+      prev[pin - 1].value = cur;
+      prev[pin - 1].time = current_time();
+      sensor_freq_new_data();
+      config.sensors[i].fault = FAULT_NONE;
+      timer_clear_flag(TIM1, timer_flag);
+    } else if ((current_time() - prev[pin - 1].time) > TICKRATE) {
+      /* Been more than one second, fault */
+      config.sensors[i].fault = FAULT_CONN;
     }
   }
-  sensor_freq_new_data();
+
   stats_finish_timing(STATS_INT_TOTAL_TIME);
 }
 
@@ -497,10 +524,15 @@ void platform_init(int argc __attribute((unused)),
   platform_init_spi_tlc2543();
   platform_init_usart();
   platform_init_pwm();
+  platform_init_freqsensor();
 
   for (int i = 0; i < NUM_SENSORS; ++i) {
-    if (config.sensors[i].source == SENSOR_FREQ) {
-      platform_init_freqsensor(config.sensors[i].pin);
+    if ((config.sensors[i].source == SENSOR_FREQ) &&
+        (config.sensors[i].pin >= 1) &&
+        (config.sensors[i].pin <= 4)) {
+      /* Pin 1-4 maps to GPIO8-11 */
+      gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO8 << (config.sensors[i].pin - 1));
+      gpio_set_af(GPIOA, GPIO_AF1, GPIO8 << (config.sensors[i].pin - 1));
     }
     if (config.sensors[i].source == SENSOR_DIGITAL) {
       gpio_mode_setup(GPIOE, GPIO_MODE_INPUT, GPIO_PUPD_PULLDOWN, 
