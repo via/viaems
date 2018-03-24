@@ -107,7 +107,7 @@ static void platform_init_freqsensor(unsigned char pin) {
   timer_ic_set_polarity(tim, TIM_IC1, TIM_IC_RISING);
   timer_set_prescaler(tim, 2*SENSOR_FREQ_DIVIDER); /* Prescale set to map up to 20kHz */
   timer_slave_set_mode(tim, TIM_SMCR_SMS_RM);
-  timer_slave_set_trigger(tim, TIM_SMCR_TS_IT1FP1);
+  timer_slave_set_trigger(tim, TIM_SMCR_TS_TI1FP1);
   timer_ic_enable(tim, TIM_IC1);
 
   timer_enable_counter(tim);
