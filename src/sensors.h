@@ -23,6 +23,11 @@ typedef enum {
   SENSOR_DIGITAL,
   SENSOR_PWM,
   SENSOR_CONST,
+} sensor_source;
+
+typedef enum {
+  METHOD_LINEAR,
+  METHOD_TABLE,
 } sensor_method;
 
 typedef enum {
@@ -33,8 +38,8 @@ typedef enum {
 
 struct sensor_input {
   int pin;
+  sensor_source source;
   sensor_method method;
-  void (*process)(struct sensor_input *);
 
   union {
     struct {
@@ -47,18 +52,25 @@ struct sensor_input {
 
   uint32_t raw_value;
   float processed_value;
+  float lag;
+  struct {
+    uint32_t min;
+    uint32_t max;
+    float fault_value;
+  } fault_config;
   sensor_fault fault;
 };
-
-/* Process functions */
-void sensor_process_linear(struct sensor_input *);
-void sensor_process_freq(struct sensor_input *);
-void sensor_process_table(struct sensor_input *);
 
 void sensors_process();
 
 void sensor_adc_new_data();
 void sensor_freq_new_data();
+uint32_t sensor_fault_status();
+
+#ifdef UNITTEST
+#include <check.h>
+TCase *setup_sensor_tests();
+#endif
 
 #endif
 

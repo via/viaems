@@ -14,26 +14,20 @@
 #include "check_platform.h"
 
 
-static int value_within(int percent, float value, float target) {
-  float diff = (target - value) / target;
-  return (diff * 100) <= percent;
-}
-
-
 START_TEST(check_rpm_from_time_diff) {
-  /* 360 degrees for 0.005 s is 6000 rpm */
-  ck_assert(value_within(1, rpm_from_time_diff(2000, 180), 6000));
+  /* 180 degrees for 0.005 s is 6000 rpm */
+  ck_assert_float_eq_tol(rpm_from_time_diff(20000, 180), 6000, 50);
 
   /* 90 degrees for 0.00125 s is 6000 rpm */
-  ck_assert(value_within(1, rpm_from_time_diff(5000, 45), 6000));
+  ck_assert_float_eq_tol(rpm_from_time_diff(5000, 45), 6000, 50);
 } END_TEST
 
 START_TEST(check_time_from_rpm_diff) {
-  /* 6000 RPMS, 360 degrees = 0.005 s */
-  ck_assert(value_within(1, time_from_rpm_diff(6000, 180), 5000));
+  /* 6000 RPMS, 180 degrees = 0.005 s */
+  ck_assert_float_eq_tol(time_from_rpm_diff(6000, 180), 20000, 50);
 
   /* 6000 RPMS, 90 is 0.00125 s */
-  ck_assert(value_within(1, time_from_rpm_diff(6000, 45), 1250));
+  ck_assert_float_eq_tol(time_from_rpm_diff(6000, 45), 5000, 50);
 } END_TEST
 
 START_TEST(check_time_from_us) {
@@ -99,43 +93,6 @@ START_TEST(check_clamp_angle) {
   ck_assert_int_eq(clamp_angle(1080, 720), 360);
 } END_TEST
 
-START_TEST(check_sensor_process_linear) {
-  struct sensor_input si = {
-    .params = {
-      .range = { .min=-10.0, .max=10.0},
-    },
-  };
-
-  si.raw_value = 0;
-  sensor_process_linear(&si);  
-  ck_assert(si.processed_value == -10.0);
-
-  si.raw_value = 4096.0;
-  sensor_process_linear(&si);  
-  ck_assert(si.processed_value == 10.0);
-
-  si.raw_value = 2048.0;
-  sensor_process_linear(&si);  
-  ck_assert(si.processed_value == 0.0);
-
-} END_TEST
-
-START_TEST(check_sensor_process_freq) {
-  struct sensor_input si;
-
-  si.raw_value = 100.0;
-  sensor_process_freq(&si);  
-  ck_assert(value_within(1, si.processed_value, 9.765625));
-
-  si.raw_value = 1000.0;
-  sensor_process_freq(&si); 
-  ck_assert(value_within(1, si.processed_value, 0.976562));
-
-  si.raw_value = 0.0;
-  sensor_process_freq(&si);  
-  ck_assert(si.processed_value == 0.0);
-
-} END_TEST
 
 struct table t1 = {
   .num_axis = 1,
@@ -240,7 +197,6 @@ int main(void) {
 
   Suite *tfi_suite = suite_create("TFI");
   TCase *util_tests = tcase_create("util");
-  TCase *sensor_tests = tcase_create("sensors");
   TCase *table_tests = tcase_create("tables");
   TCase *calc_tests = tcase_create("calculations");
 
@@ -252,9 +208,6 @@ int main(void) {
   tcase_add_test(util_tests, check_clamp_angle);
   tcase_add_test(util_tests, check_time_from_us);
 
-  tcase_add_test(sensor_tests, check_sensor_process_linear);
-  tcase_add_test(sensor_tests, check_sensor_process_freq);
-
   tcase_add_test(table_tests, check_table_oneaxis_interpolate);
   tcase_add_test(table_tests, check_table_oneaxis_clamp);
   tcase_add_test(table_tests, check_table_twoaxis_interpolate);
@@ -264,9 +217,9 @@ int main(void) {
   tcase_add_test(calc_tests, check_calculate_ignition_fixedduty);
 
   suite_add_tcase(tfi_suite, util_tests);
-  suite_add_tcase(tfi_suite, sensor_tests);
   suite_add_tcase(tfi_suite, table_tests);
   suite_add_tcase(tfi_suite, calc_tests);
+  suite_add_tcase(tfi_suite, setup_sensor_tests());
   suite_add_tcase(tfi_suite, setup_decoder_tests());
   suite_add_tcase(tfi_suite, setup_scheduler_tests());
   SRunner *sr = srunner_create(tfi_suite);
