@@ -27,7 +27,7 @@ battery voltage.  Spark advance is determined by a MAP/RPM table lookup.
 
 The decoder currently measures RPM by using the last two trigger times, creating
 an average over 180 degrees of crank rotation.  Trigger-to-trigger variation
-allowance in rpm is controlled by `config.decoder.offset`.
+allowance in rpm is controlled by `config.decoder.max_variation`.
 
 ## Configuration
 Static configuration is in `config.c`. The main configuration structure is
@@ -91,16 +91,19 @@ value into a usable number:
 Member | Meaning
 --- | ---
 `pin` | pin to use on TLC2543
-`process` | Processing function to use (see below)
-`method` | Type of sensor, currently supported are analog and frequency based.
+`method` | Processing method, currently supported are linear interpolation and table lookup
+`source` | Type of sensor, currently supported are analog and frequency based.
 `params` | Union used to configure a sensor. Contains `range` used for calculated sensors, and `table` for table lookup sensors.
+`lag` | Lag filtering value. 0 means no filtering, 100 will effectively never change.
 `params.range.min` | For processing, value that lowest raw sensor value reflects
 `params.range.max` | For processing, value that highest raw sensor value reflects
+`fault_config.min` | Raw sensor value, below this indicates sensor fault
+`fault_config.max` | Raw sensor value, above this indicates sensor fault
+`falut_config.fault_value` | During sensor fault, use this fallback value
 
-The process function can point to any function that takes a pointer to the
-sensor structure.  Currently the only provided ones are `sensor_process_linear`, which
-linearly interpolates between `min` and `max`, and `sensor_process_freq`, which 
-converts based on measured frequency.
+For method `SENSOR_LINEAR`, the processed value is linear interpolated based on
+the raw value between min and max (with the raw value being 0 - 4096).
+Frequency sensors measure a raw value between 0 - 20000 Hz.
 
 The onboard ADC is not used. Instead a TLC2543 external ADC should be connected
 to SPI2 (PB12-PB15).  Currently the first 10 inputs are supported.
@@ -127,10 +130,9 @@ externally such that it can be directly referenced in `console.c`.
 ## Runtime configuration
 The serial interface provides a (barbaric) means of setting some things
 dynamically.  At startup, the serial interface will provide a constant stream of
-data points:
+data points in csv format:
 ```
-* rpm=0 sync=1 loss=0 variance=0.000 t0_count=0 t1_count=0 map=60.0 adv=0.0 dwell_us=0 pw_us=0
-
+400,1,3,0.000,30991,0,40.0,99.9,9.5,14.1,50.2,78.5,102.0,0.0,0.0,1000,1729,1
 ```
 
 Sending any command (or empty line) will drop to a command prompt. The data
@@ -143,6 +145,7 @@ Command | Meaning
 `set` | Set variable or table (see below)
 `get` | Set variable or table (see below)
 `feed` | Resume constant data stream
+`save` | Save current config to flash
 
 The `set` and `get` commands can work with any variable that has been configured
 in `console.c` `struct console_var vars[]`.  For any variable that is type UINT
@@ -155,8 +158,6 @@ tablename, e.g. `get config.timing`.  To get or set a cell, reference it with
 0-offset indexes into the table, horizontal column first. `set
 config.timing[0][2] 20.0`, for example, will set the timing advance for RPM
 offset 0 (400 rpms by default) and 2 (100 kpa) to 20 degrees.
-
-Currently persistence is not supported.
 
 # Compiling
 Requires:
