@@ -5,8 +5,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <signal.h>
+#include <poll.h>
 #include <time.h>
 
 #include "platform.h"
@@ -114,11 +116,14 @@ int usart_tx_ready() {
   return (curtime -  last_tx) > 200;
 }
 
+static int rx_ready = 0;
 int usart_rx_ready() {
-  return 0;
+  return rx_ready;
 }
 
 void usart_rx_reset() {
+  strcpy(config.console.rxbuffer, "");
+  rx_ready = 0;
 }
 
 void usart_tx(char *str, unsigned short len) {
@@ -167,6 +172,11 @@ static void hosted_platform_timer() {
 
   stats_increment_counter(STATS_INT_RATE);
   stats_start_timing(STATS_INT_TOTAL_TIME);
+
+  if (!output_slots[0]) {
+    /* Not initialized */
+    return;
+  }
 
   static uint16_t old_outputs = 0;
   static timeval_t run_until_time = 0;
@@ -219,6 +229,23 @@ static void hosted_platform_timer() {
       }
     }
   }
+
+  /* poll for command input */
+  struct pollfd pfds[] = {
+    {.fd = STDIN_FILENO, .events = POLLIN},
+  };
+  if (poll(pfds, 1, 0)) {
+    char buf[128];
+    int r = read(STDIN_FILENO, buf, 127);
+    if (r > 0) {
+      buf[r] = '\0';
+      strcat(config.console.rxbuffer, buf);
+    }
+    if (strchr(config.console.rxbuffer, '\n')) {
+      rx_ready = 1;
+    }
+  }
+
 
   stats_finish_timing(STATS_INT_TOTAL_TIME);
 }
@@ -302,5 +329,8 @@ void platform_init(int argc, char *argv[]) {
   setitimer(ITIMER_VIRTUAL, &t, NULL);
 #endif
   stats_init(2900000);
+
+  /* Set stdin nonblock */
+  fcntl(STDIN_FILENO, F_SETFL, fcntl(STDIN_FILENO, F_GETFL, 0) | O_NONBLOCK);
 
 }

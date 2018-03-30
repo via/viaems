@@ -22,7 +22,7 @@ all: tfi
 
 .elif ${PLATFORM} == "hosted"
 CC=gcc
-CFLAGS+= -I. -std=c99 -Wall -O2 -ggdb -lrt -DSUPPORTS_POSIX_TIMERS
+CFLAGS+= -I. -std=c99 -Wall -O0 -ggdb -lrt -DSUPPORTS_POSIX_TIMERS
 CFLAGS+= -D TICKRATE=1000000 -D_POSIX_C_SOURCE=199309L -D_GNU_SOURCE
 all: tfi
 .endif
