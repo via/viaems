@@ -19,7 +19,7 @@
 
 
 struct console_config_node {
-  char *name;
+  const char *name;
   void (*get)(const struct console_config_node *self, char *dest, char *remaining);
   void (*set)(const struct console_config_node *self, char *remaining);
   void *val;
@@ -131,23 +131,30 @@ static int parse_keyval_pair(char **key, char **val, char **str) {
 }
 
 
-static void console_set_table_element(struct table *t, const char *k, float v) {
-  int row, col;
+static int console_set_table_element(struct table *t, const char *k, float v) {
+  unsigned int row, col;
   int n_parsed = sscanf(k, "[%d][%d]", &row, &col);
-  if ((t->num_axis == 1) && (n_parsed == 1)) {
+  if ((t->num_axis == 1) && (n_parsed == 1) &&
+      (row < t->axis[0].num)) {
     t->data.one[row] = v;
-  } else if ((t->num_axis) == 2 && (n_parsed) == 2) {
+    return 1;
+  } else if ((t->num_axis == 2) && (n_parsed == 2) &&
+      (row < t->axis[0].num) && (col < t->axis[1].num)) {
     t->data.two[row][col] = v;
+    return 1;
   }
+  return 0;
 }
 
 static int console_get_table_element(const struct table *t, const char *k, float *v) {
   int row, col;
   int n_parsed = sscanf(k, "[%d][%d]", &row, &col);
-  if ((t->num_axis == 1) && (n_parsed == 1)) {
+  if ((t->num_axis == 1) && (n_parsed == 1) && 
+      (row < t->axis[0].num)) {
     *v = t->data.one[row];
     return 1;
-  } else if ((t->num_axis) == 2 && (n_parsed) == 2) {
+  } else if ((t->num_axis == 2) && (n_parsed == 2) &&
+      (row < t->axis[0].num) && (col < t->axis[1].num)) {
     *v = t->data.two[row][col];
     return 1;
   }
@@ -184,6 +191,8 @@ static void console_set_table(const struct console_config_node *self, char *rema
   while(parse_keyval_pair(&k, &v, &remaining)) {
     if (!strcmp("naxis", k)) {
       t->num_axis = atoi(v);
+    } else if (!strcmp("name", k)) {
+      strncpy(t->title, v, 31);
     } else if (!strcmp("rows", k)) {
       t->axis[0].num = atoi(v);
     } else if (!strcmp("rowname", k)) {
@@ -191,7 +200,7 @@ static void console_set_table(const struct console_config_node *self, char *rema
     } else if (!strcmp("cols", k)) {
       t->axis[1].num = atoi(v);
     } else if (!strcmp("colname", k)) {
-      strcpy(t->axis[1].name, k);
+      strcpy(t->axis[1].name, v);
     } else if (!strcmp("rowlabels", k)) {
       console_set_table_axis_labels(&t->axis[0], v);
     } else if (!strcmp("collabels", k)) {
@@ -222,7 +231,7 @@ static void console_get_table(const struct console_config_node *self, char *dest
   if (remaining && (remaining[0] == '[')) {
     float val;
     if (console_get_table_element(t, remaining, &val)) {
-      sprintf(dest, "%f", val);
+      sprintf(dest, "%.2f", val);
     } else {
       strcpy(dest, "invalid");
     }
@@ -290,17 +299,18 @@ static void console_get_sensor(const struct console_config_node *self, char *des
 
   dest += sprintf(dest, "source=%s method=%s pin=%d ", source, method, s->pin);
   if (s->source == SENSOR_CONST) {
-    dest += sprintf(dest, "fixed-val=%f ", s->params.fixed_value);
+    dest += sprintf(dest, "fixed-val=%.2f ", s->params.fixed_value);
   } else if (s->method == METHOD_LINEAR) {
-    dest += sprintf(dest, "range-min=%f range-max=%f ", 
+    dest += sprintf(dest, "range-min=%.2f range-max=%.2f ", 
         s->params.range.min, s->params.range.max);
   } else if (s->method == METHOD_TABLE) {
     dest += sprintf(dest, "table=%s ", "unsupported");
   }
-  sprintf(dest, "fault-min=%u fault-max=%u fault-val=%f", 
+  sprintf(dest, "fault-min=%u fault-max=%u fault-val=%.2f lag=%f", 
       (unsigned int)s->fault_config.min, 
       (unsigned int)s->fault_config.max, 
-      s->fault_config.fault_value);
+      s->fault_config.fault_value,
+      s->lag);
 
 }
 
@@ -346,12 +356,14 @@ static void console_set_sensor(const struct console_config_node *self,
       s->method = console_sensor_method_from_str(v);
     } else if (!strcmp("pin", k)) {
       s->pin = atoi(v);
+    } else if (!strcmp("lag", k)) {
+      s->lag = atof(v);
     } else if (!strcmp("fixed-val", k)) {
       s->params.fixed_value = atof(v);
     } else if (!strcmp("range-min", k)) {
       s->params.range.min = atof(v);
     } else if (!strcmp("range-max", k)) {
-      s->params.range.max = atoi(v);
+      s->params.range.max = atof(v);
     } else if (!strcmp("fault-min", k)) {
       s->fault_config.min = atoi(v);
     } else if (!strcmp("fault-max", k)) {
@@ -531,14 +543,24 @@ static void console_set_events(
     const struct console_config_node *self __attribute__((unused)), 
     char *remaining) {
 
+  char *k, *v;
   char *saveptr;
+
+  if (!remaining) {
+    return;
+  }
+  if (!strncmp("num_events=", remaining, 11)) {
+    parse_keyval_pair(&k, &v, &remaining);
+    config.num_events = atoi(v);
+    return;
+  }
+
   unsigned int ev_n = atoi(strtok_r(remaining, " ", &saveptr));
   if (ev_n >= config.num_events) {
     return;
   }
   struct output_event *ev = &config.events[ev_n];
 
-  char *k, *v;
   remaining = saveptr;
   while(parse_keyval_pair(&k, &v, &remaining)) {
     if (!strcmp("type", k)) {
@@ -792,13 +814,14 @@ static void console_feed_line(char *dest) {
 
   unsigned int i;
   char temp[64];
+  char empty[1] = "";
   for (i = 0; i < console_feed_config.n_nodes; i++) {
     const struct console_config_node *node = console_feed_config.nodes[i];
     strcpy(temp, "");
     if (!node->get) {
       continue;
     }
-    node->get(node, temp, "");
+    node->get(node, temp, empty);
     strcat(dest, temp);
     if (i < console_feed_config.n_nodes - 1) {
       strcat(dest, ",");
@@ -849,6 +872,8 @@ static struct console_config_node test_nodes[] = {
   {.name="test2.testA"},
   {.name="test3.testA"},
   {.name="test3.testA.test1"},
+  {.name="test2.testB"},
+  {.name="test2.testB.test2"},
   {0},
 };
 
@@ -866,6 +891,22 @@ START_TEST(check_console_search_node) {
   ck_assert_ptr_eq(console_search_node(test_nodes, "test2.testA"), &test_nodes[2]);
   ck_assert_ptr_eq(console_search_node(test_nodes, "test3.testA.test1"), &test_nodes[4]);
 
+} END_TEST
+
+START_TEST(check_console_list_prefix) {
+  char buf[128];
+
+  strcpy(buf, "");
+  console_list_prefix(test_nodes, buf, "test2");
+  ck_assert_str_eq(buf, "test2.testA test2.testB ");
+
+  strcpy(buf, "");
+  console_list_prefix(test_nodes, buf, "test1");
+  ck_assert_str_eq(buf, "");
+
+  strcpy(buf, "");
+  console_list_prefix(test_nodes, buf, "test3");
+  ck_assert_str_eq(buf, "test3.testA ");
 } END_TEST
 
 START_TEST(check_console_get_time) {
@@ -960,15 +1001,366 @@ START_TEST(check_parse_keyval_pair) {
 
 } END_TEST
 
+START_TEST(check_console_set_table_element_oneaxis) {
+  struct table t1 = {
+    .num_axis = 1,
+    .axis[0] = {
+      .num = 6,
+      .values = {0},
+    },
+  };
+
+  /* Out of bounds */
+  ck_assert_int_eq(console_set_table_element(&t1, "[10]", 1.0), 0);
+
+  /*Wrong type */
+  ck_assert_int_eq(console_set_table_element(&t1, "[3][3]", 1.0), 0);
+
+  /* Bad formatting */
+  ck_assert_int_eq(console_set_table_element(&t1, "3", 1.0), 0);
+  ck_assert_int_eq(console_set_table_element(&t1, "3]", 1.0), 0);
+
+  ck_assert_int_eq(console_set_table_element(&t1, "[3]", 1.0), 1);
+  ck_assert_float_eq(t1.data.one[3], 1.0);
+} END_TEST
+
+START_TEST(check_console_set_table_element_twoaxis) {
+  struct table t2 = {
+    .num_axis = 2,
+    .axis[0] = {
+      .num = 6,
+    }, 
+    .axis[1] = {
+      .num = 6,
+    },
+  };
+
+  /* Out of bounds */
+  ck_assert_int_eq(console_set_table_element(&t2, "[10][10]", 1.0), 0);
+
+  /*Wrong type */
+  ck_assert_int_eq(console_set_table_element(&t2, "[3]", 1.0), 0);
+
+  /* Bad formatting */
+  ck_assert_int_eq(console_set_table_element(&t2, "3", 1.0), 0);
+  ck_assert_int_eq(console_set_table_element(&t2, "3]4]", 1.0), 0);
+
+  ck_assert_int_eq(console_set_table_element(&t2, "[3][2]", 1.0), 1);
+  ck_assert_float_eq(t2.data.two[3][2], 1.0);
+} END_TEST
+
+START_TEST(check_console_get_table_element_oneaxis) {
+  const struct table t1 = {
+    .num_axis = 2,
+    .axis[0] = {
+      .num = 3,
+    },
+    .axis[1] = {
+      .num = 3,
+    },
+    .data = {
+      .two = {
+        {5, 6, 7, 8, 9},
+        {12, 13, 14, 15, 16},
+        {18, 19, 20, 21, 22},
+      },
+    },
+  };
+
+  float v;
+  /* Out of bounds */
+  ck_assert_int_eq(console_get_table_element(&t1, "[10][2]", &v), 0);
+
+  /*Wrong type */
+  ck_assert_int_eq(console_get_table_element(&t1, "[2]", &v), 0);
+
+  /* Bad formatting */
+  ck_assert_int_eq(console_get_table_element(&t1, "1", &v), 0);
+  ck_assert_int_eq(console_get_table_element(&t1, "1]1", &v), 0);
+
+  ck_assert_int_eq(console_get_table_element(&t1, "[1][1]", &v), 1);
+  ck_assert_float_eq(v, 13.0);
+} END_TEST
+
+START_TEST(check_console_get_table_element_twoaxis) {
+  struct table t2 = {
+    .num_axis = 2,
+    .axis[0] = {
+      .num = 6,
+      .values = {0},
+    }, 
+    .axis[1] = {
+      .num = 6,
+      .values = {0},
+    },
+  };
+
+  /* Out of bounds */
+  ck_assert_int_eq(console_set_table_element(&t2, "[10][10]", 1.0), 0);
+
+  /*Wrong type */
+  ck_assert_int_eq(console_set_table_element(&t2, "[3]", 1.0), 0);
+
+  /* Bad formatting */
+  ck_assert_int_eq(console_set_table_element(&t2, "3", 1.0), 0);
+  ck_assert_int_eq(console_set_table_element(&t2, "3]4]", 1.0), 0);
+
+  ck_assert_int_eq(console_set_table_element(&t2, "[3][2]", 1.0), 1);
+  ck_assert_float_eq(t2.data.two[3][2], 1.0);
+} END_TEST
+
+START_TEST(check_console_set_table_axis_labels) {
+  struct table_axis a = {
+    .num = 4,
+    .values = {0},
+  };
+  char buf[32];
+
+  /* Out of bounds */
+  strcpy(buf, "[1,2,3,4,5]");
+  console_set_table_axis_labels(&a, buf);
+  ck_assert_int_eq(a.values[3], 4);
+  ck_assert_int_eq(a.values[4], 0);
+
+  /* Malformed */
+  strcpy(buf, "10,11,12,13,15");
+  console_set_table_axis_labels(&a, buf);
+  ck_assert_int_eq(a.values[3], 4);
+  ck_assert_int_eq(a.values[4], 0);
+
+  strcpy(buf, "[8,9,10]");
+  console_set_table_axis_labels(&a, buf);
+  ck_assert_int_eq(a.values[0], 8);
+  ck_assert_int_eq(a.values[1], 9);
+  ck_assert_int_eq(a.values[2], 10);
+
+} END_TEST
+
+START_TEST(check_console_set_table) {
+  struct table t = {0};
+  const struct console_config_node n = {.val = &t};
+
+  char buf[] = "name=test naxis=2 rows=3 cols=3 rowname=row colname=col "
+    "rowlabels=[1,2,3] collabels=[5,6,7] [0][0]=5.0";
+
+  console_set_table(&n, buf);
+  ck_assert_str_eq(t.title, "test");
+  ck_assert_int_eq(t.num_axis, 2);
+  ck_assert_int_eq(t.axis[0].num, 3);
+  ck_assert_int_eq(t.axis[1].num, 3);
+  ck_assert_str_eq(t.axis[0].name, "row");
+  ck_assert_str_eq(t.axis[1].name, "col");
+
+  ck_assert_int_eq(t.axis[0].values[0], 1);
+  ck_assert_int_eq(t.axis[0].values[1], 2);
+  ck_assert_int_eq(t.axis[0].values[2], 3);
+
+  ck_assert_int_eq(t.axis[1].values[0], 5);
+  ck_assert_int_eq(t.axis[1].values[1], 6);
+  ck_assert_int_eq(t.axis[1].values[2], 7);
+
+  ck_assert_float_eq(t.data.two[0][0], 5.0);
+
+  char buf2[] = "[0][0]=1.1 [0][1]=1.2 [0][2]=1.3 [1][0]=2.0";
+  console_set_table(&n, buf2);
+  ck_assert_float_eq(t.data.two[0][0], 1.1);
+  ck_assert_float_eq(t.data.two[0][1], 1.2);
+  ck_assert_float_eq(t.data.two[0][2], 1.3);
+  ck_assert_float_eq(t.data.two[1][0], 2.0);
+
+} END_TEST
+
+START_TEST(check_console_get_table) {
+  struct table t;
+  const struct console_config_node n = {.val = &t};
+
+  char buf[512];
+  t = (struct table){
+    .title = "test",
+    .num_axis = 2,
+    .axis[0] = {
+      .name = "rows", .num = 3,
+      .values = {1, 2, 3},
+    },
+    .axis[1] = {
+      .name = "cols", .num = 3,
+      .values = {5, 6, 7},
+    },
+    .data = {
+      .two = {
+        {1, 2, 3},
+        {4, 6, 7},
+        {7, 8, 9},
+      },
+    },
+  };
+
+  char cmd[] = "";
+  console_get_table(&n, buf, cmd);
+  ck_assert_ptr_nonnull(strstr(buf, "name=test"));
+  ck_assert_ptr_nonnull(strstr(buf, "naxis=2"));
+  ck_assert_ptr_nonnull(strstr(buf, "rows=3"));
+  ck_assert_ptr_nonnull(strstr(buf, "rowname=rows"));
+  ck_assert_ptr_nonnull(strstr(buf, "rowlabels=[1,2,3]"));
+  ck_assert_ptr_nonnull(strstr(buf, "cols=3"));
+  ck_assert_ptr_nonnull(strstr(buf, "colname=cols"));
+  ck_assert_ptr_nonnull(strstr(buf, "collabels=[5,6,7]"));
+
+  char cmd2[] = "[1][1]";
+  console_get_table(&n, buf, cmd2);
+  ck_assert_str_eq(buf, "6.00");
+
+} END_TEST
+
+START_TEST(check_console_get_sensor) {
+  struct sensor_input s_const = {
+    .source = SENSOR_CONST,
+    .params = {
+      .fixed_value = 12.0,
+    },
+    .fault_config = {
+      .min = 1,
+      .max = 2,
+      .fault_value = 1.5,
+    },
+  };
+  struct console_config_node n = {.val = &s_const};
+  char buf[256];
+  char cmd[] = "";
+
+  strcpy(buf, "");
+  console_get_sensor(&n, buf, cmd);
+  ck_assert_ptr_nonnull(strstr(buf, "source=const"));
+  ck_assert_ptr_nonnull(strstr(buf, "fixed-val=12.00"));
+  ck_assert_ptr_nonnull(strstr(buf, "fault-min=1"));
+  ck_assert_ptr_nonnull(strstr(buf, "fault-max=2"));
+  ck_assert_ptr_nonnull(strstr(buf, "fault-val=1.50"));
+
+  struct sensor_input s_linear = {
+    .pin = 1,
+    .source = SENSOR_ADC,
+    .method = METHOD_LINEAR,
+    .lag = 20,
+    .params = {
+      .range = {
+        .min = 12,
+        .max = 20,
+      },
+    },
+  };
+  n.val = &s_linear;
+
+  strcpy(buf, "");
+  console_get_sensor(&n, buf, cmd);
+  ck_assert_ptr_nonnull(strstr(buf, "source=adc"));
+  ck_assert_ptr_nonnull(strstr(buf, "method=linear"));
+  ck_assert_ptr_nonnull(strstr(buf, "range-min=12.00"));
+  ck_assert_ptr_nonnull(strstr(buf, "range-max=20.00"));
+  ck_assert_ptr_nonnull(strstr(buf, "pin=1"));
+  ck_assert_ptr_nonnull(strstr(buf, "lag=20.00"));
+} END_TEST
+
+START_TEST(check_console_set_sensor) {
+  struct sensor_input s = {0};
+  const struct console_config_node n = {.val = &s};
+
+  char buf[] = "source=freq pin=2 method=linear lag=0.2 range-min=20.1 "
+    "range-max=100.1 fault-min=200 fault-max=400, fault-val=19.2";
+
+  console_set_sensor(&n, buf);
+  ck_assert_int_eq(s.source, SENSOR_FREQ);
+  ck_assert_int_eq(s.method, METHOD_LINEAR);
+  ck_assert_int_eq(s.pin, 2);
+  ck_assert_float_eq(s.lag, 0.2);
+  ck_assert_float_eq(s.params.range.min, 20.1);
+  ck_assert_float_eq(s.params.range.max, 100.1);
+  ck_assert_float_eq(s.fault_config.fault_value, 19.2);
+  ck_assert_int_eq(s.fault_config.min, 200);
+  ck_assert_int_eq(s.fault_config.max, 400);
+
+  char buf2[] = "source=const fixed-val=101.1";
+  console_set_sensor(&n, buf2);
+  ck_assert_int_eq(s.source, SENSOR_CONST);
+  ck_assert_float_eq(s.params.fixed_value, 101.1);
+
+} END_TEST
+
+START_TEST(check_console_get_events) {
+
+  char cmd[] = "";
+  char buf[128];
+
+  config.num_events = 4;
+  console_get_events(NULL, buf, cmd);
+  ck_assert_str_eq(buf, "num_events=4");
+
+  config.events[3] = (struct output_event) {
+    .type = FUEL_EVENT,
+    .inverted = 1,
+    .angle = 100,
+    .output_id = 5,
+  };
+
+  strcpy(cmd, "3");
+  console_get_events(NULL, buf, cmd);
+  ck_assert_ptr_nonnull(strstr(buf, "type=fuel"));
+  ck_assert_ptr_nonnull(strstr(buf, "angle=100"));
+  ck_assert_ptr_nonnull(strstr(buf, "output=5"));
+  ck_assert_ptr_nonnull(strstr(buf, "inverted=1"));
+
+  config.events[3] = (struct output_event) {
+    .type = IGNITION_EVENT,
+    .inverted = 0,
+    .angle = 5,
+    .output_id = 4,
+  };
+
+  strcpy(cmd, "3");
+  console_get_events(NULL, buf, cmd);
+  ck_assert_ptr_nonnull(strstr(buf, "type=ignition"));
+  ck_assert_ptr_nonnull(strstr(buf, "angle=5"));
+  ck_assert_ptr_nonnull(strstr(buf, "output=4"));
+  ck_assert_ptr_nonnull(strstr(buf, "inverted=0"));
+} END_TEST
+
+START_TEST(check_console_set_events) {
+
+  char buf[] = "num_events=4";
+  console_set_events(NULL, buf);
+  ck_assert_int_eq(config.num_events, 4);
+
+
+  char buf2[] = "2 type=fuel inverted=1 angle=12 output=6";
+
+  console_set_events(NULL, buf2);
+  ck_assert_int_eq(config.events[2].type, FUEL_EVENT);
+  ck_assert_int_eq(config.events[2].inverted, 1);
+  ck_assert_int_eq(config.events[2].angle, 12);
+  ck_assert_int_eq(config.events[2].output_id, 6);
+} END_TEST
+
+
 TCase *setup_console_tests() {
   TCase *console_tests = tcase_create("console");
   tcase_add_test(console_tests, check_console_search_node);
+  tcase_add_test(console_tests, check_console_list_prefix);
   tcase_add_test(console_tests, check_console_get_time);
   tcase_add_test(console_tests, check_console_get_float);
   tcase_add_test(console_tests, check_console_set_float);
   tcase_add_test(console_tests, check_console_get_uint);
   tcase_add_test(console_tests, check_console_set_uint);
   tcase_add_test(console_tests, check_parse_keyval_pair);
+  tcase_add_test(console_tests, check_console_set_table_element_oneaxis);
+  tcase_add_test(console_tests, check_console_set_table_element_twoaxis);
+  tcase_add_test(console_tests, check_console_get_table_element_oneaxis);
+  tcase_add_test(console_tests, check_console_get_table_element_twoaxis);
+  tcase_add_test(console_tests, check_console_set_table_axis_labels);
+  tcase_add_test(console_tests, check_console_set_table);
+  tcase_add_test(console_tests, check_console_get_table);
+  tcase_add_test(console_tests, check_console_set_sensor);
+  tcase_add_test(console_tests, check_console_get_sensor);
+  tcase_add_test(console_tests, check_console_set_events);
+  tcase_add_test(console_tests, check_console_get_events);
   return console_tests;
 }
 
