@@ -19,5 +19,9 @@ struct console {
 void console_init();
 void console_process();
 
+#ifdef UNITTEST
+#include <check.h>
+TCase *setup_console_tests();
+#endif
 
 #endif

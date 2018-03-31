@@ -6,6 +6,7 @@
 
 
 typedef enum {
+  DISABLED_EVENT,
   FUEL_EVENT,
   IGNITION_EVENT,
   ADC_EVENT,

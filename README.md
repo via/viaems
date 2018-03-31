@@ -128,36 +128,45 @@ For a new table to be configurable over the serial console, it must be declared
 externally such that it can be directly referenced in `console.c`.
 
 ## Runtime configuration
-The serial interface provides a (barbaric) means of setting some things
-dynamically.  At startup, the serial interface will provide a constant stream of
-data points in csv format:
-```
-400,1,3,0.000,30991,0,40.0,99.9,9.5,14.1,50.2,78.5,102.0,0.0,0.0,1000,1729,1
-```
+The serial console immediately outputs csv lines with a default set of values.
+This set of values, along with any other configurable, can get viewed or changed
+by commands and responses.  All commands are processed after a newline, and the
+result with start with a ` *`, distinguishing it from normal log output.
 
-Sending any command (or empty line) will drop to a command prompt. The data
-stream can be resumed with the `feed` command.
-Currently implemented commands:
+Any configuration node may support the command `list`, `get`, or `set`. Toplevel
+nodes are `config` and `status`.  The hierarchy of config nodes can be traversed
+by using `list`, and then any commands on the results.
 
-Command | Meaning
+A few specific example nodes:
+
+Node | Meaning
 --- | ---
-`testtrigger` | Set fake trigger output on Pin A0 with given rpm. Ex: `testtrigger 5000`
-`set` | Set variable or table (see below)
-`get` | Set variable or table (see below)
-`feed` | Resume constant data stream
-`save` | Save current config to flash
+`config` | Top-level configuration
+`status` | Real-time status output
+`config.tables.timing` | Timing table
+`config.sensors.iat` | IAT sensor
+`config.feed` | comma-delimited list of config nodes to output
+`flash` | Set to save current configuration
 
-The `set` and `get` commands can work with any variable that has been configured
-in `console.c` `struct console_var vars[]`.  For any variable that is type UINT
-or FLOAT, simply specify the value after the variable for set:
-`set config.rpm_start 5200`
-`get config.rpm_stop`
+Any config node that is a simple value (string, float, int) can be used with
+`config.feed`.  Some config nodes are detailed. On get they will return a
+space-delimited list of `=`-delimited key-value pairs. Any pair returned can
+then be set on the node. For example
 
-For tables, axis/metadata for the table will be fetched with a simple get on the
-tablename, e.g. `get config.timing`.  To get or set a cell, reference it with
-0-offset indexes into the table, horizontal column first. `set
-config.timing[0][2] 20.0`, for example, will set the timing advance for RPM
-offset 0 (400 rpms by default) and 2 (100 kpa) to 20 degrees.
+```
+get config.tables.timing 
+ * Name=test num_axis=2 rows=3 ...
+get config.events 0
+ * type=fuel angle=0 output=3 inverted=0
+set config.events 2 inverted=1
+```
+
+Tables will treat any key that is in the form of `[row][col]` as a value to be
+returned or set
+```
+get config.tables.timing [2][2]
+set config.tables.timing name=Timing [2][2]=5.2
+```
 
 # Compiling
 Requires:
