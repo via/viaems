@@ -550,8 +550,9 @@ static void console_set_events(
     return;
   }
   if (!strncmp("num_events=", remaining, 11)) {
-    parse_keyval_pair(&k, &v, &remaining);
-    config.num_events = atoi(v);
+    if (parse_keyval_pair(&k, &v, &remaining)) {
+      config.num_events = atoi(v);
+    }
     return;
   }
 
@@ -782,22 +783,9 @@ void console_init() {
     "status.rpm",
     "status.rpm_variance",
     "status.timing_advance",
-    "config.sensors.map.value",
-    "config.sensors.map.fault",
-    "config.sensors.iat.value",
-    "config.sensors.iat.fault",
-    "config.sensors.clt.value",
-    "config.sensors.clt.fault",
     "config.sensors.brv.value",
-    "config.sensors.brv.fault",
+    "config.sensors.map.value",
     "config.sensors.tps.value",
-    "config.sensors.tps.fault",
-    "config.sensors.aap.value",
-    "config.sensors.aap.fault",
-    "config.sensors.frt.value",
-    "config.sensors.frt.fault",
-    "config.sensors.ego.value",
-    "config.sensors.ego.fault",
     NULL,
   };
 
@@ -832,7 +820,7 @@ static void console_feed_line(char *dest) {
 
 static void console_process_rx() {
   char *out = config.console.txbuffer;
-  char *in = strtok(config.console.rxbuffer, "\n");
+  char *in = strtok(config.console.rxbuffer, "\r\n");
   out += sprintf(out, "* ");
   console_parse_request(out, in);
   strcat(out, "\r\n");
@@ -844,7 +832,7 @@ static void console_process_rx() {
 void console_process() {
 
   stats_start_timing(STATS_CONSOLE_TIME);
-  if (usart_rx_ready()) {
+  if (usart_tx_ready() && usart_rx_ready()) {
     console_process_rx();
   }
 

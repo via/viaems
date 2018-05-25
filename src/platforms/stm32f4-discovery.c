@@ -23,7 +23,6 @@
 #include "stats.h"
 
 #include <assert.h>
-
 /* Hardware setup:
  *  Discovery board LEDs:
  *  LD3 - Orange - PD13
@@ -39,6 +38,15 @@
  *  Trigger 0 - PB3 (TIM2_CH2)
  *  Trigger 1 - PB10 (TIM2_CH3)
  *  Trigger 2 - PB11 (TIM2_CH4)
+ *
+ *  CAN2:
+ *    PB5, PB6
+ *
+ *  Freq:
+ *    TIM10 PB8
+ *    TIM11 PB9
+ *    TIM13 PA6
+ *    TIM14 PA7
  *
  *  TLC2543 on SPI2 (PB12-15) CS, SCK, MISO, MOSI
  *    - Uses TIM5 dma1 stream 1 chan 7 to trigger DMA at about 40 khz for 10
@@ -78,22 +86,22 @@ static void platform_init_freqsensor() {
 
   /* Set up compare */
   timer_ic_set_input(TIM1, TIM_IC1, TIM_IC_IN_TI1);
-  timer_ic_set_filter(TIM1, TIM_IC1, TIM_IC_CK_INT_N_8);
+  timer_ic_set_filter(TIM1, TIM_IC1, TIM_IC_CK_INT_N_2);
   timer_ic_set_polarity(TIM1, TIM_IC1, TIM_IC_RISING);
   timer_ic_enable(TIM1, TIM_IC1);
 
   timer_ic_set_input(TIM1, TIM_IC2, TIM_IC_IN_TI2);
-  timer_ic_set_filter(TIM1, TIM_IC2, TIM_IC_CK_INT_N_8);
+  timer_ic_set_filter(TIM1, TIM_IC2, TIM_IC_CK_INT_N_2);
   timer_ic_set_polarity(TIM1, TIM_IC2, TIM_IC_RISING);
   timer_ic_enable(TIM1, TIM_IC2);
 
   timer_ic_set_input(TIM1, TIM_IC3, TIM_IC_IN_TI3);
-  timer_ic_set_filter(TIM1, TIM_IC3, TIM_IC_CK_INT_N_8);
+  timer_ic_set_filter(TIM1, TIM_IC3, TIM_IC_CK_INT_N_2);
   timer_ic_set_polarity(TIM1, TIM_IC3, TIM_IC_RISING);
   timer_ic_enable(TIM1, TIM_IC3);
 
   timer_ic_set_input(TIM1, TIM_IC4, TIM_IC_IN_TI4);
-  timer_ic_set_filter(TIM1, TIM_IC4, TIM_IC_CK_INT_N_8);
+  timer_ic_set_filter(TIM1, TIM_IC4, TIM_IC_CK_INT_N_2);
   timer_ic_set_polarity(TIM1, TIM_IC4, TIM_IC_RISING);
   timer_ic_enable(TIM1, TIM_IC4);
 
@@ -153,13 +161,14 @@ void tim1_cc_isr() {
 
     if (timer_get_flag(TIM1, timer_flag)) {
       uint16_t cur = *timer_ccr;
-      config.sensors[i].raw_value = cur - prev[pin - 1].value;
+      config.sensors[i].raw_value = (uint16_t)(cur - prev[pin - 1].value);
       prev[pin - 1].value = cur;
       prev[pin - 1].time = current_time();
       sensor_freq_new_data();
       config.sensors[i].fault = FAULT_NONE;
       timer_clear_flag(TIM1, timer_flag);
     } else if ((current_time() - prev[pin - 1].time) > TICKRATE) {
+      /* TODO fix */
       /* Been more than one second, fault */
       config.sensors[i].fault = FAULT_CONN;
     }
@@ -531,7 +540,7 @@ void platform_init(int argc __attribute((unused)),
         (config.sensors[i].pin >= 1) &&
         (config.sensors[i].pin <= 4)) {
       /* Pin 1-4 maps to GPIO8-11 */
-      gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO8 << (config.sensors[i].pin - 1));
+      gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_PULLDOWN, GPIO8 << (config.sensors[i].pin - 1));
       gpio_set_af(GPIOA, GPIO_AF1, GPIO8 << (config.sensors[i].pin - 1));
     }
     if (config.sensors[i].source == SENSOR_DIGITAL) {

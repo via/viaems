@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
   initialize_scheduler();
 
 
-  enable_test_trigger(FORD_TFI, 400);
+  enable_test_trigger(FORD_TFI, 2000);
 
   while (1) {                   
     stats_increment_counter(STATS_MAINLOOP_RATE);
