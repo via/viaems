@@ -49,6 +49,12 @@ struct stats_entry entries[] __attribute__((externally_visible)) = {
     .name = "total interrupt time",
     .is_interrupt = 1,
   },
+	[STATS_USB_POLL_TIME] = {
+		.name = "usb time",
+	},
+	[STATS_USB_WRITE_TIME] = {
+		.name = "usb write time",
+	},
 	[STATS_LAST] = {},
 };
 

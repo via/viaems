@@ -32,7 +32,7 @@ all: tfi
 OBJS=decoder.o util.o scheduler.o console.o calculations.o config.o table.o sensors.o stats.o
 
 tfi: ${OBJS} tfi.o platforms/${PLATFORM}.o
-	${CC} ${CFLAGS} -o tfi tfi.o ${OBJS} ${PLATFORM}.o  ${LDFLAGS}
+	${CC} ${CFLAGS} -o tfi tfi.o ${OBJS} ${PLATFORM}.o ${LDFLAGS}
 
 
 check: ${OBJS} test/check.o test/check_platform.o test/check_scheduler.o test/check_decoder.o

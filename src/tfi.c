@@ -84,7 +84,6 @@ int main(int argc, char *argv[]) {
     }
    
     console_process();
-
   }
 
   return 0;

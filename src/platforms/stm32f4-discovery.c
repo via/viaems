@@ -4,14 +4,16 @@
 #include <libopencm3/stm32/exti.h>
 #include <libopencm3/stm32/dma.h>
 #include <libopencm3/stm32/adc.h>
-#include <libopencm3/stm32/usart.h>
 #include <libopencm3/stm32/flash.h>
 #include <libopencm3/stm32/syscfg.h>
 #include <libopencm3/stm32/spi.h>
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/cm3/scb.h>
 #include <libopencm3/cm3/cortex.h>
-#include "libopencm3/cm3/dwt.h"
+#include <libopencm3/cm3/dwt.h>
+#include <libopencm3/usb/usbd.h>
+#include <libopencm3/usb/cdc.h>
+#include <libopencm3/cm3/scb.h>
 
 #include "decoder.h"
 #include "platform.h"
@@ -22,6 +24,8 @@
 #include "config.h"
 #include "stats.h"
 
+#include <string.h>
+
 #include <assert.h>
 /* Hardware setup:
  *  Discovery board LEDs:
@@ -31,8 +35,6 @@
  *  LD6 - Blue - PD15
  *
  *  Fixed pin mapping:
- *  USART2_TX - PA2 (dma1 stream 6 chan 4)
- *  USART2_RX - PA3 (dma1 stream 5 chan 4)
  *  Test trigger out - A0 (Uses TIM5)
  *  Event timer TIM2 slaved off TIM8
  *  Trigger 0 - PB3 (TIM2_CH2)
@@ -41,6 +43,9 @@
  *
  *  CAN2:
  *    PB5, PB6
+ *
+ *  USB:
+ *    PA9, PA11, PA12
  *
  *  Freq:
  *    TIM10 PB8
@@ -66,11 +71,7 @@
  *
  */
 
-static char *usart_rx_dest;
-static int usart_rx_end;
 static volatile uint16_t spi_rx_raw_adc[13] = {0};
-
-
 
 static void platform_init_freqsensor() {
   timer_reset(TIM1);
@@ -462,46 +463,211 @@ static void platform_init_spi_tlc2543() {
 
 }
 
-static void platform_init_usart() {
-  /* USART initialization */
-  nvic_enable_irq(NVIC_USART2_IRQ);
-  nvic_set_priority(NVIC_USART2_IRQ, 64);
+static uint8_t usbd_control_buffer[128];
+static usbd_device *usbd_dev;
 
-  gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO2);
-  gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO3);
-  gpio_set_output_options(GPIOA, GPIO_OTYPE_OD, GPIO_OSPEED_25MHZ, GPIO3);
+static char *usb_rx_ptr;
+static uint16_t usb_rx_bytes_max;
+static uint16_t usb_rx_bytes_read;
 
-  /* Setup USART2 TX and RX pin as alternate function. */
-  gpio_set_af(GPIOA, GPIO_AF7, GPIO2);
-  gpio_set_af(GPIOA, GPIO_AF7, GPIO3);
+/* Most of the following is copied from libopencm3-examples */
+static enum usbd_request_return_codes cdcacm_control_request(usbd_device *usbd_dev,
+  struct usb_setup_data *req, uint8_t **buf, uint16_t *len,
+  void (**complete)(usbd_device *usbd_dev, struct usb_setup_data *req))
+{
+  (void)complete;
+  (void)buf;
+  (void)usbd_dev;
 
-  /* Setup USART2 parameters. */
-  usart_set_baudrate(USART2, config.console.baud);
-  usart_set_databits(USART2, config.console.data_bits);
-  switch (config.console.stop_bits) {
-    case 1:
-      usart_set_stopbits(USART2, USART_STOPBITS_1);
-      break;
-    default:
-      while (1);
+  switch (req->bRequest) {
+  case USB_CDC_REQ_SET_CONTROL_LINE_STATE: {
+    /*
+     * This Linux cdc_acm driver requires this to be implemented
+     * even though it's optional in the CDC spec, and we don't
+     * advertise it in the ACM functional descriptor.
+     */
+    return USBD_REQ_HANDLED;
+    }
+  case USB_CDC_REQ_SET_LINE_CODING:
+    if (*len < sizeof(struct usb_cdc_line_coding)) {
+      return USBD_REQ_NOTSUPP;
+    }
+
+    return USBD_REQ_HANDLED;
   }
-  usart_set_mode(USART2, USART_MODE_TX_RX);
-  switch (config.console.parity) {
-    case 'N':
-      usart_set_parity(USART2, USART_PARITY_NONE);
-      break;
-    case 'O':
-      usart_set_parity(USART2, USART_PARITY_ODD);
-      break;
-    case 'E':
-      usart_set_parity(USART2, USART_PARITY_EVEN);
-      break;
-  }
-  usart_set_flow_control(USART2, USART_FLOWCONTROL_NONE);
+  return USBD_REQ_NOTSUPP;
+}
 
-  /* Finally enable the USART. */
-  usart_enable(USART2);
-  usart_rx_reset();
+
+static void cdcacm_data_rx_cb(usbd_device *usbd_dev, uint8_t ep)
+{
+  (void)ep;
+  usb_rx_bytes_read = usbd_ep_read_packet(usbd_dev, 0x01, usb_rx_ptr, usb_rx_bytes_max);
+}
+
+static void cdcacm_set_config(usbd_device *usbd_dev, uint16_t wValue)
+{
+  (void)wValue;
+
+  usbd_ep_setup(usbd_dev, 0x01, USB_ENDPOINT_ATTR_BULK, 64,
+      cdcacm_data_rx_cb);
+  usbd_ep_setup(usbd_dev, 0x82, USB_ENDPOINT_ATTR_BULK, 64, NULL);
+  usbd_ep_setup(usbd_dev, 0x83, USB_ENDPOINT_ATTR_INTERRUPT, 16, NULL);
+
+  usbd_register_control_callback(
+        usbd_dev,
+        USB_REQ_TYPE_CLASS | USB_REQ_TYPE_INTERFACE,
+        USB_REQ_TYPE_TYPE | USB_REQ_TYPE_RECIPIENT,
+        cdcacm_control_request);
+}
+
+
+static const struct usb_device_descriptor dev = {
+  .bLength = USB_DT_DEVICE_SIZE,
+  .bDescriptorType = USB_DT_DEVICE,
+  .bcdUSB = 0x0200,
+  .bDeviceClass = USB_CLASS_CDC,
+  .bDeviceSubClass = 0,
+  .bDeviceProtocol = 0,
+  .bMaxPacketSize0 = 64,
+  .idVendor = 0x0483,
+  .idProduct = 0x5740,
+  .bcdDevice = 0x0200,
+  .iManufacturer = 1,
+  .iProduct = 2,
+  .iSerialNumber = 3,
+  .bNumConfigurations = 1,
+};
+
+static const struct usb_endpoint_descriptor comm_endp[] = {{
+  .bLength = USB_DT_ENDPOINT_SIZE,
+  .bDescriptorType = USB_DT_ENDPOINT,
+  .bEndpointAddress = 0x83,
+  .bmAttributes = USB_ENDPOINT_ATTR_INTERRUPT,
+  .wMaxPacketSize = 16,
+  .bInterval = 255,
+} };
+
+static const struct usb_endpoint_descriptor data_endp[] = {{
+  .bLength = USB_DT_ENDPOINT_SIZE,
+  .bDescriptorType = USB_DT_ENDPOINT,
+  .bEndpointAddress = 0x01,
+  .bmAttributes = USB_ENDPOINT_ATTR_BULK,
+  .wMaxPacketSize = 64,
+  .bInterval = 1,
+}, {
+  .bLength = USB_DT_ENDPOINT_SIZE,
+  .bDescriptorType = USB_DT_ENDPOINT,
+  .bEndpointAddress = 0x82,
+  .bmAttributes = USB_ENDPOINT_ATTR_BULK,
+  .wMaxPacketSize = 64,
+  .bInterval = 1,
+} };
+
+static const struct {
+  struct usb_cdc_header_descriptor header;
+  struct usb_cdc_call_management_descriptor call_mgmt;
+  struct usb_cdc_acm_descriptor acm;
+  struct usb_cdc_union_descriptor cdc_union;
+} __attribute__((packed)) cdcacm_functional_descriptors = {
+  .header = {
+    .bFunctionLength = sizeof(struct usb_cdc_header_descriptor),
+    .bDescriptorType = CS_INTERFACE,
+    .bDescriptorSubtype = USB_CDC_TYPE_HEADER,
+    .bcdCDC = 0x0110,
+  },
+  .call_mgmt = {
+    .bFunctionLength =
+      sizeof(struct usb_cdc_call_management_descriptor),
+    .bDescriptorType = CS_INTERFACE,
+    .bDescriptorSubtype = USB_CDC_TYPE_CALL_MANAGEMENT,
+    .bmCapabilities = 0,
+    .bDataInterface = 1,
+  },
+  .acm = {
+    .bFunctionLength = sizeof(struct usb_cdc_acm_descriptor),
+    .bDescriptorType = CS_INTERFACE,
+    .bDescriptorSubtype = USB_CDC_TYPE_ACM,
+    .bmCapabilities = 0,
+  },
+  .cdc_union = {
+    .bFunctionLength = sizeof(struct usb_cdc_union_descriptor),
+    .bDescriptorType = CS_INTERFACE,
+    .bDescriptorSubtype = USB_CDC_TYPE_UNION,
+    .bControlInterface = 0,
+    .bSubordinateInterface0 = 1,
+   }
+};
+
+static const struct usb_interface_descriptor comm_iface[] = {{
+  .bLength = USB_DT_INTERFACE_SIZE,
+  .bDescriptorType = USB_DT_INTERFACE,
+  .bInterfaceNumber = 0,
+  .bAlternateSetting = 0,
+  .bNumEndpoints = 1,
+  .bInterfaceClass = USB_CLASS_CDC,
+  .bInterfaceSubClass = USB_CDC_SUBCLASS_ACM,
+  .bInterfaceProtocol = USB_CDC_PROTOCOL_AT,
+  .iInterface = 0,
+
+  .endpoint = comm_endp,
+
+  .extra = &cdcacm_functional_descriptors,
+  .extralen = sizeof(cdcacm_functional_descriptors)
+} };
+
+static const struct usb_interface_descriptor data_iface[] = {{
+  .bLength = USB_DT_INTERFACE_SIZE,
+  .bDescriptorType = USB_DT_INTERFACE,
+  .bInterfaceNumber = 1,
+  .bAlternateSetting = 0,
+  .bNumEndpoints = 2,
+  .bInterfaceClass = USB_CLASS_DATA,
+  .bInterfaceSubClass = 0,
+  .bInterfaceProtocol = 0,
+  .iInterface = 0,
+
+  .endpoint = data_endp,
+} };
+
+static const struct usb_interface ifaces[] = {{
+  .num_altsetting = 1,
+  .altsetting = comm_iface,
+}, {
+  .num_altsetting = 1,
+  .altsetting = data_iface,
+} };
+
+static const struct usb_config_descriptor usb_config = {
+  .bLength = USB_DT_CONFIGURATION_SIZE,
+  .bDescriptorType = USB_DT_CONFIGURATION,
+  .wTotalLength = 0,
+  .bNumInterfaces = 2,
+  .bConfigurationValue = 1,
+  .iConfiguration = 0,
+  .bmAttributes = 0x80,
+  .bMaxPower = 0x32,
+
+  .interface = ifaces,
+};
+
+static const char * usb_strings[] = {
+  "https://github.com/via/tfi-computer/",
+  "tfi-computer console",
+  "0",
+};
+
+void platform_init_usb() {
+
+  gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE,
+      GPIO9 | GPIO11 | GPIO12);
+  gpio_set_af(GPIOA, GPIO_AF10, GPIO9 | GPIO11 | GPIO12);
+
+  usbd_dev = usbd_init(&otgfs_usb_driver, &dev, &usb_config,
+      usb_strings, 3,
+      usbd_control_buffer, sizeof(usbd_control_buffer));
+
+  usbd_register_set_config_callback(usbd_dev, cdcacm_set_config);
 }
 
 void platform_init(int argc __attribute((unused)),
@@ -517,7 +683,6 @@ void platform_init(int argc __attribute((unused)),
   rcc_periph_clock_enable(RCC_GPIOD);
   rcc_periph_clock_enable(RCC_GPIOE);
   rcc_periph_clock_enable(RCC_SYSCFG);
-  rcc_periph_clock_enable(RCC_USART2);
   rcc_periph_clock_enable(RCC_DMA1);
   rcc_periph_clock_enable(RCC_DMA2);
   rcc_periph_clock_enable(RCC_TIM1);
@@ -526,14 +691,15 @@ void platform_init(int argc __attribute((unused)),
   rcc_periph_clock_enable(RCC_TIM6);
   rcc_periph_clock_enable(RCC_TIM8);
   rcc_periph_clock_enable(RCC_SPI2);
+  rcc_periph_clock_enable(RCC_OTGFS);
 
   scb_set_priority_grouping(SCB_AIRCR_PRIGROUP_GROUP16_NOSUB);
   platform_init_scheduled_outputs();
   platform_init_eventtimer();
   platform_init_spi_tlc2543();
-  platform_init_usart();
   platform_init_pwm();
   platform_init_freqsensor();
+  platform_init_usb();
 
   for (int i = 0; i < NUM_SENSORS; ++i) {
     if ((config.sensors[i].source == SENSOR_FREQ) &&
@@ -552,67 +718,9 @@ void platform_init(int argc __attribute((unused)),
   stats_init(168000000);
 }
 
-void usart_rx_reset() {
-  usart_rx_dest = config.console.rxbuffer;
-  usart_rx_end = 0;
-  usart_enable_rx_interrupt(USART2);
-}
 
 uint32_t cycle_count() {
   return dwt_read_cycle_counter();
-}
-
-void usart2_isr() {
-  stats_increment_counter(STATS_INT_RATE);
-  stats_increment_counter(STATS_INT_USART_RATE);
-  stats_start_timing(STATS_INT_TOTAL_TIME);
-  if (usart_rx_end) {
-    /* Already have unprocessed line in buffer */
-    (void)usart_recv(USART2);
-    stats_finish_timing(STATS_INT_TOTAL_TIME);
-    return;
-  }
-
-  *usart_rx_dest = usart_recv(USART2);
-  if (*usart_rx_dest == '\r') {
-    *(usart_rx_dest + 1) = '\0';
-    usart_rx_end = 1;
-  }
-
-  usart_rx_dest++;
-  if (!usart_rx_end && 
-      usart_rx_dest == config.console.rxbuffer + CONSOLE_BUFFER_SIZE - 1) {
-    /* Buffer full */
-    usart_rx_reset();
-    stats_finish_timing(STATS_INT_TOTAL_TIME);
-    return;
-  }
-  stats_finish_timing(STATS_INT_TOTAL_TIME);
-}
-
-int usart_tx_ready() {
-  return usart_get_flag(USART2, USART_SR_TC);
-}
-
-int usart_rx_ready() {
-  return usart_rx_end;
-}
-
-void usart_tx(char *buf, unsigned short len) {
-  usart_enable_tx_dma(USART2);
-  dma_stream_reset(DMA1, DMA_STREAM6);
-  dma_set_priority(DMA1, DMA_STREAM6, DMA_SxCR_PL_LOW);
-  dma_set_memory_size(DMA1, DMA_STREAM6, DMA_SxCR_MSIZE_8BIT);
-  dma_set_peripheral_size(DMA1, DMA_STREAM6, DMA_SxCR_PSIZE_8BIT);
-  dma_enable_memory_increment_mode(DMA1, DMA_STREAM6);
-  dma_set_transfer_mode(DMA1, DMA_STREAM6, DMA_SxCR_DIR_MEM_TO_PERIPHERAL);
-  dma_set_peripheral_address(DMA1, DMA_STREAM6, (uint32_t) &USART2_DR);
-  dma_set_memory_address(DMA1, DMA_STREAM6, (uint32_t) buf);
-  dma_set_number_of_data(DMA1, DMA_STREAM6, len);
-  dma_enable_transfer_complete_interrupt(DMA1, DMA_STREAM6);
-  dma_channel_select(DMA1, DMA_STREAM6, DMA_SxCR_CHSEL_4);
-  dma_enable_stream(DMA1, DMA_STREAM6);
-
 }
 
 static volatile int adc_gather_in_progress = 0;
@@ -846,4 +954,20 @@ void platform_save_config() {
   }
 
   flash_lock();
+}
+
+
+size_t console_read(void *buf, size_t max) {
+  usb_rx_ptr = buf;
+  usb_rx_bytes_max = max > 64 ? 64 : max;
+  usb_rx_bytes_read = 0;
+  usbd_poll(usbd_dev);
+  return usb_rx_bytes_read;
+}
+
+size_t console_write(const void *buf, size_t count) {
+  size_t rem = count > 64 ? 64 : count;
+
+  rem = usbd_ep_write_packet(usbd_dev, 0x82, buf, rem);
+  return rem;
 }

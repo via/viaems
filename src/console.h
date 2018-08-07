@@ -4,12 +4,6 @@
 #define CONSOLE_BUFFER_SIZE 1024
 
 struct console {
-  /* Configuration */
-  unsigned int baud;
-  char stop_bits;
-  char data_bits;
-  char parity;
-
   /* Internal */
   volatile unsigned int needs_processing;
   char txbuffer[CONSOLE_BUFFER_SIZE];

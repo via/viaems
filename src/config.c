@@ -111,11 +111,5 @@ struct config config __attribute__((section(".configdata"))) = {
     .dwell_us = 1000,
     .min_fire_time_us = 500,
   },
-  .console = {
-    .baud = 38400,
-    .stop_bits = 1,
-    .data_bits = 8,
-    .parity = 'N',
-  },
 };
 
