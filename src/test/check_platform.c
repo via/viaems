@@ -75,20 +75,6 @@ int get_output(int output) {
 void adc_gather(void *_adc) {
 }
 
-int usart_tx_ready() {
-  return 0;
-}
-
-int usart_rx_ready() {
-  return 0;
-}
-
-void usart_rx_reset() {
-}
-
-void usart_tx(char *s, unsigned short len) {
-}
-
 int current_output_buffer() {
   return current_buffer;
 }
@@ -107,4 +93,12 @@ void platform_save_config() {
 
 void platform_load_config() {
 
+}
+
+size_t console_read(void *ptr, size_t max) {
+  return 0;
+}
+
+size_t console_write(const void *ptr, size_t max) {
+  return 0;
 }

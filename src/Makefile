@@ -11,6 +11,7 @@ CFLAGS+= -fprofile-arcs -ftest-coverage
 .else
 .if ${PLATFORM} == "stm32f4-discovery"
 CC=arm-none-eabi-gcc
+OBJCOPY=arm-none-eabi-objcopy
 OPENCM3_DIR=../libopencm3
 CFLAGS=  -I. -std=c99 -Wall -O3 -Wextra -g -flto
 CFLAGS+= -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mthumb -mcpu=cortex-m4
@@ -34,6 +35,8 @@ OBJS=decoder.o util.o scheduler.o console.o calculations.o config.o table.o sens
 tfi: ${OBJS} tfi.o platforms/${PLATFORM}.o
 	${CC} ${CFLAGS} -o tfi tfi.o ${OBJS} ${PLATFORM}.o ${LDFLAGS}
 
+tfi.dfu: tfi
+	${OBJCOPY} -O binary tfi tfi.dfu
 
 check: ${OBJS} test/check.o test/check_platform.o test/check_scheduler.o test/check_decoder.o
 	${CC} ${CFLAGS} -o check check.o check_platform.o check_scheduler.o check_decoder.o  ${OBJS} ${LDFLAGS}
