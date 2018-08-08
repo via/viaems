@@ -119,7 +119,7 @@ START_TEST(check_schedule_ignition_reschedule_active_later) {
 /* Special case where rescheduling before last trigger is
  * reinterpretted as future */
 START_TEST(check_schedule_ignition_reschedule_active_too_early) {
-  oev->angle = 40;
+  oev->angle = 60;
   set_current_time(time_from_rpm_diff(6000, 0));
   schedule_ignition_event(oev, &config.decoder, 0, 1000);
   /* Emulate firing of the event */
