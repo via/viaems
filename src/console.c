@@ -505,6 +505,18 @@ static void console_set_dwell_type(const struct console_config_node *self,
   }
 }
 
+static void console_get_stats(
+    const struct console_config_node *self __attribute((unused)),
+    char *dest,
+    char *remaining __attribute__((unused))) {
+
+  const struct stats_entry *e;
+  for (e = &stats_entries[0]; e != &stats_entries[STATS_LAST]; ++e) {
+    dest += sprintf(dest, "* %s min/avg/max (uS) = %lu/%lu/%lu\r\n",
+        e->name, e->min, e->avg, e->max);
+  }
+}
+
 static void console_get_events(
     const struct console_config_node *self __attribute__((unused)), 
     char *dest, 
@@ -715,6 +727,7 @@ static struct console_config_node console_config_nodes[] = {
 
   /* Misc commands */
   {.name="flash", .set=console_save_to_flash},
+  {.name="stats", .get=console_get_stats},
   {0},
 };
 
@@ -841,7 +854,7 @@ int console_read_full(char *buf, size_t max) {
     r = console_read(console_state.rx.ptr, r);
     if (r) {
       console_state.rx.ptr += r;
-      if (memchr(console_state.rx.src, '\r',
+      if (memchr(console_state.rx.src, '\n',
             (uint16_t)(console_state.rx.ptr - console_state.rx.src))) {
         console_state.rx.in_progress = 0;
         return 1;
@@ -884,6 +897,10 @@ int console_write_full(char *buf, size_t max) {
 static void console_process_rx() {
   char *out = config.console.txbuffer;
   char *in = strtok(config.console.rxbuffer, "\r\n");
+  if (!in) {
+    /* Allow just raw \n's in the case of hosted mode */
+    in = strtok(config.console.rxbuffer, "\n");
+  }
   out += sprintf(out, "* ");
   console_parse_request(out, in);
   strcat(out, "\r\n");

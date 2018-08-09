@@ -16,10 +16,6 @@
 #include "config.h"
 #include "stats.h"
 
-#if __x86_64__
-#include <x86intrin.h>
-#endif
-
 /* A platform that runs on a hosted OS, preferably one that supports posix 
  * timers.  Sends console to stdout, and creates a control socket on tfi.sock.
  *
@@ -53,9 +49,11 @@ timeval_t current_time() {
 }
 
 timeval_t cycle_count() {
-#if __x86_64__
-  return (timeval_t)__rdtsc();
-#endif
+
+  struct timespec tp;
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &tp);
+  return (timeval_t)(tp.tv_sec * 1000000000 + tp.tv_nsec);
+
 }
 
 void set_event_timer(timeval_t t) {
@@ -112,23 +110,28 @@ void adc_gather() {
 }
 
 timeval_t last_tx = 0;
-int usart_tx_ready() {
-  return (curtime -  last_tx) > 200;
+size_t console_write(const void *buf, size_t len) {
+  if (curtime - last_tx < 200) {
+    return 0;
+  }
+  size_t written = write(STDOUT_FILENO, buf, len);
+  if (written) {
+    last_tx = curtime;
+  }
+  return written;
 }
 
-static int rx_ready = 0;
-int usart_rx_ready() {
-  return rx_ready;
-}
+char rx_buffer[128];
+int rx_amt = 0;
+size_t console_read(void *buf, size_t len) {
+  if (rx_amt == 0) {
+    return 0;
+  }
 
-void usart_rx_reset() {
-  strcpy(config.console.rxbuffer, "");
-  rx_ready = 0;
-}
-
-void usart_tx(char *str, unsigned short len) {
-  write(STDOUT_FILENO, str, len);
-  last_tx = curtime;
+  size_t amt = len < rx_amt ? len: rx_amt;
+  memcpy(buf, rx_buffer, amt);
+  rx_amt -= amt;
+  return amt;
 }
 
 void platform_load_config() {
@@ -234,15 +237,10 @@ static void hosted_platform_timer() {
   struct pollfd pfds[] = {
     {.fd = STDIN_FILENO, .events = POLLIN},
   };
-  if (poll(pfds, 1, 0)) {
-    char buf[128];
-    int r = read(STDIN_FILENO, buf, 127);
-    if (r > 0) {
-      buf[r] = '\0';
-      strcat(config.console.rxbuffer, buf);
-    }
-    if (strchr(config.console.rxbuffer, '\n')) {
-      rx_ready = 1;
+  if (!rx_amt && poll(pfds, 1, 0)) {
+    size_t r = read(STDIN_FILENO, rx_buffer, 127);
+    if (r) {
+      rx_amt = r;
     }
   }
 
@@ -328,7 +326,7 @@ void platform_init(int argc, char *argv[]) {
   };
   setitimer(ITIMER_VIRTUAL, &t, NULL);
 #endif
-  stats_init(2900000);
+  stats_init(1000000000);
 
   /* Set stdin nonblock */
   fcntl(STDIN_FILENO, F_SETFL, fcntl(STDIN_FILENO, F_GETFL, 0) | O_NONBLOCK);
