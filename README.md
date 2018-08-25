@@ -52,10 +52,6 @@ Member | Meaning
 `injector_pw_compensation` | Points to table containing Voltage vs dead time
 `rpm_stop` | Stop event scheduling above this RPM (rev limiter)
 `rpm_start` | Resume event scheduling when speed falls to this RPM (rev limiter)
-`console.baud` | Serial console baud
-`console.stop_bits` | Serial console stop bits
-`console.data_bits` | Serial console data bits
-`console.parity` | Serial console parity
 
 ### Event Configuration
 Event configuration is done with an array of schedulable events.  This entire
@@ -99,7 +95,7 @@ Member | Meaning
 `params.range.max` | For processing, value that highest raw sensor value reflects
 `fault_config.min` | Raw sensor value, below this indicates sensor fault
 `fault_config.max` | Raw sensor value, above this indicates sensor fault
-`falut_config.fault_value` | During sensor fault, use this fallback value
+`fault_config.fault_value` | During sensor fault, use this fallback value
 
 For method `SENSOR_LINEAR`, the processed value is linear interpolated based on
 the raw value between min and max (with the raw value being 0 - 4096).

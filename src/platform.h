@@ -1,6 +1,7 @@
 #ifndef _PLATFORM_H
 #define _PLATFORM_H
 #include <stdint.h>
+#include <stddef.h>
 
 #ifndef NULL
 #define NULL 0
@@ -36,10 +37,8 @@ void set_gpio(int output, char value);
 void set_pwm(int output, float value);
 void adc_gather();
 
-int usart_tx_ready();
-int usart_rx_ready();
-void usart_rx_reset();
-void usart_tx(char *, unsigned short);
+size_t console_read(void *buf, size_t max);
+size_t console_write(const void *buf, size_t count);
 
 void platform_load_config();
 void platform_save_config();

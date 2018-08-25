@@ -1,8 +1,10 @@
+#include <stdio.h>
+#include <assert.h>
+
 #include "platform.h"
 #include "stats.h"
-#include <stdio.h>
 
-struct stats_entry entries[] __attribute__((externally_visible)) = {
+struct stats_entry stats_entries[] = {
 	[STATS_INT_RATE] = {
 		.name = "interrupt_rate",
 	},
@@ -49,69 +51,98 @@ struct stats_entry entries[] __attribute__((externally_visible)) = {
     .name = "total interrupt time",
     .is_interrupt = 1,
   },
+	[STATS_USB_POLL_TIME] = {
+		.name = "usb time",
+	},
+	[STATS_USB_WRITE_TIME] = {
+		.name = "usb write time",
+	},
+	[STATS_TRIGGER_LATENCY] = {
+		.name = "time from trigger to start decoding",
+	},
 	[STATS_LAST] = {},
 };
 
-static timeval_t ticks_per_sec;
-static timeval_t interrupt_time;
+static timeval_t ticks_per_sec = 1000000;
+static volatile timeval_t interrupt_time = 0;
 
 void stats_init(timeval_t ticks) {
   ticks_per_sec = ticks;
 
   for (int i = 0; i < STATS_LAST; ++i) {
-    entries[i].min = (timeval_t)-1;
-    entries[i].max = 0;
-    entries[i].avg = 0;
-    entries[i].counter = 0;
-    entries[i]._window = 0;
-    entries[i]._prev[0] = 0;
-    entries[i]._prev[1] = 0;
-    entries[i]._prev[2] = 0;
-    entries[i]._prev[3] = 0;
+    stats_entries[i].min = (timeval_t)-1;
+    stats_entries[i].max = 0;
+    stats_entries[i].avg = 0;
+    stats_entries[i].counter = 0;
+    stats_entries[i]._window = 0;
+    stats_entries[i]._prev[0] = 0;
+    stats_entries[i]._prev[1] = 0;
+    stats_entries[i]._prev[2] = 0;
+    stats_entries[i]._prev[3] = 0;
   }
 }
 
 static void stats_update(stats_field_t type, timeval_t val) {
-  if (val < entries[type].min) {
-    entries[type].min = val;
+
+  if (val < stats_entries[type].min) {
+    stats_entries[type].min = val;
   }
 
-  if (val > entries[type].max) {
-    entries[type].max = val;
+  if (val > stats_entries[type].max) {
+    stats_entries[type].max = val;
   }
 
-  entries[type]._prev[3] = entries[type]._prev[2];
-  entries[type]._prev[2] = entries[type]._prev[1];
-  entries[type]._prev[1] = entries[type]._prev[0];
-  entries[type]._prev[0] = val;
+  stats_entries[type]._prev[3] = stats_entries[type]._prev[2];
+  stats_entries[type]._prev[2] = stats_entries[type]._prev[1];
+  stats_entries[type]._prev[1] = stats_entries[type]._prev[0];
+  stats_entries[type]._prev[0] = val;
 
-  timeval_t total = entries[type]._prev[3] + entries[type]._prev[2] +
-    entries[type]._prev[1] + entries[type]._prev[0];
-  entries[type].avg = total / 4;
+  timeval_t total = stats_entries[type]._prev[3] + stats_entries[type]._prev[2] +
+    stats_entries[type]._prev[1] + stats_entries[type]._prev[0];
+  stats_entries[type].avg = total / 4;
 }
 
 void stats_start_timing(stats_field_t type) {
-  entries[type]._window = cycle_count();
-  entries[type].cur_interrupt_time = interrupt_time;
+  timeval_t inttime, new_inttime;
+  do {
+    inttime = interrupt_time;
+    stats_entries[type]._window = cycle_count();
+    new_inttime = interrupt_time;
+  } while (new_inttime != inttime);
+  stats_entries[type].cur_interrupt_time = inttime;
 }
 
 void stats_finish_timing(stats_field_t type) {
-  timeval_t time = cycle_count();
-  time -= entries[type]._window;
-  stats_update(type, time);
 
-  if (entries[type].is_interrupt) {
+  timeval_t time;
+  timeval_t inttime, new_inttime;
+
+  do {
+    inttime = interrupt_time;
+    time = cycle_count();
+    new_inttime = interrupt_time;
+  } while (new_inttime != inttime);
+
+  if (!stats_entries[type].is_interrupt) {
+    time -= (inttime - stats_entries[type].cur_interrupt_time);
+  }
+
+  time -= stats_entries[type]._window;
+
+  stats_update(type, time / (ticks_per_sec / 1000000));
+
+  if (stats_entries[type].is_interrupt) {
     interrupt_time += time;
   }
 }
 
 void stats_increment_counter(stats_field_t type) {
 
-  if (cycle_count() - entries[type]._window > ticks_per_sec) {
+  if (cycle_count() - stats_entries[type]._window > ticks_per_sec) {
     /* We've reached the window edge, calculate and reset */
-    stats_update(type, entries[type].counter);
-    entries[type].counter = 0;
-    entries[type]._window = cycle_count();
+    stats_update(type, stats_entries[type].counter);
+    stats_entries[type].counter = 0;
+    stats_entries[type]._window = cycle_count();
   }
-  entries[type].counter++;
+  stats_entries[type].counter++;
 }

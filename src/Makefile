@@ -7,10 +7,12 @@ CC=gcc
 CFLAGS+= -I. -Itest -std=c99 -Wall -Wwrite-strings -O0 -g
 CFLAGS+= -D TICKRATE=4000000 -DUNITTEST
 CFLAGS+= -fprofile-arcs -ftest-coverage 
+CFLAGS+=  -fsanitize=undefined
 
 .else
 .if ${PLATFORM} == "stm32f4-discovery"
 CC=arm-none-eabi-gcc
+OBJCOPY=arm-none-eabi-objcopy
 OPENCM3_DIR=../libopencm3
 CFLAGS=  -I. -std=c99 -Wall -O3 -Wextra -g -flto
 CFLAGS+= -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mthumb -mcpu=cortex-m4
@@ -24,6 +26,7 @@ all: tfi
 CC=gcc
 CFLAGS+= -I. -std=c99 -Wall -O0 -ggdb -lrt -DSUPPORTS_POSIX_TIMERS
 CFLAGS+= -D TICKRATE=1000000 -D_POSIX_C_SOURCE=199309L -D_GNU_SOURCE
+CFLAGS+= -fsanitize=undefined
 all: tfi
 .endif
 .endif
@@ -32,8 +35,13 @@ all: tfi
 OBJS=decoder.o util.o scheduler.o console.o calculations.o config.o table.o sensors.o stats.o
 
 tfi: ${OBJS} tfi.o platforms/${PLATFORM}.o
-	${CC} ${CFLAGS} -o tfi tfi.o ${OBJS} ${PLATFORM}.o  ${LDFLAGS}
+	${CC} ${CFLAGS} -o tfi tfi.o ${OBJS} ${PLATFORM}.o ${LDFLAGS}
 
+tfi.dfu: tfi
+	${OBJCOPY} -O binary tfi tfi.dfu
+
+program: tfi.dfu
+	dfu-util -D tfi.dfu -a 0 -s 0x8000000:leave
 
 check: ${OBJS} test/check.o test/check_platform.o test/check_scheduler.o test/check_decoder.o
 	${CC} ${CFLAGS} -o check check.o check_platform.o check_scheduler.o check_decoder.o  ${OBJS} ${LDFLAGS}
@@ -46,6 +54,7 @@ coverage: check
 clean:
 	-rm *.o
 	-rm tfi
+	-rm tfi.dfu
 	-rm test/*.o
 	-rm check
 	-rm *.hex

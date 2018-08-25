@@ -505,6 +505,21 @@ static void console_set_dwell_type(const struct console_config_node *self,
   }
 }
 
+static void console_get_stats(
+    const struct console_config_node *self __attribute((unused)),
+    char *dest,
+    char *remaining __attribute__((unused))) {
+
+  const struct stats_entry *e;
+  for (e = &stats_entries[0]; e != &stats_entries[STATS_LAST]; ++e) {
+    dest += sprintf(dest, "* %s min/avg/max (uS) = %u/%u/%u\r\n",
+        e->name, 
+        (unsigned int)e->min, 
+        (unsigned int)e->avg, 
+        (unsigned int)e->max);
+  }
+}
+
 static void console_get_events(
     const struct console_config_node *self __attribute__((unused)), 
     char *dest, 
@@ -715,6 +730,7 @@ static struct console_config_node console_config_nodes[] = {
 
   /* Misc commands */
   {.name="flash", .set=console_save_to_flash},
+  {.name="stats", .get=console_get_stats},
   {0},
 };
 
@@ -818,26 +834,101 @@ static void console_feed_line(char *dest) {
   strcat(dest, "\r\n");
 }
 
+struct {
+  struct {
+    int in_progress;
+    size_t max;
+    const char *src;
+    char *ptr;
+  } rx, tx;
+} console_state = {
+  .tx = { .src = config.console.txbuffer, .in_progress = 0},
+  .rx = { .src = config.console.rxbuffer, .in_progress = 0},
+};
+
+int console_read_full(char *buf, size_t max) {
+  if (console_state.rx.in_progress) {
+    size_t r = console_state.rx.max - 1 -
+      (size_t)(console_state.rx.ptr - console_state.rx.src);
+    if (r == 0) {
+      console_state.rx.in_progress = 0;
+      return 0;
+    }
+    r = console_read(console_state.rx.ptr, r);
+    if (r) {
+      console_state.rx.ptr += r;
+      if (memchr(console_state.rx.src, '\n',
+            (uint16_t)(console_state.rx.ptr - console_state.rx.src))) {
+        console_state.rx.in_progress = 0;
+        return 1;
+      }
+    }
+  } else {
+    console_state.rx.in_progress = 1;
+    console_state.rx.max = max;
+    console_state.rx.src = buf;
+    console_state.rx.ptr = buf;
+
+    memset(buf, 0, max);
+  }
+  return 0;
+}
+
+
+int console_write_full(char *buf, size_t max) {
+  if (console_state.tx.in_progress) {
+    size_t r = console_state.tx.max -
+      (size_t)(console_state.tx.ptr - console_state.tx.src);
+    r = console_write(console_state.tx.ptr, r);
+    if (r) {
+      console_state.tx.ptr += r;
+      if (console_state.tx.max ==
+          (uint16_t)(console_state.tx.ptr - console_state.tx.src)) {
+        console_state.tx.in_progress = 0;
+        return 1;
+      }
+    }
+  } else {
+    console_state.tx.in_progress = 1;
+    console_state.tx.max = max;
+    console_state.tx.src = buf;
+    console_state.tx.ptr = buf;
+  }
+  return 0;
+}
+
 static void console_process_rx() {
   char *out = config.console.txbuffer;
   char *in = strtok(config.console.rxbuffer, "\r\n");
+  if (!in) {
+    /* Allow just raw \n's in the case of hosted mode */
+    in = strtok(config.console.rxbuffer, "\n");
+  }
   out += sprintf(out, "* ");
   console_parse_request(out, in);
   strcat(out, "\r\n");
-  usart_tx(config.console.txbuffer, strlen(config.console.txbuffer));
-  usart_rx_reset();
-
+  console_write_full(config.console.txbuffer, strlen(config.console.txbuffer));
 }
+
 
 void console_process() {
 
+  static int pending_request = 0;
   stats_start_timing(STATS_CONSOLE_TIME);
-  if (usart_tx_ready() && usart_rx_ready()) {
-    console_process_rx();
+  if (!pending_request &&
+      console_read_full(config.console.rxbuffer, CONSOLE_BUFFER_SIZE)) {
+    pending_request = 1;
   }
 
-  /*  if tx buffer is usable, print regular status update */
-  if (!usart_tx_ready()) {
+  /* We don't ever want to interrupt a feedline */
+  if (pending_request && !console_state.tx.in_progress) {
+    console_process_rx();
+    pending_request = 0;
+  }
+
+  /* We're still sending packets for a tx line, keep doing just that */
+  if (console_state.tx.in_progress) {
+    console_write_full(config.console.txbuffer, 0);
     stats_finish_timing(STATS_CONSOLE_TIME);
     return;
   }
@@ -845,7 +936,7 @@ void console_process() {
   config.console.txbuffer[0] = '\0';
   if (console_feed_config.n_nodes) {
     console_feed_line(config.console.txbuffer);
-    usart_tx(config.console.txbuffer, strlen(config.console.txbuffer));
+    console_write_full(config.console.txbuffer, strlen(config.console.txbuffer));
   }
 
   stats_finish_timing(STATS_CONSOLE_TIME);
