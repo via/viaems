@@ -63,7 +63,7 @@ struct stats_entry stats_entries[] = {
 	[STATS_LAST] = {},
 };
 
-static timeval_t ticks_per_sec;
+static timeval_t ticks_per_sec = 1000000;
 static volatile timeval_t interrupt_time = 0;
 
 void stats_init(timeval_t ticks) {

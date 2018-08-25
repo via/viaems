@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
 
     sensors_process();
     if (config.decoder.needs_decoding_t0 || config.decoder.needs_decoding_t1) {
-      stats_finish_timing(STATS_SCHED_LATENCY);
+      stats_finish_timing(STATS_TRIGGER_LATENCY);
       config.decoder.decode(&config.decoder);
 
       if (config.decoder.valid) {
