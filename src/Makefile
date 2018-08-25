@@ -7,7 +7,7 @@ CC=gcc
 CFLAGS+= -I. -Itest -std=c99 -Wall -Wwrite-strings -O0 -g
 CFLAGS+= -D TICKRATE=4000000 -DUNITTEST
 CFLAGS+= -fprofile-arcs -ftest-coverage 
-#CFLAGS+=  -fsanitize=undefined
+CFLAGS+=  -fsanitize=undefined
 
 .else
 .if ${PLATFORM} == "stm32f4-discovery"
