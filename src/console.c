@@ -512,8 +512,11 @@ static void console_get_stats(
 
   const struct stats_entry *e;
   for (e = &stats_entries[0]; e != &stats_entries[STATS_LAST]; ++e) {
-    dest += sprintf(dest, "* %s min/avg/max (uS) = %lu/%lu/%lu\r\n",
-        e->name, e->min, e->avg, e->max);
+    dest += sprintf(dest, "* %s min/avg/max (uS) = %u/%u/%u\r\n",
+        e->name, 
+        (unsigned int)e->min, 
+        (unsigned int)e->avg, 
+        (unsigned int)e->max);
   }
 }
 
