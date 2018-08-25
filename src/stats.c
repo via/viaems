@@ -11,9 +11,6 @@ struct stats_entry stats_entries[] = {
 	[STATS_INT_PWM_RATE] = {
 		.name = "pwm interrupt_rate",
 	},
-	[STATS_INT_USART_RATE] = {
-		.name = "usart interrupt_rate",
-	},
 	[STATS_INT_EVENTTIMER_RATE] = {
 		.name = "event timer interrupt_rate",
 	},
@@ -22,6 +19,9 @@ struct stats_entry stats_entries[] = {
 	},
 	[STATS_CONSOLE_TIME] = {
 		.name = "console processing time",
+	},
+	[STATS_CONSOLE_FEED_LINE] = {
+		.name = "console feed-line generate time",
 	},
 	[STATS_MAINLOOP_RATE] = {
 		.name = "main loop rate",
@@ -60,6 +60,15 @@ struct stats_entry stats_entries[] = {
 	[STATS_TRIGGER_LATENCY] = {
 		.name = "time from trigger to start decoding",
 	},
+	[STATS_SENSORS_TIME] = {
+		.name = "time to read and process sensors",
+	},
+	[STATS_TEST_1] = {
+		.name = "test point 1",
+	},
+	[STATS_TEST_2] = {
+		.name = "test point 2",
+	},
 	[STATS_LAST] = {},
 };
 
@@ -79,6 +88,7 @@ void stats_init(timeval_t ticks) {
     stats_entries[i]._prev[1] = 0;
     stats_entries[i]._prev[2] = 0;
     stats_entries[i]._prev[3] = 0;
+    stats_entries[i].nest = 0;
   }
 }
 
@@ -103,37 +113,25 @@ static void stats_update(stats_field_t type, timeval_t val) {
 }
 
 void stats_start_timing(stats_field_t type) {
-  timeval_t inttime, new_inttime;
-  do {
-    inttime = interrupt_time;
-    stats_entries[type]._window = cycle_count();
-    new_inttime = interrupt_time;
-  } while (new_inttime != inttime);
-  stats_entries[type].cur_interrupt_time = inttime;
+  stats_entries[type]._window = cycle_count();
+  stats_entries[type].nest++;
 }
 
 void stats_finish_timing(stats_field_t type) {
 
   timeval_t time;
-  timeval_t inttime, new_inttime;
 
-  do {
-    inttime = interrupt_time;
-    time = cycle_count();
-    new_inttime = interrupt_time;
-  } while (new_inttime != inttime);
-
-  if (!stats_entries[type].is_interrupt) {
-    time -= (inttime - stats_entries[type].cur_interrupt_time);
-  }
-
+  time = cycle_count();
   time -= stats_entries[type]._window;
 
-  stats_update(type, time / (ticks_per_sec / 1000000));
+  if (stats_entries[type].nest == 1) {
+    stats_update(type, time / (ticks_per_sec / 1000000));
+  }
 
   if (stats_entries[type].is_interrupt) {
     interrupt_time += time;
   }
+  stats_entries[type].nest--;
 }
 
 void stats_increment_counter(stats_field_t type) {

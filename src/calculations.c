@@ -1,7 +1,7 @@
 #include "config.h"
 #include "calculations.h"
 #include "stats.h"
-struct calculated_values calculated_values;
+struct calculated_values calculated_values = {0};
 
 int ignition_cut() {
   if (config.decoder.rpm >= config.rpm_stop) {

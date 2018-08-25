@@ -8,6 +8,7 @@
 #include "sensors.h"
 #include "calculations.h"
 #include "stats.h"
+#include "fiber.h"
 
 static void schedule(struct output_event *ev) {
   switch(ev->type) {
@@ -38,20 +39,10 @@ static void schedule(struct output_event *ev) {
   }
 }
 
-int main(int argc, char *argv[]) {
-  platform_load_config();
-  decoder_init(&config.decoder);
-  console_init();
-  platform_init(argc, argv);
-  initialize_scheduler();
-
-
-  enable_test_trigger(FORD_TFI, 2000);
-
-  while (1) {                   
-    stats_increment_counter(STATS_MAINLOOP_RATE);
-
-    sensors_process();
+struct fiber_condition decoder_ready __attribute__((externally_visible)) = {0};
+void decode_loop() {
+  while (1) {
+    fiber_wait(&decoder_ready);
     if (config.decoder.needs_decoding_t0 || config.decoder.needs_decoding_t1) {
       stats_finish_timing(STATS_TRIGGER_LATENCY);
       config.decoder.decode(&config.decoder);
@@ -66,27 +57,51 @@ int main(int argc, char *argv[]) {
         stats_finish_timing(STATS_SCHED_TOTAL_TIME);
       }
 
-    } else {
-      /* Check to see if any events have fired. These should be rescheduled
-       * now to allow 100% duty utilization */
-      stats_start_timing(STATS_SCHED_FIRED_TIME);
-      for (unsigned int e = 0; e < config.num_events; ++e) {
-        if (config.decoder.valid && event_has_fired(&config.events[e])) {
-          schedule(&config.events[e]);
-        }
-      }
-      stats_finish_timing(STATS_SCHED_FIRED_TIME);
-
-      /* We want to continue adc sampling when the engine isn't spinning.
-       * TODO: do this more infrequently */
-      if (!config.decoder.valid) {
-        adc_gather();
-      }
     }
-   
-    console_process();
   }
-
-  return 0;
 }
 
+void reschedule_finished_loop() {
+  while (1) {
+    stats_start_timing(STATS_SCHED_FIRED_TIME);
+    for (unsigned int e = 0; e < config.num_events; ++e) {
+      if (config.decoder.valid && event_has_fired(&config.events[e])) {
+        schedule(&config.events[e]);
+      }
+    }
+    stats_finish_timing(STATS_SCHED_FIRED_TIME);
+    platform_fiber_yield();
+  }
+}
+
+void console_loop() {
+  while (1) {                   
+    stats_increment_counter(STATS_MAINLOOP_RATE);
+
+    sensors_process();
+    if (!config.decoder.valid) {
+      adc_gather();
+    }
+    console_process();
+    platform_fiber_yield();
+  }
+}
+
+struct fiber fibers[] = {
+  {.entry = console_loop, .runnable = 1, .priority = 0},
+  {.entry = reschedule_finished_loop, .runnable = 1, .priority = 0},
+  {.entry = decode_loop, .runnable = 1, .priority = 6},
+};
+
+int main(int argc, char *argv[]) {
+  platform_load_config();
+  decoder_init(&config.decoder);
+  console_init();
+  platform_init(argc, argv);
+  initialize_scheduler();
+
+  enable_test_trigger(FORD_TFI, 6000);
+
+  fibers_init(fibers, 3);
+  return 0;
+}

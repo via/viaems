@@ -45,6 +45,10 @@ SECTIONS {
 		. = ALIGN(4);
 	} >rom
 
+	.ccm : {
+		*(.ccm)	/* Program code */
+	} >ccm
+
 	/* C++ Static constructors/destructors, also used for __attribute__
 	 * ((constructor)) and the likes */
 	.preinit_array : {
@@ -113,7 +117,7 @@ SECTIONS {
 	 */
 	/DISCARD/ : { *(.eh_frame) }
 
-	. = ALIGN(4);
+	. = ALIGN(8);
 	end = .;
 }
 

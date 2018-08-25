@@ -14,12 +14,14 @@ CFLAGS+=  -fsanitize=undefined
 CC=arm-none-eabi-gcc
 OBJCOPY=arm-none-eabi-objcopy
 OPENCM3_DIR=../libopencm3
-CFLAGS=  -I. -std=c99 -Wall -O3 -Wextra -g -flto
-CFLAGS+= -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mthumb -mcpu=cortex-m4
+CFLAGS=  -I. -std=c99 -Wall -O3 -Wextra -g -mthumb -flto
+CFLAGS+= -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mcpu=cortex-m4
 CFLAGS+= -D TICKRATE=4000000
 CFLAGS+=  -L${OPENCM3_DIR}/lib -I${OPENCM3_DIR}/include -DSTM32F4
+CFLAGS+= -fstack-protector-all -fstack-usage
+CFLAGS+= -fno-strict-aliasing
 LDFLAGS+= -lopencm3_stm32f4 -lc -lnosys -flto
-LDFLAGS+= -T platforms/stm32f4-discovery.ld -nostartfiles
+LDFLAGS+= -T platforms/stm32f4-discovery.ld -nostartfiles -L .
 all: tfi
 
 .elif ${PLATFORM} == "hosted"
@@ -31,10 +33,15 @@ all: tfi
 .endif
 .endif
 
+libssp.a:
+	arm-none-eabi-ar rcs libssp.a
 
-OBJS=decoder.o util.o scheduler.o console.o calculations.o config.o table.o sensors.o stats.o
+libssp_nonshared.a:
+	arm-none-eabi-ar rcs libssp_nonshared.a
 
-tfi: ${OBJS} tfi.o platforms/${PLATFORM}.o
+OBJS=decoder.o util.o scheduler.o console.o calculations.o config.o table.o sensors.o stats.o fiber.o
+
+tfi: ${OBJS} tfi.o platforms/${PLATFORM}.o libssp.a libssp_nonshared.a
 	${CC} ${CFLAGS} -o tfi tfi.o ${OBJS} ${PLATFORM}.o ${LDFLAGS}
 
 tfi.dfu: tfi
@@ -53,6 +60,7 @@ coverage: check
 
 clean:
 	-rm *.o
+	-rm *.su
 	-rm tfi
 	-rm tfi.dfu
 	-rm test/*.o

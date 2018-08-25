@@ -15,6 +15,7 @@
 #include <libopencm3/usb/cdc.h>
 #include <libopencm3/cm3/scb.h>
 
+
 #include "decoder.h"
 #include "platform.h"
 #include "scheduler.h"
@@ -23,10 +24,13 @@
 #include "util.h"
 #include "config.h"
 #include "stats.h"
-
-#include <string.h>
+#include "fiber.h"
 
 #include <assert.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+
 /* Hardware setup:
  *  Discovery board LEDs:
  *  LD3 - Orange - PD13
@@ -670,6 +674,7 @@ void platform_init_usb() {
   usbd_register_set_config_callback(usbd_dev, cdcacm_set_config);
 }
 
+
 void platform_init(int argc __attribute((unused)),
     char *argv[] __attribute((unused))) {
 
@@ -700,6 +705,7 @@ void platform_init(int argc __attribute((unused)),
   platform_init_pwm();
   platform_init_freqsensor();
   platform_init_usb();
+  
 
   for (int i = 0; i < NUM_SENSORS; ++i) {
     if ((config.sensors[i].source == SENSOR_FREQ) &&
@@ -772,6 +778,8 @@ void adc_gather() {
 }
 
 void dma1_stream3_isr(void) {
+  stats_start_timing(STATS_INT_TOTAL_TIME);
+
   if (!dma_get_interrupt_flag(DMA1, DMA_STREAM3, DMA_TCIF)) {
     return;
   }
@@ -798,6 +806,7 @@ void dma1_stream3_isr(void) {
   
   sensor_adc_new_data();
   adc_gather_in_progress = 0;
+  stats_finish_timing(STATS_INT_TOTAL_TIME);
 }
 
 /* This can be set as a higher priority interrupt than the swap_buffers
@@ -806,6 +815,7 @@ void dma1_stream3_isr(void) {
  * takes 13 uS, which means we might be delayed up to about a degree in
  * recording decoder information.  This isn't an issue until we're dealing with
  * more than 100 teeth on a wheel */
+extern struct fiber_condition decoder_ready;
 void tim2_isr() {
   stats_increment_counter(STATS_INT_RATE);
   stats_increment_counter(STATS_INT_EVENTTIMER_RATE);
@@ -817,12 +827,19 @@ void tim2_isr() {
   if (timer_get_flag(TIM2, TIM_SR_CC2IF)) {
     timer_clear_flag(TIM2, TIM_SR_CC2IF);
     config.decoder.last_t0 = TIM2_CCR2;
+    if (config.decoder.needs_decoding_t0) {
+      config.decoder.overflows++;
+    }
     config.decoder.needs_decoding_t0 = 1;
+    fiber_notify(&decoder_ready);
     stats_start_timing(STATS_TRIGGER_LATENCY);
   }
   if (timer_get_flag(TIM2, TIM_SR_CC3IF)) {
     timer_clear_flag(TIM2, TIM_SR_CC3IF);
     config.decoder.last_t1 = TIM2_CCR3;
+    if (config.decoder.needs_decoding_t1) {
+      config.decoder.overflows++;
+    }
     config.decoder.needs_decoding_t1 = 1;
   }
   stats_finish_timing(STATS_INT_TOTAL_TIME);
@@ -847,8 +864,11 @@ void enable_interrupts() {
 }
 
 void disable_interrupts() {
+  int in = interrupts_enabled();
   cm_disable_interrupts();
-  stats_start_timing(STATS_INT_DISABLE_TIME);
+  if (in) {
+    stats_start_timing(STATS_INT_DISABLE_TIME);
+  }
 }
 
 int interrupts_enabled() {
@@ -962,13 +982,114 @@ size_t console_read(void *buf, size_t max) {
   usb_rx_ptr = buf;
   usb_rx_bytes_max = max > 64 ? 64 : max;
   usb_rx_bytes_read = 0;
+  stats_start_timing(STATS_USB_POLL_TIME);
   usbd_poll(usbd_dev);
+  stats_finish_timing(STATS_USB_POLL_TIME);
   return usb_rx_bytes_read;
 }
 
 size_t console_write(const void *buf, size_t count) {
   size_t rem = count > 64 ? 64 : count;
 
+  disable_interrupts();
+  stats_start_timing(STATS_USB_WRITE_TIME);
   rem = usbd_ep_write_packet(usbd_dev, 0x82, buf, rem);
+  stats_finish_timing(STATS_USB_WRITE_TIME);
+  enable_interrupts();
   return rem;
+}
+
+void hang_forever() {
+  while(1);
+}
+
+void platform_fiber_spawn(struct fiber *f) {
+  /* We are now in fiber. Set up the stack and call the entrypoint */
+  uint32_t *sp = &f->stack[FIBER_STACK_WORDS];
+  *(sp - 8) = 0; /* r0 */
+  *(sp - 7) = 0; /* r1 */
+  *(sp - 6) = 0; /* r2 */
+  *(sp - 5) = 0; /* r3 */
+  *(sp - 4) = 0; /* r12 */
+  *(sp - 3) = (uint32_t)hang_forever; /* lr */
+  *(sp - 2) = (uint32_t)f->entry; /* pc */
+  *(sp - 1) = 0x21000000; /* psr */
+  *(sp - 17) = 0xfffffffd;
+  f->sp = sp - 17;
+
+//  if ((uint32_t)(f->sp + 16) & 0x7) {
+//    while (1);
+//    /* Future SP not aligned(8) */
+//  }
+}
+
+void  platform_fiber_yield() {
+  SCB_ICSR |= SCB_ICSR_PENDSVSET;
+  __asm__("dsb");
+  __asm__("isb");
+}
+
+void platform_fiber_start(struct fiber *starting) {
+  nvic_set_priority(NVIC_PENDSV_IRQ, 128);
+
+  __asm__("msr psp, %0": : "r"(starting->sp));
+  platform_fiber_yield();
+  while(1);
+}
+
+__attribute__((externally_visible)) 
+__attribute__((used)) 
+void *platform_fiber_switch_stack(void *old) {
+  /* If we aren't already scheduling stuff, don't save the stack */
+  stats_start_timing(STATS_TEST_1);
+  if (fiber_current()) {
+    fiber_current()->sp = old;
+  }
+  fiber_schedule();
+  stats_increment_counter(STATS_INT_RATE);
+  stats_finish_timing(STATS_TEST_1);
+  return fiber_current()->sp;
+}
+
+__asm__ (".global pend_sv_handler\n"
+         ".thumb_func\n"
+        "pend_sv_handler:\n"
+        
+        "mrs r2, psp\n"
+        "stmdb r2!, {r4-r11}\n"
+        "mov r1, lr\n"
+
+        /* See if this previous context used FP, and if so save it */
+        "and.w r1, r1, 0x10\n"
+        "cmp r1, 0x10\n"
+        "beq.n after_fp_save\n"
+        "vstmdb r2!, {S16-S31}\n"
+
+        /* Lastly, save lr to the stack so we know if the context used FP */
+        "after_fp_save:\n"
+        "stmdb r2!, {lr}\n"
+        "mov r0, r2\n"
+        "bl platform_fiber_switch_stack\n" 
+        "ldr r2, [r0]\n"
+        "adds r1, r0, 0x4\n"
+        /* Check to see if we used FP in this new context */
+        "and.w r3, r2, 0x10\n"
+        "cmp r3, 0x10\n"
+        /* If bit 4 is set, we did not use FP */
+        "beq.n after_fp_restore\n"
+        "vldmia r1!, {S16-S31}\n"
+        "after_fp_restore:\n"
+        "ldmfd r1!, {r4-r11}\n"
+        "msr psp, r1\n"
+        "bx r2\n"
+);
+
+/* TODO: implement graceful shutdown of outputs on fault */
+#define STACK_CHK_GUARD 0xe2dee396
+uintptr_t  __attribute__((externally_visible)) __stack_chk_guard = STACK_CHK_GUARD;
+ 
+__attribute__((noreturn)) __attribute__((externally_visible))
+  void __stack_chk_fail(void)
+{
+      while(1);
 }

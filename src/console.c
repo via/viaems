@@ -91,7 +91,7 @@ static void console_get_time(
     const struct console_config_node *self __attribute__((unused)),
     char *dest,
     char *remaining __attribute__((unused))) {
-  sprintf(dest, "%u", (unsigned int)current_time());
+    snprintf(dest, 32, "%u", (unsigned int)current_time());
 }
 
 static void console_get_float(const struct console_config_node *self, 
@@ -717,6 +717,8 @@ static struct console_config_node console_config_nodes[] = {
    .get=console_get_uint},
   {.name="status.decoder_t1_count", .val=&config.decoder.t1_count,
    .get=console_get_uint},
+  {.name="status.decoder_overflows", .val=(uint32_t *)&config.decoder.overflows,
+   .get=console_get_uint},
   {.name="status.rpm", .val=&config.decoder.rpm,
    .get=console_get_uint},
   {.name="status.rpm_variance", .val=&config.decoder.trigger_cur_rpm_change,
@@ -817,8 +819,9 @@ void console_init() {
 static void console_feed_line(char *dest) {
 
   unsigned int i;
-  char temp[64];
-  char empty[1] = "";
+  char temp[128];
+  char empty[32] = "";
+  stats_start_timing(STATS_CONSOLE_FEED_LINE);
   for (i = 0; i < console_feed_config.n_nodes; i++) {
     const struct console_config_node *node = console_feed_config.nodes[i];
     strcpy(temp, "");
@@ -832,6 +835,7 @@ static void console_feed_line(char *dest) {
     }
   }
   strcat(dest, "\r\n");
+  stats_finish_timing(STATS_CONSOLE_FEED_LINE);
 }
 
 struct {
@@ -857,7 +861,9 @@ int console_read_full(char *buf, size_t max) {
     r = console_read(console_state.rx.ptr, r);
     if (r) {
       console_state.rx.ptr += r;
-      if (memchr(console_state.rx.src, '\n',
+      if (memchr(console_state.rx.src, '\r', 
+            (uint16_t)(console_state.rx.ptr - console_state.rx.src)) ||
+          memchr(console_state.rx.src, '\n', 
             (uint16_t)(console_state.rx.ptr - console_state.rx.src))) {
         console_state.rx.in_progress = 0;
         return 1;

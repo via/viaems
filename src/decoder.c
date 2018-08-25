@@ -133,6 +133,8 @@ void cam_nplusone_decoder(struct decoder *d) {
   }
 }
 
+timeval_t max_delay __attribute__((externally_visible)) = 0;
+uint32_t max_times __attribute__((externally_visible)) = 0;
 void tfi_pip_decoder(struct decoder *d) {
   stats_start_timing(STATS_DECODE_TIME);
   timeval_t t0;

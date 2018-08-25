@@ -1,6 +1,7 @@
 #include "sensors.h"
 #include "config.h"
 #include "platform.h"
+#include "stats.h"
 
 static volatile int adc_data_ready;
 static volatile int freq_data_ready;
@@ -71,6 +72,7 @@ static void sensor_convert(struct sensor_input *in) {
   
 void
 sensors_process() {
+  stats_start_timing(STATS_SENSORS_TIME);
   for (int i = 0; i < NUM_SENSORS; ++i) {
     switch(config.sensors[i].source) {
       case SENSOR_ADC:
@@ -98,6 +100,7 @@ sensors_process() {
     }
   }
 
+  stats_finish_timing(STATS_SENSORS_TIME);
 }
 
 void sensor_adc_new_data() {

@@ -29,8 +29,9 @@ struct decoder {
   /* Unsafe interrupt-written vars */
   volatile timeval_t last_t0;
   volatile timeval_t last_t1;
-  volatile char needs_decoding_t0;
-  volatile char needs_decoding_t1;
+  volatile uint32_t needs_decoding_t0;
+  volatile uint32_t needs_decoding_t1;
+  volatile uint32_t overflows;
 
   /* Safe, only handled in main loop */
   decoder_func decode;
