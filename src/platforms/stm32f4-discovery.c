@@ -1004,7 +1004,10 @@ void hang_forever() {
 }
 
 void platform_fiber_spawn(struct fiber *f) {
-  /* We are now in fiber. Set up the stack and call the entrypoint */
+  /* This platform we just store everything on the fiber's stack, so _md is the
+   * stack pointer.  Context frame has R0-R3, R12, LR, PC, PSR.  We also store
+   * the other 8 registers after that.
+   */
   uint32_t *sp = &f->stack[FIBER_STACK_WORDS];
   *(sp - 8) = 0; /* r0 */
   *(sp - 7) = 0; /* r1 */
@@ -1014,16 +1017,14 @@ void platform_fiber_spawn(struct fiber *f) {
   *(sp - 3) = (uint32_t)hang_forever; /* lr */
   *(sp - 2) = (uint32_t)f->entry; /* pc */
   *(sp - 1) = 0x21000000; /* psr */
+  /* Additionally, the fiber switch code expects ISR's LR to be at top of stack,
+   * indicating if the FP unit was used (bit 4 is zero).  We default to a
+   * non-FPU-used return */
   *(sp - 17) = 0xfffffffd;
-  f->sp = sp - 17;
-
-//  if ((uint32_t)(f->sp + 16) & 0x7) {
-//    while (1);
-//    /* Future SP not aligned(8) */
-//  }
+  f->_md = sp - 17;
 }
 
-void  platform_fiber_yield() {
+void fiber_yield() {
   SCB_ICSR |= SCB_ICSR_PENDSVSET;
   __asm__("dsb");
   __asm__("isb");
@@ -1032,29 +1033,37 @@ void  platform_fiber_yield() {
 void platform_fiber_start(struct fiber *starting) {
   nvic_set_priority(NVIC_PENDSV_IRQ, 128);
 
-  __asm__("msr psp, %0": : "r"(starting->sp));
-  platform_fiber_yield();
+  __asm__("msr psp, %0": : "r"(starting->_md));
+  fiber_yield();
   while(1);
 }
 
 __attribute__((externally_visible)) 
 __attribute__((used)) 
 void *platform_fiber_switch_stack(void *old) {
-  /* If we aren't already scheduling stuff, don't save the stack */
   stats_start_timing(STATS_TEST_1);
+
+  /* If we aren't in a fiber right now, don't save the stack */
   if (fiber_current()) {
-    fiber_current()->sp = old;
+    fiber_current()->_md = old;
   }
   fiber_schedule();
   stats_increment_counter(STATS_INT_RATE);
   stats_finish_timing(STATS_TEST_1);
-  return fiber_current()->sp;
+  return fiber_current()->_md;
 }
 
+/* Pend SV is used to trigger a task change. This is totally written in assembly
+ * because it is important that before the context is saved or after it is
+ * loaded that we do not mangle any registers outside of r0-r3, since those are
+ * the ones the hardware will handle. 
+ * */
 __asm__ (".global pend_sv_handler\n"
          ".thumb_func\n"
         "pend_sv_handler:\n"
         
+        /* Save the registers that aren't hardware-saved onto the stack still
+         * pointed at by PSP */
         "mrs r2, psp\n"
         "stmdb r2!, {r4-r11}\n"
         "mov r1, lr\n"
@@ -1063,14 +1072,18 @@ __asm__ (".global pend_sv_handler\n"
         "and.w r1, r1, 0x10\n"
         "cmp r1, 0x10\n"
         "beq.n after_fp_save\n"
+        /* Cortex m4f autosaves s0-s15 */
         "vstmdb r2!, {S16-S31}\n"
 
         /* Lastly, save lr to the stack so we know if the context used FP */
         "after_fp_save:\n"
         "stmdb r2!, {lr}\n"
         "mov r0, r2\n"
+        /* Actually switch current fiber */
         "bl platform_fiber_switch_stack\n" 
+        /* New frame's LR was stored last, save it */
         "ldr r2, [r0]\n"
+        /* After LR is the normal stack frame including FP */
         "adds r1, r0, 0x4\n"
         /* Check to see if we used FP in this new context */
         "and.w r3, r2, 0x10\n"
@@ -1078,9 +1091,13 @@ __asm__ (".global pend_sv_handler\n"
         /* If bit 4 is set, we did not use FP */
         "beq.n after_fp_restore\n"
         "vldmia r1!, {S16-S31}\n"
+
         "after_fp_restore:\n"
+        /* Restore non-hardware-saved context */
         "ldmfd r1!, {r4-r11}\n"
         "msr psp, r1\n"
+        /* We jump to the same LR that was saved to preserve FP state, otherwise
+         * hardware will restore frame very wrong */
         "bx r2\n"
 );
 

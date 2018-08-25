@@ -49,10 +49,6 @@ void fiber_schedule() {
   current_fiber->times_run++;
 }
 
-void fiber_yield() {
-  platform_fiber_yield();
-}
-
 struct fiber *fiber_current() {
   return current_fiber;
 }

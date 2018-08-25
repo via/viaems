@@ -13,7 +13,7 @@ struct fiber {
   void (*entry)();
   uint32_t times_run;
 
-  void *sp;
+  void *_md;
   uint32_t stack[FIBER_STACK_WORDS] __attribute__((aligned(8)));
 };
 
@@ -22,21 +22,12 @@ struct fiber_condition {
   volatile uint32_t triggered;
 };
 
-typedef void (*fiber_platform_spawn)(struct fiber *);
-typedef int (*fiber_platform_setjmp)();
-typedef void (*fiber_platform_longjmp)();
-typedef void (*fiber_platform_yield)();
-
-/* Call to initialize task list.  Task initialization if platform-specific, so
- * it is expected that the platform set up the initial jmp_buf for each task,
- * which likely involves setting up stack and calling fiber_spawn */
+/* Call to initialize task list */
 void fibers_init(struct fiber *, size_t n);
  
-
 struct fiber *fiber_current();
 
-/* Saves current context, determines the correct next context, and switches to
- * it, returning in that new context */
+/* Selects a new fiber to run, sets current fiber accordingly */
 void fiber_schedule();
 
 /* Notify on a condition.  This sets any fiber that is waiting on a condition to

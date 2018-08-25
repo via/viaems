@@ -70,7 +70,7 @@ void reschedule_finished_loop() {
       }
     }
     stats_finish_timing(STATS_SCHED_FIRED_TIME);
-    platform_fiber_yield();
+    fiber_yield();
   }
 }
 
@@ -83,7 +83,7 @@ void console_loop() {
       adc_gather();
     }
     console_process();
-    platform_fiber_yield();
+    fiber_yield();
   }
 }
 

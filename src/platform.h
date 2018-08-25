@@ -49,9 +49,7 @@ int current_output_slot();
 
 struct fiber;
 void platform_fiber_spawn(struct fiber *);
-int platform_fiber_setjmp();
-void platform_fiber_longjmp();
-void platform_fiber_yield();
+void fiber_yield();
 void platform_fiber_start(struct fiber *);
 
 #endif
