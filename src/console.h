@@ -3,6 +3,7 @@
 
 #define CONSOLE_BUFFER_SIZE 2048
 
+/* TODO: there is no reason for this to be public now */
 struct console {
   /* Internal */
   volatile unsigned int needs_processing;

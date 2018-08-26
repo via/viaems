@@ -41,5 +41,10 @@ void fiber_wait(struct fiber_condition *);
 /* Yields the thread */
 void fiber_yield();
 
+#ifdef UNITTEST
+#include <check.h>
+TCase *setup_fiber_tests();
+#endif
+
 #endif
 

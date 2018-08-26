@@ -102,3 +102,13 @@ size_t console_read(void *ptr, size_t max) {
 size_t console_write(const void *ptr, size_t max) {
   return 0;
 }
+
+void platform_fiber_spawn(struct fiber *fiber) {
+}
+
+void platform_fiber_start(struct fiber *fiber) {
+}
+
+void fiber_yield() {
+}
+
