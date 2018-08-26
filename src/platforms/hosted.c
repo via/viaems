@@ -3,6 +3,7 @@
 #include <sys/types.h>
 #include <sys/un.h>
 
+#include <ucontext.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -15,6 +16,7 @@
 #include "scheduler.h"
 #include "config.h"
 #include "stats.h"
+#include "fiber.h"
 
 /* A platform that runs on a hosted OS, preferably one that supports posix 
  * timers.  Sends console to stdout, and creates a control socket on tfi.sock.
@@ -158,9 +160,11 @@ int current_output_slot() {
 void enable_test_trigger(trigger_type t, unsigned int rpm) {
 }
 
+extern struct fiber_condition decoder_ready;
 static void hosted_send_trigger() {
   config.decoder.last_t0 = curtime;
   config.decoder.needs_decoding_t0 = 1;
+  fiber_notify(&decoder_ready);
 }
 
 static void hosted_platform_timer() {
@@ -278,6 +282,45 @@ static void bind_control_socket(const char *path) {
 
 }
 
+static struct fiber signal_fiber = {0};
+
+void platform_fiber_spawn(struct fiber *f) {
+  struct ucontext *ctx = malloc(sizeof(struct ucontext));
+  if (getcontext(ctx)) {
+    abort();
+  }
+  ctx->uc_stack.ss_sp = f->stack;
+  ctx->uc_stack.ss_flags = 0;
+  ctx->uc_stack.ss_size = sizeof(f->stack) - sizeof(long);
+  ctx->uc_link = NULL;
+  if (f == &signal_fiber) {
+    sigset_t s;
+    sigemptyset(&s);
+    sigaddset(&s, SIGVTALRM);
+    ctx->uc_sigmask = s;
+  }
+  makecontext(ctx, f->entry, 0);
+  f->_md = ctx;
+}
+
+static void platform_schedule() {
+  while(1) {
+    fiber_schedule();
+    swapcontext((struct ucontext *)signal_fiber._md, 
+        (struct ucontext *)fiber_current()->_md);
+  }
+}
+
+void fiber_yield() {
+    swapcontext((struct ucontext *)fiber_current()->_md,
+                 (struct ucontext *)signal_fiber._md);
+}
+
+void platform_fiber_start(struct fiber *s) {
+  platform_fiber_spawn(&signal_fiber);
+  platform_schedule();
+}
+
 void platform_init(int argc, char *argv[]) {
 
   unlink("tfi.sock");
@@ -285,6 +328,7 @@ void platform_init(int argc, char *argv[]) {
 
   /* Set up signal handling */
   sigemptyset(&smask);
+  sigaddset(&smask, SIGVTALRM);
   struct sigaction sa = {
     .sa_handler = hosted_platform_timer,
     .sa_mask = smask,

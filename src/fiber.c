@@ -70,10 +70,12 @@ void fiber_wait(struct fiber_condition *blocker) {
 void fiber_notify(struct fiber_condition *blocker) {
   blocker->waiter->runnable = 1;
   blocker->triggered = 1;
+#ifndef FIBER_NO_PREEMPT
   struct fiber *cur = fiber_current();
   if (cur && (blocker->waiter->priority > cur->priority)) {
     fiber_yield();
   }
+#endif
 }
   
 #ifdef UNITTEST

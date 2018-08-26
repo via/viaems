@@ -40,7 +40,7 @@ static void schedule(struct output_event *ev) {
 }
 
 struct fiber_condition decoder_ready __attribute__((externally_visible)) = {0};
-void decode_loop() {
+void decode_loop(int argc) {
   while (1) {
     fiber_wait(&decoder_ready);
     if (config.decoder.needs_decoding_t0 || config.decoder.needs_decoding_t1) {
@@ -61,7 +61,7 @@ void decode_loop() {
   }
 }
 
-void reschedule_finished_loop() {
+void reschedule_finished_loop(int argc) {
   while (1) {
     stats_start_timing(STATS_SCHED_FIRED_TIME);
     for (unsigned int e = 0; e < config.num_events; ++e) {
@@ -74,7 +74,7 @@ void reschedule_finished_loop() {
   }
 }
 
-void console_loop() {
+void console_loop(int argc) {
   while (1) {                   
     stats_increment_counter(STATS_MAINLOOP_RATE);
 
