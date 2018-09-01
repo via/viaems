@@ -28,7 +28,7 @@ all: tfi
 CC=gcc
 CFLAGS+= -I. -std=c99 -Wall -O0 -ggdb -lrt -DSUPPORTS_POSIX_TIMERS
 CFLAGS+= -D TICKRATE=1000000 -D_POSIX_C_SOURCE=199309L -D_GNU_SOURCE
-CFLAGS+= -fsanitize=undefined -DFIBER_NO_PREEMPT
+CFLAGS+= -DFIBER_NO_PREEMPT
 all: tfi
 .endif
 .endif

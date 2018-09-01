@@ -282,8 +282,6 @@ static void bind_control_socket(const char *path) {
 
 }
 
-static struct fiber signal_fiber = {0};
-
 void platform_fiber_spawn(struct fiber *f) {
   struct ucontext *ctx = malloc(sizeof(struct ucontext));
   if (getcontext(ctx)) {
@@ -291,78 +289,81 @@ void platform_fiber_spawn(struct fiber *f) {
   }
   ctx->uc_stack.ss_sp = f->stack;
   ctx->uc_stack.ss_flags = 0;
-  ctx->uc_stack.ss_size = sizeof(f->stack) - sizeof(long);
+  ctx->uc_stack.ss_size = sizeof(f->stack) - 8;
   ctx->uc_link = NULL;
-  if (f == &signal_fiber) {
-    sigset_t s;
-    sigemptyset(&s);
-    sigaddset(&s, SIGVTALRM);
-    ctx->uc_sigmask = s;
-  }
   makecontext(ctx, f->entry, 0);
   f->_md = ctx;
 }
 
-static void platform_schedule() {
-  while(1) {
-    fiber_schedule();
-    swapcontext((struct ucontext *)signal_fiber._md, 
-        (struct ucontext *)fiber_current()->_md);
-  }
-}
-
 void fiber_yield() {
-    swapcontext((struct ucontext *)fiber_current()->_md,
-                 (struct ucontext *)signal_fiber._md);
+  disable_interrupts();
+  struct fiber *previous = fiber_current();
+  fiber_schedule();
+  swapcontext((struct ucontext *)previous->_md,
+               (struct ucontext *)fiber_current()->_md);
+  enable_interrupts();
 }
 
 void platform_fiber_start(struct fiber *s) {
-  platform_fiber_spawn(&signal_fiber);
-  platform_schedule();
+  disable_interrupts();
+  fiber_schedule();
+  setcontext((struct ucontext *)fiber_current()->_md);
 }
 
+static char sigstack_bytes[SIGSTKSZ] = {0};
+static stack_t signal_stack = {
+  .ss_sp = sigstack_bytes,
+  .ss_flags = 0,
+  .ss_size = sizeof(sigstack_bytes),
+};
 void platform_init(int argc, char *argv[]) {
 
   unlink("tfi.sock");
   bind_control_socket("tfi.sock");
+    stats_init(1000000000);
+    if (sigaltstack(&signal_stack, NULL)) {
+      while(1);
+    }
 
-  /* Set up signal handling */
-  sigemptyset(&smask);
-  sigaddset(&smask, SIGVTALRM);
-  struct sigaction sa = {
-    .sa_handler = hosted_platform_timer,
-    .sa_mask = smask,
-  };
-  sigaction(SIGVTALRM, &sa, NULL);
+
+    /* Set up signal handling */
+    sigemptyset(&smask);
+    sigaddset(&smask, SIGVTALRM);
+    struct sigaction sa = {
+      .sa_handler = hosted_platform_timer,
+      .sa_mask = smask,
+      .sa_flags = SA_ONSTACK,
+    };
+    sigaction(SIGVTALRM, &sa, NULL);
 
 #ifdef SUPPORTS_POSIX_TIMERS
-  struct sigevent sev = {
-    .sigev_notify = SIGEV_SIGNAL,
-    .sigev_signo = SIGVTALRM,
-  };
+    struct sigevent sev = {
+      .sigev_notify = SIGEV_SIGNAL,
+      .sigev_signo = SIGVTALRM,
+    };
 
-  timer_t timer;
-  if (timer_create(CLOCK_MONOTONIC, &sev, &timer) == -1) {
-    perror("timer_create");
-  }
-  struct itimerspec interval = {
-    .it_interval = {
-      .tv_sec = 0,
-      .tv_nsec = 10000,
-    },
-    .it_value = {
-      .tv_sec = 0,
-      .tv_nsec = 10000,
-    },
-  };
-  timer_settime(timer, 0, &interval, NULL);
+    timer_t timer;
+    if (timer_create(CLOCK_MONOTONIC, &sev, &timer) == -1) {
+      perror("timer_create");
+    }
+    struct itimerspec interval = {
+      .it_interval = {
+        .tv_sec = 0,
+        .tv_nsec = 10000,
+      },
+      .it_value = {
+        .tv_sec = 0,
+        .tv_nsec = 10000,
+      },
+    };
+    timer_settime(timer, 0, &interval, NULL);
 #else
-  /* Use interval timer */
-  struct itimerval t = {
-    .it_interval = (struct timeval) {
-      .tv_sec = 0,
-      .tv_usec = 1,
-    },
+    /* Use interval timer */
+    struct itimerval t = {
+      .it_interval = (struct timeval) {
+        .tv_sec = 0,
+        .tv_usec = 1,
+      },
     .it_value = (struct timeval) {
       .tv_sec = 0,
       .tv_usec = 1,
@@ -370,7 +371,6 @@ void platform_init(int argc, char *argv[]) {
   };
   setitimer(ITIMER_VIRTUAL, &t, NULL);
 #endif
-  stats_init(1000000000);
 
   /* Set stdin nonblock */
   fcntl(STDIN_FILENO, F_SETFL, fcntl(STDIN_FILENO, F_GETFL, 0) | O_NONBLOCK);

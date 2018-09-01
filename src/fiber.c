@@ -68,6 +68,9 @@ void fiber_wait(struct fiber_condition *blocker) {
 }
 
 void fiber_notify(struct fiber_condition *blocker) {
+  if (!blocker->waiter) {
+    return;
+  }
   blocker->waiter->runnable = 1;
   blocker->triggered = 1;
 #ifndef FIBER_NO_PREEMPT
