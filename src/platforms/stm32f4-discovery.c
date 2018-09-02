@@ -969,6 +969,18 @@ size_t console_read(void *buf, size_t max) {
 size_t console_write(const void *buf, size_t count) {
   size_t rem = count > 64 ? 64 : count;
 
+  disable_interrupts();
   rem = usbd_ep_write_packet(usbd_dev, 0x82, buf, rem);
+  enable_interrupts();
   return rem;
+}
+
+
+/* TODO: implement graceful shutdown of outputs on fault */
+#define STACK_CHK_GUARD 0xe2dee396
+uintptr_t  __attribute__((externally_visible)) __stack_chk_guard = STACK_CHK_GUARD;
+
+__attribute__((noreturn)) __attribute__((externally_visible))
+void __stack_chk_fail(void) {
+  while(1);
 }

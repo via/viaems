@@ -18,7 +18,8 @@ CFLAGS=  -I. -std=c99 -Wall -O3 -Wextra -g -flto
 CFLAGS+= -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mthumb -mcpu=cortex-m4
 CFLAGS+= -D TICKRATE=4000000
 CFLAGS+=  -L${OPENCM3_DIR}/lib -I${OPENCM3_DIR}/include -DSTM32F4
-LDFLAGS+= -lopencm3_stm32f4 -lc -lnosys -flto
+CFLAGS+= -fstack-protector-strong -fno-strict-aliasing
+LDFLAGS+= -lopencm3_stm32f4 -lc -lnosys -flto -L .
 LDFLAGS+= -T platforms/stm32f4-discovery.ld -nostartfiles
 all: tfi
 
@@ -31,10 +32,16 @@ all: tfi
 .endif
 .endif
 
+libssp.a:
+		arm-none-eabi-ar rcs libssp.a
+
+libssp_nonshared.a:
+		arm-none-eabi-ar rcs libssp_nonshared.a
+
 
 OBJS=decoder.o util.o scheduler.o console.o calculations.o config.o table.o sensors.o stats.o
 
-tfi: ${OBJS} tfi.o platforms/${PLATFORM}.o
+tfi: ${OBJS} tfi.o platforms/${PLATFORM}.o libssp.a libssp_nonshared.a
 	${CC} ${CFLAGS} -o tfi tfi.o ${OBJS} ${PLATFORM}.o ${LDFLAGS}
 
 tfi.dfu: tfi
