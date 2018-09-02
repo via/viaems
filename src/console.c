@@ -857,7 +857,9 @@ int console_read_full(char *buf, size_t max) {
     r = console_read(console_state.rx.ptr, r);
     if (r) {
       console_state.rx.ptr += r;
-      if (memchr(console_state.rx.src, '\n',
+      if (memchr(console_state.rx.src, '\r',
+            (uint16_t)(console_state.rx.ptr - console_state.rx.src)) ||
+          memchr(console_state.rx.src, '\n',
             (uint16_t)(console_state.rx.ptr - console_state.rx.src))) {
         console_state.rx.in_progress = 0;
         return 1;
