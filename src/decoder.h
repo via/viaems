@@ -63,6 +63,7 @@ struct decoder {
 };
 
 void decoder_init(struct decoder *);
+void decoder_update_scheduling();
 void enable_test_trigger(trigger_type t, unsigned int rpm);
 
 #ifdef UNITTEST

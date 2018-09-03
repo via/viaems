@@ -283,7 +283,7 @@ timeval_t init_output_thread(uint32_t *buf0, uint32_t *buf1, uint32_t len) {
   timer_enable_counter(TIM8);
 
   nvic_enable_irq(NVIC_DMA2_STREAM1_IRQ);
-  nvic_set_priority(NVIC_DMA2_STREAM1_IRQ, 32);
+  nvic_set_priority(NVIC_DMA2_STREAM1_IRQ, 0);
 
   return start;
 }
@@ -444,7 +444,7 @@ static void platform_init_spi_tlc2543() {
   dma_enable_stream(DMA1, DMA_STREAM3);
 
   nvic_enable_irq(NVIC_DMA1_STREAM3_IRQ);
-  nvic_set_priority(NVIC_DMA1_STREAM3_IRQ, 64);
+  nvic_set_priority(NVIC_DMA1_STREAM3_IRQ, 0);
 
 
   /* Configure TIM6 to drive DMA for SPI */
@@ -797,23 +797,22 @@ void dma1_stream3_isr(void) {
   }
   
   sensor_adc_new_data();
-  adc_gather_in_progress = 0;
+  sensors_process();
 }
 
-/* This can be set as a higher priority interrupt than the swap_buffers
- * interrupt once it is verified there are no races between the descheduling
- * callback and the buffer swaps.  Its not an urgent fix as currently the swap
- * takes 13 uS, which means we might be delayed up to about a degree in
- * recording decoder information.  This isn't an issue until we're dealing with
- * more than 100 teeth on a wheel */
+/* This is now the lowest priority interrupt, with buffer swapping and sensor
+ * reading interrupts being higher priority.  Keep scheduled callbacks quick to
+ * keep scheduling delay low.  Currently nothing takes more than 15 uS
+ * (rescheduling individual events).  All fueling calculations and scheduling is
+ * now done in the ISR for trigger updates.  Overflows aren't currently handled,
+ * but will be when we switch to DMA of trigger time readings, which will allow
+ * graceful overflow (at the expensive of non-critical routines not running,
+ * e.g. console).
+ */
 void tim2_isr() {
   stats_increment_counter(STATS_INT_RATE);
   stats_increment_counter(STATS_INT_EVENTTIMER_RATE);
   stats_start_timing(STATS_INT_TOTAL_TIME);
-  if (timer_get_flag(TIM2, TIM_SR_CC1IF)) {
-    timer_clear_flag(TIM2, TIM_SR_CC1IF);
-    scheduler_callback_timer_execute();
-  }
   if (timer_get_flag(TIM2, TIM_SR_CC2IF)) {
     timer_clear_flag(TIM2, TIM_SR_CC2IF);
     config.decoder.last_t0 = TIM2_CCR2;
@@ -824,6 +823,14 @@ void tim2_isr() {
     timer_clear_flag(TIM2, TIM_SR_CC3IF);
     config.decoder.last_t1 = TIM2_CCR3;
     config.decoder.needs_decoding_t1 = 1;
+  }
+  if (config.decoder.needs_decoding_t0 ||
+      config.decoder.needs_decoding_t1) {
+    decoder_update_scheduling();
+  }
+  if (timer_get_flag(TIM2, TIM_SR_CC1IF)) {
+    timer_clear_flag(TIM2, TIM_SR_CC1IF);
+    scheduler_callback_timer_execute();
   }
   stats_finish_timing(STATS_INT_TOTAL_TIME);
 }

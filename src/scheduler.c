@@ -7,6 +7,7 @@
 #include "stats.h"
 
 #include <string.h>
+#include <strings.h>
 #include <assert.h>
 
 #define OUTPUT_BUFFER_LEN (512)
@@ -372,6 +373,12 @@ schedule_fuel_event(struct output_event *ev,
 
 
   schedule_output_event_safely(ev, start_time, stop_time, 1);
+  
+  /* Schedule a callback to reschedule this immediately after it fires */
+  void schedule(struct output_event *);
+  ev->callback.callback = (void (*)(void *))schedule_event;
+  ev->callback.data = ev;
+  schedule_callback(&ev->callback, stop_time);
 
   return 1;
 }
@@ -391,6 +398,35 @@ schedule_adc_event(struct output_event *ev, struct decoder *d) {
   schedule_callback(&ev->callback, collect_time);
 
   return 1;
+}
+
+void schedule_event(struct output_event *ev) {
+  switch(ev->type) {
+    case IGNITION_EVENT:
+      if (ignition_cut() || !config.decoder.valid) {
+        invalidate_scheduled_events(config.events, config.num_events);
+        return;
+      }
+      schedule_ignition_event(ev, &config.decoder, 
+          (degrees_t)calculated_values.timing_advance, 
+          calculated_values.dwell_us);
+      break;
+
+    case FUEL_EVENT:
+      if (fuel_cut() || !config.decoder.valid) {
+        invalidate_scheduled_events(config.events, config.num_events);
+        return;
+      }
+      schedule_fuel_event(ev, &config.decoder, 
+        calculated_values.fueling_us);
+      break;
+
+    case ADC_EVENT:
+      schedule_adc_event(ev, &config.decoder);
+      break;
+    default:
+      break;
+  }
 }
 
 static void callback_remove(struct timed_callback *tcb) {

@@ -32,6 +32,9 @@
 
 _Atomic static timeval_t curtime;
 
+_Atomic static timeval_t eventtimer_time;
+_Atomic static uint32_t eventtimer_enable = 0;
+
 struct slot {
   uint16_t on_mask;
   uint16_t off_mask;
@@ -57,17 +60,22 @@ timeval_t cycle_count() {
 }
 
 void set_event_timer(timeval_t t) {
+  eventtimer_time = t;
+  eventtimer_enable = 1;
+
 }
 
 timeval_t get_event_timer() {
-  return 0;
+  return eventtimer_time;
 }
 
 void clear_event_timer() {
+  eventtimer_enable = 0;
 }
 
 void disable_event_timer() {
-}
+  eventtimer_enable = 0;
+} 
 
 static int interrupts_disabled = 0;
 void disable_interrupts() {
@@ -161,6 +169,7 @@ void enable_test_trigger(trigger_type t, unsigned int rpm) {
 static void hosted_send_trigger() {
   config.decoder.last_t0 = curtime;
   config.decoder.needs_decoding_t0 = 1;
+  decoder_update_scheduling();
 }
 
 static void hosted_platform_timer() {
@@ -222,7 +231,14 @@ static void hosted_platform_timer() {
         int sensor, value;
         sscanf(&bufpos[4], "%d %d", &sensor, &value);
         config.sensors[sensor].raw_value = value & 0xFFF;
-        sensor_adc_new_data();
+        config.sensors[sensor].fault = FAULT_NONE;
+        if (config.sensors[sensor].source == SENSOR_FREQ) {
+          sensor_freq_new_data();
+        }
+        if (config.sensors[sensor].source == SENSOR_ADC) {
+          sensor_adc_new_data();
+        }
+        sensors_process();
       }
 
       /* Multiple commands sent in one packet? */
@@ -244,6 +260,9 @@ static void hosted_platform_timer() {
     }
   }
 
+  if (eventtimer_enable && (eventtimer_time + 1 == curtime)) {
+    scheduler_callback_timer_execute();
+  }
 
   stats_finish_timing(STATS_INT_TOTAL_TIME);
 }

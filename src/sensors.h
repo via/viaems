@@ -2,7 +2,7 @@
 #define _SENSORS_H
 
 #include "platform.h"
-#define SENSOR_FREQ_DIVIDER 4096
+#define SENSOR_FREQ_DIVIDER (1024)
 
 typedef enum {
   SENSOR_MAP, /* Manifold Absolute Pressure */

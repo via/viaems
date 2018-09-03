@@ -88,7 +88,6 @@ void cam_nplusone_decoder(struct decoder *d) {
   int sync, trigger;
   decoder_state oldstate = d->state;
 
-  disable_interrupts();
   t0 = d->last_t0;
   t1 = d->last_t1;
 
@@ -97,7 +96,6 @@ void cam_nplusone_decoder(struct decoder *d) {
 
   sync = d->needs_decoding_t1;
   d->needs_decoding_t1 = 0;
-  enable_interrupts();
 
   if (d->state == DECODER_NOSYNC && trigger) {
     if (d->current_triggers_rpm >= d->required_triggers_rpm) {
@@ -138,10 +136,8 @@ void tfi_pip_decoder(struct decoder *d) {
   timeval_t t0;
   decoder_state oldstate = d->state;
 
-  disable_interrupts();
   t0 = d->last_t0;
   d->needs_decoding_t0 = 0;
-  enable_interrupts();
 
   if (d->state == DECODER_NOSYNC) {
     if (d->current_triggers_rpm >= d->required_triggers_rpm) {
@@ -199,6 +195,22 @@ void decoder_init(struct decoder *d) {
   d->expiration = 0;
 
   expire_event.callback = handle_decoder_expire;
+}
+
+/* When decoder has new information, reschedule everything */
+void decoder_update_scheduling() {
+  stats_finish_timing(STATS_TRIGGER_LATENCY);
+  config.decoder.decode(&config.decoder);
+
+  if (config.decoder.valid) {
+    calculate_ignition();
+    calculate_fueling();
+    stats_start_timing(STATS_SCHED_TOTAL_TIME);
+    for (unsigned int e = 0; e < config.num_events; ++e) {
+      schedule_event(&config.events[e]);
+    }
+    stats_finish_timing(STATS_SCHED_TOTAL_TIME);
+  }
 }
 
 #ifdef UNITTEST
