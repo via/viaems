@@ -199,7 +199,6 @@ void decoder_init(struct decoder *d) {
 
 /* When decoder has new information, reschedule everything */
 void decoder_update_scheduling() {
-  stats_finish_timing(STATS_TRIGGER_LATENCY);
   config.decoder.decode(&config.decoder);
 
   if (config.decoder.valid) {
@@ -211,6 +210,7 @@ void decoder_update_scheduling() {
     }
     stats_finish_timing(STATS_SCHED_TOTAL_TIME);
   }
+  stats_finish_timing(STATS_SCHEDULE_LATENCY);
 }
 
 #ifdef UNITTEST

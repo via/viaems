@@ -817,7 +817,7 @@ void tim2_isr() {
     timer_clear_flag(TIM2, TIM_SR_CC2IF);
     config.decoder.last_t0 = TIM2_CCR2;
     config.decoder.needs_decoding_t0 = 1;
-    stats_start_timing(STATS_TRIGGER_LATENCY);
+    stats_start_timing(STATS_SCHEDULE_LATENCY);
   }
   if (timer_get_flag(TIM2, TIM_SR_CC3IF)) {
     timer_clear_flag(TIM2, TIM_SR_CC3IF);
