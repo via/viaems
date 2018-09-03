@@ -7,6 +7,7 @@
 #include "stats.h"
 
 #include <string.h>
+#include <strings.h>
 #include <assert.h>
 
 #define OUTPUT_BUFFER_LEN (512)
@@ -289,7 +290,7 @@ void schedule_output_event_safely(struct output_event *ev,
 
 }
 
-int
+static int
 schedule_ignition_event(struct output_event *ev, 
                         struct decoder *d,
                         degrees_t advance, 
@@ -298,6 +299,9 @@ schedule_ignition_event(struct output_event *ev,
   timeval_t stop_time;
   timeval_t start_time;
   int firing_angle;
+
+  assert(d->rpm > 0);
+  assert(config.decoder.valid);
 
   firing_angle = clamp_angle(ev->angle - advance - 
       d->last_trigger_angle + d->offset, 720);
@@ -340,7 +344,7 @@ schedule_ignition_event(struct output_event *ev,
   return 1;
 }
 
-int
+static int
 schedule_fuel_event(struct output_event *ev, 
                     struct decoder *d, 
                     unsigned int usecs_pw) {
@@ -349,6 +353,8 @@ schedule_fuel_event(struct output_event *ev,
   timeval_t start_time;
   int firing_angle;
 
+  assert(d->rpm > 0);
+  assert(config.decoder.valid);
 
   firing_angle = clamp_angle(ev->angle - d->last_trigger_angle + 
     d->offset, 720);
@@ -372,14 +378,22 @@ schedule_fuel_event(struct output_event *ev,
 
 
   schedule_output_event_safely(ev, start_time, stop_time, 1);
+  
+  /* Schedule a callback to reschedule this immediately after it fires */
+  ev->callback.callback = (void (*)(void *))schedule_event;
+  ev->callback.data = ev;
+  schedule_callback(&ev->callback, stop_time);
 
   return 1;
 }
 
-int
+static int
 schedule_adc_event(struct output_event *ev, struct decoder *d) {
   int firing_angle;
   timeval_t collect_time;
+
+  assert(d->rpm > 0);
+  assert(config.decoder.valid);
 
   firing_angle = clamp_angle(ev->angle - d->last_trigger_angle + 
     d->offset, 720);
@@ -391,6 +405,35 @@ schedule_adc_event(struct output_event *ev, struct decoder *d) {
   schedule_callback(&ev->callback, collect_time);
 
   return 1;
+}
+
+void schedule_event(struct output_event *ev) {
+  switch(ev->type) {
+    case IGNITION_EVENT:
+      if (ignition_cut() || !config.decoder.valid) {
+        invalidate_scheduled_events(config.events, config.num_events);
+        return;
+      }
+      schedule_ignition_event(ev, &config.decoder, 
+          (degrees_t)calculated_values.timing_advance, 
+          calculated_values.dwell_us);
+      break;
+
+    case FUEL_EVENT:
+      if (fuel_cut() || !config.decoder.valid) {
+        invalidate_scheduled_events(config.events, config.num_events);
+        return;
+      }
+      schedule_fuel_event(ev, &config.decoder, 
+        calculated_values.fueling_us);
+      break;
+
+    case ADC_EVENT:
+      schedule_adc_event(ev, &config.decoder);
+      break;
+    default:
+      break;
+  }
 }
 
 static void callback_remove(struct timed_callback *tcb) {
@@ -528,7 +571,171 @@ initialize_scheduler() {
 
 #ifdef UNITTEST
 #include <check.h>
+#include <stdio.h>
+
 #include "check_platform.h"
+
+static struct output_event *oev = &config.events[0];
+
+static void check_scheduler_setup() {
+  decoder_init(&config.decoder);
+  check_platform_reset();
+  config.decoder.last_trigger_angle = 0;
+  config.decoder.last_trigger_time = 0;
+  config.decoder.offset = 0;
+  config.decoder.rpm = 6000;
+  config.num_events = 1;
+  *oev = (struct output_event){
+    .type = IGNITION_EVENT,
+    .angle = 360,
+    .output_id = 0,
+    .inverted = 0,
+  };
+}
+
+START_TEST(check_schedule_ignition) {
+
+  /* Set our current position at 270* for an event at 360* */
+  set_current_time(time_from_rpm_diff(6000, 270));
+  schedule_ignition_event(oev, &config.decoder, 10, 1000);
+  ck_assert(oev->start.scheduled);
+  ck_assert(oev->stop.scheduled);
+  ck_assert(!oev->start.fired);
+  ck_assert(!oev->stop.fired);
+
+  ck_assert_int_eq(oev->stop.time - oev->start.time, 
+    1000 * (TICKRATE / 1000000));
+  ck_assert_int_eq(oev->stop.time, 
+    time_from_rpm_diff(config.decoder.rpm, 
+    oev->angle + config.decoder.offset - 10));
+} END_TEST
+
+START_TEST(check_schedule_ignition_reschedule_completely_later) {
+
+  set_current_time(time_from_rpm_diff(6000, 270));
+  schedule_ignition_event(oev, &config.decoder, 10, 1000);
+
+  set_current_time(oev->start.time - 100);
+
+  /* Reschedule 10 degrees later */
+  schedule_ignition_event(oev, &config.decoder, 0, 1000);
+
+  ck_assert(oev->start.scheduled);
+  ck_assert(oev->stop.scheduled);
+  ck_assert(!oev->start.fired);
+  ck_assert(!oev->stop.fired);
+
+  ck_assert_int_eq(oev->stop.time - oev->start.time, 
+    1000 * (TICKRATE / 1000000));
+  ck_assert_int_eq(oev->stop.time, 
+    time_from_rpm_diff(config.decoder.rpm, 
+    oev->angle + config.decoder.offset));
+
+} END_TEST
+
+START_TEST(check_schedule_ignition_reschedule_completely_earlier_still_future) {
+
+  set_current_time(time_from_rpm_diff(6000, 180));
+  schedule_ignition_event(oev, &config.decoder, 10, 1000);
+  /* Reschedule 10 earlier later */
+  schedule_ignition_event(oev, &config.decoder, 50, 1000);
+
+  ck_assert(oev->start.scheduled);
+  ck_assert(oev->stop.scheduled);
+  ck_assert(!oev->start.fired);
+  ck_assert(!oev->stop.fired);
+
+  ck_assert_int_eq(oev->stop.time - oev->start.time, 
+    1000 * (TICKRATE / 1000000));
+  ck_assert_int_eq(oev->stop.time, 
+    time_from_rpm_diff(config.decoder.rpm, 
+    oev->angle + config.decoder.offset - 50));
+
+} END_TEST
+
+START_TEST(check_schedule_ignition_reschedule_onto_now) {
+
+  set_current_time(time_from_rpm_diff(6000, 340));
+  schedule_ignition_event(oev, &config.decoder, 15, 1000);
+
+  /* Start would fail, stop should schedule */
+  ck_assert(!oev->start.scheduled);
+  ck_assert(!oev->stop.scheduled); 
+  ck_assert(!oev->start.fired);
+  ck_assert(!oev->stop.fired);
+
+} END_TEST
+
+START_TEST(check_schedule_ignition_reschedule_active_later) {
+
+  set_current_time(time_from_rpm_diff(6000, 270));
+  schedule_ignition_event(oev, &config.decoder, 10, 1000);
+
+  /* Emulate firing of the event */
+  set_current_time(oev->start.time + 1);
+
+  /* Reschedule 10* later */
+  schedule_ignition_event(oev, &config.decoder, 0, 1000);
+
+  ck_assert(oev->stop.scheduled);
+  ck_assert_int_eq(oev->stop.time, 
+    time_from_rpm_diff(config.decoder.rpm, 
+    oev->angle + config.decoder.offset));
+
+
+} END_TEST
+
+/* Special case where rescheduling before last trigger is
+ * reinterpretted as future */
+START_TEST(check_schedule_ignition_reschedule_active_too_early) {
+  oev->angle = 60;
+  set_current_time(time_from_rpm_diff(6000, 0));
+  schedule_ignition_event(oev, &config.decoder, 0, 1000);
+  /* Emulate firing of the event */
+  set_current_time(oev->start.time + 5);
+
+  timeval_t old_stop = oev->stop.time;
+  /* Reschedule 45* earlier, now in past*/
+  schedule_ignition_event(oev, &config.decoder, 45, 1000);
+
+  ck_assert(oev->stop.scheduled);
+  ck_assert_int_eq(oev->stop.time, old_stop);
+
+} END_TEST
+
+START_TEST(check_event_is_active) {
+  ck_assert(!event_is_active(oev));
+
+  oev->start.fired = 1;
+  ck_assert(event_is_active(oev));
+
+  oev->stop.fired = 1;
+  ck_assert(!event_is_active(oev));
+
+  oev->start.fired = 0;
+  ck_assert(!event_is_active(oev));
+} END_TEST
+
+START_TEST(check_event_has_fired) {
+
+
+} END_TEST
+  
+START_TEST(check_invalidate_events_when_active) {
+  /* Schedule an event, get in the middle of it */
+  set_current_time(time_from_rpm_diff(6000, 270));
+  schedule_ignition_event(oev, &config.decoder, 10, 1000);
+  set_current_time(oev->start.time + 500);
+ 
+  invalidate_scheduled_events(oev, 1);
+
+  ck_assert(oev->stop.scheduled);
+
+} END_TEST
+
+START_TEST(check_deschedule_event) {
+
+} END_TEST
 
 START_TEST(check_buffer_insert_totally_after) {
   struct output_event oev = {0};
@@ -893,7 +1100,19 @@ START_TEST(check_callback_execute) {
 } END_TEST
 
 
-void check_add_buffer_tests(TCase *tc) {
+TCase *setup_scheduler_tests() {
+  TCase *tc = tcase_create("scheduler");
+  tcase_add_checked_fixture(tc, check_scheduler_setup, NULL);
+  tcase_add_test(tc, check_schedule_ignition);
+  tcase_add_test(tc, check_schedule_ignition_reschedule_completely_later);
+  tcase_add_test(tc, check_schedule_ignition_reschedule_completely_earlier_still_future);
+  tcase_add_test(tc, check_schedule_ignition_reschedule_onto_now);
+  tcase_add_test(tc, check_schedule_ignition_reschedule_active_later);
+  tcase_add_test(tc, check_schedule_ignition_reschedule_active_too_early);
+  tcase_add_test(tc, check_event_is_active);
+  tcase_add_test(tc, check_event_has_fired);
+  tcase_add_test(tc, check_invalidate_events_when_active);
+  tcase_add_test(tc, check_deschedule_event);
   tcase_add_test(tc, check_buffer_insert_totally_after);
   tcase_add_test(tc, check_buffer_insert_totally_before);
   tcase_add_test(tc, check_buffer_insert_totally_inside);
@@ -913,6 +1132,7 @@ void check_add_buffer_tests(TCase *tc) {
   tcase_add_test(tc, check_callback_insert);
   tcase_add_test(tc, check_callback_remove);
   tcase_add_test(tc, check_callback_execute);
+  return tc;
 }
 #endif
 

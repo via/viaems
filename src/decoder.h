@@ -27,14 +27,14 @@ typedef enum {
 
 struct decoder {
   /* Unsafe interrupt-written vars */
-  volatile timeval_t last_t0;
-  volatile timeval_t last_t1;
-  volatile char needs_decoding_t0;
-  volatile char needs_decoding_t1;
+  timeval_t last_t0;
+  timeval_t last_t1;
+  char needs_decoding_t0;
+  char needs_decoding_t1;
 
   /* Safe, only handled in main loop */
   decoder_func decode;
-  volatile unsigned char valid;
+  unsigned char valid;
   unsigned int rpm;
   timeval_t last_trigger_time;
   degrees_t last_trigger_angle;
@@ -63,6 +63,7 @@ struct decoder {
 };
 
 void decoder_init(struct decoder *);
+void decoder_update_scheduling();
 void enable_test_trigger(trigger_type t, unsigned int rpm);
 
 #ifdef UNITTEST

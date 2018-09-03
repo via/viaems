@@ -57,14 +57,13 @@ struct stats_entry stats_entries[] = {
 	[STATS_USB_WRITE_TIME] = {
 		.name = "usb write time",
 	},
-	[STATS_TRIGGER_LATENCY] = {
-		.name = "time from trigger to start decoding",
+	[STATS_SCHEDULE_LATENCY] = {
+		.name = "time from trigger to finish scheduling",
 	},
 	[STATS_LAST] = {},
 };
 
 static timeval_t ticks_per_sec = 1000000;
-static volatile timeval_t interrupt_time = 0;
 
 void stats_init(timeval_t ticks) {
   ticks_per_sec = ticks;
@@ -103,37 +102,16 @@ static void stats_update(stats_field_t type, timeval_t val) {
 }
 
 void stats_start_timing(stats_field_t type) {
-  timeval_t inttime, new_inttime;
-  do {
-    inttime = interrupt_time;
-    stats_entries[type]._window = cycle_count();
-    new_inttime = interrupt_time;
-  } while (new_inttime != inttime);
-  stats_entries[type].cur_interrupt_time = inttime;
+  stats_entries[type]._window = cycle_count();
 }
 
 void stats_finish_timing(stats_field_t type) {
 
   timeval_t time;
-  timeval_t inttime, new_inttime;
-
-  do {
-    inttime = interrupt_time;
-    time = cycle_count();
-    new_inttime = interrupt_time;
-  } while (new_inttime != inttime);
-
-  if (!stats_entries[type].is_interrupt) {
-    time -= (inttime - stats_entries[type].cur_interrupt_time);
-  }
-
+  time = cycle_count();
   time -= stats_entries[type]._window;
 
   stats_update(type, time / (ticks_per_sec / 1000000));
-
-  if (stats_entries[type].is_interrupt) {
-    interrupt_time += time;
-  }
 }
 
 void stats_increment_counter(stats_field_t type) {

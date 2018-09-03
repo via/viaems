@@ -50,8 +50,8 @@ tfi.dfu: tfi
 program: tfi.dfu
 	dfu-util -D tfi.dfu -a 0 -s 0x8000000:leave
 
-check: ${OBJS} test/check.o test/check_platform.o test/check_scheduler.o test/check_decoder.o
-	${CC} ${CFLAGS} -o check check.o check_platform.o check_scheduler.o check_decoder.o  ${OBJS} ${LDFLAGS}
+check: ${OBJS} test/check.o test/check_platform.o test/check_decoder.o
+	${CC} ${CFLAGS} -o check check.o check_platform.o check_decoder.o  ${OBJS} ${LDFLAGS}
 
 coverage: check
 	./check
