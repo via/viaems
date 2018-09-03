@@ -290,7 +290,7 @@ void schedule_output_event_safely(struct output_event *ev,
 
 }
 
-int
+static int
 schedule_ignition_event(struct output_event *ev, 
                         struct decoder *d,
                         degrees_t advance, 
@@ -341,7 +341,7 @@ schedule_ignition_event(struct output_event *ev,
   return 1;
 }
 
-int
+static int
 schedule_fuel_event(struct output_event *ev, 
                     struct decoder *d, 
                     unsigned int usecs_pw) {
@@ -375,7 +375,6 @@ schedule_fuel_event(struct output_event *ev,
   schedule_output_event_safely(ev, start_time, stop_time, 1);
   
   /* Schedule a callback to reschedule this immediately after it fires */
-  void schedule(struct output_event *);
   ev->callback.callback = (void (*)(void *))schedule_event;
   ev->callback.data = ev;
   schedule_callback(&ev->callback, stop_time);
@@ -383,7 +382,7 @@ schedule_fuel_event(struct output_event *ev,
   return 1;
 }
 
-int
+static int
 schedule_adc_event(struct output_event *ev, struct decoder *d) {
   int firing_angle;
   timeval_t collect_time;

@@ -201,15 +201,13 @@ void decoder_init(struct decoder *d) {
 void decoder_update_scheduling() {
   config.decoder.decode(&config.decoder);
 
-  if (config.decoder.valid) {
-    calculate_ignition();
-    calculate_fueling();
-    stats_start_timing(STATS_SCHED_TOTAL_TIME);
-    for (unsigned int e = 0; e < config.num_events; ++e) {
-      schedule_event(&config.events[e]);
-    }
-    stats_finish_timing(STATS_SCHED_TOTAL_TIME);
+  calculate_ignition();
+  calculate_fueling();
+  stats_start_timing(STATS_SCHED_TOTAL_TIME);
+  for (unsigned int e = 0; e < config.num_events; ++e) {
+    schedule_event(&config.events[e]);
   }
+  stats_finish_timing(STATS_SCHED_TOTAL_TIME);
   stats_finish_timing(STATS_SCHEDULE_LATENCY);
 }
 

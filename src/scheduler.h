@@ -52,11 +52,6 @@ struct output_event {
 };
 
 
-int schedule_ignition_event(struct output_event *, struct decoder *d, 
-    degrees_t advance, unsigned int usecs_dwell);
-int schedule_fuel_event(struct output_event *, struct decoder *d, 
-    unsigned int usecs_pw);
-int schedule_adc_event(struct output_event *, struct decoder *);
 void schedule_event(struct output_event *ev);
 void deschedule_event(struct output_event *);
 

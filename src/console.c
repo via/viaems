@@ -802,7 +802,6 @@ void console_init() {
     "config.sensors.brv.value",
     "config.sensors.map.value",
     "config.sensors.tps.value",
-    "status.fueling_us",
     NULL,
   };
 
