@@ -297,7 +297,7 @@ static void bind_control_socket(const char *path) {
 
 }
 
-void platform_init(int argc, char *argv[]) {
+void platform_init() {
 
   unlink("tfi.sock");
   bind_control_socket("tfi.sock");

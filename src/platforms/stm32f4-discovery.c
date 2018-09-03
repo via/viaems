@@ -670,8 +670,7 @@ void platform_init_usb() {
   usbd_register_set_config_callback(usbd_dev, cdcacm_set_config);
 }
 
-void platform_init(int argc __attribute((unused)),
-    char *argv[] __attribute((unused))) {
+void platform_init() {
 
   /* 168 Mhz clock */
   rcc_clock_setup_hse_3v3(&rcc_hse_8mhz_3v3[RCC_CLOCK_3V3_168MHZ]);
