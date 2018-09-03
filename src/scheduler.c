@@ -300,6 +300,9 @@ schedule_ignition_event(struct output_event *ev,
   timeval_t start_time;
   int firing_angle;
 
+  assert(d->rpm > 0);
+  assert(config.decoder.valid);
+
   firing_angle = clamp_angle(ev->angle - advance - 
       d->last_trigger_angle + d->offset, 720);
 
@@ -350,6 +353,8 @@ schedule_fuel_event(struct output_event *ev,
   timeval_t start_time;
   int firing_angle;
 
+  assert(d->rpm > 0);
+  assert(config.decoder.valid);
 
   firing_angle = clamp_angle(ev->angle - d->last_trigger_angle + 
     d->offset, 720);
@@ -386,6 +391,9 @@ static int
 schedule_adc_event(struct output_event *ev, struct decoder *d) {
   int firing_angle;
   timeval_t collect_time;
+
+  assert(d->rpm > 0);
+  assert(config.decoder.valid);
 
   firing_angle = clamp_angle(ev->angle - d->last_trigger_angle + 
     d->offset, 720);
