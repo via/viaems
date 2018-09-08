@@ -1036,3 +1036,12 @@ __attribute__((noreturn)) __attribute__((externally_visible))
 void __stack_chk_fail(void) {
   while(1);
 }
+
+void platform_freeze_timers() {
+  timer_disable_counter(TIM8);
+}
+
+void platform_unfreeze_timers() {
+  timer_enable_counter(TIM8);
+}
+
