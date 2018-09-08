@@ -9,6 +9,8 @@
 #include "calculations.h"
 #include "stats.h"
 
+#include "hostcmd.h"
+
 
 int main() {
   platform_load_config();
@@ -17,11 +19,13 @@ int main() {
   platform_init(0, NULL);
   initialize_scheduler();
 
+  //hostcmd_init();
   enable_test_trigger(FORD_TFI, 2000);
 
   while (1) {                   
     stats_increment_counter(STATS_MAINLOOP_RATE);
     console_process();
+
   }
 
   return 0;

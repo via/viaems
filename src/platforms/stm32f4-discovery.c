@@ -386,8 +386,54 @@ static void platform_init_scheduled_outputs() {
   gpio_set_output_options(GPIOD, GPIO_OTYPE_PP, GPIO_OSPEED_100MHZ, 0xFFFF & ~GPIO5);
   gpio_mode_setup(GPIOE, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, 0xFF);
   gpio_set_output_options(GPIOE, GPIO_OTYPE_PP, GPIO_OSPEED_100MHZ, 0xFF);
+
+  nvic_enable_irq(NVIC_EXTI0_IRQ);
+  exti_select_source(EXTI0, GPIOD);
+  exti_set_trigger(EXTI0, EXTI_TRIGGER_BOTH);
+  exti_enable_request(EXTI0);
+
+  nvic_enable_irq(NVIC_EXTI1_IRQ);
+  exti_select_source(EXTI1, GPIOD);
+  exti_set_trigger(EXTI1, EXTI_TRIGGER_BOTH);
+  exti_enable_request(EXTI1);
+
+  nvic_enable_irq(NVIC_EXTI2_IRQ);
+  exti_select_source(EXTI2, GPIOD);
+  exti_set_trigger(EXTI2, EXTI_TRIGGER_BOTH);
+  exti_enable_request(EXTI2);
+
+  nvic_enable_irq(NVIC_EXTI3_IRQ);
+  exti_select_source(EXTI3, GPIOD);
+  exti_set_trigger(EXTI3, EXTI_TRIGGER_BOTH);
+  exti_enable_request(EXTI3);
+
 }
 
+static void show_scheduled_outputs() {
+  platform_freeze_timers();
+  //printf("%lu OUTPUTS %2x\r\n", current_time(), gpio_port_read(GPIOD)); 
+  exti_reset_request(0xFF);
+  platform_unfreeze_timers();
+}
+
+void exti0_isr() {
+  show_scheduled_outputs();
+}
+void exti1_isr() {
+  show_scheduled_outputs();
+}
+void exti2_isr() {
+  show_scheduled_outputs();
+}
+void exti3_isr() {
+  show_scheduled_outputs();
+}
+void exti9_5_isr() {
+  show_scheduled_outputs();
+}
+void exti15_10_isr() {
+  show_scheduled_outputs();
+}
 
 
 /* We use TIM6 to control the sample rate.  It is set up to trigger a DMA event
