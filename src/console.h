@@ -10,8 +10,21 @@ struct console {
   char rxbuffer[CONSOLE_BUFFER_SIZE];
 };
 
+struct logged_event {
+  timeval_t time;
+  enum {
+    EVENT_NONE,
+    EVENT_OUTPUT,
+    EVENT_TRIGGER0,
+    EVENT_TRIGGER1,
+  } type;
+  uint16_t value;
+};
+
 void console_init();
 void console_process();
+
+void console_record_event(struct logged_event);
 
 #ifdef UNITTEST
 #include <check.h>

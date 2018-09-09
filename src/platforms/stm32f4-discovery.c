@@ -72,6 +72,7 @@
  */
 
 static volatile uint16_t spi_rx_raw_adc[13] = {0};
+static int output_logging = 0;
 
 static void platform_init_freqsensor() {
   timer_reset(TIM1);
@@ -283,7 +284,7 @@ timeval_t init_output_thread(uint32_t *buf0, uint32_t *buf1, uint32_t len) {
   timer_enable_counter(TIM8);
 
   nvic_enable_irq(NVIC_DMA2_STREAM1_IRQ);
-  nvic_set_priority(NVIC_DMA2_STREAM1_IRQ, 0);
+  nvic_set_priority(NVIC_DMA2_STREAM1_IRQ, 16);
 
   return start;
 }
@@ -387,33 +388,43 @@ static void platform_init_scheduled_outputs() {
   gpio_mode_setup(GPIOE, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, 0xFF);
   gpio_set_output_options(GPIOE, GPIO_OTYPE_PP, GPIO_OSPEED_100MHZ, 0xFF);
 
-  nvic_enable_irq(NVIC_EXTI0_IRQ);
-  exti_select_source(EXTI0, GPIOD);
-  exti_set_trigger(EXTI0, EXTI_TRIGGER_BOTH);
-  exti_enable_request(EXTI0);
-
-  nvic_enable_irq(NVIC_EXTI1_IRQ);
-  exti_select_source(EXTI1, GPIOD);
-  exti_set_trigger(EXTI1, EXTI_TRIGGER_BOTH);
-  exti_enable_request(EXTI1);
-
-  nvic_enable_irq(NVIC_EXTI2_IRQ);
-  exti_select_source(EXTI2, GPIOD);
-  exti_set_trigger(EXTI2, EXTI_TRIGGER_BOTH);
-  exti_enable_request(EXTI2);
-
-  nvic_enable_irq(NVIC_EXTI3_IRQ);
-  exti_select_source(EXTI3, GPIOD);
-  exti_set_trigger(EXTI3, EXTI_TRIGGER_BOTH);
-  exti_enable_request(EXTI3);
-
 }
 
+void platform_enable_event_logging() {
+
+  output_logging = 1;
+  nvic_enable_irq(NVIC_EXTI0_IRQ);
+  nvic_enable_irq(NVIC_EXTI1_IRQ);
+  nvic_enable_irq(NVIC_EXTI2_IRQ);
+  nvic_enable_irq(NVIC_EXTI3_IRQ);
+  nvic_enable_irq(NVIC_EXTI4_IRQ);
+  nvic_enable_irq(NVIC_EXTI9_5_IRQ);
+  nvic_enable_irq(NVIC_EXTI15_10_IRQ);
+
+  exti_select_source(0xFFFF, GPIOD);
+  exti_set_trigger(0xFFFF, EXTI_TRIGGER_BOTH);
+  exti_enable_request(0xFFFF);
+}
+
+void platform_disable_event_logging() {
+  output_logging = 0;
+  nvic_disable_irq(NVIC_EXTI0_IRQ);
+  nvic_disable_irq(NVIC_EXTI1_IRQ);
+  nvic_disable_irq(NVIC_EXTI2_IRQ);
+  nvic_disable_irq(NVIC_EXTI3_IRQ);
+  nvic_disable_irq(NVIC_EXTI4_IRQ);
+  nvic_disable_irq(NVIC_EXTI9_5_IRQ);
+  nvic_disable_irq(NVIC_EXTI15_10_IRQ);
+}
+
+
 static void show_scheduled_outputs() {
-  platform_freeze_timers();
-  //printf("%lu OUTPUTS %2x\r\n", current_time(), gpio_port_read(GPIOD)); 
-  exti_reset_request(0xFF);
-  platform_unfreeze_timers();
+  console_record_event((struct logged_event){
+      .type = EVENT_OUTPUT,
+      .time = current_time(),
+      .value = gpio_port_read(GPIOD),
+      });
+  exti_reset_request(0xFFFF);
 }
 
 void exti0_isr() {
@@ -490,7 +501,7 @@ static void platform_init_spi_tlc2543() {
   dma_enable_stream(DMA1, DMA_STREAM3);
 
   nvic_enable_irq(NVIC_DMA1_STREAM3_IRQ);
-  nvic_set_priority(NVIC_DMA1_STREAM3_IRQ, 0);
+  nvic_set_priority(NVIC_DMA1_STREAM3_IRQ, 16);
 
 
   /* Configure TIM6 to drive DMA for SPI */
@@ -862,12 +873,24 @@ void tim2_isr() {
     timer_clear_flag(TIM2, TIM_SR_CC2IF);
     config.decoder.last_t0 = TIM2_CCR2;
     config.decoder.needs_decoding_t0 = 1;
+    if (output_logging) {
+      console_record_event((struct logged_event){
+          .type = EVENT_TRIGGER0,
+          .time = config.decoder.last_t0,
+          });
+    }
     stats_start_timing(STATS_SCHEDULE_LATENCY);
   }
   if (timer_get_flag(TIM2, TIM_SR_CC3IF)) {
     timer_clear_flag(TIM2, TIM_SR_CC3IF);
     config.decoder.last_t1 = TIM2_CCR3;
     config.decoder.needs_decoding_t1 = 1;
+    if (output_logging) {
+      console_record_event((struct logged_event){
+          .type = EVENT_TRIGGER1,
+          .time = config.decoder.last_t1,
+          });
+    }
   }
   if (config.decoder.needs_decoding_t0 ||
       config.decoder.needs_decoding_t1) {
@@ -1008,7 +1031,6 @@ void platform_save_config() {
 
   flash_lock();
 }
-
 
 size_t console_read(void *buf, size_t max) {
   usb_rx_ptr = buf;

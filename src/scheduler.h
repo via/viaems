@@ -2,7 +2,7 @@
 #define SCHEDULER_H
 
 #include "platform.h"
-#include "queue.h"
+//#include "queue.h"
 
 
 typedef enum {

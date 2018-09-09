@@ -47,8 +47,8 @@ timeval_t init_output_thread(uint32_t *buf0, uint32_t *buf1, uint32_t len);
 int current_output_buffer();
 int current_output_slot();
 
-void platform_freeze_timers();
-void platform_unfreeze_timers();
+void platform_enable_event_logging();
+void platform_disable_event_logging();
 
 #endif
 

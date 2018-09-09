@@ -14,6 +14,7 @@
 #include "platform.h"
 #include "scheduler.h"
 #include "config.h"
+#include "console.h"
 #include "stats.h"
 
 /* A platform that runs on a hosted OS, preferably one that supports posix 
@@ -34,16 +35,24 @@ _Atomic static timeval_t curtime;
 
 _Atomic static timeval_t eventtimer_time;
 _Atomic static uint32_t eventtimer_enable = 0;
+int event_logging_enabled = 1;
 
 struct slot {
   uint16_t on_mask;
   uint16_t off_mask;
 } __attribute__((packed)) *output_slots[2];
-int control_socket;
 size_t max_slots;
 size_t cur_slot = 0;
 size_t cur_buffer = 0;
 sigset_t smask;
+
+void platform_enable_event_logging() {
+  event_logging_enabled = 1;
+}
+
+void platform_disable_event_logging() {
+  event_logging_enabled = 0;
+}
 
 uint16_t cur_outputs = 0;
 
@@ -166,12 +175,6 @@ int current_output_slot() {
 void enable_test_trigger(trigger_type t, unsigned int rpm) {
 }
 
-static void hosted_send_trigger() {
-  config.decoder.last_t0 = curtime;
-  config.decoder.needs_decoding_t0 = 1;
-  decoder_update_scheduling();
-}
-
 static void hosted_platform_timer() {
   /* - Increase "time"
    * - Trigger appropriate interrupts
@@ -191,7 +194,6 @@ static void hosted_platform_timer() {
   }
 
   static uint16_t old_outputs = 0;
-  static timeval_t run_until_time = 0;
   curtime++;
   cur_slot++;
   if (cur_slot == max_slots) {
@@ -206,47 +208,12 @@ static void hosted_platform_timer() {
   cur_outputs &= ~output_slots[cur_buffer][cur_slot].off_mask;
 
   if (cur_outputs != old_outputs) {
-    char buf[32];
-    sprintf(buf, "%d OUTPUTS %2x\n", curtime, cur_outputs);
-    write(control_socket, buf, strlen(buf));
+    console_record_event((struct logged_event){
+        .time = curtime,
+        .value = cur_outputs,
+        .type = EVENT_OUTPUT,
+        });
     old_outputs = cur_outputs;
-  }
-  if (curtime >= run_until_time) {
-    char buf[1024];
-    char *bufpos = buf;
-
-    sprintf(buf, "%d STOPPED\n", curtime);
-    write(control_socket, buf, strlen(buf));
-
-    size_t len = read(control_socket, buf, 1024);
-    buf[len] = '\0';
-    while (bufpos) {
-      if (strncmp(bufpos, "RUN", 3) == 0) {
-        run_until_time = atoi(&bufpos[4]);
-      }
-      if (strncmp(bufpos, "TRIGGER1", 8) == 0) {
-        hosted_send_trigger();
-      }
-      if (strncmp(bufpos, "ADC", 3) == 0) {
-        int sensor, value;
-        sscanf(&bufpos[4], "%d %d", &sensor, &value);
-        config.sensors[sensor].raw_value = value & 0xFFF;
-        config.sensors[sensor].fault = FAULT_NONE;
-        if (config.sensors[sensor].source == SENSOR_FREQ) {
-          sensor_freq_new_data();
-        }
-        if (config.sensors[sensor].source == SENSOR_ADC) {
-          sensor_adc_new_data();
-        }
-        sensors_process();
-      }
-
-      /* Multiple commands sent in one packet? */
-      bufpos = strchr(bufpos, '\n');
-      if (bufpos) {
-        bufpos++;
-      }
-    }
   }
 
   /* poll for command input */
@@ -267,40 +234,8 @@ static void hosted_platform_timer() {
   stats_finish_timing(STATS_INT_TOTAL_TIME);
 }
 
-static void bind_control_socket(const char *path) {
-  struct sockaddr_un sockaddr;
-  int control_server_socket = 0;
-
-  control_server_socket = socket(AF_UNIX, SOCK_STREAM, 0);
-  if (control_server_socket < 0) {
-    perror("socket");
-    exit(1);
-  }
-
-  sockaddr.sun_family = AF_UNIX;
-  strcpy(sockaddr.sun_path, "tfi.sock");
-  if (bind(control_server_socket, (struct sockaddr *)&sockaddr, sizeof(sockaddr))) {
-    perror("bind");
-    exit(1);
-  }
-
-  if (listen(control_server_socket, 5)) {
-    perror("listen");
-    exit(1);
-  }
-
-  control_socket = accept(control_server_socket, 0, 0);
-  if (control_socket == -1) {
-    perror("accept");
-    exit(1);
-  }
-
-}
 
 void platform_init() {
-
-  unlink("tfi.sock");
-  bind_control_socket("tfi.sock");
 
   /* Set up signal handling */
   sigemptyset(&smask);

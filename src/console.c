@@ -599,6 +599,49 @@ static void console_set_events(
   }
 }
 
+static struct {
+  int enabled;
+  struct logged_event events[32];
+  int read;
+  int write;
+} event_log = {.enabled = 1};
+
+static struct logged_event platform_get_logged_event() {
+  if (!event_log.enabled || (event_log.read == event_log.write)) {
+    return (struct logged_event){.type = EVENT_NONE};
+  }
+  struct logged_event ret = event_log.events[event_log.read];
+  event_log.read = (event_log.read + 1) % (sizeof(event_log.events) / sizeof(event_log.events[0]));
+  return ret;
+}
+
+void console_record_event(struct logged_event ev) {
+  int size = (sizeof(event_log.events) / sizeof(event_log.events[0]));
+  if ((event_log.write + 1) % size == event_log.read) {
+    return;
+  }
+
+  event_log.events[event_log.write] = ev;
+  event_log.write = (event_log.write + 1) % size;
+}
+
+static void console_set_trigger_callback(const struct console_config_node *self,
+    char *remaining) {
+  (void)self;
+  (void)remaining;
+}
+
+static void console_set_event_logging(const struct console_config_node *self,
+    char *remaining) {
+  (void)self;
+
+  if (!strncmp(remaining, "on", 2)) {
+    platform_enable_event_logging();
+  } else {
+    platform_disable_event_logging();
+  }
+}
+
 static struct console_config_node console_config_nodes[] = {
   /* Config hierarchy */
   {.name="config"},
@@ -731,6 +774,10 @@ static struct console_config_node console_config_nodes[] = {
   /* Misc commands */
   {.name="flash", .set=console_save_to_flash},
   {.name="stats", .get=console_get_stats},
+
+  /* Host commands */
+  {.name="sim.trigger_time", .set=console_set_trigger_callback},
+  {.name="sim.event_logging", .set=console_set_event_logging},
   {0},
 };
 
@@ -912,6 +959,26 @@ static void console_process_rx() {
   console_write_full(config.console.txbuffer, strlen(config.console.txbuffer));
 }
 
+static void console_output_events() {
+  struct logged_event ev = platform_get_logged_event();
+  switch (ev.type) {
+  case EVENT_OUTPUT:
+    sprintf(config.console.txbuffer, " * OUTPUTS %lu %2x\r\n",
+        (unsigned long)ev.time, ev.value);
+    console_write_full(config.console.txbuffer, strlen(config.console.txbuffer));
+    break;
+  case EVENT_TRIGGER0:
+    sprintf(config.console.txbuffer, " * TRIGGER0 %lu\r\n", (unsigned long)ev.time);
+    console_write_full(config.console.txbuffer, strlen(config.console.txbuffer));
+    break;
+  case EVENT_TRIGGER1:
+    sprintf(config.console.txbuffer, " * TRIGGER1 %lu\r\n", (unsigned long)ev.time);
+    console_write_full(config.console.txbuffer, strlen(config.console.txbuffer));
+    break;
+  default:
+    break;
+  }
+}
 
 void console_process() {
 
@@ -936,6 +1003,7 @@ void console_process() {
   }
 
   config.console.txbuffer[0] = '\0';
+  console_output_events();
   if (console_feed_config.n_nodes) {
     console_feed_line(config.console.txbuffer);
     console_write_full(config.console.txbuffer, strlen(config.console.txbuffer));
