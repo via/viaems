@@ -41,6 +41,7 @@ struct decoder {
   timeval_t expiration;
 
   /* Configuration */
+  trigger_type type;
   degrees_t offset;
   float trigger_max_rpm_change;
   float trigger_cur_rpm_change;
@@ -63,7 +64,7 @@ struct decoder {
 };
 
 void decoder_init(struct decoder *);
-void decoder_update_scheduling();
+void decoder_update_scheduling(int trigger, timeval_t time);
 void enable_test_trigger(trigger_type t, unsigned int rpm);
 
 #ifdef UNITTEST

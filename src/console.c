@@ -604,7 +604,7 @@ static struct {
   struct logged_event events[32];
   int read;
   int write;
-} event_log = {.enabled = 1};
+} event_log = {0};
 
 static struct logged_event platform_get_logged_event() {
   if (!event_log.enabled || (event_log.read == event_log.write)) {
@@ -616,6 +616,10 @@ static struct logged_event platform_get_logged_event() {
 }
 
 void console_record_event(struct logged_event ev) {
+  if (!event_log.enabled) {
+    return;
+  }
+
   int size = (sizeof(event_log.events) / sizeof(event_log.events[0]));
   if ((event_log.write + 1) % size == event_log.read) {
     return;
@@ -625,10 +629,19 @@ void console_record_event(struct logged_event ev) {
   event_log.write = (event_log.write + 1) % size;
 }
 
+static struct timed_callback trig_cb = {0};
+static void console_fire_trigger_callback(void *_a) {
+  (void)_a;
+ 
+  decoder_update_scheduling(0, trig_cb.time);
+}
+
 static void console_set_trigger_callback(const struct console_config_node *self,
     char *remaining) {
   (void)self;
-  (void)remaining;
+  timeval_t stoptime = atoi(remaining);
+  trig_cb.callback = console_fire_trigger_callback;
+  schedule_callback(&trig_cb, stoptime);
 }
 
 static void console_set_event_logging(const struct console_config_node *self,
@@ -637,9 +650,25 @@ static void console_set_event_logging(const struct console_config_node *self,
 
   if (!strncmp(remaining, "on", 2)) {
     platform_enable_event_logging();
+    event_log.enabled = 1;
   } else {
     platform_disable_event_logging();
+    event_log.enabled = 0;
   }
+}
+
+static void console_set_freeze(const struct console_config_node *self,
+    char *remaining) {
+  (void)self;
+  (void)remaining;
+}
+
+static void console_set_test_trigger(const struct console_config_node *self,
+    char *remaining) {
+    (void)self;
+
+    uint32_t rpm = atoi(remaining);
+    enable_test_trigger(config.decoder.type, rpm);
 }
 
 static struct console_config_node console_config_nodes[] = {
@@ -664,7 +693,7 @@ static struct console_config_node console_config_nodes[] = {
 
   /* Decoding */
   {.name="config.decoder"},
-  {.name="config.decoder.trigger", .val=&config.trigger,
+  {.name="config.decoder.trigger", .val=&config.decoder.type,
    .get=console_get_trigger, .set=console_set_trigger},
   {.name="config.decoder.max_variance", .val=&config.decoder.trigger_cur_rpm_change,
    .get=console_get_float, .set=console_set_float},
@@ -776,8 +805,11 @@ static struct console_config_node console_config_nodes[] = {
   {.name="stats", .get=console_get_stats},
 
   /* Host commands */
+  {.name="sim"},
   {.name="sim.trigger_time", .set=console_set_trigger_callback},
+  {.name="sim.test_trigger", .set=console_set_test_trigger},
   {.name="sim.event_logging", .set=console_set_event_logging},
+  {.name="sim.freeze", .set=console_set_freeze},
   {0},
 };
 
@@ -963,16 +995,16 @@ static void console_output_events() {
   struct logged_event ev = platform_get_logged_event();
   switch (ev.type) {
   case EVENT_OUTPUT:
-    sprintf(config.console.txbuffer, " * OUTPUTS %lu %2x\r\n",
+    sprintf(config.console.txbuffer, "# OUTPUTS %lu %2x\r\n",
         (unsigned long)ev.time, ev.value);
     console_write_full(config.console.txbuffer, strlen(config.console.txbuffer));
     break;
   case EVENT_TRIGGER0:
-    sprintf(config.console.txbuffer, " * TRIGGER0 %lu\r\n", (unsigned long)ev.time);
+    sprintf(config.console.txbuffer, "# TRIGGER0 %lu\r\n", (unsigned long)ev.time);
     console_write_full(config.console.txbuffer, strlen(config.console.txbuffer));
     break;
   case EVENT_TRIGGER1:
-    sprintf(config.console.txbuffer, " * TRIGGER1 %lu\r\n", (unsigned long)ev.time);
+    sprintf(config.console.txbuffer, "# TRIGGER1 %lu\r\n", (unsigned long)ev.time);
     console_write_full(config.console.txbuffer, strlen(config.console.txbuffer));
     break;
   default:

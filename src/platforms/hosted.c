@@ -231,6 +231,8 @@ static void hosted_platform_timer() {
     scheduler_callback_timer_execute();
   }
 
+  sensors_process();
+
   stats_finish_timing(STATS_INT_TOTAL_TIME);
 }
 

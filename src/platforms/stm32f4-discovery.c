@@ -72,7 +72,6 @@
  */
 
 static volatile uint16_t spi_rx_raw_adc[13] = {0};
-static int output_logging = 0;
 
 static void platform_init_freqsensor() {
   timer_reset(TIM1);
@@ -392,7 +391,6 @@ static void platform_init_scheduled_outputs() {
 
 void platform_enable_event_logging() {
 
-  output_logging = 1;
   nvic_enable_irq(NVIC_EXTI0_IRQ);
   nvic_enable_irq(NVIC_EXTI1_IRQ);
   nvic_enable_irq(NVIC_EXTI2_IRQ);
@@ -407,7 +405,6 @@ void platform_enable_event_logging() {
 }
 
 void platform_disable_event_logging() {
-  output_logging = 0;
   nvic_disable_irq(NVIC_EXTI0_IRQ);
   nvic_disable_irq(NVIC_EXTI1_IRQ);
   nvic_disable_irq(NVIC_EXTI2_IRQ);
@@ -871,30 +868,11 @@ void tim2_isr() {
   stats_start_timing(STATS_INT_TOTAL_TIME);
   if (timer_get_flag(TIM2, TIM_SR_CC2IF)) {
     timer_clear_flag(TIM2, TIM_SR_CC2IF);
-    config.decoder.last_t0 = TIM2_CCR2;
-    config.decoder.needs_decoding_t0 = 1;
-    if (output_logging) {
-      console_record_event((struct logged_event){
-          .type = EVENT_TRIGGER0,
-          .time = config.decoder.last_t0,
-          });
-    }
-    stats_start_timing(STATS_SCHEDULE_LATENCY);
+    decoder_update_scheduling(0, TIM2_CCR2);
   }
   if (timer_get_flag(TIM2, TIM_SR_CC3IF)) {
     timer_clear_flag(TIM2, TIM_SR_CC3IF);
-    config.decoder.last_t1 = TIM2_CCR3;
-    config.decoder.needs_decoding_t1 = 1;
-    if (output_logging) {
-      console_record_event((struct logged_event){
-          .type = EVENT_TRIGGER1,
-          .time = config.decoder.last_t1,
-          });
-    }
-  }
-  if (config.decoder.needs_decoding_t0 ||
-      config.decoder.needs_decoding_t1) {
-    decoder_update_scheduling();
+    decoder_update_scheduling(1, TIM2_CCR3);
   }
   if (timer_get_flag(TIM2, TIM_SR_CC1IF)) {
     timer_clear_flag(TIM2, TIM_SR_CC1IF);

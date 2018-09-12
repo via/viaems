@@ -67,8 +67,8 @@ struct config config __attribute__((section(".configdata"))) = {
     {.type=FUEL_EVENT, .angle=540, .output_id=2},
     {.type=FUEL_EVENT, .angle=630, .output_id=3},
   },
-  .trigger = FORD_TFI,
   .decoder = {
+    .type = FORD_TFI,
     .offset = 55,
     .trigger_max_rpm_change = 0.55, /*Startup sucks with only 90* trigger */
     .trigger_min_rpm = 80,
