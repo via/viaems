@@ -728,52 +728,20 @@ static struct console_config_node console_config_nodes[] = {
   {.name="config.sensors"},
   {.name="config.sensors.map", .val=&config.sensors[SENSOR_MAP],
    .get=console_get_sensor, .set=console_set_sensor},
-  {.name="config.sensors.map.value", .val=&config.sensors[SENSOR_MAP].processed_value,
-   .get=console_get_float},
-  {.name="config.sensors.map.fault", .val=&config.sensors[SENSOR_MAP].fault,
-   .get=console_get_sensor_fault},
   {.name="config.sensors.iat", .val=&config.sensors[SENSOR_IAT],
    .get=console_get_sensor, .set=console_set_sensor},
-  {.name="config.sensors.iat.value", .val=&config.sensors[SENSOR_IAT].processed_value,
-   .get=console_get_float},
-  {.name="config.sensors.iat.fault", .val=&config.sensors[SENSOR_IAT].fault,
-   .get=console_get_sensor_fault},
   {.name="config.sensors.clt", .val=&config.sensors[SENSOR_CLT],
    .get=console_get_sensor, .set=console_set_sensor},
-  {.name="config.sensors.clt.value", .val=&config.sensors[SENSOR_CLT].processed_value,
-   .get=console_get_float},
-  {.name="config.sensors.clt.fault", .val=&config.sensors[SENSOR_CLT].fault,
-   .get=console_get_sensor_fault},
   {.name="config.sensors.brv", .val=&config.sensors[SENSOR_BRV],
    .get=console_get_sensor, .set=console_set_sensor},
-  {.name="config.sensors.brv.value", .val=&config.sensors[SENSOR_BRV].processed_value,
-   .get=console_get_float},
-  {.name="config.sensors.brv.fault", .val=&config.sensors[SENSOR_BRV].fault,
-   .get=console_get_sensor_fault},
   {.name="config.sensors.tps", .val=&config.sensors[SENSOR_TPS],
    .get=console_get_sensor, .set=console_set_sensor},
-  {.name="config.sensors.tps.value", .val=&config.sensors[SENSOR_TPS].processed_value,
-   .get=console_get_float},
-  {.name="config.sensors.tps.fault", .val=&config.sensors[SENSOR_TPS].fault,
-   .get=console_get_sensor_fault},
   {.name="config.sensors.aap", .val=&config.sensors[SENSOR_AAP],
    .get=console_get_sensor, .set=console_set_sensor},
-  {.name="config.sensors.aap.value", .val=&config.sensors[SENSOR_AAP].processed_value,
-   .get=console_get_float},
-  {.name="config.sensors.aap.fault", .val=&config.sensors[SENSOR_AAP].fault,
-   .get=console_get_sensor_fault},
   {.name="config.sensors.frt", .val=&config.sensors[SENSOR_FRT],
    .get=console_get_sensor, .set=console_set_sensor},
-  {.name="config.sensors.frt.value", .val=&config.sensors[SENSOR_FRT].processed_value,
-   .get=console_get_float},
-  {.name="config.sensors.frt.fault", .val=&config.sensors[SENSOR_FRT].fault,
-   .get=console_get_sensor_fault},
   {.name="config.sensors.ego", .val=&config.sensors[SENSOR_EGO],
    .get=console_get_sensor, .set=console_set_sensor},
-  {.name="config.sensors.ego.value", .val=&config.sensors[SENSOR_EGO].processed_value,
-   .get=console_get_float},
-  {.name="config.sensors.ego.fault", .val=&config.sensors[SENSOR_EGO].fault,
-   .get=console_get_sensor_fault},
 
   {.name="config.events", .get=console_get_events, .set=console_set_events},
 
@@ -799,6 +767,41 @@ static struct console_config_node console_config_nodes[] = {
    .get=console_get_uint},
   {.name="status.dwell_us", .val=&calculated_values.dwell_us,
    .get=console_get_uint},
+  
+  /* Sensor values */
+  {.name="status.sensors"},
+  {.name="status.sensors.map", .val=&config.sensors[SENSOR_MAP].processed_value,
+   .get=console_get_float},
+  {.name="status.sensors.map.fault", .val=&config.sensors[SENSOR_MAP].fault,
+   .get=console_get_sensor_fault},
+  {.name="status.sensors.iat", .val=&config.sensors[SENSOR_IAT].processed_value,
+   .get=console_get_float},
+  {.name="status.sensors.iat.fault", .val=&config.sensors[SENSOR_IAT].fault,
+   .get=console_get_sensor_fault},
+  {.name="status.sensors.clt", .val=&config.sensors[SENSOR_CLT].processed_value,
+   .get=console_get_float},
+  {.name="status.sensors.clt.fault", .val=&config.sensors[SENSOR_CLT].fault,
+   .get=console_get_sensor_fault},
+  {.name="status.sensors.brv", .val=&config.sensors[SENSOR_BRV].processed_value,
+   .get=console_get_float},
+  {.name="status.sensors.brv.fault", .val=&config.sensors[SENSOR_BRV].fault,
+   .get=console_get_sensor_fault},
+  {.name="status.sensors.tps", .val=&config.sensors[SENSOR_TPS].processed_value,
+   .get=console_get_float},
+  {.name="status.sensors.tps.fault", .val=&config.sensors[SENSOR_TPS].fault,
+   .get=console_get_sensor_fault},
+  {.name="status.sensors.aap", .val=&config.sensors[SENSOR_AAP].processed_value,
+   .get=console_get_float},
+  {.name="status.sensors.aap", .val=&config.sensors[SENSOR_AAP].fault,
+   .get=console_get_sensor_fault},
+  {.name="status.sensors.frt", .val=&config.sensors[SENSOR_FRT].processed_value,
+   .get=console_get_float},
+  {.name="status.sensors.frt", .val=&config.sensors[SENSOR_FRT].fault,
+   .get=console_get_sensor_fault},
+  {.name="status.sensors.ego", .val=&config.sensors[SENSOR_EGO].processed_value,
+   .get=console_get_float},
+  {.name="status.sensors.ego.fault", .val=&config.sensors[SENSOR_EGO].fault,
+   .get=console_get_sensor_fault},
 
   /* Misc commands */
   {.name="flash", .set=console_save_to_flash},
@@ -820,15 +823,9 @@ static void console_list_prefix(const struct console_config_node *nodes,
   const struct console_config_node *node;
   for (node = nodes; node->name; node++) {
     /* If prefix doesn't match */
-    if (strncmp(node->name, prefix, strlen(prefix))) {
-      continue;
-    }
-    /* It looks like the root name, or no extra element */
-    if (strlen(node->name) <= strlen(prefix) + 1) {
-      continue;
-    }
-    /* Contains another delimiter, so not an immediate subelement */
-    if (strchr(node->name + strlen(prefix) + 1, '.')) {
+    if (prefix && 
+        strlen(prefix) && 
+        strncmp(node->name, prefix, strlen(prefix))) {
       continue;
     }
     strcat(dest, node->name);
@@ -842,26 +839,26 @@ void console_parse_request(char *dest, char *line) {
   char *var = strtok(NULL, " ");
   char *rem = strtok(NULL, "\0");
 
-  if (!action || !var) {
+  if (!action) {
     strcpy(dest, "invalid input");
     return;
   }
 
   const struct console_config_node *node = console_search_node(console_config_nodes, var);
-  if (!node) {
-    strcat(dest, "Config node not found");
-    return;
-  }
   if (!strcmp("list", action)) {
     console_list_prefix(console_config_nodes, dest, var);
   } else if (!strcmp("get", action)) {
-    if (node->get) {
+    if (!node) {
+      strcpy(dest, "invalid config node");
+    } else if (node->get) {
       node->get(node, dest, rem);
     } else {
       strcat(dest, "Config node does not support get");
     }
   } else if (!strcmp("set", action)) {
-    if (node->set) {
+    if (!node) {
+      strcpy(dest, "invalid config node");
+    } else if (node->set) {
       node->set(node, rem);
     } else {
       strcat(dest, "Config node does not support set");
@@ -878,9 +875,9 @@ void console_init() {
     "status.rpm",
     "status.rpm_variance",
     "status.timing_advance",
-    "config.sensors.brv.value",
-    "config.sensors.map.value",
-    "config.sensors.tps.value",
+    "status.sensors.brv",
+    "status.sensors.map",
+    "status.sensors.tps",
     NULL,
   };
 
