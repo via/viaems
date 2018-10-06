@@ -225,7 +225,11 @@ static void console_get_table_axis_labels(const struct table_axis *t, char *dest
 
 static void console_get_table(const struct console_config_node *self, char *dest, char *remaining) {
   assert(self);
-  assert(self->val);
+
+  if (!self->val) {
+    strcpy(dest, "null");
+    return;
+  }
 
   const struct table *t = self->val;
   if (remaining && (remaining[0] == '[')) {
@@ -512,7 +516,7 @@ static void console_get_stats(
 
   const struct stats_entry *e;
   for (e = &stats_entries[0]; e != &stats_entries[STATS_LAST]; ++e) {
-    dest += sprintf(dest, "* %s min/avg/max (uS) = %u/%u/%u\r\n",
+    dest += sprintf(dest, "  %s min/avg/max (uS) = %u/%u/%u\r\n",
         e->name, 
         (unsigned int)e->min, 
         (unsigned int)e->avg, 
@@ -792,11 +796,11 @@ static struct console_config_node console_config_nodes[] = {
    .get=console_get_sensor_fault},
   {.name="status.sensors.aap", .val=&config.sensors[SENSOR_AAP].processed_value,
    .get=console_get_float},
-  {.name="status.sensors.aap", .val=&config.sensors[SENSOR_AAP].fault,
+  {.name="status.sensors.aap.fault", .val=&config.sensors[SENSOR_AAP].fault,
    .get=console_get_sensor_fault},
   {.name="status.sensors.frt", .val=&config.sensors[SENSOR_FRT].processed_value,
    .get=console_get_float},
-  {.name="status.sensors.frt", .val=&config.sensors[SENSOR_FRT].fault,
+  {.name="status.sensors.frt.fault", .val=&config.sensors[SENSOR_FRT].fault,
    .get=console_get_sensor_fault},
   {.name="status.sensors.ego", .val=&config.sensors[SENSOR_EGO].processed_value,
    .get=console_get_float},
@@ -834,38 +838,45 @@ static void console_list_prefix(const struct console_config_node *nodes,
 }
 
 
-void console_parse_request(char *dest, char *line) {
+int console_parse_request(char *dest, char *line) {
   char *action = strtok(line, " ");
   char *var = strtok(NULL, " ");
   char *rem = strtok(NULL, "\0");
 
   if (!action) {
-    strcpy(dest, "invalid input");
-    return;
+    strcat(dest, "invalid action");
+    return 0;
   }
 
   const struct console_config_node *node = console_search_node(console_config_nodes, var);
   if (!strcmp("list", action)) {
     console_list_prefix(console_config_nodes, dest, var);
+    return 1;
+  } else if (!node) {
+    strcpy(dest, "invalid config node");
+    return 0;
   } else if (!strcmp("get", action)) {
-    if (!node) {
-      strcpy(dest, "invalid config node");
-    } else if (node->get) {
+    if (node->get) {
       node->get(node, dest, rem);
+      return 1;
     } else {
-      strcat(dest, "Config node does not support get");
+      strcat(dest, "Config node ");
+      strncat(dest, node->name, 64);
+      strcat(dest, " does not support get");
     }
   } else if (!strcmp("set", action)) {
-    if (!node) {
-      strcpy(dest, "invalid config node");
-    } else if (node->set) {
+    if (node->set) {
       node->set(node, rem);
+      return 1;
     } else {
-      strcat(dest, "Config node does not support set");
+      strcat(dest, "Config node ");
+      strncat(dest, node->name, 64);
+      strcat(dest, " does not support set");
     } 
   } else {
-    strcat(dest, "invalid action");
+    strcpy(dest, "invalid action");
   }
+  return 0;
 }
 
 void console_init() {
@@ -978,14 +989,19 @@ int console_write_full(char *buf, size_t max) {
 static void console_process_rx() {
   char *out = config.console.txbuffer;
   char *in = strtok(config.console.rxbuffer, "\r\n");
+  char *response = out + 2; /* Allow for status character */
+  strcpy(response, "");
+
   if (!in) {
     /* Allow just raw \n's in the case of hosted mode */
     in = strtok(config.console.rxbuffer, "\n");
   }
-  out += sprintf(out, "* ");
-  console_parse_request(out, in);
-  strcat(out, "\r\n");
-  console_write_full(config.console.txbuffer, strlen(config.console.txbuffer));
+  int success = console_parse_request(response, in);
+  strcat(response, "\r\n");
+
+  out[0] = success ? '*' : '-';
+  out[1] = ' ';
+  console_write_full(out, strlen(out));
 }
 
 static void console_output_events() {

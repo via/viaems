@@ -1,7 +1,7 @@
 #ifndef _CONSOLE_H
 #define _CONSOLE_H
 
-#define CONSOLE_BUFFER_SIZE 1024
+#define CONSOLE_BUFFER_SIZE 2048
 
 struct console {
   /* Internal */

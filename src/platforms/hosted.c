@@ -36,6 +36,8 @@ _Atomic static timeval_t curtime;
 _Atomic static timeval_t eventtimer_time;
 _Atomic static uint32_t eventtimer_enable = 0;
 int event_logging_enabled = 1;
+uint32_t test_trigger_rpm = 0;
+timeval_t test_trigger_last = 0;
 
 struct slot {
   uint16_t on_mask;
@@ -128,14 +130,15 @@ void adc_gather() {
 
 timeval_t last_tx = 0;
 size_t console_write(const void *buf, size_t len) {
-  if (curtime - last_tx < 200) {
+  if (curtime - last_tx < 1000) {
     return 0;
   }
   size_t written = write(STDOUT_FILENO, buf, len);
-  if (written) {
+  if (written > 0) {
     last_tx = curtime;
+    return written;
   }
-  return written;
+  return 0;
 }
 
 char rx_buffer[128];
@@ -173,6 +176,7 @@ int current_output_slot() {
 }
 
 void enable_test_trigger(trigger_type t, unsigned int rpm) {
+  test_trigger_rpm = rpm;
 }
 
 static void hosted_platform_timer() {
@@ -191,6 +195,14 @@ static void hosted_platform_timer() {
   if (!output_slots[0]) {
     /* Not initialized */
     return;
+  }
+
+  if (test_trigger_rpm) {
+    timeval_t time_between = time_from_rpm_diff(test_trigger_rpm, 90);
+    if (curtime == test_trigger_last + time_between) {
+      test_trigger_last = curtime;
+      decoder_update_scheduling(0, curtime);
+    }
   }
 
   static uint16_t old_outputs = 0;
@@ -221,8 +233,8 @@ static void hosted_platform_timer() {
     {.fd = STDIN_FILENO, .events = POLLIN},
   };
   if (!rx_amt && poll(pfds, 1, 0)) {
-    size_t r = read(STDIN_FILENO, rx_buffer, 127);
-    if (r) {
+    ssize_t r = read(STDIN_FILENO, rx_buffer, 127);
+    if (r > 0) {
       rx_amt = r;
     }
   }
