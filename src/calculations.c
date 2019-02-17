@@ -34,14 +34,14 @@ void calculate_ignition() {
 
 static float air_density(float iat_celsius, float atmos_kpa) {
   const float kelvin_offset = 273.15;
-  float temp_factor =  kelvin_offset / (iat_celsius - kelvin_offset); // Wrong?
-  return (atmos_kpa / 100) * config.fueling.density_of_air_stp / temp_factor;
+  float temp_factor =  kelvin_offset / (iat_celsius + kelvin_offset);
+  return (atmos_kpa / 100) * config.fueling.density_of_air_stp * temp_factor;
 }
 
 static float fuel_density(float fuel_celsius) {
-  const float kelvin_offset = 273.15;
-  float temp_factor =  kelvin_offset / (fuel_celsius - kelvin_offset);
-  return config.fueling.density_of_fuel / temp_factor;
+  const float beta = 950.0; /* Gasoline 10^-6/K */
+  float delta_temp = fuel_celsius - 15.0;
+  return config.fueling.density_of_fuel - (delta_temp * beta / 1000000.0);
 }
 
 void calculate_fueling() {
@@ -95,3 +95,31 @@ void calculate_fueling() {
   calculated_values.fueling_us = raw_pw_us + idt;
   stats_finish_timing(STATS_FUELCALC_TIME);
 }
+
+#ifdef UNITTEST
+#include <check.h>
+
+#include "check_platform.h"
+
+START_TEST(check_air_density) {
+
+  /* Confirm STP */
+  ck_assert_float_eq_tol(air_density(0.0, 100), 1.2754e-3, 0.000001);
+
+  ck_assert_float_eq_tol(air_density(20, 101.325), 1.2041e-3, 0.000001);
+} END_TEST
+
+START_TEST(check_fuel_density) {
+  ck_assert_float_eq_tol(fuel_density(15), 0.755, 0.001);
+  ck_assert_float_eq_tol(fuel_density(50), 0.721, 0.001);
+} END_TEST
+
+TCase *setup_calculations_tests() {
+  TCase *tc = tcase_create("calculations");
+  tcase_add_test(tc, check_air_density);
+  tcase_add_test(tc, check_fuel_density);
+
+  return tc;
+}
+#endif
+

@@ -102,9 +102,9 @@ struct config config __attribute__((section(".configdata"))) = {
     .cylinder_cc = 500,
     .fuel_stoich_ratio = 14.7,
     .injections_per_cycle = 2, /* All batched */
-    .density_of_fuel = 0.755,
-    .density_of_air_stp = 1.2754e-3,
     .fuel_pump_pin = 0,
+    .density_of_fuel = 0.755, /* g/cm^3 at 15C */
+    .density_of_air_stp = 1.2754e-3, /* g/cm^3 */
   },
   .ignition = {
     .dwell = DWELL_FIXED_DUTY,

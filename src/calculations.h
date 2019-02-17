@@ -44,4 +44,9 @@ void calculate_fueling();
 int ignition_cut();
 int fuel_cut();
 
+#ifdef UNITTEST
+#include <check.h>
+TCase *setup_calculations_tests();
+#endif
+
 #endif
