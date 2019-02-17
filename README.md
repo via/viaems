@@ -39,7 +39,7 @@ Member | Meaning
 --- | ---
 `num_events` | Number of configured events
 `events` | Array of configured event structures, see Event Configuration below
-`trigger` | Decoder type. Possible values in `decoder.h`
+`decoder.type` | Decoder type. Possible values in `decoder.h`
 `decoder.offset` | Degrees between 'decoder' top-dead-center and 'crank' top-dead-center. TFI units by default emit the falling-edge trigger 45 degrees before they would trigger spark in failsafe mode
 `decoder.trigger_max_rpm_change` | Percentage of rpm change between trigger events. 1.00 would mean the engine speed can double or halve between triggers without sync loss.
 `decoder.trigger_min_rpm` | Minimum RPM for sync.  Should be just below the slowest cranking speed.

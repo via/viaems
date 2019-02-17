@@ -22,6 +22,7 @@ int main() {
   while (1) {                   
     stats_increment_counter(STATS_MAINLOOP_RATE);
     console_process();
+
   }
 
   return 0;

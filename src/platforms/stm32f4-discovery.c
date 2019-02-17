@@ -283,7 +283,7 @@ timeval_t init_output_thread(uint32_t *buf0, uint32_t *buf1, uint32_t len) {
   timer_enable_counter(TIM8);
 
   nvic_enable_irq(NVIC_DMA2_STREAM1_IRQ);
-  nvic_set_priority(NVIC_DMA2_STREAM1_IRQ, 0);
+  nvic_set_priority(NVIC_DMA2_STREAM1_IRQ, 16);
 
   return start;
 }
@@ -386,8 +386,62 @@ static void platform_init_scheduled_outputs() {
   gpio_set_output_options(GPIOD, GPIO_OTYPE_PP, GPIO_OSPEED_100MHZ, 0xFFFF & ~GPIO5);
   gpio_mode_setup(GPIOE, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, 0xFF);
   gpio_set_output_options(GPIOE, GPIO_OTYPE_PP, GPIO_OSPEED_100MHZ, 0xFF);
+
 }
 
+void platform_enable_event_logging() {
+
+  nvic_enable_irq(NVIC_EXTI0_IRQ);
+  nvic_enable_irq(NVIC_EXTI1_IRQ);
+  nvic_enable_irq(NVIC_EXTI2_IRQ);
+  nvic_enable_irq(NVIC_EXTI3_IRQ);
+  nvic_enable_irq(NVIC_EXTI4_IRQ);
+  nvic_enable_irq(NVIC_EXTI9_5_IRQ);
+  nvic_enable_irq(NVIC_EXTI15_10_IRQ);
+
+  exti_select_source(0xFFFF, GPIOD);
+  exti_set_trigger(0xFFFF, EXTI_TRIGGER_BOTH);
+  exti_enable_request(0xFFFF);
+}
+
+void platform_disable_event_logging() {
+  nvic_disable_irq(NVIC_EXTI0_IRQ);
+  nvic_disable_irq(NVIC_EXTI1_IRQ);
+  nvic_disable_irq(NVIC_EXTI2_IRQ);
+  nvic_disable_irq(NVIC_EXTI3_IRQ);
+  nvic_disable_irq(NVIC_EXTI4_IRQ);
+  nvic_disable_irq(NVIC_EXTI9_5_IRQ);
+  nvic_disable_irq(NVIC_EXTI15_10_IRQ);
+}
+
+
+static void show_scheduled_outputs() {
+  console_record_event((struct logged_event){
+      .type = EVENT_OUTPUT,
+      .time = current_time(),
+      .value = gpio_port_read(GPIOD),
+      });
+  exti_reset_request(0xFFFF);
+}
+
+void exti0_isr() {
+  show_scheduled_outputs();
+}
+void exti1_isr() {
+  show_scheduled_outputs();
+}
+void exti2_isr() {
+  show_scheduled_outputs();
+}
+void exti3_isr() {
+  show_scheduled_outputs();
+}
+void exti9_5_isr() {
+  show_scheduled_outputs();
+}
+void exti15_10_isr() {
+  show_scheduled_outputs();
+}
 
 
 /* We use TIM6 to control the sample rate.  It is set up to trigger a DMA event
@@ -444,7 +498,7 @@ static void platform_init_spi_tlc2543() {
   dma_enable_stream(DMA1, DMA_STREAM3);
 
   nvic_enable_irq(NVIC_DMA1_STREAM3_IRQ);
-  nvic_set_priority(NVIC_DMA1_STREAM3_IRQ, 0);
+  nvic_set_priority(NVIC_DMA1_STREAM3_IRQ, 16);
 
 
   /* Configure TIM6 to drive DMA for SPI */
@@ -814,18 +868,11 @@ void tim2_isr() {
   stats_start_timing(STATS_INT_TOTAL_TIME);
   if (timer_get_flag(TIM2, TIM_SR_CC2IF)) {
     timer_clear_flag(TIM2, TIM_SR_CC2IF);
-    config.decoder.last_t0 = TIM2_CCR2;
-    config.decoder.needs_decoding_t0 = 1;
-    stats_start_timing(STATS_SCHEDULE_LATENCY);
+    decoder_update_scheduling(0, TIM2_CCR2);
   }
   if (timer_get_flag(TIM2, TIM_SR_CC3IF)) {
     timer_clear_flag(TIM2, TIM_SR_CC3IF);
-    config.decoder.last_t1 = TIM2_CCR3;
-    config.decoder.needs_decoding_t1 = 1;
-  }
-  if (config.decoder.needs_decoding_t0 ||
-      config.decoder.needs_decoding_t1) {
-    decoder_update_scheduling();
+    decoder_update_scheduling(1, TIM2_CCR3);
   }
   if (timer_get_flag(TIM2, TIM_SR_CC1IF)) {
     timer_clear_flag(TIM2, TIM_SR_CC1IF);
@@ -963,7 +1010,6 @@ void platform_save_config() {
   flash_lock();
 }
 
-
 size_t console_read(void *buf, size_t max) {
   usb_rx_ptr = buf;
   usb_rx_bytes_max = max > 64 ? 64 : max;
@@ -990,3 +1036,12 @@ __attribute__((noreturn)) __attribute__((externally_visible))
 void __stack_chk_fail(void) {
   while(1);
 }
+
+void platform_freeze_timers() {
+  timer_disable_counter(TIM8);
+}
+
+void platform_unfreeze_timers() {
+  timer_enable_counter(TIM8);
+}
+

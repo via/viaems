@@ -225,7 +225,11 @@ static void console_get_table_axis_labels(const struct table_axis *t, char *dest
 
 static void console_get_table(const struct console_config_node *self, char *dest, char *remaining) {
   assert(self);
-  assert(self->val);
+
+  if (!self->val) {
+    strcpy(dest, "null");
+    return;
+  }
 
   const struct table *t = self->val;
   if (remaining && (remaining[0] == '[')) {
@@ -512,7 +516,7 @@ static void console_get_stats(
 
   const struct stats_entry *e;
   for (e = &stats_entries[0]; e != &stats_entries[STATS_LAST]; ++e) {
-    dest += sprintf(dest, "* %s min/avg/max (uS) = %u/%u/%u\r\n",
+    dest += sprintf(dest, "  %s min/avg/max (uS) = %u/%u/%u\r\n",
         e->name, 
         (unsigned int)e->min, 
         (unsigned int)e->avg, 
@@ -599,6 +603,78 @@ static void console_set_events(
   }
 }
 
+static struct {
+  int enabled;
+  struct logged_event events[32];
+  int read;
+  int write;
+} event_log = {0};
+
+static struct logged_event platform_get_logged_event() {
+  if (!event_log.enabled || (event_log.read == event_log.write)) {
+    return (struct logged_event){.type = EVENT_NONE};
+  }
+  struct logged_event ret = event_log.events[event_log.read];
+  event_log.read = (event_log.read + 1) % (sizeof(event_log.events) / sizeof(event_log.events[0]));
+  return ret;
+}
+
+void console_record_event(struct logged_event ev) {
+  if (!event_log.enabled) {
+    return;
+  }
+
+  int size = (sizeof(event_log.events) / sizeof(event_log.events[0]));
+  if ((event_log.write + 1) % size == event_log.read) {
+    return;
+  }
+
+  event_log.events[event_log.write] = ev;
+  event_log.write = (event_log.write + 1) % size;
+}
+
+static struct timed_callback trig_cb = {0};
+static void console_fire_trigger_callback(void *_a) {
+  (void)_a;
+ 
+  decoder_update_scheduling(0, trig_cb.time);
+}
+
+static void console_set_trigger_callback(const struct console_config_node *self,
+    char *remaining) {
+  (void)self;
+  timeval_t stoptime = atoi(remaining);
+  trig_cb.callback = console_fire_trigger_callback;
+  schedule_callback(&trig_cb, stoptime);
+}
+
+static void console_set_event_logging(const struct console_config_node *self,
+    char *remaining) {
+  (void)self;
+
+  if (!strncmp(remaining, "on", 2)) {
+    platform_enable_event_logging();
+    event_log.enabled = 1;
+  } else {
+    platform_disable_event_logging();
+    event_log.enabled = 0;
+  }
+}
+
+static void console_set_freeze(const struct console_config_node *self,
+    char *remaining) {
+  (void)self;
+  (void)remaining;
+}
+
+static void console_set_test_trigger(const struct console_config_node *self,
+    char *remaining) {
+    (void)self;
+
+    uint32_t rpm = atoi(remaining);
+    enable_test_trigger(config.decoder.type, rpm);
+}
+
 static struct console_config_node console_config_nodes[] = {
   /* Config hierarchy */
   {.name="config"},
@@ -621,7 +697,7 @@ static struct console_config_node console_config_nodes[] = {
 
   /* Decoding */
   {.name="config.decoder"},
-  {.name="config.decoder.trigger", .val=&config.trigger,
+  {.name="config.decoder.trigger", .val=&config.decoder.type,
    .get=console_get_trigger, .set=console_set_trigger},
   {.name="config.decoder.max_variance", .val=&config.decoder.trigger_cur_rpm_change,
    .get=console_get_float, .set=console_set_float},
@@ -656,52 +732,20 @@ static struct console_config_node console_config_nodes[] = {
   {.name="config.sensors"},
   {.name="config.sensors.map", .val=&config.sensors[SENSOR_MAP],
    .get=console_get_sensor, .set=console_set_sensor},
-  {.name="config.sensors.map.value", .val=&config.sensors[SENSOR_MAP].processed_value,
-   .get=console_get_float},
-  {.name="config.sensors.map.fault", .val=&config.sensors[SENSOR_MAP].fault,
-   .get=console_get_sensor_fault},
   {.name="config.sensors.iat", .val=&config.sensors[SENSOR_IAT],
    .get=console_get_sensor, .set=console_set_sensor},
-  {.name="config.sensors.iat.value", .val=&config.sensors[SENSOR_IAT].processed_value,
-   .get=console_get_float},
-  {.name="config.sensors.iat.fault", .val=&config.sensors[SENSOR_IAT].fault,
-   .get=console_get_sensor_fault},
   {.name="config.sensors.clt", .val=&config.sensors[SENSOR_CLT],
    .get=console_get_sensor, .set=console_set_sensor},
-  {.name="config.sensors.clt.value", .val=&config.sensors[SENSOR_CLT].processed_value,
-   .get=console_get_float},
-  {.name="config.sensors.clt.fault", .val=&config.sensors[SENSOR_CLT].fault,
-   .get=console_get_sensor_fault},
   {.name="config.sensors.brv", .val=&config.sensors[SENSOR_BRV],
    .get=console_get_sensor, .set=console_set_sensor},
-  {.name="config.sensors.brv.value", .val=&config.sensors[SENSOR_BRV].processed_value,
-   .get=console_get_float},
-  {.name="config.sensors.brv.fault", .val=&config.sensors[SENSOR_BRV].fault,
-   .get=console_get_sensor_fault},
   {.name="config.sensors.tps", .val=&config.sensors[SENSOR_TPS],
    .get=console_get_sensor, .set=console_set_sensor},
-  {.name="config.sensors.tps.value", .val=&config.sensors[SENSOR_TPS].processed_value,
-   .get=console_get_float},
-  {.name="config.sensors.tps.fault", .val=&config.sensors[SENSOR_TPS].fault,
-   .get=console_get_sensor_fault},
   {.name="config.sensors.aap", .val=&config.sensors[SENSOR_AAP],
    .get=console_get_sensor, .set=console_set_sensor},
-  {.name="config.sensors.aap.value", .val=&config.sensors[SENSOR_AAP].processed_value,
-   .get=console_get_float},
-  {.name="config.sensors.aap.fault", .val=&config.sensors[SENSOR_AAP].fault,
-   .get=console_get_sensor_fault},
   {.name="config.sensors.frt", .val=&config.sensors[SENSOR_FRT],
    .get=console_get_sensor, .set=console_set_sensor},
-  {.name="config.sensors.frt.value", .val=&config.sensors[SENSOR_FRT].processed_value,
-   .get=console_get_float},
-  {.name="config.sensors.frt.fault", .val=&config.sensors[SENSOR_FRT].fault,
-   .get=console_get_sensor_fault},
   {.name="config.sensors.ego", .val=&config.sensors[SENSOR_EGO],
    .get=console_get_sensor, .set=console_set_sensor},
-  {.name="config.sensors.ego.value", .val=&config.sensors[SENSOR_EGO].processed_value,
-   .get=console_get_float},
-  {.name="config.sensors.ego.fault", .val=&config.sensors[SENSOR_EGO].fault,
-   .get=console_get_sensor_fault},
 
   {.name="config.events", .get=console_get_events, .set=console_set_events},
 
@@ -727,10 +771,52 @@ static struct console_config_node console_config_nodes[] = {
    .get=console_get_uint},
   {.name="status.dwell_us", .val=&calculated_values.dwell_us,
    .get=console_get_uint},
+  
+  /* Sensor values */
+  {.name="status.sensors"},
+  {.name="status.sensors.map", .val=&config.sensors[SENSOR_MAP].processed_value,
+   .get=console_get_float},
+  {.name="status.sensors.map.fault", .val=&config.sensors[SENSOR_MAP].fault,
+   .get=console_get_sensor_fault},
+  {.name="status.sensors.iat", .val=&config.sensors[SENSOR_IAT].processed_value,
+   .get=console_get_float},
+  {.name="status.sensors.iat.fault", .val=&config.sensors[SENSOR_IAT].fault,
+   .get=console_get_sensor_fault},
+  {.name="status.sensors.clt", .val=&config.sensors[SENSOR_CLT].processed_value,
+   .get=console_get_float},
+  {.name="status.sensors.clt.fault", .val=&config.sensors[SENSOR_CLT].fault,
+   .get=console_get_sensor_fault},
+  {.name="status.sensors.brv", .val=&config.sensors[SENSOR_BRV].processed_value,
+   .get=console_get_float},
+  {.name="status.sensors.brv.fault", .val=&config.sensors[SENSOR_BRV].fault,
+   .get=console_get_sensor_fault},
+  {.name="status.sensors.tps", .val=&config.sensors[SENSOR_TPS].processed_value,
+   .get=console_get_float},
+  {.name="status.sensors.tps.fault", .val=&config.sensors[SENSOR_TPS].fault,
+   .get=console_get_sensor_fault},
+  {.name="status.sensors.aap", .val=&config.sensors[SENSOR_AAP].processed_value,
+   .get=console_get_float},
+  {.name="status.sensors.aap.fault", .val=&config.sensors[SENSOR_AAP].fault,
+   .get=console_get_sensor_fault},
+  {.name="status.sensors.frt", .val=&config.sensors[SENSOR_FRT].processed_value,
+   .get=console_get_float},
+  {.name="status.sensors.frt.fault", .val=&config.sensors[SENSOR_FRT].fault,
+   .get=console_get_sensor_fault},
+  {.name="status.sensors.ego", .val=&config.sensors[SENSOR_EGO].processed_value,
+   .get=console_get_float},
+  {.name="status.sensors.ego.fault", .val=&config.sensors[SENSOR_EGO].fault,
+   .get=console_get_sensor_fault},
 
   /* Misc commands */
   {.name="flash", .set=console_save_to_flash},
   {.name="stats", .get=console_get_stats},
+
+  /* Host commands */
+  {.name="sim"},
+  {.name="sim.trigger_time", .set=console_set_trigger_callback},
+  {.name="sim.test_trigger", .set=console_set_test_trigger},
+  {.name="sim.event_logging", .set=console_set_event_logging},
+  {.name="sim.freeze", .set=console_set_freeze},
   {0},
 };
 
@@ -741,15 +827,9 @@ static void console_list_prefix(const struct console_config_node *nodes,
   const struct console_config_node *node;
   for (node = nodes; node->name; node++) {
     /* If prefix doesn't match */
-    if (strncmp(node->name, prefix, strlen(prefix))) {
-      continue;
-    }
-    /* It looks like the root name, or no extra element */
-    if (strlen(node->name) <= strlen(prefix) + 1) {
-      continue;
-    }
-    /* Contains another delimiter, so not an immediate subelement */
-    if (strchr(node->name + strlen(prefix) + 1, '.')) {
+    if (prefix && 
+        strlen(prefix) && 
+        strncmp(node->name, prefix, strlen(prefix))) {
       continue;
     }
     strcat(dest, node->name);
@@ -758,38 +838,45 @@ static void console_list_prefix(const struct console_config_node *nodes,
 }
 
 
-void console_parse_request(char *dest, char *line) {
+int console_parse_request(char *dest, char *line) {
   char *action = strtok(line, " ");
   char *var = strtok(NULL, " ");
   char *rem = strtok(NULL, "\0");
 
-  if (!action || !var) {
-    strcpy(dest, "invalid input");
-    return;
+  if (!action) {
+    strcat(dest, "invalid action");
+    return 0;
   }
 
   const struct console_config_node *node = console_search_node(console_config_nodes, var);
-  if (!node) {
-    strcat(dest, "Config node not found");
-    return;
-  }
   if (!strcmp("list", action)) {
     console_list_prefix(console_config_nodes, dest, var);
+    return 1;
+  } else if (!node) {
+    strcpy(dest, "invalid config node");
+    return 0;
   } else if (!strcmp("get", action)) {
     if (node->get) {
       node->get(node, dest, rem);
+      return 1;
     } else {
-      strcat(dest, "Config node does not support get");
+      strcat(dest, "Config node ");
+      strncat(dest, node->name, 64);
+      strcat(dest, " does not support get");
     }
   } else if (!strcmp("set", action)) {
     if (node->set) {
       node->set(node, rem);
+      return 1;
     } else {
-      strcat(dest, "Config node does not support set");
+      strcat(dest, "Config node ");
+      strncat(dest, node->name, 64);
+      strcat(dest, " does not support set");
     } 
   } else {
-    strcat(dest, "invalid action");
+    strcpy(dest, "invalid action");
   }
+  return 0;
 }
 
 void console_init() {
@@ -799,9 +886,9 @@ void console_init() {
     "status.rpm",
     "status.rpm_variance",
     "status.timing_advance",
-    "config.sensors.brv.value",
-    "config.sensors.map.value",
-    "config.sensors.tps.value",
+    "status.sensors.brv",
+    "status.sensors.map",
+    "status.sensors.tps",
     NULL,
   };
 
@@ -902,16 +989,41 @@ int console_write_full(char *buf, size_t max) {
 static void console_process_rx() {
   char *out = config.console.txbuffer;
   char *in = strtok(config.console.rxbuffer, "\r\n");
+  char *response = out + 2; /* Allow for status character */
+  strcpy(response, "");
+
   if (!in) {
     /* Allow just raw \n's in the case of hosted mode */
     in = strtok(config.console.rxbuffer, "\n");
   }
-  out += sprintf(out, "* ");
-  console_parse_request(out, in);
-  strcat(out, "\r\n");
-  console_write_full(config.console.txbuffer, strlen(config.console.txbuffer));
+  int success = console_parse_request(response, in);
+  strcat(response, "\r\n");
+
+  out[0] = success ? '*' : '-';
+  out[1] = ' ';
+  console_write_full(out, strlen(out));
 }
 
+static void console_output_events() {
+  struct logged_event ev = platform_get_logged_event();
+  switch (ev.type) {
+  case EVENT_OUTPUT:
+    sprintf(config.console.txbuffer, "# OUTPUTS %lu %2x\r\n",
+        (unsigned long)ev.time, ev.value);
+    console_write_full(config.console.txbuffer, strlen(config.console.txbuffer));
+    break;
+  case EVENT_TRIGGER0:
+    sprintf(config.console.txbuffer, "# TRIGGER0 %lu\r\n", (unsigned long)ev.time);
+    console_write_full(config.console.txbuffer, strlen(config.console.txbuffer));
+    break;
+  case EVENT_TRIGGER1:
+    sprintf(config.console.txbuffer, "# TRIGGER1 %lu\r\n", (unsigned long)ev.time);
+    console_write_full(config.console.txbuffer, strlen(config.console.txbuffer));
+    break;
+  default:
+    break;
+  }
+}
 
 void console_process() {
 
@@ -936,6 +1048,7 @@ void console_process() {
   }
 
   config.console.txbuffer[0] = '\0';
+  console_output_events();
   if (console_feed_config.n_nodes) {
     console_feed_line(config.console.txbuffer);
     console_write_full(config.console.txbuffer, strlen(config.console.txbuffer));
@@ -979,15 +1092,15 @@ START_TEST(check_console_list_prefix) {
 
   strcpy(buf, "");
   console_list_prefix(test_nodes, buf, "test2");
-  ck_assert_str_eq(buf, "test2.testA test2.testB ");
+  ck_assert_str_eq(buf, "test2 test2.testA test2.testB test2.testB.test2 ");
 
   strcpy(buf, "");
   console_list_prefix(test_nodes, buf, "test1");
-  ck_assert_str_eq(buf, "");
+  ck_assert_str_eq(buf, "test1 ");
 
   strcpy(buf, "");
   console_list_prefix(test_nodes, buf, "test3");
-  ck_assert_str_eq(buf, "test3.testA ");
+  ck_assert_str_eq(buf, "test3.testA test3.testA.test1 ");
 } END_TEST
 
 START_TEST(check_console_get_time) {

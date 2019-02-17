@@ -1,5 +1,5 @@
 #include "util.h"
-#include "queue.h"
+//#include "queue.h"
 #include "decoder.h"
 #include "platform.h"
 #include "scheduler.h"
@@ -503,10 +503,11 @@ int schedule_callback(struct timed_callback *tcb, timeval_t time) {
 void scheduler_callback_timer_execute() {
   while (n_callbacks && time_before(callbacks[0]->time, current_time())) {
     clear_event_timer();
-    if (callbacks[0]->callback) {
-      callbacks[0]->callback(callbacks[0]->data);
+    struct timed_callback *cb = callbacks[0];
+    callback_remove(cb);
+    if (cb->callback) {
+      cb->callback(cb->data);
     }
-    callback_remove(callbacks[0]);
     if (!n_callbacks) {
       disable_event_timer();
     } else {

@@ -167,7 +167,7 @@ void decoder_init(struct decoder *d) {
   d->last_t1 = 0;
   d->needs_decoding_t0 = 0;
   d->needs_decoding_t1 = 0;
-  switch (config.trigger) {
+  switch (d->type) {
     case FORD_TFI:
       d->decode = tfi_pip_decoder;
       d->required_triggers_rpm = 3;
@@ -198,7 +198,23 @@ void decoder_init(struct decoder *d) {
 }
 
 /* When decoder has new information, reschedule everything */
-void decoder_update_scheduling() {
+void decoder_update_scheduling(int trigger, timeval_t time) {
+  stats_start_timing(STATS_SCHEDULE_LATENCY);
+
+  switch (trigger) {
+  case 0:
+    config.decoder.last_t0 = time;
+    config.decoder.needs_decoding_t0 = 1;
+    break;
+  case 1:
+    config.decoder.last_t1 = time;
+    config.decoder.needs_decoding_t1 = 1;
+    break;
+  }
+  console_record_event((struct logged_event){
+    .type = trigger == 0 ? EVENT_TRIGGER0 : EVENT_TRIGGER1,
+    .time = time,
+  });
   config.decoder.decode(&config.decoder);
 
   if (config.decoder.valid) {
