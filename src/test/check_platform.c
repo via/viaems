@@ -10,6 +10,12 @@ static int int_on = 1;
 static int output_states[16] = {0};
 static int current_buffer = 0;
 
+void platform_enable_event_logging() {
+}
+
+void platform_disable_event_logging() {
+}
+
 void check_platform_reset() {
   curtime = 0;
   current_buffer = 0;

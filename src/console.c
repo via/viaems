@@ -1092,15 +1092,15 @@ START_TEST(check_console_list_prefix) {
 
   strcpy(buf, "");
   console_list_prefix(test_nodes, buf, "test2");
-  ck_assert_str_eq(buf, "test2.testA test2.testB ");
+  ck_assert_str_eq(buf, "test2 test2.testA test2.testB test2.testB.test2 ");
 
   strcpy(buf, "");
   console_list_prefix(test_nodes, buf, "test1");
-  ck_assert_str_eq(buf, "");
+  ck_assert_str_eq(buf, "test1 ");
 
   strcpy(buf, "");
   console_list_prefix(test_nodes, buf, "test3");
-  ck_assert_str_eq(buf, "test3.testA ");
+  ck_assert_str_eq(buf, "test3.testA test3.testA.test1 ");
 } END_TEST
 
 START_TEST(check_console_get_time) {
