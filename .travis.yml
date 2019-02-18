@@ -7,6 +7,7 @@ addons:
     packages:
       - bmake
 before_install:
+  - "mkdir libcheck"
   - "wget https://github.com/libcheck/check/releases/download/0.12.0/check-0.12.0.tar.gz -O - | tar -xvz -C libcheck"
   - "cd libcheck/check; ./configure; make; sudo make install"
 
