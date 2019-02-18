@@ -1,5 +1,6 @@
 language:
-os: xenial
+os: linux
+dist: xenial
 compiler: gcc
 addons: 
   apt:
