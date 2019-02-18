@@ -1,0 +1,9 @@
+language:
+os: linux
+addons: 
+  apt:
+    packages:
+      - check
+      - bmake
+script:
+  - bmake test && ./check
