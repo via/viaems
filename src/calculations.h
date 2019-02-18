@@ -10,12 +10,9 @@ struct fueling_config {
 
   /* Constants */
   float density_of_air_stp; /* g/cc at 0C 100 kpa */
-  float density_of_fuel; /* At ? C */
+  float density_of_fuel; /* At 15 C */
 
   /* Intermediate values for debugging below */
-  float airmass_per_cycle;
-  float fuelvol_per_cycle;
-  float injector_dead_time;
 };
 
 typedef enum {
@@ -31,10 +28,18 @@ struct ignition_config {
 };
 
 struct calculated_values {
+  /* Ignition */
   float timing_advance;
-  unsigned int fueling_us;
   unsigned int dwell_us;
   int rpm_limit_cut;
+
+  /* Fueling */
+  unsigned int fueling_us;
+  float airmass_per_cycle;
+  float fuelvol_per_cycle;
+  float idt;
+  float lambda;
+  float ve;
 };
 
 extern struct calculated_values calculated_values;
