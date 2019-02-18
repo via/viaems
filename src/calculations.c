@@ -14,6 +14,13 @@ int ignition_cut() {
 }
 
 int fuel_cut() {
+
+  /* Maximum pulse width */
+  timeval_t max_pw = time_from_rpm_diff(config.decoder.rpm, 360) / config.fueling.injections_per_cycle;
+  if (time_from_us(calculated_values.fueling_us) >= max_pw) {
+    return 1;
+  }
+
   return ignition_cut();
 }
 
