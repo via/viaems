@@ -6,4 +6,4 @@ addons:
       - check
       - bmake
 script:
-  - bmake check && ./check
+  - cd src && bmake check && ./check
