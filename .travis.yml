@@ -6,4 +6,4 @@ addons:
       - check
       - bmake
 script:
-  - bmake test && ./check
+  - bmake check && ./check
