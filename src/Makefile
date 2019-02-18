@@ -39,7 +39,7 @@ libssp_nonshared.a:
 		arm-none-eabi-ar rcs libssp_nonshared.a
 
 
-OBJS=decoder.o util.o scheduler.o console.o calculations.o config.o table.o sensors.o stats.o
+OBJS=decoder.o util.o scheduler.o console.o calculations.o config.o table.o sensors.o stats.o tasks.o
 
 tfi: ${OBJS} tfi.o platforms/${PLATFORM}.o libssp.a libssp_nonshared.a
 	${CC} ${CFLAGS} -o tfi tfi.o ${OBJS} ${PLATFORM}.o ${LDFLAGS}

@@ -716,6 +716,8 @@ static struct console_config_node console_config_nodes[] = {
    .get=console_get_float, .set=console_set_float},
   {.name="config.fueling.injections_per_cycle", .val=&config.fueling.injections_per_cycle,
    .get=console_get_uint, .set=console_set_uint},
+  {.name="config.fueling.fuel_pump_pin", .val=&config.fueling.fuel_pump_pin,
+   .get=console_get_uint, .set=console_set_uint},
 
   /* Ignition */
   {.name="config.ignition"},
@@ -1009,6 +1011,11 @@ static void console_output_events() {
   switch (ev.type) {
   case EVENT_OUTPUT:
     sprintf(config.console.txbuffer, "# OUTPUTS %lu %2x\r\n",
+        (unsigned long)ev.time, ev.value);
+    console_write_full(config.console.txbuffer, strlen(config.console.txbuffer));
+    break;
+  case EVENT_GPIO:
+    sprintf(config.console.txbuffer, "# GPIO %lu %2x\r\n",
         (unsigned long)ev.time, ev.value);
     console_write_full(config.console.txbuffer, strlen(config.console.txbuffer));
     break;

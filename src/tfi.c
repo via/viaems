@@ -8,6 +8,7 @@
 #include "sensors.h"
 #include "calculations.h"
 #include "stats.h"
+#include "tasks.h"
 
 
 int main() {
@@ -21,8 +22,11 @@ int main() {
 
   while (1) {                   
     stats_increment_counter(STATS_MAINLOOP_RATE);
-    console_process();
 
+    console_process();
+    handle_fuel_pump();
+    handle_boost_control();
+    handle_idle_control();
   }
 
   return 0;

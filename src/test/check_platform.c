@@ -8,6 +8,7 @@ static timeval_t curtime = 0;
 static timeval_t cureventtime = 0;
 static int int_on = 1;
 static int output_states[16] = {0};
+static int gpio_states[16] = {0};
 static int current_buffer = 0;
 
 void platform_enable_event_logging() {
@@ -76,6 +77,14 @@ void set_output(int output, char value) {
 
 int get_output(int output) {
   return output_states[output];
+}
+
+void set_gpio(int output, char value) {
+  gpio_states[output] = value;  
+}
+
+int get_gpio(int output) {
+  return gpio_states[output];
 }
 
 void adc_gather(void *_adc) {

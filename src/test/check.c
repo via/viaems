@@ -9,6 +9,7 @@
 #include "calculations.h"
 #include "scheduler.h"
 #include "console.h"
+#include "tasks.h"
 #include <check.h>
 
 #include "check_platform.h"
@@ -223,6 +224,7 @@ int main(void) {
   suite_add_tcase(tfi_suite, setup_decoder_tests());
   suite_add_tcase(tfi_suite, setup_scheduler_tests());
   suite_add_tcase(tfi_suite, setup_console_tests());
+  suite_add_tcase(tfi_suite, setup_tasks_tests());
   SRunner *sr = srunner_create(tfi_suite);
   srunner_run_all(sr, CK_VERBOSE);
   return 0;

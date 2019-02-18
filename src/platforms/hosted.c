@@ -120,6 +120,22 @@ void set_output(int output, char value) {
 }
 
 void set_gpio(int output, char value) {
+  static uint16_t gpios = 0;
+  uint16_t old_gpios = gpios;
+
+  if (value) {
+    gpios |= (1 << output);
+  } else {
+    gpios &= ~(1 << output);
+  }
+
+  if (old_gpios != gpios) {
+    console_record_event((struct logged_event){
+        .time = current_time(),
+        .value = gpios,
+        .type = EVENT_GPIO,
+        });
+  }
 }
 
 void set_pwm(int output, float value) {
