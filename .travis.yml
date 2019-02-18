@@ -1,11 +1,14 @@
 language:
 os: linux
-dist: bionic
+dist: xenial
 compiler: gcc
 addons: 
   apt:
     packages:
       - check
-      - bmake
+before_install:
+  - "git clone https://github.com/libcheck/check.git -C libcheck"
+  - "cd libcheck; ./configure; make; sudo make install"
+
 script:
   - cd src && bmake check && ./check
