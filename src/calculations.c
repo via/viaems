@@ -3,6 +3,13 @@
 #include "stats.h"
 struct calculated_values calculated_values;
 
+static int fuel_overduty() {
+  /* Maximum pulse width */
+  timeval_t max_pw = time_from_rpm_diff(config.decoder.rpm, 360) / config.fueling.injections_per_cycle;
+
+  return time_from_us(calculated_values.fueling_us) >= max_pw;
+}
+
 int ignition_cut() {
   if (config.decoder.rpm >= config.rpm_stop) {
     calculated_values.rpm_limit_cut = 1;
@@ -10,18 +17,12 @@ int ignition_cut() {
   if (config.decoder.rpm < config.rpm_start) {
     calculated_values.rpm_limit_cut = 0;
   }
-  return calculated_values.rpm_limit_cut;
+  return calculated_values.rpm_limit_cut || fuel_overduty();
 }
 
 int fuel_cut() {
 
-  /* Maximum pulse width */
-  timeval_t max_pw = time_from_rpm_diff(config.decoder.rpm, 360) / config.fueling.injections_per_cycle;
-  if (time_from_us(calculated_values.fueling_us) >= max_pw) {
-    return 1;
-  }
-
-  return ignition_cut();
+  return ignition_cut() || fuel_overduty();
 }
 
 void calculate_ignition() {
