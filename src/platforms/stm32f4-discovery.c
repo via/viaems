@@ -942,6 +942,10 @@ void set_output(int output, char value) {
   }
 }
 
+int get_gpio(int output) {
+  return gpio_get(GPIOE, (1 << output)) != 0;
+}
+
 void set_gpio(int output, char value) {
   if (value) {
     gpio_set(GPIOE, (1 << output));
