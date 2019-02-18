@@ -1,6 +1,6 @@
 language:
 os: linux
-dist: xenial
+dist: bionic
 compiler: gcc
 addons: 
   apt:
