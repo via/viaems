@@ -7,8 +7,8 @@ addons:
     packages:
       - bmake
 before_install:
-  - "git clone https://github.com/libcheck/check.git libcheck"
-  - "cd libcheck; ./configure; make; sudo make install"
+  - "wget https://github.com/libcheck/check/releases/download/0.12.0/check-0.12.0.tar.gz -O - | tar -xvz -C libcheck"
+  - "cd libcheck/check; ./configure; make; sudo make install"
 
 script:
   - cd src && bmake check && ./check
