@@ -608,7 +608,7 @@ static struct {
   struct logged_event events[32];
   int read;
   int write;
-} event_log = {0};
+} event_log = {.enabled = 1};
 
 static struct logged_event platform_get_logged_event() {
   if (!event_log.enabled || (event_log.read == event_log.write)) {
@@ -715,6 +715,8 @@ static struct console_config_node console_config_nodes[] = {
   {.name="config.fueling.fuel_stoich_ratio", .val=&config.fueling.fuel_stoich_ratio,
    .get=console_get_float, .set=console_set_float},
   {.name="config.fueling.injections_per_cycle", .val=&config.fueling.injections_per_cycle,
+   .get=console_get_uint, .set=console_set_uint},
+  {.name="config.fueling.fuel_pump_pin", .val=&config.fueling.fuel_pump_pin,
    .get=console_get_uint, .set=console_set_uint},
 
   /* Ignition */
@@ -1009,6 +1011,11 @@ static void console_output_events() {
   switch (ev.type) {
   case EVENT_OUTPUT:
     sprintf(config.console.txbuffer, "# OUTPUTS %lu %2x\r\n",
+        (unsigned long)ev.time, ev.value);
+    console_write_full(config.console.txbuffer, strlen(config.console.txbuffer));
+    break;
+  case EVENT_GPIO:
+    sprintf(config.console.txbuffer, "# GPIO %lu %2x\r\n",
         (unsigned long)ev.time, ev.value);
     console_write_full(config.console.txbuffer, strlen(config.console.txbuffer));
     break;

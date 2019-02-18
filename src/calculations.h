@@ -6,6 +6,7 @@ struct fueling_config {
   float cylinder_cc;
   float fuel_stoich_ratio; 
   unsigned int injections_per_cycle; /* fuel quantity per shot divisor */
+  unsigned int fuel_pump_pin;
 
   /* Constants */
   float density_of_air_stp; /* g/cc at 0C 100 kpa */

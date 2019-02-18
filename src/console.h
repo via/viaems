@@ -15,6 +15,7 @@ struct logged_event {
   enum {
     EVENT_NONE,
     EVENT_OUTPUT,
+    EVENT_GPIO,
     EVENT_TRIGGER0,
     EVENT_TRIGGER1,
   } type;
