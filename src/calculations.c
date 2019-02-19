@@ -163,11 +163,34 @@ START_TEST(check_calculate_airmass) {
       0.7 * airmass, 0.001);
 } END_TEST
 
+START_TEST(check_fuel_overduty) {
+
+  /* 10 ms for a complete revolution */
+  config.decoder.rpm = 6000;
+  config.fueling.injections_per_cycle = 1;
+  calculated_values.fueling_us = 8000;
+  ck_assert(!fuel_overduty());
+
+  calculated_values.fueling_us = 11000;
+  ck_assert(fuel_overduty());
+
+
+  /* Test batch injection */
+  config.fueling.injections_per_cycle = 2;
+  calculated_values.fueling_us = 8000;
+  ck_assert(fuel_overduty());
+
+  calculated_values.fueling_us = 4500;
+  ck_assert(!fuel_overduty());
+
+} END_TEST
+
 TCase *setup_calculations_tests() {
   TCase *tc = tcase_create("calculations");
   tcase_add_test(tc, check_air_density);
   tcase_add_test(tc, check_fuel_density);
   tcase_add_test(tc, check_calculate_airmass);
+  tcase_add_test(tc, check_fuel_overduty);
 
   return tc;
 }
