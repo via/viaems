@@ -1,7 +1,16 @@
+#include <stdlib.h>
+#include <check.h>
+
 #include "scheduler.h"
 #include "platform.h"
 #include "decoder.h"
-#include "check_platform.h"
+#include "util.h"
+#include "sensors.h"
+#include "table.h"
+#include "config.h"
+#include "calculations.h"
+#include "console.h"
+#include "tasks.h"
 
 
 static timeval_t curtime = 0;
@@ -117,3 +126,20 @@ size_t console_read(void *ptr, size_t max) {
 size_t console_write(const void *ptr, size_t max) {
   return 0;
 }
+
+void platform_init() {
+  Suite *tfi_suite = suite_create("TFI");
+
+  suite_add_tcase(tfi_suite, setup_util_tests());
+  suite_add_tcase(tfi_suite, setup_table_tests());
+  suite_add_tcase(tfi_suite, setup_sensor_tests());
+  suite_add_tcase(tfi_suite, setup_decoder_tests());
+  suite_add_tcase(tfi_suite, setup_scheduler_tests());
+  suite_add_tcase(tfi_suite, setup_calculations_tests());
+  suite_add_tcase(tfi_suite, setup_console_tests());
+  suite_add_tcase(tfi_suite, setup_tasks_tests());
+  SRunner *sr = srunner_create(tfi_suite);
+  srunner_run_all(sr, CK_VERBOSE);
+  exit(srunner_ntests_failed(sr));
+}
+

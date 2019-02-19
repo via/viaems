@@ -50,3 +50,100 @@ degrees_t clamp_angle(int ang, degrees_t max) {
   }
   return (degrees_t) ang;
 }
+
+#ifdef UNITTEST
+#include <check.h>
+
+START_TEST(check_rpm_from_time_diff) {
+  /* 180 degrees for 0.005 s is 6000 rpm */
+  ck_assert_float_eq_tol(rpm_from_time_diff(20000, 180), 6000, 50);
+
+  /* 90 degrees for 0.00125 s is 6000 rpm */
+  ck_assert_float_eq_tol(rpm_from_time_diff(5000, 45), 6000, 50);
+} END_TEST
+
+START_TEST(check_time_from_rpm_diff) {
+  /* 6000 RPMS, 180 degrees = 0.005 s */
+  ck_assert_float_eq_tol(time_from_rpm_diff(6000, 180), 20000, 50);
+
+  /* 6000 RPMS, 90 is 0.00125 s */
+  ck_assert_float_eq_tol(time_from_rpm_diff(6000, 45), 5000, 50);
+} END_TEST
+
+START_TEST(check_time_from_us) {
+  ck_assert_int_eq(time_from_us(0), 0);
+  ck_assert_int_eq(time_from_us(1000), 1000 * (TICKRATE / 1000000));
+} END_TEST
+
+START_TEST(check_time_in_range) {
+  timeval_t t1, t2, val;
+
+  t1 = 0xFF000000;
+  val = 0xFF0000FF;
+  t2 = 0xFFFF0000;
+  ck_assert_int_eq(time_in_range(val, t1, t2), 1);
+
+  t1 = 0xFF000000;
+  val = 0x80000000;
+  t2 = 0xFFFF0000;
+  ck_assert_int_eq(time_in_range(val, t1, t2), 0);
+
+  t1 = 0xFF000000;
+  val = 0xFF0000FF;
+  t2 = 0xFFFF0000;
+  ck_assert_int_eq(time_in_range(val, t2, t1), 0);
+
+  t1 = 0xFF000000;
+  val = 0x0000FFFF;
+  t2 = 0x40000000;
+  ck_assert_int_eq(time_in_range(val, t1, t2), 1);
+
+  t1 = 0x1000;
+  val = 0x2000;
+  t2 = 0x1000;
+  ck_assert_int_eq(time_in_range(val, t1, t2), 0);
+
+  t1 = 0x1000;
+  val = 0x1000;
+  t2 = 0x1000;
+  ck_assert_int_eq(time_in_range(val, t1, t2), 1);
+} END_TEST
+
+START_TEST(check_time_diff) {
+  timeval_t t1, t2;
+
+  t1 = 0xFF000000;
+  t2 = 0xFF0000FF;
+  ck_assert_int_eq(time_diff(t2, t1), 0xFF);
+
+  t1 = 0xFFFFFF00;
+  t2 = 0x00000010;
+  ck_assert_int_eq(time_diff(t2, t1), 0x110);
+
+  t1 = 0xFFFFFF00;
+  t2 = 0xFFFFFF00;
+  ck_assert_int_eq(time_diff(t2, t1), 0);
+} END_TEST
+
+START_TEST(check_clamp_angle) {
+  ck_assert_int_eq(clamp_angle(0, 720), 0);
+  ck_assert_int_eq(clamp_angle(-360, 720), 360);
+  ck_assert_int_eq(clamp_angle(-1080, 720), 360);
+  ck_assert_int_eq(clamp_angle(720, 720), 0);
+  ck_assert_int_eq(clamp_angle(1080, 720), 360);
+} END_TEST
+
+
+TCase *setup_util_tests() {
+  TCase *util_tests = tcase_create("util");
+  tcase_add_test(util_tests, check_rpm_from_time_diff);
+  tcase_add_test(util_tests, check_time_from_rpm_diff);
+  tcase_add_test(util_tests, check_time_in_range);
+  tcase_add_test(util_tests, check_time_diff);
+  tcase_add_test(util_tests, check_clamp_angle);
+  tcase_add_test(util_tests, check_time_from_us);
+  return util_tests;
+}
+
+#endif
+

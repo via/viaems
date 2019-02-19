@@ -233,7 +233,6 @@ void decoder_update_scheduling(int trigger, timeval_t time) {
 #include "platform.h"
 #include "config.h"
 #include "decoder.h"
-#include "check_platform.h"
 
 #include <check.h>
 

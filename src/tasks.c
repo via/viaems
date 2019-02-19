@@ -33,7 +33,6 @@ void handle_idle_control() {
 
 #ifdef UNITTEST
 #include <check.h>
-#include "check_platform.h"
 
 START_TEST(check_tasks_handle_fuel_pump) {
 

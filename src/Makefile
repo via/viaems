@@ -1,15 +1,9 @@
 PLATFORM?=stm32f4-discovery
 
 .ifmake check || coverage
-CFLAGS!=pkg-config --cflags check
-LDFLAGS!=pkg-config --libs check
-CC=gcc
-CFLAGS+= -I. -Itest -std=c99 -Wall -Wwrite-strings -O0 -g
-CFLAGS+= -D TICKRATE=4000000 -DUNITTEST
-CFLAGS+= -fprofile-arcs -ftest-coverage 
-CFLAGS+=  -fsanitize=undefined
+PLATFORM=test
+.endif
 
-.else
 .if ${PLATFORM} == "stm32f4-discovery"
 CC=arm-none-eabi-gcc
 OBJCOPY=arm-none-eabi-objcopy
@@ -21,16 +15,24 @@ CFLAGS+=  -L${OPENCM3_DIR}/lib -I${OPENCM3_DIR}/include -DSTM32F4
 CFLAGS+= -fstack-protector-strong -fno-strict-aliasing
 LDFLAGS+= -lopencm3_stm32f4 -lc -lnosys -flto -L .
 LDFLAGS+= -T platforms/stm32f4-discovery.ld -nostartfiles
-all: tfi
 
 .elif ${PLATFORM} == "hosted"
 CC=gcc
 CFLAGS+= -I. -std=c99 -Wall -O0 -ggdb -lrt -DSUPPORTS_POSIX_TIMERS
 CFLAGS+= -D TICKRATE=1000000 -D_POSIX_C_SOURCE=199309L -D_GNU_SOURCE
 CFLAGS+= -fsanitize=undefined
+
+.elif ${PLATFORM} == "test"
+CFLAGS!=pkg-config --cflags check
+LDFLAGS!=pkg-config --libs check
+CC=gcc
+CFLAGS+= -I. -Itest -std=c99 -Wall -Wwrite-strings -O0 -g
+CFLAGS+= -D TICKRATE=4000000 -DUNITTEST
+CFLAGS+= -fprofile-arcs -ftest-coverage 
+CFLAGS+=  -fsanitize=undefined
+.endif
+
 all: tfi
-.endif
-.endif
 
 libssp.a:
 		arm-none-eabi-ar rcs libssp.a
@@ -50,8 +52,8 @@ tfi.dfu: tfi
 program: tfi.dfu
 	dfu-util -D tfi.dfu -a 0 -s 0x8000000:leave
 
-check: ${OBJS} test/check.o test/check_platform.o
-	${CC} ${CFLAGS} -o check check.o check_platform.o ${OBJS} ${LDFLAGS}
+check: tfi
+	./tfi
 
 coverage: check
 	./check
@@ -62,7 +64,6 @@ clean:
 	-rm *.o
 	-rm tfi
 	-rm tfi.dfu
-	-rm test/*.o
 	-rm check
 	-rm *.hex
 	-rm *.gcov *.gcno *.gcda

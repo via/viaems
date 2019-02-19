@@ -128,8 +128,7 @@ void calculate_fueling() {
 
 #ifdef UNITTEST
 #include <check.h>
-
-#include "check_platform.h"
+#include <stdlib.h>
 
 START_TEST(check_air_density) {
 
@@ -185,12 +184,57 @@ START_TEST(check_fuel_overduty) {
 
 } END_TEST
 
+START_TEST(check_calculate_ignition_cut) {
+  config.rpm_stop = 5000;
+  config.rpm_start = 4500;
+
+  config.decoder.rpm = 1000;
+  ck_assert_int_eq(ignition_cut(), 0);
+  ck_assert_int_eq(calculated_values.rpm_limit_cut, 0);
+
+  config.decoder.rpm = 5500;
+  ck_assert_int_eq(ignition_cut(), 1);
+  ck_assert_int_eq(calculated_values.rpm_limit_cut, 1);
+
+  config.decoder.rpm = 4000;
+  ck_assert_int_eq(ignition_cut(), 0);
+  ck_assert_int_eq(calculated_values.rpm_limit_cut, 0);
+
+  config.decoder.rpm = 4800;
+  ck_assert_int_eq(ignition_cut(), 0);
+  ck_assert_int_eq(calculated_values.rpm_limit_cut, 0);
+
+  config.decoder.rpm = 5500;
+  ck_assert_int_eq(ignition_cut(), 1);
+  ck_assert_int_eq(calculated_values.rpm_limit_cut, 1);
+} END_TEST
+
+START_TEST(check_calculate_ignition_fixedduty) {
+  struct table t = { 
+    .num_axis = 2,
+    .axis = { { .num = 2, .values = {5, 10} }, { .num = 2, .values = {5, 10}} },
+    .data = { .two = { {10, 10}, {10, 10} } },
+  };
+  config.timing = &t;
+  config.ignition.dwell = DWELL_FIXED_DUTY;
+  config.decoder.rpm = 6000;
+
+  calculate_ignition();
+  
+  ck_assert(calculated_values.timing_advance == 10);
+  /* 10 ms per rev, dwell should be 1/8 of rotation,
+   * fuzzy estimate because math */
+  ck_assert(abs(calculated_values.dwell_us - (10000 / 8)) < 5);
+} END_TEST
+
 TCase *setup_calculations_tests() {
   TCase *tc = tcase_create("calculations");
   tcase_add_test(tc, check_air_density);
   tcase_add_test(tc, check_fuel_density);
   tcase_add_test(tc, check_calculate_airmass);
   tcase_add_test(tc, check_fuel_overduty);
+  tcase_add_test(tc, check_calculate_ignition_cut);
+  tcase_add_test(tc, check_calculate_ignition_fixedduty);
 
   return tc;
 }
