@@ -51,5 +51,12 @@ int current_output_slot();
 void platform_enable_event_logging();
 void platform_disable_event_logging();
 
+#ifdef UNITTEST
+#include <check.h>
+
+void check_platform_reset();
+void set_current_time(timeval_t);
+#endif
+
 #endif
 

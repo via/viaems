@@ -74,3 +74,72 @@ interpolate_table_twoaxis(struct table *t, float x, float y) {
   return xy;
 }
 
+#ifdef UNITTEST
+#include <check.h>
+
+static struct table t1 = {
+  .num_axis = 1,
+  .axis = { { 
+    .num = 4,
+    .values = {5, 10, 15, 20},
+   } },
+   .data = {
+     .one = {50, 100, 150, 200}
+   },
+};
+
+static struct table t2 = {
+  .num_axis = 2,
+  .axis = { { 
+    .num = 4,
+    .values = {5, 10, 15, 20},
+   }, {
+    .num = 4,
+    .values = {-50, -40, -30, -20}
+    } },
+   .data = {
+     .two = { {50, 100, 250, 200},
+              {60, 110, 260, 210},
+              {70, 120, 270, 220},
+              {80, 130, 280, 230} },
+   },
+};
+
+START_TEST(check_table_oneaxis_interpolate) {
+  ck_assert(interpolate_table_oneaxis(&t1, 7.5) == 75);
+  ck_assert(interpolate_table_oneaxis(&t1, 5) == 50);
+  ck_assert(interpolate_table_oneaxis(&t1, 10) == 100);
+  ck_assert(interpolate_table_oneaxis(&t1, 20) == 200);
+} END_TEST
+
+START_TEST(check_table_oneaxis_clamp) {
+  ck_assert(interpolate_table_oneaxis(&t1, 0) == 50);
+  ck_assert(interpolate_table_oneaxis(&t1, 30) == 200);
+} END_TEST
+
+START_TEST(check_table_twoaxis_interpolate) {
+  ck_assert(interpolate_table_twoaxis(&t2, 5, -50) == 50);
+  ck_assert(interpolate_table_twoaxis(&t2, 7.5, -50) == 75);
+  ck_assert(interpolate_table_twoaxis(&t2, 5, -45) == 55);
+  ck_assert(interpolate_table_twoaxis(&t2, 7.5, -45) == 80);
+} END_TEST
+
+START_TEST(check_table_twoaxis_clamp) {
+  ck_assert(interpolate_table_twoaxis(&t2, 10, -60) == 100);
+  ck_assert(interpolate_table_twoaxis(&t2, 10, 0) == 130);
+  ck_assert(interpolate_table_twoaxis(&t2, 0, -40) == 60);
+  ck_assert(interpolate_table_twoaxis(&t2, 30, -40) == 210);
+  ck_assert(interpolate_table_twoaxis(&t2, 30, -45) == 205);
+} END_TEST
+
+TCase *setup_table_tests() {
+  TCase *table_tests = tcase_create("tables");
+  tcase_add_test(table_tests, check_table_oneaxis_interpolate);
+  tcase_add_test(table_tests, check_table_oneaxis_clamp);
+  tcase_add_test(table_tests, check_table_twoaxis_interpolate);
+  tcase_add_test(table_tests, check_table_twoaxis_clamp);
+  return table_tests;
+}
+
+#endif
+

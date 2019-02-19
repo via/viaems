@@ -68,8 +68,8 @@ void decoder_update_scheduling(int trigger, timeval_t time);
 void enable_test_trigger(trigger_type t, unsigned int rpm);
 
 #ifdef UNITTEST
-void check_handle_decoder_expire(void *_d);
+#include <check.h>
+TCase *setup_decoder_tests();
 #endif
-
 #endif
 

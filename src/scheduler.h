@@ -68,6 +68,7 @@ void invalidate_scheduled_events(struct output_event *, int);
 #ifdef UNITTEST
 #include <check.h>
 void check_add_buffer_tests(TCase *);
+TCase *setup_scheduler_tests();
 #endif
 
 #endif 

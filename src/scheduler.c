@@ -1,5 +1,4 @@
 #include "util.h"
-//#include "queue.h"
 #include "decoder.h"
 #include "platform.h"
 #include "scheduler.h"
@@ -573,8 +572,6 @@ initialize_scheduler() {
 #ifdef UNITTEST
 #include <check.h>
 #include <stdio.h>
-
-#include "check_platform.h"
 
 static struct output_event *oev = &config.events[0];
 
