@@ -6,6 +6,8 @@ PLATFORM=test
 
 .if ${PLATFORM} == "stm32f4-discovery"
 CC=arm-none-eabi-gcc
+AR=arm-none-eabi-ar
+OBJS=libssp.a libssp_nonshared.a
 OBJCOPY=arm-none-eabi-objcopy
 OPENCM3_DIR=../libopencm3
 CFLAGS=  -I. -std=c99 -Wall -O3 -Wextra -g -flto
@@ -35,15 +37,14 @@ CFLAGS+=  -fsanitize=undefined
 all: tfi
 
 libssp.a:
-		arm-none-eabi-ar rcs libssp.a
+		${AR} rcs libssp.a
 
 libssp_nonshared.a:
-		arm-none-eabi-ar rcs libssp_nonshared.a
+		${AR} rcs libssp_nonshared.a
 
+OBJS+=decoder.o util.o scheduler.o console.o calculations.o config.o table.o sensors.o stats.o tasks.o
 
-OBJS=decoder.o util.o scheduler.o console.o calculations.o config.o table.o sensors.o stats.o tasks.o
-
-tfi: ${OBJS} tfi.o platforms/${PLATFORM}.o libssp.a libssp_nonshared.a
+tfi: ${OBJS} tfi.o platforms/${PLATFORM}.o
 	${CC} ${CFLAGS} -o tfi tfi.o ${OBJS} ${PLATFORM}.o ${LDFLAGS}
 
 tfi.dfu: tfi
@@ -61,10 +62,9 @@ coverage: check
 
 
 clean:
-	-rm *.o
+	-rm *.o *.a
 	-rm tfi
 	-rm tfi.dfu
-	-rm check
 	-rm *.hex
-	-rm *.gcov *.gcno *.gcda
+	-rm *.gcov *.gcno *.gcda *.gmon
 	-rm tfi.sock

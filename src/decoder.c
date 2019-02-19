@@ -255,7 +255,7 @@ static struct decoder_event tfi_startup_events[] = {
   {1, 0, 125000, DECODER_SYNC, 1, 0},
 };
 
-void validate_decoder_sequence(struct decoder_event *ev, int num) {
+static void validate_decoder_sequence(struct decoder_event *ev, int num) {
   int i;
   for (i = 0; i < num; ++i) {
     if (ev[i].t0) {
