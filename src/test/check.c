@@ -223,6 +223,7 @@ int main(void) {
   suite_add_tcase(tfi_suite, setup_sensor_tests());
   suite_add_tcase(tfi_suite, setup_decoder_tests());
   suite_add_tcase(tfi_suite, setup_scheduler_tests());
+  suite_add_tcase(tfi_suite, setup_calculations_tests());
   suite_add_tcase(tfi_suite, setup_console_tests());
   suite_add_tcase(tfi_suite, setup_tasks_tests());
   SRunner *sr = srunner_create(tfi_suite);

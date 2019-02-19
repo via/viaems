@@ -3,6 +3,13 @@
 #include "stats.h"
 struct calculated_values calculated_values;
 
+static int fuel_overduty() {
+  /* Maximum pulse width */
+  timeval_t max_pw = time_from_rpm_diff(config.decoder.rpm, 360) / config.fueling.injections_per_cycle;
+
+  return time_from_us(calculated_values.fueling_us) >= max_pw;
+}
+
 int ignition_cut() {
   if (config.decoder.rpm >= config.rpm_stop) {
     calculated_values.rpm_limit_cut = 1;
@@ -10,11 +17,12 @@ int ignition_cut() {
   if (config.decoder.rpm < config.rpm_start) {
     calculated_values.rpm_limit_cut = 0;
   }
-  return calculated_values.rpm_limit_cut;
+  return calculated_values.rpm_limit_cut || fuel_overduty();
 }
 
 int fuel_cut() {
-  return ignition_cut();
+
+  return ignition_cut() || fuel_overduty();
 }
 
 void calculate_ignition() {
@@ -34,29 +42,53 @@ void calculate_ignition() {
 
 static float air_density(float iat_celsius, float atmos_kpa) {
   const float kelvin_offset = 273.15;
-  float temp_factor =  kelvin_offset / (iat_celsius - kelvin_offset); // Wrong?
-  return (atmos_kpa / 100) * config.fueling.density_of_air_stp / temp_factor;
+  float temp_factor =  kelvin_offset / (iat_celsius + kelvin_offset);
+  return (atmos_kpa / 100) * config.fueling.density_of_air_stp * temp_factor;
 }
 
 static float fuel_density(float fuel_celsius) {
-  const float kelvin_offset = 273.15;
-  float temp_factor =  kelvin_offset / (fuel_celsius - kelvin_offset);
-  return config.fueling.density_of_fuel / temp_factor;
+  const float beta = 950.0; /* Gasoline 10^-6/K */
+  float delta_temp = fuel_celsius - 15.0;
+  return config.fueling.density_of_fuel - (delta_temp * beta / 1000000.0);
+}
+
+/* Returns mass of air injested into a cylinder */
+static float calculate_airmass(float ve, float map, float aap, float iat) {
+
+  float injested_air_volume_per_cycle = (ve / 100.0) * 
+    (map / aap) * 
+    config.fueling.cylinder_cc;
+
+  float injested_air_mass_per_cycle = injested_air_volume_per_cycle *
+    air_density(iat, aap);
+
+  return injested_air_mass_per_cycle;
+}
+
+/* Given an airmass and a fuel temperature, returns stoich amount of fuel volume */
+static float calculate_fuel_volume(float airmass, float frt) {
+  float fuel_mass = airmass / config.fueling.fuel_stoich_ratio;
+  float fuel_volume = fuel_mass / fuel_density(frt);
+
+  return fuel_volume;
 }
 
 void calculate_fueling() {
   stats_start_timing(STATS_FUELCALC_TIME);
+
   float ve;
   float lambda;
   float idt;
-  float atmos_kpa = config.sensors[SENSOR_AAP].processed_value;
-  float fueltemp = config.sensors[SENSOR_FRT].processed_value;
+
   float iat = config.sensors[SENSOR_IAT].processed_value;
-  float map = config.sensors[SENSOR_MAP].processed_value;
   float brv = config.sensors[SENSOR_BRV].processed_value;
+  float map = config.sensors[SENSOR_MAP].processed_value;
+  float aap = config.sensors[SENSOR_AAP].processed_value;
+  float frt = config.sensors[SENSOR_FRT].processed_value;
 
   if (config.ve) {
-    ve = interpolate_table_twoaxis(config.ve, config.decoder.rpm, map);
+    float load = map / aap * 100.0;
+    ve = interpolate_table_twoaxis(config.ve, config.decoder.rpm, load);
   } else {
     ve = 100.0;
   }
@@ -74,24 +106,93 @@ void calculate_fueling() {
     idt = 1000;
   }
 
-  float injested_volume_per_cycle = (ve / 100.0) * 
-    (map / atmos_kpa) * 
-    config.fueling.cylinder_cc;
+  calculated_values.airmass_per_cycle = calculate_airmass(ve, map, aap, iat);
 
-  float injested_mass_per_cycle = injested_volume_per_cycle *
-    air_density(iat, atmos_kpa);
-  config.fueling.airmass_per_cycle = injested_mass_per_cycle;
+  float fuel_vol_at_stoich = calculate_fuel_volume(
+      calculated_values.airmass_per_cycle,
+      frt);
 
-  float required_fuelvolume_per_cycle = injested_mass_per_cycle / 
-    config.fueling.fuel_stoich_ratio / fuel_density(fueltemp) / lambda;
-  config.fueling.fuelvol_per_cycle = required_fuelvolume_per_cycle;
+  calculated_values.fuelvol_per_cycle = fuel_vol_at_stoich / lambda;
 
-  float raw_pw_us = required_fuelvolume_per_cycle / 
+  float raw_pw_us = calculated_values.fuelvol_per_cycle / 
     config.fueling.injector_cc_per_minute * 60000000 / /* uS per minute */
     config.fueling.injections_per_cycle; /* This many pulses */
   
-  config.fueling.injector_dead_time = idt;
-
+  calculated_values.idt = idt;
+  calculated_values.ve = ve;
+  calculated_values.lambda = lambda;
   calculated_values.fueling_us = raw_pw_us + idt;
+
   stats_finish_timing(STATS_FUELCALC_TIME);
 }
+
+#ifdef UNITTEST
+#include <check.h>
+
+#include "check_platform.h"
+
+START_TEST(check_air_density) {
+
+  /* Confirm STP */
+  ck_assert_float_eq_tol(air_density(0.0, 100), 1.2754e-3, 0.000001);
+
+  ck_assert_float_eq_tol(air_density(20, 101.325), 1.2041e-3, 0.000001);
+} END_TEST
+
+START_TEST(check_fuel_density) {
+  ck_assert_float_eq_tol(fuel_density(15), 0.755, 0.001);
+  ck_assert_float_eq_tol(fuel_density(50), 0.721, 0.001);
+} END_TEST
+
+
+START_TEST(check_calculate_airmass) {
+
+  /* Airmass for perfect VE, full map, 0 C*/
+  float airmass = calculate_airmass(100, 100, 100, 0);
+
+  /* 70 MAP should be 70% of previous airmass */
+  ck_assert_float_eq_tol(calculate_airmass(100, 70, 100, 0), 
+      0.7 * airmass, 0.001);
+
+  /* 80 VE should be 80% of first airmass */
+  ck_assert_float_eq_tol(calculate_airmass(80, 100, 100, 0), 
+      0.8 * airmass, 0.001);
+
+  /* 70 MAP when aap is 70 as well should be the same as 70 %*/
+  ck_assert_float_eq_tol(calculate_airmass(100, 70, 70, 0), 
+      0.7 * airmass, 0.001);
+} END_TEST
+
+START_TEST(check_fuel_overduty) {
+
+  /* 10 ms for a complete revolution */
+  config.decoder.rpm = 6000;
+  config.fueling.injections_per_cycle = 1;
+  calculated_values.fueling_us = 8000;
+  ck_assert(!fuel_overduty());
+
+  calculated_values.fueling_us = 11000;
+  ck_assert(fuel_overduty());
+
+
+  /* Test batch injection */
+  config.fueling.injections_per_cycle = 2;
+  calculated_values.fueling_us = 8000;
+  ck_assert(fuel_overduty());
+
+  calculated_values.fueling_us = 4500;
+  ck_assert(!fuel_overduty());
+
+} END_TEST
+
+TCase *setup_calculations_tests() {
+  TCase *tc = tcase_create("calculations");
+  tcase_add_test(tc, check_air_density);
+  tcase_add_test(tc, check_fuel_density);
+  tcase_add_test(tc, check_calculate_airmass);
+  tcase_add_test(tc, check_fuel_overduty);
+
+  return tc;
+}
+#endif
+
