@@ -441,6 +441,23 @@ START_TEST(check_cam_nplusone_startup_normal_no_second_trigger) {
 
 } END_TEST
 
+START_TEST(check_nplusone_decoder_syncloss_expire) {
+  struct decoder_event cam_nplusone_startup_events[] = {
+    {1, 0, 18000, DECODER_NOSYNC, 0, 0},
+    {1, 0, 25000, DECODER_NOSYNC, 0, 0},
+    {1, 0, 50000, DECODER_NOSYNC, 0, 0},
+    {1, 0, 75000, DECODER_NOSYNC, 0, 0},
+    {1, 0, 100000, DECODER_RPM, 0, 0},
+    {0, 1, 100500, DECODER_SYNC, 1, 0},
+    {1, 0, 125000, DECODER_SYNC, 1, 0},
+  };
+  prepare_decoder(TOYOTA_24_1_CAS);
+  validate_decoder_sequence(cam_nplusone_startup_events, 7);
+
+  ck_assert_int_eq(config.decoder.expiration, 162500);
+
+} END_TEST
+
 TCase *setup_decoder_tests() {
   TCase *decoder_tests = tcase_create("decoder");
   tcase_add_test(decoder_tests, check_tfi_decoder_startup_normal);
@@ -450,6 +467,7 @@ TCase *setup_decoder_tests() {
   tcase_add_test(decoder_tests, check_cam_nplusone_startup_normal_then_die);
   tcase_add_test(decoder_tests, check_cam_nplusone_startup_normal_sustained);
   tcase_add_test(decoder_tests, check_cam_nplusone_startup_normal_no_second_trigger);
+  tcase_add_test(decoder_tests, check_nplusone_decoder_syncloss_expire);
   return decoder_tests;
 }
 #endif
