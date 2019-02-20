@@ -57,7 +57,7 @@ check: tfi
 	./tfi
 
 coverage: check
-	./check
+	./tfi
 	gcovr -r .
 
 

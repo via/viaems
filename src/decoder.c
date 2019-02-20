@@ -71,7 +71,10 @@ static void trigger_update(struct decoder *d, timeval_t t) {
 
 static void sync_update(struct decoder *d) {
   d->t1_count++;
-  if (d->state == DECODER_RPM || d->state == DECODER_SYNC) {
+  if (d->state == DECODER_RPM) {
+    d->state = DECODER_SYNC;
+    d->last_trigger_angle = 0;
+  } else if (d->state == DECODER_SYNC) {
     if (d->triggers_since_last_sync == d->num_triggers) {
       d->state = DECODER_SYNC;
       d->last_trigger_angle = 0;
@@ -282,7 +285,7 @@ static void validate_decoder_sequence(struct decoder_event *ev, int num) {
 }
 
 static void prepare_decoder(trigger_type type) {
-  config.trigger = type;
+  config.decoder.type = type;
   decoder_init(&config.decoder);
 }
 
@@ -320,11 +323,47 @@ START_TEST(check_tfi_decoder_syncloss_expire) {
   ck_assert_int_eq(DECODER_EXPIRED, config.decoder.loss);
 } END_TEST
 
+
+START_TEST(check_cam_nplusone_startup_normal) {
+  struct decoder_event cam_nplusone_startup_events[] = {
+    {1, 0, 18000, DECODER_NOSYNC, 0, 0},
+    {1, 0, 25000, DECODER_NOSYNC, 0, 0},
+    {1, 0, 50000, DECODER_NOSYNC, 0, 0},
+    {1, 0, 75000, DECODER_NOSYNC, 0, 0},
+    {1, 0, 100000, DECODER_RPM, 0, 0},
+    {0, 1, 100500, DECODER_SYNC, 1, 0},
+    {1, 0, 125000, DECODER_SYNC, 1, 0},
+  };
+  prepare_decoder(TOYOTA_24_1_CAS);
+  validate_decoder_sequence(cam_nplusone_startup_events, 7);
+  ck_assert_int_eq(config.decoder.last_trigger_angle, 30);
+
+} END_TEST
+
+START_TEST(check_cam_nplusone_startup_normal_then_die) {
+  struct decoder_event cam_nplusone_startup_death_events[] = {
+    {1, 0, 18000, DECODER_NOSYNC, 0, 0},
+    {1, 0, 25000, DECODER_NOSYNC, 0, 0},
+    {1, 0, 50000, DECODER_NOSYNC, 0, 0},
+    {1, 0, 75000, DECODER_NOSYNC, 0, 0},
+    {1, 0, 100000, DECODER_RPM, 0, 0},
+    {0, 1, 100500, DECODER_SYNC, 1, 0},
+    {1, 0, 125000, DECODER_SYNC, 1, 0},
+    {0, 1, 150000, DECODER_NOSYNC, 0, DECODER_TRIGGERCOUNT_LOW},
+  };
+
+  prepare_decoder(TOYOTA_24_1_CAS);
+  validate_decoder_sequence(cam_nplusone_startup_death_events, 8);
+
+} END_TEST
+
 TCase *setup_decoder_tests() {
   TCase *decoder_tests = tcase_create("decoder");
   tcase_add_test(decoder_tests, check_tfi_decoder_startup_normal);
   tcase_add_test(decoder_tests, check_tfi_decoder_syncloss_variation);
   tcase_add_test(decoder_tests, check_tfi_decoder_syncloss_expire);
+  tcase_add_test(decoder_tests, check_cam_nplusone_startup_normal);
+  tcase_add_test(decoder_tests, check_cam_nplusone_startup_normal_then_die);
   return decoder_tests;
 }
 #endif
