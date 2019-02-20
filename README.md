@@ -184,5 +184,4 @@ To run the unit tests:
 cd src/
 make clean
 make check
-./check
 ```
