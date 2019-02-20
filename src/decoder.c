@@ -357,6 +357,90 @@ START_TEST(check_cam_nplusone_startup_normal_then_die) {
 
 } END_TEST
 
+START_TEST(check_cam_nplusone_startup_normal_sustained) {
+  struct decoder_event cam_nplusone_startup_events[] = {
+    {1, 0, 18000, DECODER_NOSYNC, 0, 0},
+    {1, 0, 25000, DECODER_NOSYNC, 0, 0},
+    {1, 0, 50000, DECODER_NOSYNC, 0, 0},
+    {1, 0, 75000, DECODER_NOSYNC, 0, 0},
+    {1, 0, 100000, DECODER_RPM, 0, 0},
+    {0, 1, 100500, DECODER_SYNC, 1, 0}, /* sync */
+    {1, 0, 125000, DECODER_SYNC, 1, 0},
+    {1, 0, 150000, DECODER_SYNC, 1, 0},
+    {1, 0, 175000, DECODER_SYNC, 1, 0},
+    {1, 0, 200000, DECODER_SYNC, 1, 0},
+    {1, 0, 225000, DECODER_SYNC, 1, 0},
+    {1, 0, 250000, DECODER_SYNC, 1, 0},
+    {1, 0, 275000, DECODER_SYNC, 1, 0},
+    {1, 0, 300000, DECODER_SYNC, 1, 0},
+    {1, 0, 325000, DECODER_SYNC, 1, 0},
+    {1, 0, 350000, DECODER_SYNC, 1, 0},
+    {1, 0, 375000, DECODER_SYNC, 1, 0},
+    {1, 0, 400000, DECODER_SYNC, 1, 0},
+    {1, 0, 425000, DECODER_SYNC, 1, 0},
+    {1, 0, 450000, DECODER_SYNC, 1, 0},
+    {1, 0, 475000, DECODER_SYNC, 1, 0},
+    {1, 0, 500000, DECODER_SYNC, 1, 0},
+    {1, 0, 525000, DECODER_SYNC, 1, 0},
+    {1, 0, 550000, DECODER_SYNC, 1, 0},
+    {1, 0, 575000, DECODER_SYNC, 1, 0},
+    {1, 0, 600000, DECODER_SYNC, 1, 0},
+    {1, 0, 625000, DECODER_SYNC, 1, 0},
+    {1, 0, 650000, DECODER_SYNC, 1, 0},
+    {1, 0, 675000, DECODER_SYNC, 1, 0},
+    {1, 0, 700000, DECODER_SYNC, 1, 0},
+    {0, 1, 700500, DECODER_SYNC, 1, 0}, /* sync */
+    {1, 0, 725000, DECODER_SYNC, 1, 0},
+    {1, 0, 750000, DECODER_SYNC, 1, 0},
+  };
+
+  prepare_decoder(TOYOTA_24_1_CAS);
+  validate_decoder_sequence(cam_nplusone_startup_events, 33);
+  ck_assert_int_eq(config.decoder.last_trigger_angle, 60);
+
+} END_TEST
+
+START_TEST(check_cam_nplusone_startup_normal_no_second_trigger) {
+  struct decoder_event cam_nplusone_startup_events[] = {
+    {1, 0, 18000, DECODER_NOSYNC, 0, 0},
+    {1, 0, 25000, DECODER_NOSYNC, 0, 0},
+    {1, 0, 50000, DECODER_NOSYNC, 0, 0},
+    {1, 0, 75000, DECODER_NOSYNC, 0, 0},
+    {1, 0, 100000, DECODER_RPM, 0, 0},
+    {0, 1, 100500, DECODER_SYNC, 1, 0}, /* sync */
+    {1, 0, 125000, DECODER_SYNC, 1, 0},
+    {1, 0, 150000, DECODER_SYNC, 1, 0},
+    {1, 0, 175000, DECODER_SYNC, 1, 0},
+    {1, 0, 200000, DECODER_SYNC, 1, 0},
+    {1, 0, 225000, DECODER_SYNC, 1, 0},
+    {1, 0, 250000, DECODER_SYNC, 1, 0},
+    {1, 0, 275000, DECODER_SYNC, 1, 0},
+    {1, 0, 300000, DECODER_SYNC, 1, 0},
+    {1, 0, 325000, DECODER_SYNC, 1, 0},
+    {1, 0, 350000, DECODER_SYNC, 1, 0},
+    {1, 0, 375000, DECODER_SYNC, 1, 0},
+    {1, 0, 400000, DECODER_SYNC, 1, 0},
+    {1, 0, 425000, DECODER_SYNC, 1, 0},
+    {1, 0, 450000, DECODER_SYNC, 1, 0},
+    {1, 0, 475000, DECODER_SYNC, 1, 0},
+    {1, 0, 500000, DECODER_SYNC, 1, 0},
+    {1, 0, 525000, DECODER_SYNC, 1, 0},
+    {1, 0, 550000, DECODER_SYNC, 1, 0},
+    {1, 0, 575000, DECODER_SYNC, 1, 0},
+    {1, 0, 600000, DECODER_SYNC, 1, 0},
+    {1, 0, 625000, DECODER_SYNC, 1, 0},
+    {1, 0, 650000, DECODER_SYNC, 1, 0},
+    {1, 0, 675000, DECODER_SYNC, 1, 0},
+    {1, 0, 700000, DECODER_SYNC, 1, 0},
+    {1, 0, 725000, DECODER_NOSYNC, 0, DECODER_TRIGGERCOUNT_HIGH},
+    {1, 0, 750000, DECODER_NOSYNC, 0, DECODER_TRIGGERCOUNT_HIGH},
+  };
+
+  prepare_decoder(TOYOTA_24_1_CAS);
+  validate_decoder_sequence(cam_nplusone_startup_events, 32);
+
+} END_TEST
+
 TCase *setup_decoder_tests() {
   TCase *decoder_tests = tcase_create("decoder");
   tcase_add_test(decoder_tests, check_tfi_decoder_startup_normal);
@@ -364,6 +448,8 @@ TCase *setup_decoder_tests() {
   tcase_add_test(decoder_tests, check_tfi_decoder_syncloss_expire);
   tcase_add_test(decoder_tests, check_cam_nplusone_startup_normal);
   tcase_add_test(decoder_tests, check_cam_nplusone_startup_normal_then_die);
+  tcase_add_test(decoder_tests, check_cam_nplusone_startup_normal_sustained);
+  tcase_add_test(decoder_tests, check_cam_nplusone_startup_normal_no_second_trigger);
   return decoder_tests;
 }
 #endif
