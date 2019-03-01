@@ -28,6 +28,7 @@ typedef enum {
 typedef enum {
   METHOD_LINEAR,
   METHOD_TABLE,
+  METHOD_THERM,
 } sensor_method;
 
 typedef enum {
@@ -35,6 +36,11 @@ typedef enum {
   FAULT_RANGE,
   FAULT_CONN,
 } sensor_fault;
+
+struct thermistor_config {
+  float bias;
+  float a, b, c;
+};
 
 struct sensor_input {
   int pin;
@@ -48,6 +54,7 @@ struct sensor_input {
     } range;
     struct table *table;
     float fixed_value;
+    struct thermistor_config therm;
   } params;
 
   uint32_t raw_value;

@@ -299,6 +299,9 @@ static void console_get_sensor(const struct console_config_node *self, char *des
     case METHOD_TABLE:
       method = "table";
       break;
+    case METHOD_THERM:
+      method = "therm";
+      break;
   }
 
   dest += sprintf(dest, "source=%s method=%s pin=%d ", source, method, s->pin);
@@ -309,6 +312,10 @@ static void console_get_sensor(const struct console_config_node *self, char *des
         s->params.range.min, s->params.range.max);
   } else if (s->method == METHOD_TABLE) {
     dest += sprintf(dest, "table=%s ", "unsupported");
+  } else if (s->method == METHOD_THERM) {
+    dest += sprintf(dest, "therm-bias=%f therm-a=%f therm-b=%f therm-c=%f ", 
+        s->params.therm.bias, s->params.therm.a,
+        s->params.therm.b, s->params.therm.c);
   }
   sprintf(dest, "fault-min=%u fault-max=%u fault-val=%.2f lag=%f", 
       (unsigned int)s->fault_config.min, 
@@ -340,6 +347,8 @@ static sensor_method console_sensor_method_from_str(const char *str) {
     return METHOD_LINEAR;
   } else if (!strcmp("table", str)) {
     return METHOD_TABLE;
+  } else if (!strcmp("therm", str)) {
+    return METHOD_THERM;
   }
   return METHOD_TABLE;
 }  
@@ -368,6 +377,14 @@ static void console_set_sensor(const struct console_config_node *self,
       s->params.range.min = atof(v);
     } else if (!strcmp("range-max", k)) {
       s->params.range.max = atof(v);
+    } else if (!strcmp("therm-bias", k)) {
+      s->params.therm.bias = atof(v);
+    } else if (!strcmp("therm-a", k)) {
+      s->params.therm.a = atof(v);
+    } else if (!strcmp("therm-b", k)) {
+      s->params.therm.b = atof(v);
+    } else if (!strcmp("therm-c", k)) {
+      s->params.therm.c = atof(v);
     } else if (!strcmp("fault-min", k)) {
       s->fault_config.min = atoi(v);
     } else if (!strcmp("fault-max", k)) {
