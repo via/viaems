@@ -110,6 +110,8 @@ sensors_process() {
     }
   }
 
+  adc_data_ready = 0;
+  freq_data_ready = 0;
 }
 
 void sensor_adc_new_data() {
