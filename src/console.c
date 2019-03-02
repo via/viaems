@@ -174,7 +174,7 @@ static void console_set_table_axis_labels(struct table_axis *t, char *list) {
     if ((cur >= t->num) || (cur >= MAX_AXIS_SIZE)) {
       return;
     }
-    t->values[cur] = atoi(curlabel);
+    t->values[cur] = atof(curlabel);
     curlabel = strtok_r(NULL, ",]", &saveptr);
     cur++;
   }
@@ -214,7 +214,7 @@ static void console_get_table_axis_labels(const struct table_axis *t, char *dest
   char buf[32];
   strcat(dest, "[");
   for (int i = 0; i < t->num; ++i) {
-    sprintf(buf, "%d", t->values[i]);
+    sprintf(buf, "%.1f", t->values[i]);
     strcat(dest, buf);
     if (i != t->num - 1) {
       strcat(dest, ",");
@@ -705,11 +705,13 @@ static struct console_config_node console_config_nodes[] = {
    .get=console_get_table, .set=console_set_table},
   {.name="config.tables.clt_timing_adjust",
    .get=console_get_table, .set=console_set_table},
-  {.name="config.tables.ve",
+  {.name="config.tables.clt_pw_adjust",
    .get=console_get_table, .set=console_set_table},
-  {.name="config.tables.commanded_lambda",
+  {.name="config.tables.ve", .val=&ve_vs_rpm_and_map,
    .get=console_get_table, .set=console_set_table},
-  {.name="config.tables.injector_pw_compensation", .val=&injector_dead_time,
+  {.name="config.tables.commanded_lambda", .val=&lambda_vs_rpm_and_map,
+   .get=console_get_table, .set=console_set_table},
+  {.name="config.tables.injector_dead_time", .val=&injector_dead_time,
    .get=console_get_table, .set=console_set_table},
 
   /* Decoding */
@@ -1359,7 +1361,7 @@ START_TEST(check_console_set_table) {
   const struct console_config_node n = {.val = &t};
 
   char buf[] = "name=test naxis=2 rows=3 cols=3 rowname=row colname=col "
-    "rowlabels=[1,2,3] collabels=[5,6,7] [0][0]=5.0";
+    "rowlabels=[1,2,3] collabels=[5,6,7.2] [0][0]=5.0";
 
   console_set_table(&n, buf);
   ck_assert_str_eq(t.title, "test");
@@ -1369,13 +1371,13 @@ START_TEST(check_console_set_table) {
   ck_assert_str_eq(t.axis[0].name, "row");
   ck_assert_str_eq(t.axis[1].name, "col");
 
-  ck_assert_int_eq(t.axis[0].values[0], 1);
-  ck_assert_int_eq(t.axis[0].values[1], 2);
-  ck_assert_int_eq(t.axis[0].values[2], 3);
+  ck_assert_float_eq(t.axis[0].values[0], 1);
+  ck_assert_float_eq(t.axis[0].values[1], 2);
+  ck_assert_float_eq(t.axis[0].values[2], 3);
 
-  ck_assert_int_eq(t.axis[1].values[0], 5);
-  ck_assert_int_eq(t.axis[1].values[1], 6);
-  ck_assert_int_eq(t.axis[1].values[2], 7);
+  ck_assert_float_eq(t.axis[1].values[0], 5);
+  ck_assert_float_eq(t.axis[1].values[1], 6);
+  ck_assert_float_eq(t.axis[1].values[2], 7.2);
 
   ck_assert_float_eq(t.data.two[0][0], 5.0);
 
@@ -1398,7 +1400,7 @@ START_TEST(check_console_get_table) {
     .num_axis = 2,
     .axis[0] = {
       .name = "rows", .num = 3,
-      .values = {1, 2, 3},
+      .values = {1, 2.0, 3},
     },
     .axis[1] = {
       .name = "cols", .num = 3,
@@ -1419,10 +1421,10 @@ START_TEST(check_console_get_table) {
   ck_assert_ptr_nonnull(strstr(buf, "naxis=2"));
   ck_assert_ptr_nonnull(strstr(buf, "rows=3"));
   ck_assert_ptr_nonnull(strstr(buf, "rowname=rows"));
-  ck_assert_ptr_nonnull(strstr(buf, "rowlabels=[1,2,3]"));
+  ck_assert_ptr_nonnull(strstr(buf, "rowlabels=[1.0,2.0,3.0]"));
   ck_assert_ptr_nonnull(strstr(buf, "cols=3"));
   ck_assert_ptr_nonnull(strstr(buf, "colname=cols"));
-  ck_assert_ptr_nonnull(strstr(buf, "collabels=[5,6,7]"));
+  ck_assert_ptr_nonnull(strstr(buf, "collabels=[5.0,6.0,7.0]"));
 
   char cmd2[] = "[1][1]";
   console_get_table(&n, buf, cmd2);

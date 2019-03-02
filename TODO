@@ -1,12 +1,13 @@
-- Detect overlapping output schedules
+- Detect overlapping output schedules on same pin
 - New frequency sensors that use DMA (TBD)
 + Trigger input DMA to circular buffer
 + Refactor decoder trigger interface now that it is synchronous
-+ Pluggable generic system for driving these from the main loop
-    for non-timing-critical things:
++ Refactor sensor interface now that it is synchronous
++ Dwell time vs BRV
++ CLT/IAT enrich/timing code
++ Basic tasks
     + Boost control
     + Fan control
     + Idle Control
-    + Fuel Pump Control (FP disable when engine stop)
     + Priming
     + Tip in Enrich

@@ -6,7 +6,7 @@
 struct table_axis {
   char name[32];
   unsigned char num; /* Max of 24 */
-  int values[MAX_AXIS_SIZE];
+  float values[MAX_AXIS_SIZE];
 };
   
 

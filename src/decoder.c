@@ -180,7 +180,7 @@ void decoder_init(struct decoder *d) {
       break;
     case TOYOTA_24_1_CAS:
       d->decode = cam_nplusone_decoder;
-      d->required_triggers_rpm = 4;
+      d->required_triggers_rpm = 8;
       d->degrees_per_trigger = 30;
       d->rpm_window_size = 3;
       d->num_triggers = 24;
