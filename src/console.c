@@ -313,7 +313,7 @@ static void console_get_sensor(const struct console_config_node *self, char *des
   } else if (s->method == METHOD_TABLE) {
     dest += sprintf(dest, "table=%s ", "unsupported");
   } else if (s->method == METHOD_THERM) {
-    dest += sprintf(dest, "therm-bias=%f therm-a=%f therm-b=%f therm-c=%f ", 
+    dest += sprintf(dest, "therm-bias=%.2f therm-a=%e therm-b=%e therm-c=%e ", 
         s->params.therm.bias, s->params.therm.a,
         s->params.therm.b, s->params.therm.c);
   }
