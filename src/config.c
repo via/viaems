@@ -79,8 +79,14 @@ struct config config __attribute__((section(".configdata"))) = {
       .fault_config={.min = 100, .max = 4000, .fault_value = 13.8}},
     [SENSOR_IAT] = {.pin=1, .source=SENSOR_ADC, .method=METHOD_LINEAR,
       .params={.range={.min=0, .max=100}}},
-    [SENSOR_CLT] = {.pin=2, .source=SENSOR_ADC, .method=METHOD_LINEAR,
-      .params={.range={.min=0, .max=100}}},
+    [SENSOR_CLT] = {.pin=2, .source=SENSOR_ADC, .method=METHOD_THERM,
+      .params={
+        .therm={
+          .bias=2490,
+          .a=0.00131586818223649,
+          .b=0.00025618700140100302,
+          .c=0.00000018474199456928
+        }}},
     [SENSOR_TPS] = {.pin=3, .source=SENSOR_ADC, .method=METHOD_LINEAR,
       .params={.range={.min=0, .max=100}},
       .fault_config={.min = 100, .max = 4000, .fault_value = 25.0},

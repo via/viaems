@@ -87,12 +87,13 @@ value into a usable number:
 Member | Meaning
 --- | ---
 `pin` | pin to use on TLC2543
-`method` | Processing method, currently supported are linear interpolation and table lookup
+`method` | Processing method, currently supported are linear interpolation, table looksup, and thermistors
 `source` | Type of sensor, currently supported are analog and frequency based.
 `params` | Union used to configure a sensor. Contains `range` used for calculated sensors, and `table` for table lookup sensors.
 `lag` | Lag filtering value. 0 means no filtering, 100 will effectively never change.
 `params.range.min` | For processing, value that lowest raw sensor value reflects
 `params.range.max` | For processing, value that highest raw sensor value reflects
+`params.therm` | For processing, Bias resistor and A, B and C parameters of the Steinart-Hart equation
 `fault_config.min` | Raw sensor value, below this indicates sensor fault
 `fault_config.max` | Raw sensor value, above this indicates sensor fault
 `fault_config.fault_value` | During sensor fault, use this fallback value

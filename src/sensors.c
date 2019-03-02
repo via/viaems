@@ -1,6 +1,9 @@
+#include <math.h>
+
 #include "sensors.h"
 #include "config.h"
 #include "platform.h"
+#include "stats.h"
 
 static volatile int adc_data_ready;
 static volatile int freq_data_ready;
@@ -19,6 +22,15 @@ static float sensor_convert_freq(float raw) {
   } else {
     return 0.0; /* Prevent Div by Zero */
   }
+}
+
+float sensor_convert_thermistor(struct thermistor_config *tc, float raw) {
+  stats_start_timing(STATS_SENSOR_THERM_TIME);
+  float r = tc->bias / ((4096.0f / raw) - 1);
+  float t = 1 / (tc->a + tc->b * logf(r) + tc->c * powf(logf(r), 3));
+  stats_finish_timing(STATS_SENSOR_THERM_TIME);
+
+  return t - 273.15f;
 
 }
 
@@ -60,6 +72,9 @@ static void sensor_convert(struct sensor_input *in) {
     case METHOD_TABLE:
       in->processed_value = interpolate_table_oneaxis(in->params.table, raw);
       break;
+    case METHOD_THERM:
+      in->processed_value = sensor_convert_thermistor(&in->params.therm, raw);
+      break;
   }
 
 
@@ -98,6 +113,8 @@ sensors_process() {
     }
   }
 
+  adc_data_ready = 0;
+  freq_data_ready = 0;
 }
 
 void sensor_adc_new_data() {
@@ -148,10 +165,26 @@ START_TEST(check_sensor_convert_freq) {
 
 } END_TEST
 
+START_TEST(check_sensor_convert_therm) {
+  // test parameters for my CHT sensor
+  struct thermistor_config tc = {
+    .bias = 2490.0,
+    .a = 0.00131586818223649,
+    .b = 0.000256187001401003,
+    .c = 1.84741994569279E-07,
+  };
+
+  ck_assert_float_eq_tol(sensor_convert_thermistor(&tc, 2048), 20.31, 0.2);
+
+  ck_assert_float_eq_tol(sensor_convert_thermistor(&tc, 4092), -97.43, 0.2);
+
+} END_TEST
+
 TCase *setup_sensor_tests() {
   TCase *sensor_tests = tcase_create("sensors");
   tcase_add_test(sensor_tests, check_sensor_convert_linear);
   tcase_add_test(sensor_tests, check_sensor_convert_freq);
+  tcase_add_test(sensor_tests, check_sensor_convert_therm);
   return sensor_tests;
 }
 

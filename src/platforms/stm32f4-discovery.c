@@ -851,6 +851,7 @@ void dma1_stream3_isr(void) {
   
   sensor_adc_new_data();
   sensors_process();
+  adc_gather_in_progress = 0;
 }
 
 /* This is now the lowest priority interrupt, with buffer swapping and sensor
