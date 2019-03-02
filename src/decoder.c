@@ -227,8 +227,8 @@ void decoder_update_scheduling(int trigger, timeval_t time) {
     for (unsigned int e = 0; e < config.num_events; ++e) {
       schedule_event(&config.events[e]);
     }
+    stats_finish_timing(STATS_SCHED_TOTAL_TIME);
   }
-  stats_finish_timing(STATS_SCHED_TOTAL_TIME);
   stats_finish_timing(STATS_SCHEDULE_LATENCY);
 }
 
