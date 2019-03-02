@@ -44,6 +44,9 @@ struct stats_entry stats_entries[] = {
 	[STATS_DECODE_TIME] = {
 		.name = "decode_time",
 	},
+	[STATS_SENSOR_THERM_TIME] = {
+		.name = "sensor_therm_time",
+	},
 	[STATS_FUELCALC_TIME] = {
 		.name = "fuelcalc_time",
 	},

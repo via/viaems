@@ -3,6 +3,7 @@
 #include "sensors.h"
 #include "config.h"
 #include "platform.h"
+#include "stats.h"
 
 static volatile int adc_data_ready;
 static volatile int freq_data_ready;
@@ -24,10 +25,12 @@ static float sensor_convert_freq(float raw) {
 }
 
 float sensor_convert_thermistor(struct thermistor_config *tc, float raw) {
-
+  stats_start_timing(STATS_SENSOR_THERM_TIME);
   float r = tc->bias / ((4096.0f / raw) - 1);
   float t = 1 / (tc->a + tc->b * logf(r) + tc->c * powf(logf(r), 3));
-  return t - 273.15;
+  stats_finish_timing(STATS_SENSOR_THERM_TIME);
+
+  return t - 273.15f;
 
 }
 
