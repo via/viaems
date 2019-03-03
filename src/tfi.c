@@ -27,6 +27,10 @@ int main() {
     handle_fuel_pump();
     handle_boost_control();
     handle_idle_control();
+
+    if (!config.decoder.valid) {
+      adc_gather();
+    }
   }
 
   return 0;

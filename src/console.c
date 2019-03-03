@@ -906,10 +906,16 @@ void console_init() {
     "status.decoder_state",
     "status.rpm",
     "status.rpm_variance",
+    "status.decoder_t0_count",
+    "status.decoder_t1_count",
     "status.timing_advance",
+    "status.fueling_us",
     "status.sensors.brv",
     "status.sensors.map",
     "status.sensors.tps",
+    "status.sensors.iat",
+    "status.sensors.clt",
+    "status.sensors.ego",
     NULL,
   };
 
