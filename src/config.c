@@ -1,6 +1,26 @@
 #include "config.h"
 #include "sensors.h"
 
+struct table enrich_vs_temp_and_map __attribute__((section(".configdata"))) = {
+  .title = "ve", .num_axis = 2,
+  .axis = { { 
+      .name = "TEMP", .num = 6,
+      .values = {-20, 0, 20, 40, 102, 120},
+    },
+    { .name = "MAP", .num = 4,
+      .values = {20, 60, 80, 100},
+    },
+  },
+  .data = {
+    .two = {
+      {2.5, 2.0, 1.5, 1.0, 1.0, 1.2},
+      {2.0, 1.5, 1.3, 1.0, 1.0, 1.2},
+      {1.5, 1.4, 1.2, 1.0, 1.0, 1.2},
+      {1.2, 1.2, 1.1, 1.0, 1.0, 1.2},
+    },
+  },
+};
+
 struct table ve_vs_rpm_and_map __attribute__((section(".configdata"))) = {
   .title = "ve", .num_axis = 2,
   .axis = { { 
@@ -171,6 +191,7 @@ struct config config __attribute__((section(".configdata"))) = {
   .injector_pw_compensation = &injector_dead_time,
   .ve = &ve_vs_rpm_and_map,
   .commanded_lambda = &lambda_vs_rpm_and_map,
+  .engine_temp_enrich = &enrich_vs_temp_and_map,
   .rpm_stop = 6700,
   .rpm_start = 6200,
   .fueling = {
