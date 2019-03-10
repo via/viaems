@@ -723,7 +723,7 @@ static struct console_config_node console_config_nodes[] = {
   {.name="config.decoder.max_variance", .val=&config.decoder.trigger_cur_rpm_change,
    .get=console_get_float, .set=console_set_float},
   {.name="config.decoder.offset", .val=&config.decoder.offset,
-   .get=console_get_uint, .set=console_set_uint},
+   .get=console_get_float, .set=console_set_float},
   {.name="config.decoder.min_rpm", .val=&config.decoder.trigger_min_rpm,
    .get=console_get_uint, .set=console_set_uint},
 

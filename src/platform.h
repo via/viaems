@@ -27,7 +27,7 @@ void disable_event_timer();
 
 void platform_init();
 
-void disable_interrupts();
+int disable_interrupts();
 void enable_interrupts();
 int interrupts_enabled();
 

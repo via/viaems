@@ -32,8 +32,10 @@ void check_platform_reset() {
   initialize_scheduler();
 }
 
-void disable_interrupts() {
+int disable_interrupts() {
+  int old = int_on;
   int_on = 0;
+  return old;
 }
 
 void enable_interrupts() {

@@ -22,6 +22,7 @@
 #include "sensors.h"
 #include "util.h"
 #include "config.h"
+#include "tasks.h"
 #include "stats.h"
 
 #include <stdlib.h>
@@ -902,9 +903,12 @@ void enable_interrupts() {
   cm_enable_interrupts();
 }
 
-void disable_interrupts() {
+/* Returns current enabled status prior to call */
+int disable_interrupts() {
+  int ret = interrupts_enabled();
   cm_disable_interrupts();
   stats_start_timing(STATS_INT_DISABLE_TIME);
+  return ret;
 }
 
 int interrupts_enabled() {
@@ -1034,10 +1038,29 @@ size_t console_write(const void *buf, size_t count) {
   return rem;
 }
 
+/* This should only ever be used in an emergency */
 ssize_t _write(int fd, const void *buf, size_t count) {
   (void)fd;
 
-  return console_write(buf, count);
+  while (count > 0) {
+    size_t written = console_write(buf, count);
+    if (written == 0) {
+      return 0;
+    }
+    buf += written;
+    count -= written;
+    usbd_poll(usbd_dev);
+  }
+  return count;
+}
+
+void _exit(int status) {
+  (void)status;
+  
+  handle_emergency_shutdown();
+  while (1) {
+    usbd_poll(usbd_dev);
+  }
 }
 
 /* TODO: implement graceful shutdown of outputs on fault */
