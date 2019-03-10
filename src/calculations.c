@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <math.h>
 
 #include "config.h"
 #include "calculations.h"
@@ -7,7 +8,7 @@ struct calculated_values calculated_values;
 
 static int fuel_overduty() {
   /* Maximum pulse width */
-  timeval_t max_pw = time_from_rpm_diff(config.decoder.rpm, 360) / config.fueling.injections_per_cycle;
+  timeval_t max_pw = time_from_rpm_diff(config.decoder.rpm, 720) / config.fueling.injections_per_cycle;
 
   return time_from_us(calculated_values.fueling_us) >= max_pw;
 }
@@ -175,22 +176,22 @@ START_TEST(check_calculate_airmass) {
 
 START_TEST(check_fuel_overduty) {
 
-  /* 10 ms for a complete revolution */
+  /* 20 ms for two complete revolutions */
   config.decoder.rpm = 6000;
   config.fueling.injections_per_cycle = 1;
-  calculated_values.fueling_us = 8000;
+  calculated_values.fueling_us = 18000;
   ck_assert(!fuel_overduty());
 
-  calculated_values.fueling_us = 11000;
+  calculated_values.fueling_us = 21000;
   ck_assert(fuel_overduty());
 
 
   /* Test batch injection */
   config.fueling.injections_per_cycle = 2;
-  calculated_values.fueling_us = 8000;
+  calculated_values.fueling_us = 11000;
   ck_assert(fuel_overduty());
 
-  calculated_values.fueling_us = 4500;
+  calculated_values.fueling_us = 8000;
   ck_assert(!fuel_overduty());
 
 } END_TEST
