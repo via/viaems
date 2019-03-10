@@ -1,5 +1,6 @@
 - Detect overlapping output schedules on same pin
 - New frequency sensors that use DMA (TBD)
++ Improve decoder tests to be less brittle on slight config changes
 + Trigger input DMA to circular buffer
 + Refactor decoder trigger interface now that it is synchronous
 + Refactor sensor interface now that it is synchronous
