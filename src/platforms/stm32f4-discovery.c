@@ -207,21 +207,21 @@ static void platform_init_eventtimer() {
   gpio_set_af(GPIOB, GPIO_AF1, GPIO3);
   timer_ic_set_input(TIM2, TIM_IC2, TIM_IC_IN_TI2);
   timer_ic_set_filter(TIM2, TIM_IC2, TIM_IC_CK_INT_N_2);
-  timer_ic_set_polarity(TIM2, TIM_IC2, TIM_IC_FALLING);
+  timer_ic_set_polarity(TIM2, TIM_IC2, TIM_IC_RISING);
   timer_ic_enable(TIM2, TIM_IC2);
 
   gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_PULLDOWN, GPIO10);
   gpio_set_af(GPIOB, GPIO_AF1, GPIO10);
   timer_ic_set_input(TIM2, TIM_IC3, TIM_IC_IN_TI3);
   timer_ic_set_filter(TIM2, TIM_IC3, TIM_IC_CK_INT_N_2);
-  timer_ic_set_polarity(TIM2, TIM_IC3, TIM_IC_FALLING);
+  timer_ic_set_polarity(TIM2, TIM_IC3, TIM_IC_RISING);
   timer_ic_enable(TIM2, TIM_IC3);
 
   gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_PULLDOWN, GPIO11);
   gpio_set_af(GPIOB, GPIO_AF1, GPIO11);
   timer_ic_set_input(TIM2, TIM_IC4, TIM_IC_IN_TI4);
   timer_ic_set_filter(TIM2, TIM_IC4, TIM_IC_CK_INT_N_2);
-  timer_ic_set_polarity(TIM2, TIM_IC4, TIM_IC_FALLING);
+  timer_ic_set_polarity(TIM2, TIM_IC4, TIM_IC_RISING);
   timer_ic_enable(TIM2, TIM_IC4);
 
   timer_enable_counter(TIM2);
@@ -870,13 +870,22 @@ void tim2_isr() {
   stats_increment_counter(STATS_INT_RATE);
   stats_increment_counter(STATS_INT_EVENTTIMER_RATE);
   stats_start_timing(STATS_INT_TOTAL_TIME);
-  if (timer_get_flag(TIM2, TIM_SR_CC2IF)) {
-    timer_clear_flag(TIM2, TIM_SR_CC2IF);
-    decoder_update_scheduling(0, TIM2_CCR2);
-  }
-  if (timer_get_flag(TIM2, TIM_SR_CC3IF)) {
-    timer_clear_flag(TIM2, TIM_SR_CC3IF);
-    decoder_update_scheduling(1, TIM2_CCR3);
+  if (timer_get_flag(TIM2, TIM_SR_CC1IF) &&
+      timer_get_flag(TIM2, TIM_SR_CC3IF) &&
+      time_in_range(TIM2_CCR2, TIM2_CCR3, current_time())) {
+      timer_clear_flag(TIM2, TIM_SR_CC2IF);
+      timer_clear_flag(TIM2, TIM_SR_CC3IF);
+      decoder_update_scheduling(1, TIM2_CCR3);
+      decoder_update_scheduling(0, TIM2_CCR2);
+  } else {
+    if (timer_get_flag(TIM2, TIM_SR_CC2IF)) {
+      timer_clear_flag(TIM2, TIM_SR_CC2IF);
+      decoder_update_scheduling(0, TIM2_CCR2);
+    }
+    if (timer_get_flag(TIM2, TIM_SR_CC3IF)) {
+      timer_clear_flag(TIM2, TIM_SR_CC3IF);
+      decoder_update_scheduling(1, TIM2_CCR3);
+    }
   }
   if (timer_get_flag(TIM2, TIM_SR_CC1IF)) {
     timer_clear_flag(TIM2, TIM_SR_CC1IF);

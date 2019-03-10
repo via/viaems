@@ -12,3 +12,6 @@
     + Idle Control
     + Priming
     + Tip in Enrich
+
+- Implement less of a hack for the trigger ordering fix
+- Determine better ADC strategy, the graphs look awful for every-tooth

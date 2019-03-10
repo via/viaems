@@ -31,7 +31,9 @@ int main() {
     handle_boost_control();
     handle_idle_control();
 
-    adc_gather();
+    if (!config.decoder.valid) {
+      adc_gather();
+    }
   }
 
   return 0;
