@@ -131,7 +131,7 @@ struct table injector_dead_time __attribute__((section(".configdata"))) = {
 };
 
 struct config config __attribute__((section(".configdata"))) = {
-  .num_events = 14,
+  .num_events = 18,
   .events = {
     {.type=IGNITION_EVENT, .angle=0, .output_id=0},
     {.type=IGNITION_EVENT, .angle=120, .output_id=1},
@@ -149,8 +149,8 @@ struct config config __attribute__((section(".configdata"))) = {
     {.type=ADC_EVENT, .angle=600},
 
     {.type=FUEL_EVENT, .angle=0, .output_id=8},
-    {.type=FUEL_EVENT, .angle=120,   .output_id=9},
-    {.type=FUEL_EVENT, .angle=240,  .output_id=10},
+    {.type=FUEL_EVENT, .angle=120, .output_id=9},
+    {.type=FUEL_EVENT, .angle=240, .output_id=10},
     {.type=FUEL_EVENT, .angle=360, .output_id=8},
     {.type=FUEL_EVENT, .angle=480, .output_id=9},
     {.type=FUEL_EVENT, .angle=600, .output_id=10},
