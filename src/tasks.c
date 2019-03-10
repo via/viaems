@@ -31,6 +31,23 @@ void handle_boost_control() {
 void handle_idle_control() {
 }
 
+void handle_emergency_shutdown() {
+
+  /* Fuel pump off */
+  set_gpio(config.fueling.fuel_pump_pin, 0);
+
+  /* Stop events */
+  invalidate_scheduled_events(config.events, config.num_events);
+
+  /* TODO evaluate what to do about ignition outputs
+   * for now, make sure fuel injectors are off */
+  for (unsigned int i = 0; i < config.num_events; ++i) {
+    if (config.events[i].type == FUEL_EVENT) {
+      set_output(config.events[i].output_id, config.events[i].inverted);
+    }
+  }
+}
+
 #ifdef UNITTEST
 #include <check.h>
 
