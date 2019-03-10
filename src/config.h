@@ -27,6 +27,7 @@ struct config {
   struct table *timing;
   struct table *iat_timing_adjust;
   struct table *clt_timing_adjust;
+  struct table *clt_pw_adjust;
   struct table *ve;
   struct table *commanded_lambda;
   struct table *injector_pw_compensation;
@@ -47,6 +48,8 @@ extern struct config config;
 
 /* Externally make-available tables for console */
 extern struct table timing_vs_rpm_and_map;
+extern struct table lambda_vs_rpm_and_map;
+extern struct table ve_vs_rpm_and_map;
 extern struct table injector_dead_time;
 
 #endif

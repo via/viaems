@@ -1,75 +1,139 @@
 #include "config.h"
 #include "sensors.h"
 
-struct table timing_vs_rpm_and_map __attribute__((section(".configdata"))) = {
-  .title = "Timing",
-  .num_axis = 2,
-  .axis = {
-    { 
-      .name = "RPM", 
-      .num = 5,
-      .values = {200, 400, 700, 1000, 2400, 6000}
+struct table ve_vs_rpm_and_map __attribute__((section(".configdata"))) = {
+  .title = "ve", .num_axis = 2,
+  .axis = { { 
+      .name = "RPM", .num = 16,
+      .values = {250, 500, 900, 1200, 1600, 2000, 2400, 3000, 3600, 4000, 4400, 5200, 5800, 6400, 6800, 7200},
     },
-    {
-      .name = "MAP",
-      .num = 3,
-      .values = {25, 75, 100}
+    { .name = "MAP", .num = 16,
+      .values = {20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 140, 160, 180, 200, 220, 240},
     },
   },
   .data = {
     .two = {
-      {15, 3, 10, 14, 40, 45},
-      {15, 3, 10, 10, 25, 45},
-      {15, 3, 10, 10, 20, 25},
-      /* Map isnt physically hooked up yet */
+      {65.0,  30.0,  8.0,  8.0,  8.0,  9.0,  8.0,  8.0,  11.0,  12.0,  16.0,  16.0,  16.0,  16.0,  16.0,  16.0},
+      {65.0,  45.0,  7.0,  6.0,  7.0,  7.0,  8.0,  8.0,  10.0,  20.0,  24.0,  25.0,  26.0,  26.0,  26.0,  26.0},
+      {65.0,  45.0,  15.0,  18.0,  20.0,  21.0,  22.0,  24.0,  27.0,  37.0,  41.0,  43.0,  45.0,  45.0,  45.0,  45.0},
+      {65.0,  45.0,  43.0,  36.0,  28.0,  29.0,  31.0,  33.0,  34.0,  44.0,  48.0,  50.0,  52.0,  52.0,  52.0,  52.0},
+      {65.0,  45.0,  49.0,  41.0,  38.0,  38.0,  39.0,  41.0,  45.0,  52.0,  52.0,  52.0,  52.0,  52.0,  52.0,  52.0},
+      {65.0,  45.0,  49.0,  49.0,  44.0,  44.0,  47.0,  49.0,  61.0,  59.0,  58.0,  60.0,  63.0,  63.0,  63.0,  63.0},
+      {65.0,  45.0,  65.0,  49.0,  50.0,  55.0,  56.0,  58.0,  58.0,  63.0,  64.0,  65.0,  68.0,  68.0,  68.0,  68.0},
+      {65.0,  45.0,  65.0,  63.0,  63.0,  63.0,  64.0,  64.0,  64.0,  66.0,  66.0,  67.0,  70.0,  70.0,  70.0,  72.0},
+      {65.0,  45.0,  65.0,  63.0,  63.0,  63.0,  68.0,  70.0,  71.0,  66.0,  67.0,  68.0,  77.0,  76.0,  78.0,  78.0},
+      {65.0,  45.0,  65.0,  63.0,  65.0,  67.0,  72.0,  71.0,  72.0,  74.0,  75.0,  79.0,  77.0,  76.0,  78.0,  78.0},
+      {65.0,  45.0,  65.0,  63.0,  65.0,  67.0,  72.0,  71.0,  72.0,  82.0,  84.0,  82.0,  78.0,  76.0,  78.0,  78.0},
+      {65.0,  45.0,  65.0,  63.0,  65.0,  67.0,  72.0,  73.0,  72.0,  82.0,  85.0,  82.0,  78.0,  76.0,  78.0,  78.0},
+      {65.0,  45.0,  65.0,  63.0,  65.0,  67.0,  75.0,  73.0,  72.0,  82.0,  85.0,  82.0,  78.0,  76.0,  78.0,  78.0},
+      {65.0,  45.0,  65.0,  63.0,  65.0,  67.0,  75.0,  73.0,  72.0,  82.0,  85.0,  82.0,  78.0,  76.0,  78.0,  78.0},
+      {65.0,  45.0,  65.0,  63.0,  65.0,  67.0,  75.0,  73.0,  72.0,  82.0,  85.0,  82.0,  78.0,  76.0,  78.0,  78.0},
+      {65.0,  45.0,  65.0,  63.0,  65.0,  67.0,  75.0,  73.0,  72.0,  82.0,  85.0,  82.0,  78.0,  76.0,  78.0,  78.0},
     },
   },
 };
 
-struct table injector_dead_time __attribute__((section(".configdata"))) = {
-  .title = "Dead Time",
-  .num_axis = 1,
-  .axis = {
-    { 
-      .name = "BRV", 
-      .num = 5,
-      .values = {7, 10, 12, 13.8, 18}
+
+struct table lambda_vs_rpm_and_map __attribute__((section(".configdata"))) = {
+  .title = "lambda", .num_axis = 2,
+  .axis = { { 
+      .name = "RPM", .num = 16,
+      .values = {250, 500, 900, 1200, 1600, 2000, 2400, 3000, 3600, 4000, 4400, 5200, 5800, 6400, 6800, 7200},
+    },
+    { .name = "MAP", .num = 16,
+      .values = {20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 140, 160, 180, 200, 220, 240},
     },
   },
   .data = {
-    .one = {
-      2000, 1500, 1200, 1000, 700,
+    .two = {
+      {1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00},
+      {1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00},
+      {1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00},
+      {1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00},
+      {1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00},
+      {1.00, 1.00, 0.92, 0.95, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00},
+      {0.95, 0.95, 0.92, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95, 0.95},
+      {0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85},
+      {0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85},
+      {0.84, 0.84, 0.84, 0.84, 0.84, 0.84, 0.84, 0.84, 0.84, 0.84, 0.84, 0.84, 0.84, 0.84, 0.84, 0.84},
+      {0.83, 0.83, 0.83, 0.83, 0.83, 0.82, 0.82, 0.82, 0.82, 0.82, 0.82, 0.82, 0.82, 0.82, 0.82, 0.82},
+      {0.83, 0.83, 0.83, 0.83, 0.83, 0.78, 0.80, 0.80, 0.80, 0.80, 0.80, 0.80, 0.80, 0.80, 0.80, 0.80},
+      {0.81, 0.81, 0.81, 0.81, 0.81, 0.76, 0.76, 0.76, 0.76, 0.76, 0.76, 0.76, 0.76, 0.76, 0.76, 0.76},
+      {0.73, 0.73, 0.73, 0.81, 0.81, 0.73, 0.73, 0.73, 0.73, 0.73, 0.73, 0.73, 0.73, 0.73, 0.73, 0.73},
+      {0.75, 0.75, 0.75, 0.73, 0.73, 0.73, 0.73, 0.73, 0.73, 0.73, 0.73, 0.73, 0.73, 0.73, 0.73, 0.73},
     },
+  },
+};
+
+struct table timing_vs_rpm_and_map __attribute__((section(".configdata"))) = {
+  .title = "Timing", .num_axis = 2,
+  .axis = {
+    { .name = "RPM", .num = 16,
+      .values = {250, 500, 900, 1200, 1600, 2000, 2400, 3000, 3600, 4000, 4400, 5200, 5800, 6400, 6800, 7200},
+    },
+    {
+      .name = "MAP", .num = 16,
+      .values = {20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 140, 160, 180, 200, 220, 240},
+    },
+  },
+  .data = {
+    .two = {
+      {12.0, 15.0, 18.0, 18.0, 25.0, 30.0, 32.0, 35.0, 36.0, 38.0, 42.0, 42.0, 42.0, 42.0, 42.0, 42.0},
+      {12.0, 15.0, 18.0, 18.0, 25.0, 30.0, 32.0, 35.0, 36.0, 38.0, 40.0, 40.0, 40.0, 40.0, 40.0, 40.0},
+      {12.0, 15.0, 18.0, 18.0, 22.0, 30.0, 32.0, 35.0, 36.0, 36.0, 38.0, 40.0, 40.0, 40.0, 40.0, 40.0},
+      {10.0, 15.0, 15.0, 18.0, 20.0, 27.0, 30.0, 32.0, 34.0, 34.0, 34.0, 38.0, 38.0, 38.0, 38.0, 38.0},
+      {10.0, 15.0, 15.0, 15.0, 18.0, 24.0, 28.0, 30.0, 34.0, 34.0, 34.0, 34.0, 34.0, 34.0, 34.0, 34.0},
+      {10.0, 15.0, 15.0, 14.0, 17.0, 22.0, 26.0, 28.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0},
+      {10.0, 15.0, 10.0, 13.0, 16.0, 18.0, 24.0, 26.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0, 30.0},
+      {8.0, 10.0, 10.0, 12.0, 15.0, 15.0, 22.0, 24.0, 24.0, 24.0, 24.0, 24.0, 24.0, 24.0, 24.0, 24.0},
+      {8.0, 10.0, 10.0, 12.0, 13.0, 13.0, 19.0, 20.0, 20.0, 20.0, 20.0, 20.0, 20.0, 20.0, 20.0, 20.0},
+      {8.0, 10.0, 10.0, 12.0, 13.0, 13.0, 17.0, 18.0, 17.0, 17.0, 17.0, 17.0, 17.0, 17.0, 17.0, 17.0},
+      {8.0, 10.0, 10.0, 12.0, 13.0, 13.0, 15.0, 16.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0},
+      {8.0, 10.0, 10.0, 12.0, 13.0, 13.0, 15.0, 16.0, 13.0, 13.0, 13.0, 13.0, 13.0, 13.0, 13.0, 11.0},
+      {8.0, 10.0, 10.0, 12.0, 13.0, 13.0, 16.0, 16.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0},
+      {8.0, 10.0, 10.0, 12.0, 12.0, 13.0, 13.0, 13.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0},
+      {8.0, 10.0, 10.0, 10.0, 10.0, 11.0, 13.0, 13.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0},
+      {8.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0,  8.0,  8.0,  8.0},
+    },
+  },
+};
+
+
+struct table injector_dead_time __attribute__((section(".configdata"))) = {
+  .title = "Dead Time", .num_axis = 1,
+  .axis = { { .name = "BRV", .num = 16,
+      .values = {8.5, 9, 9.5, 10, 10.5, 11, 11.5, 12, 12.5, 13, 13.5, 14, 14.5, 15, 15.5, 16},
+    },
+  },
+  .data = {
+    .one = {2.97, 2.66, 2.39, 2.155, 1.96, 1.82, 1.70, 1.59, 1.48, 1.4, 1.32, 1.25, 1.19, 1.11, 1.05, 1},
   },
 };
 
 struct config config __attribute__((section(".configdata"))) = {
-  .num_events = 18,
+  .num_events = 14,
   .events = {
-    {.type=IGNITION_EVENT, .angle=0, .output_id=12, .inverted=1},
-    {.type=IGNITION_EVENT, .angle=90, .output_id=12, .inverted=1},
-    {.type=IGNITION_EVENT, .angle=180, .output_id=12, .inverted=1},
-    {.type=IGNITION_EVENT, .angle=270, .output_id=12, .inverted=1},
-    {.type=ADC_EVENT, .angle=270},
+    {.type=IGNITION_EVENT, .angle=0, .output_id=0},
+    {.type=IGNITION_EVENT, .angle=120, .output_id=1},
+    {.type=IGNITION_EVENT, .angle=240, .output_id=2},
+    {.type=IGNITION_EVENT, .angle=360, .output_id=0},
+    {.type=IGNITION_EVENT, .angle=480, .output_id=1},
+    {.type=IGNITION_EVENT, .angle=600, .output_id=2},
 
-    {.type=IGNITION_EVENT, .angle=360, .output_id=12, .inverted=1},
-    {.type=IGNITION_EVENT, .angle=450, .output_id=12, .inverted=1},
-    {.type=IGNITION_EVENT, .angle=540, .output_id=12, .inverted=1},
-    {.type=IGNITION_EVENT, .angle=630, .output_id=12, .inverted=1},
-    {.type=ADC_EVENT, .angle=630},
 
-    {.type=FUEL_EVENT, .angle=0, .output_id=0},
-    {.type=FUEL_EVENT, .angle=90,   .output_id=1},
-    {.type=FUEL_EVENT, .angle=180,  .output_id=2},
-    {.type=FUEL_EVENT, .angle=270, .output_id=3},
-    {.type=FUEL_EVENT, .angle=360, .output_id=0},
-    {.type=FUEL_EVENT, .angle=450, .output_id=1},
-    {.type=FUEL_EVENT, .angle=540, .output_id=2},
-    {.type=FUEL_EVENT, .angle=630, .output_id=3},
+    {.type=ADC_EVENT, .angle=0},
+    {.type=ADC_EVENT, .angle=360},
+
+    {.type=FUEL_EVENT, .angle=0, .output_id=8},
+    {.type=FUEL_EVENT, .angle=120,   .output_id=9},
+    {.type=FUEL_EVENT, .angle=240,  .output_id=10},
+    {.type=FUEL_EVENT, .angle=360, .output_id=8},
+    {.type=FUEL_EVENT, .angle=480, .output_id=9},
+    {.type=FUEL_EVENT, .angle=600, .output_id=10},
   },
   .decoder = {
-    .type = FORD_TFI,
-    .offset = 55,
+    .type = TOYOTA_24_1_CAS,
+    .offset = 20,
     .trigger_max_rpm_change = 0.55, /*Startup sucks with only 90* trigger */
     .trigger_min_rpm = 80,
   },
@@ -77,34 +141,40 @@ struct config config __attribute__((section(".configdata"))) = {
     [SENSOR_BRV] = {.pin=0, .source=SENSOR_ADC, .method=METHOD_LINEAR,
       .params={.range={.min=0, .max=24.5}},
       .fault_config={.min = 100, .max = 4000, .fault_value = 13.8}},
-    [SENSOR_IAT] = {.pin=1, .source=SENSOR_ADC, .method=METHOD_LINEAR,
-      .params={.range={.min=0, .max=100}}},
+    [SENSOR_IAT] = {.pin=1, .source=SENSOR_ADC, .method=METHOD_THERM,
+      .params={.therm={
+        .bias=2490,
+        .a=0.00146167419060305,
+        .b=0.00022887572003919,
+        .c=1.64484831669638E-07,
+      }}},
     [SENSOR_CLT] = {.pin=2, .source=SENSOR_ADC, .method=METHOD_THERM,
-      .params={
-        .therm={
-          .bias=2490,
-          .a=0.00131586818223649,
-          .b=0.00025618700140100302,
-          .c=0.00000018474199456928
-        }}},
+      .params={.therm={
+        .bias=2490,
+        .a=0.00131586818223649,
+        .b=0.00025618700140100302,
+        .c=0.00000018474199456928,
+      }}},
     [SENSOR_TPS] = {.pin=3, .source=SENSOR_ADC, .method=METHOD_LINEAR,
-      .params={.range={.min=0, .max=100}},
-      .fault_config={.min = 100, .max = 4000, .fault_value = 25.0},
+      .params={.range={.min=-15.74, .max=145.47}},
+      .fault_config={.min = 200, .max = 3200, .fault_value = 25.0},
       .lag = 10.0},
     [SENSOR_EGO] = {.pin=4, .source=SENSOR_ADC, .method=METHOD_LINEAR,
-      .params={.range={.min=0, .max=100}}},
-    [SENSOR_MAP] = {.pin=3, .source=SENSOR_FREQ, .method=METHOD_LINEAR,
-      .params={.range={.min=-50, .max=1929}}, /* Ford MAP sensor*/
-      .fault_config={.min = 90, .max = 350, .fault_value = 80.0}},
+      .params={.range={.min=0.5, .max=1.5}}},
+    [SENSOR_MAP] = {.pin=5, .source=SENSOR_ADC, .method=METHOD_LINEAR,
+      .params={.range={.min=-44.45, .max=386.48}}, /* AEM 3.5 bar MAP sensor*/
+      .fault_config={.min = 10, .max = 4050, .fault_value = 50.0}},
     [SENSOR_AAP] = {.source=SENSOR_CONST, .params={.fixed_value = 102.0}},
-    [SENSOR_FRT] = {.source=SENSOR_CONST, .params={.fixed_value = 0.0}},
+    [SENSOR_FRT] = {.source=SENSOR_CONST, .params={.fixed_value = 15.0}},
   },
   .timing = &timing_vs_rpm_and_map,
   .injector_pw_compensation = &injector_dead_time,
-  .rpm_stop = 7000,
-  .rpm_start = 6800,
+  .ve = &ve_vs_rpm_and_map,
+  .commanded_lambda = &lambda_vs_rpm_and_map,
+  .rpm_stop = 6700,
+  .rpm_start = 6200,
   .fueling = {
-    .injector_cc_per_minute = 550,
+    .injector_cc_per_minute = 1015,
     .cylinder_cc = 500,
     .fuel_stoich_ratio = 14.7,
     .injections_per_cycle = 2, /* All batched */
@@ -113,9 +183,8 @@ struct config config __attribute__((section(".configdata"))) = {
     .density_of_air_stp = 1.2754e-3, /* g/cm^3 */
   },
   .ignition = {
-    .dwell = DWELL_FIXED_DUTY,
-    .dwell_duty = 0.5,
-    .dwell_us = 1000,
+    .dwell = DWELL_FIXED_TIME,
+    .dwell_us = 4000,
     .min_fire_time_us = 500,
   },
 };
