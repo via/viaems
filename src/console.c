@@ -568,7 +568,7 @@ static void console_get_events(
         ev_type = "disabled";
         break;
     }
-    sprintf(dest, "type=%s angle=%d output=%d inverted=%d", 
+    sprintf(dest, "type=%s angle=%.0f output=%d inverted=%d", 
         ev_type, ev->angle, ev->output_id, ev->inverted);
   } else {
     strcpy(dest, "event out of range");

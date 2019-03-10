@@ -13,7 +13,7 @@ typedef uint64_t timeval_t;
 #else
 typedef uint32_t timeval_t;
 #endif
-typedef uint16_t degrees_t;
+typedef float degrees_t;
 /* timeval_t is gauranteed to be 32 bits */
 
 timeval_t current_time();
