@@ -111,7 +111,7 @@ void calculate_fueling() {
   if (config.engine_temp_enrich) {
     ete = interpolate_table_twoaxis(config.engine_temp_enrich, clt, map);
   } else {
-    ete = 100;
+    ete = 1.0;
   }
 
   calculated_values.airmass_per_cycle = calculate_airmass(ve, map, aap, iat);
