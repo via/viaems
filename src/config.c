@@ -142,7 +142,11 @@ struct config config __attribute__((section(".configdata"))) = {
 
 
     {.type=ADC_EVENT, .angle=0},
+    {.type=ADC_EVENT, .angle=120},
+    {.type=ADC_EVENT, .angle=240},
     {.type=ADC_EVENT, .angle=360},
+    {.type=ADC_EVENT, .angle=480},
+    {.type=ADC_EVENT, .angle=600},
 
     {.type=FUEL_EVENT, .angle=0, .output_id=8},
     {.type=FUEL_EVENT, .angle=120,   .output_id=9},
