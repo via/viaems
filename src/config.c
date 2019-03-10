@@ -210,3 +210,22 @@ struct config config __attribute__((section(".configdata"))) = {
   },
 };
 
+int config_valid() {
+  if (config.ve && !table_valid(config.ve)) {
+    return 0;
+  }
+
+  if (config.timing && !table_valid(config.timing)) {
+    return 0;
+  }
+
+  if (config.injector_pw_compensation && !table_valid(config.injector_pw_compensation)) {
+    return 0;
+  }
+
+  if (config.commanded_lambda && !table_valid(config.commanded_lambda)) {
+    return 0;
+  }
+
+  return 1;
+}

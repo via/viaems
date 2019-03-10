@@ -23,6 +23,8 @@ struct table {
 float interpolate_table_oneaxis(struct table *, float a);
 float interpolate_table_twoaxis(struct table *, float a1, float a2);
 
+int table_valid(struct table *);
+
 #ifdef UNITTEST
 #include <check.h>
 TCase *setup_table_tests();

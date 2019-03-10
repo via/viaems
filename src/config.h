@@ -54,4 +54,6 @@ extern struct table ve_vs_rpm_and_map;
 extern struct table injector_dead_time;
 extern struct table enrich_vs_temp_and_map;
 
+int config_valid();
+
 #endif

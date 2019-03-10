@@ -1,3 +1,5 @@
+#include <assert.h>
+
 #include "config.h"
 #include "calculations.h"
 #include "stats.h"

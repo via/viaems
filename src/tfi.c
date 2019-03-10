@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <assert.h>
 #include "platform.h"
 #include "util.h"
 #include "decoder.h"
@@ -17,6 +18,8 @@ int main() {
   console_init();
   platform_init(0, NULL);
   initialize_scheduler();
+
+  assert(config_valid());
 
   enable_test_trigger(FORD_TFI, 2000);
 

@@ -24,7 +24,9 @@
 #include "config.h"
 #include "stats.h"
 
+#include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <assert.h>
 /* Hardware setup:
@@ -1032,6 +1034,11 @@ size_t console_write(const void *buf, size_t count) {
   return rem;
 }
 
+ssize_t _write(int fd, const void *buf, size_t count) {
+  (void)fd;
+
+  return console_write(buf, count);
+}
 
 /* TODO: implement graceful shutdown of outputs on fault */
 #define STACK_CHK_GUARD 0xe2dee396
