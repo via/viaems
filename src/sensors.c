@@ -17,11 +17,10 @@ static float sensor_convert_linear(struct sensor_input *in, float raw) {
 /* Returns 0 - 4095 for 0 Hz - 2 kHz */
 static float sensor_convert_freq(float raw) {
   float tickrate = TICKRATE;
-  if (raw) {
-    return 40.96f * 1.0 / ((raw * SENSOR_FREQ_DIVIDER )/ tickrate);
-  } else {
-    return 0.0; /* Prevent Div by Zero */
+  if (!raw) {
+    return 0.0; /* Prevent div by zero */
   }
+  return 40.96f * 1.0 / ((raw * SENSOR_FREQ_DIVIDER )/ tickrate);
 }
 
 float sensor_convert_thermistor(struct thermistor_config *tc, float raw) {
