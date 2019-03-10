@@ -40,6 +40,7 @@ struct calculated_values {
   float idt;
   float lambda;
   float ve;
+  float ete;
 };
 
 extern struct calculated_values calculated_values;

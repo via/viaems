@@ -713,6 +713,8 @@ static struct console_config_node console_config_nodes[] = {
    .get=console_get_table, .set=console_set_table},
   {.name="config.tables.injector_dead_time", .val=&injector_dead_time,
    .get=console_get_table, .set=console_set_table},
+  {.name="config.tables.engine_temp_enrich", .val=&enrich_vs_temp_and_map,
+   .get=console_get_table, .set=console_set_table},
 
   /* Decoding */
   {.name="config.decoder"},
@@ -790,6 +792,14 @@ static struct console_config_node console_config_nodes[] = {
    .get=console_get_uint},
   {.name="status.fueling_us", .val=&calculated_values.fueling_us,
    .get=console_get_uint},
+  {.name="status.ete", .val=&calculated_values.ete,
+   .get=console_get_float},
+  {.name="status.ve", .val=&calculated_values.ve,
+   .get=console_get_float},
+  {.name="status.lambda", .val=&calculated_values.lambda,
+   .get=console_get_float},
+  {.name="status.idt", .val=&calculated_values.idt,
+   .get=console_get_float},
   {.name="status.dwell_us", .val=&calculated_values.dwell_us,
    .get=console_get_uint},
   
