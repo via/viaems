@@ -89,16 +89,16 @@ static int sched_entry_disable(const struct sched_entry *en, timeval_t time) {
   int slot = time - buf->start;
   assert((slot >= 0) && (slot < 512));
 
-  uint16_t *addr = en->output_val ? &buf->slots[slot].on_mask : 
+  uint16_t *addr = en->val ? &buf->slots[slot].on_mask : 
                                     &buf->slots[slot].off_mask;
-  uint16_t value = *addr & ~(1 << en->output_id);
+  uint16_t value = *addr & ~(1 << en->pin);
 
   timeval_t before_time = current_time();
   *addr = value;
   timeval_t after_time = current_time();
 
   if (time_in_range(time, before_time, after_time)) {
-    set_output(en->output_id, en->output_val);
+    set_output(en->pin, en->val);
     return 0;
   }
   if (time_before(time, before_time) || en->fired) {
@@ -131,16 +131,16 @@ static int sched_entry_enable(const struct sched_entry *en, timeval_t time) {
   int slot = time - buf->start;
   assert((slot >= 0) && (slot < 512));
 
-  uint16_t *addr = en->output_val ? &buf->slots[slot].on_mask : 
+  uint16_t *addr = en->val ? &buf->slots[slot].on_mask : 
                                     &buf->slots[slot].off_mask;
-  uint16_t value = *addr | (1 << en->output_id);
+  uint16_t value = *addr | (1 << en->pin);
 
   timeval_t before_time = current_time();
   *addr = value;
   timeval_t after_time = current_time();
 
   if (time_in_range(time, before_time, after_time)) {
-    set_output(en->output_id, en->output_val);
+    set_output(en->pin, en->val);
   }
 
   if (time_before(time, before_time)) {
@@ -230,10 +230,10 @@ void schedule_output_event_safely(struct output_event *ev,
   timeval_t oldstart = ev->start.time;
   timeval_t oldstop = ev->stop.time;
  
-  ev->start.output_id = ev->output_id;
-  ev->start.output_val = ev->inverted ? 0 : 1;
-  ev->stop.output_id = ev->output_id;
-  ev->stop.output_val = ev->inverted ? 1 : 0;
+  ev->start.pin = ev->pin;
+  ev->start.val = ev->inverted ? 0 : 1;
+  ev->stop.pin = ev->pin;
+  ev->stop.val = ev->inverted ? 1 : 0;
 
   if (!ev->start.scheduled && !ev->stop.scheduled) {
     disable_interrupts();
@@ -587,7 +587,7 @@ static void check_scheduler_setup() {
   *oev = (struct output_event){
     .type = IGNITION_EVENT,
     .angle = 360,
-    .output_id = 0,
+    .pin = 0,
     .inverted = 0,
   };
 }

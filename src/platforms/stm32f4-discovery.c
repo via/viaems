@@ -381,7 +381,7 @@ static void platform_init_scheduled_outputs() {
   unsigned int i;
   for (i = 0; i < config.num_events; ++i) {
     if (config.events[i].inverted && config.events[i].type) {
-      set_output(config.events[i].output_id, 1);
+      set_output(config.events[i].pin, 1);
     }
   }
   gpio_mode_setup(GPIOD, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, 0xFFFF & ~GPIO5);

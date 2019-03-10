@@ -43,7 +43,7 @@ void handle_emergency_shutdown() {
    * for now, make sure fuel injectors are off */
   for (unsigned int i = 0; i < config.num_events; ++i) {
     if (config.events[i].type == FUEL_EVENT) {
-      set_output(config.events[i].output_id, config.events[i].inverted);
+      set_output(config.events[i].pin, config.events[i].inverted);
     }
   }
 }

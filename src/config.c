@@ -133,12 +133,12 @@ struct table injector_dead_time __attribute__((section(".configdata"))) = {
 struct config config __attribute__((section(".configdata"))) = {
   .num_events = 18,
   .events = {
-    {.type=IGNITION_EVENT, .angle=0, .output_id=0},
-    {.type=IGNITION_EVENT, .angle=120, .output_id=1},
-    {.type=IGNITION_EVENT, .angle=240, .output_id=2},
-    {.type=IGNITION_EVENT, .angle=360, .output_id=0},
-    {.type=IGNITION_EVENT, .angle=480, .output_id=1},
-    {.type=IGNITION_EVENT, .angle=600, .output_id=2},
+    {.type=IGNITION_EVENT, .angle=0, .pin=0},
+    {.type=IGNITION_EVENT, .angle=120, .pin=1},
+    {.type=IGNITION_EVENT, .angle=240, .pin=2},
+    {.type=IGNITION_EVENT, .angle=360, .pin=0},
+    {.type=IGNITION_EVENT, .angle=480, .pin=1},
+    {.type=IGNITION_EVENT, .angle=600, .pin=2},
 
 
     {.type=ADC_EVENT, .angle=0},
@@ -148,12 +148,12 @@ struct config config __attribute__((section(".configdata"))) = {
     {.type=ADC_EVENT, .angle=480},
     {.type=ADC_EVENT, .angle=600},
 
-    {.type=FUEL_EVENT, .angle=0, .output_id=8},
-    {.type=FUEL_EVENT, .angle=120, .output_id=9},
-    {.type=FUEL_EVENT, .angle=240, .output_id=10},
-    {.type=FUEL_EVENT, .angle=360, .output_id=8},
-    {.type=FUEL_EVENT, .angle=480, .output_id=9},
-    {.type=FUEL_EVENT, .angle=600, .output_id=10},
+    {.type=FUEL_EVENT, .angle=0, .pin=8},
+    {.type=FUEL_EVENT, .angle=120, .pin=9},
+    {.type=FUEL_EVENT, .angle=240, .pin=10},
+    {.type=FUEL_EVENT, .angle=360, .pin=8},
+    {.type=FUEL_EVENT, .angle=480, .pin=9},
+    {.type=FUEL_EVENT, .angle=600, .pin=10},
   },
   .decoder = {
     .type = TOYOTA_24_1_CAS,
