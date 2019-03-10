@@ -132,7 +132,8 @@ void calculate_fueling() {
   calculated_values.idt = idt;
   calculated_values.ve = ve;
   calculated_values.lambda = lambda;
-  calculated_values.fueling_us = (raw_pw_us * ete) + idt;
+  calculated_values.fueling_us = (raw_pw_us * ete) + (idt * 1000);
+>>>>>>> 8c7bada... IDT is in mS, convert to uS
 
   stats_finish_timing(STATS_FUELCALC_TIME);
 }
