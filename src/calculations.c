@@ -126,12 +126,6 @@ void calculate_fueling() {
     config.fueling.injector_cc_per_minute * 60000000 / /* uS per minute */
     config.fueling.injections_per_cycle; /* This many pulses */
 
-  if (config.engine_temp_enrich) {
-    ete = interpolate_table_twoaxis(config.engine_temp_enrich, clt, map);
-  } else {
-    ete = 1.0;
-  }
-  
   calculated_values.ete = ete;
   calculated_values.idt = idt;
   calculated_values.ve = ve;
