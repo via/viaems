@@ -315,7 +315,7 @@ schedule_ignition_event(struct output_event *ev,
     time_from_rpm_diff(d->rpm, (degrees_t)firing_angle);
   start_time = stop_time - time_from_us(usecs_dwell);
 
-  if (ev->start.fired && ev->stop.fired) {
+  if (event_has_fired(ev)) {
 
     /* Don't reschedule until we've passed at least 90*/
     if ((time_diff(stop_time, ev->stop.time) < 
@@ -368,7 +368,7 @@ schedule_fuel_event(struct output_event *ev,
   stop_time = d->last_trigger_time + time_from_rpm_diff(d->rpm, firing_angle);
   start_time = stop_time - (TICKRATE / 1000000) * usecs_pw;
 
-  if (ev->start.fired && ev->stop.fired) {
+  if (event_has_fired(ev)) {
 
     /* Don't reschedule until we've passed at least 90*/
     if ((time_diff(stop_time, ev->stop.time) < 
@@ -386,9 +386,11 @@ schedule_fuel_event(struct output_event *ev,
   schedule_output_event_safely(ev, start_time, stop_time, 1);
   
   /* Schedule a callback to reschedule this immediately after it fires */
-  ev->callback.callback = (void (*)(void *))schedule_event;
-  ev->callback.data = ev;
-// schedule_callback(&ev->callback, stop_time);
+  if (ev->stop.scheduled) {
+    ev->callback.callback = (void (*)(void *))schedule_event;
+    ev->callback.data = ev;
+    schedule_callback(&ev->callback, ev->stop.time);
+  }
 
   return 1;
 }
@@ -710,6 +712,20 @@ START_TEST(check_schedule_ignition_reschedule_active_too_early) {
 
   ck_assert(oev->stop.scheduled);
   ck_assert_int_eq(oev->stop.time, old_stop);
+
+} END_TEST
+
+START_TEST(check_schedule_fuel_immediately_after_finish) {
+  oev->angle = 60;
+  config.decoder.rpm = 6000;
+  schedule_fuel_event(oev, &config.decoder, 1000);
+  printf("%d - %d\n", oev->start.time, oev->stop.time);
+  
+  /* Emulate firing of the event */
+  set_current_time(oev->stop.time + 5);
+
+  /* Reschedule same event */
+  ck_assert(!schedule_fuel_event(oev, &config.decoder, 1000));
 
 } END_TEST
 
@@ -1119,6 +1135,7 @@ TCase *setup_scheduler_tests() {
   tcase_add_test(tc, check_schedule_ignition_reschedule_onto_now);
   tcase_add_test(tc, check_schedule_ignition_reschedule_active_later);
   tcase_add_test(tc, check_schedule_ignition_reschedule_active_too_early);
+  tcase_add_test(tc, check_schedule_fuel_immediately_after_finish);
   tcase_add_test(tc, check_event_is_active);
   tcase_add_test(tc, check_event_has_fired);
   tcase_add_test(tc, check_invalidate_events_when_active);
