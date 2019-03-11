@@ -15,3 +15,4 @@
 
 - Implement less of a hack for the trigger ordering fix
 - Determine better ADC strategy, the graphs look awful for every-tooth
+- Fix callback handling in interrupts (fix fuel event resched)

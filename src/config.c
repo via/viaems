@@ -131,7 +131,7 @@ struct table injector_dead_time __attribute__((section(".configdata"))) = {
 };
 
 struct config config __attribute__((section(".configdata"))) = {
-  .num_events = 18,
+  .num_events = 12,
   .events = {
     {.type=IGNITION_EVENT, .angle=0, .pin=0},
     {.type=IGNITION_EVENT, .angle=120, .pin=1},
@@ -139,14 +139,6 @@ struct config config __attribute__((section(".configdata"))) = {
     {.type=IGNITION_EVENT, .angle=360, .pin=0},
     {.type=IGNITION_EVENT, .angle=480, .pin=1},
     {.type=IGNITION_EVENT, .angle=600, .pin=2},
-
-
-    {.type=ADC_EVENT, .angle=0},
-    {.type=ADC_EVENT, .angle=120},
-    {.type=ADC_EVENT, .angle=240},
-    {.type=ADC_EVENT, .angle=360},
-    {.type=ADC_EVENT, .angle=480},
-    {.type=ADC_EVENT, .angle=600},
 
     {.type=FUEL_EVENT, .angle=0, .pin=8},
     {.type=FUEL_EVENT, .angle=120, .pin=9},
@@ -197,7 +189,7 @@ struct config config __attribute__((section(".configdata"))) = {
   .injector_pw_compensation = &injector_dead_time,
   .ve = &ve_vs_rpm_and_map,
   .commanded_lambda = &lambda_vs_rpm_and_map,
-  .engine_temp_enrich = 0, //&enrich_vs_temp_and_map,
+  .engine_temp_enrich = &enrich_vs_temp_and_map,
   .rpm_stop = 6700,
   .rpm_start = 6200,
   .fueling = {
@@ -211,7 +203,7 @@ struct config config __attribute__((section(".configdata"))) = {
   },
   .ignition = {
     .dwell = DWELL_FIXED_TIME,
-    .dwell_us = 4000,
+    .dwell_us = 2800,
     .min_fire_time_us = 500,
   },
 };
