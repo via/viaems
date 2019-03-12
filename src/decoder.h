@@ -2,7 +2,7 @@
 #define _DECODER_H
 
 #include "platform.h"
-#define MAX_DECODER_TIMES 8
+#define MAX_DECODER_TIMES 24
 
 struct decoder;
 typedef void (*decoder_func)(struct decoder *);

@@ -13,10 +13,10 @@ struct table enrich_vs_temp_and_map __attribute__((section(".configdata"))) = {
   },
   .data = {
     .two = {
-      {2.5, 2.0, 1.5, 1.0, 1.0, 1.2},
-      {2.0, 1.5, 1.3, 1.0, 1.0, 1.2},
-      {1.5, 1.4, 1.2, 1.0, 1.0, 1.2},
-      {1.2, 1.2, 1.1, 1.0, 1.0, 1.2},
+      {2.5, 1.8, 1.5, 1.0, 1.0, 1.2},
+      {2.0, 1.8, 1.3, 1.0, 1.0, 1.2},
+      {1.5, 1.5, 1.2, 1.0, 1.0, 1.2},
+      {1.2, 1.3, 1.1, 1.0, 1.0, 1.2},
     },
   },
 };
@@ -180,7 +180,7 @@ struct config config __attribute__((section(".configdata"))) = {
     [SENSOR_EGO] = {.pin=4, .source=SENSOR_ADC, .method=METHOD_LINEAR,
       .params={.range={.min=0.5, .max=1.5}}},
     [SENSOR_MAP] = {.pin=5, .source=SENSOR_ADC, .method=METHOD_LINEAR,
-      .params={.range={.min=-44.45, .max=386.48}}, /* AEM 3.5 bar MAP sensor*/
+      .params={.range={.min=-35, .max=395}}, /* AEM 3.5 bar MAP sensor*/
       .fault_config={.min = 10, .max = 4050, .fault_value = 50.0}},
     [SENSOR_AAP] = {.source=SENSOR_CONST, .params={.fixed_value = 102.0}},
     [SENSOR_FRT] = {.source=SENSOR_CONST, .params={.fixed_value = 15.0}},

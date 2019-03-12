@@ -40,6 +40,15 @@ static void trigger_update(struct decoder *d, timeval_t t) {
   timeval_t diff = d->times[0] - d->times[1];
   unsigned int slicerpm = rpm_from_time_diff(diff, d->degrees_per_trigger);
 
+  if (d->current_triggers_rpm < MAX_DECODER_TIMES) {
+    d->current_triggers_rpm++;
+  }
+
+  if ((d->state == DECODER_NOSYNC) && 
+      (d->current_triggers_rpm >= d->required_triggers_rpm)) {
+      d->state = DECODER_RPM;
+  }
+
   if (d->state == DECODER_SYNC) {
     d->last_trigger_angle += d->degrees_per_trigger;
     if (d->last_trigger_angle >= 720) {
@@ -48,10 +57,14 @@ static void trigger_update(struct decoder *d, timeval_t t) {
   }
 
   if (d->state == DECODER_RPM || d->state == DECODER_SYNC) {
-    d->rpm = rpm_from_time_diff(d->times[0] - d->times[d->rpm_window_size], 
-      d->degrees_per_trigger * d->rpm_window_size);
-    if (d->rpm) {
+    int times_for_rpm = (d->current_triggers_rpm < d->rpm_window_size) ?
+        d->current_triggers_rpm : d->rpm_window_size;
+    if (times_for_rpm) {
+      d->rpm = rpm_from_time_diff(d->times[0] - d->times[times_for_rpm], 
+        d->degrees_per_trigger * times_for_rpm);
       d->trigger_cur_rpm_change = abs(d->rpm - slicerpm) / (float)d->rpm;
+    } else {
+      d->rpm = 0;
     }
     if ((slicerpm <= d->trigger_min_rpm) ||
          (slicerpm > d->rpm + (d->rpm * d->trigger_max_rpm_change)) ||
@@ -87,12 +100,11 @@ static void sync_update(struct decoder *d) {
 }
 
 void cam_nplusone_decoder(struct decoder *d) {
-  timeval_t t0, t1;
+  timeval_t t0;
   int sync, trigger;
   decoder_state oldstate = d->state;
 
   t0 = d->last_t0;
-  t1 = d->last_t1;
 
   trigger = d->needs_decoding_t0;
   d->needs_decoding_t0 = 0;
@@ -100,26 +112,10 @@ void cam_nplusone_decoder(struct decoder *d) {
   sync = d->needs_decoding_t1;
   d->needs_decoding_t1 = 0;
 
-  if (d->state == DECODER_NOSYNC && trigger) {
-    if (d->current_triggers_rpm >= d->required_triggers_rpm) {
-      d->state = DECODER_RPM;
-    } else {
-      d->current_triggers_rpm++;
-    }
-  }
-
-  if (trigger && sync) {
-    /* Which came first? */
-    if (time_in_range(t1, t0, current_time())) {
-      trigger_update(d, t0);
-      sync_update(d);
-    } else {
-      sync_update(d);
-      trigger_update(d, t0);
-    }
-  } else if (trigger) {
+  if (trigger) {
     trigger_update(d, t0);
-  } else {
+  } 
+  if (sync) {
     sync_update(d);
   }
 
@@ -141,14 +137,6 @@ void tfi_pip_decoder(struct decoder *d) {
 
   t0 = d->last_t0;
   d->needs_decoding_t0 = 0;
-
-  if (d->state == DECODER_NOSYNC) {
-    if (d->current_triggers_rpm >= d->required_triggers_rpm) {
-      d->state = DECODER_RPM;
-    } else {
-      d->current_triggers_rpm++;
-    }
-  }
 
   trigger_update(d, t0);
   if (d->state == DECODER_RPM || d->state == DECODER_SYNC) {
@@ -182,7 +170,7 @@ void decoder_init(struct decoder *d) {
       d->decode = cam_nplusone_decoder;
       d->required_triggers_rpm = 8;
       d->degrees_per_trigger = 30;
-      d->rpm_window_size = 3;
+      d->rpm_window_size = 12;
       d->num_triggers = 24;
       break;
     default:

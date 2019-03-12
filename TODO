@@ -16,3 +16,4 @@
 - Determine better ADC strategy, the graphs look awful for every-tooth (for now
   just gather adc async)
 - Fix callback handling in interrupts (fix fuel event resched)
+- Make trigger edge configurable
