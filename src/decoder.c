@@ -27,7 +27,7 @@ static void set_expire_event(timeval_t t) {
 }
 
 static void push_time(struct decoder *d, timeval_t t) {
-  for (int i = d->required_triggers_rpm - 1; i > 0; --i) {
+  for (int i = d->rpm_window_size - 1; i > 0; --i) {
     d->times[i] = d->times[i - 1];
   }
   d->times[0] = t;
@@ -63,27 +63,37 @@ static void trigger_update(struct decoder *d, timeval_t t) {
   }
 
   if (d->state == DECODER_RPM || d->state == DECODER_SYNC) {
-    /* Use the minimum of rpm_window_size and current triggers so that rpm is
-     * valid in case our window size is larger than required trigger count */
-    int times_for_rpm = (d->current_triggers_rpm < d->rpm_window_size) ?
-        d->current_triggers_rpm : d->rpm_window_size;
+    /* Use the minimum of rpm_window_size and current previous triggers so that
+     * rpm is valid in case our window size is larger than required trigger
+     * count */
+    int times_for_rpm = ((d->current_triggers_rpm - 1) < d->rpm_window_size) ?
+        (d->current_triggers_rpm - 1) :
+        d->rpm_window_size;
+
     if (times_for_rpm) {
+      /* We have at least two data points to draw an rpm from */
       d->rpm = rpm_from_time_diff(d->times[0] - d->times[times_for_rpm], 
         d->degrees_per_trigger * times_for_rpm);
       d->trigger_cur_rpm_change = abs(d->rpm - slicerpm) / (float)d->rpm;
     } else {
       d->rpm = 0;
     }
+
+    /* Check for excessive per-tooth variation */
     if ((slicerpm <= d->trigger_min_rpm) ||
          (slicerpm > d->rpm + (d->rpm * d->trigger_max_rpm_change)) ||
          (slicerpm < d->rpm - (d->rpm * d->trigger_max_rpm_change))) {
       d->state = DECODER_NOSYNC;
       d->loss = DECODER_VARIATION;
     }
+
+    /* Check for too many triggers between syncs */
     if (d->triggers_since_last_sync > d->num_triggers) {
       d->state = DECODER_NOSYNC;
       d->loss = DECODER_TRIGGERCOUNT_HIGH;
     }
+
+    /* If we pass 150% of a inter-tooth delay, lose sync */
     d->expiration = t + diff * 1.5;
     set_expire_event(d->expiration);
   }
@@ -108,23 +118,16 @@ static void sync_update(struct decoder *d) {
 }
 
 void cam_nplusone_decoder(struct decoder *d) {
-  timeval_t t0;
-  int sync, trigger;
+  timeval_t t0 = d->last_t0;
   decoder_state oldstate = d->state;
 
-  t0 = d->last_t0;
-
-  trigger = d->needs_decoding_t0;
-  d->needs_decoding_t0 = 0;
-
-  sync = d->needs_decoding_t1;
-  d->needs_decoding_t1 = 0;
-
-  if (trigger) {
+  if (d->needs_decoding_t0) {
     trigger_update(d, t0);
+    d->needs_decoding_t0 = 0;
   } 
-  if (sync) {
+  if (d->needs_decoding_t1) {
     sync_update(d);
+    d->needs_decoding_t1 = 0;
   }
 
   if (d->state == DECODER_SYNC) {
