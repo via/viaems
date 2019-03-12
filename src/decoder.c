@@ -40,10 +40,16 @@ static void trigger_update(struct decoder *d, timeval_t t) {
   timeval_t diff = d->times[0] - d->times[1];
   unsigned int slicerpm = rpm_from_time_diff(diff, d->degrees_per_trigger);
 
-  if (d->current_triggers_rpm < MAX_DECODER_TIMES) {
+  /* Count current triggers toward rpm until the maximum of our window or
+   * required triggers */
+  if (d->current_triggers_rpm <
+        ((d->rpm_window_size > d->required_triggers_rpm) ?
+          d->rpm_window_size :
+          d->required_triggers_rpm))  {
     d->current_triggers_rpm++;
   }
 
+  /* If we get enough triggers, we now have RPM */
   if ((d->state == DECODER_NOSYNC) && 
       (d->current_triggers_rpm >= d->required_triggers_rpm)) {
       d->state = DECODER_RPM;
@@ -57,6 +63,8 @@ static void trigger_update(struct decoder *d, timeval_t t) {
   }
 
   if (d->state == DECODER_RPM || d->state == DECODER_SYNC) {
+    /* Use the minimum of rpm_window_size and current triggers so that rpm is
+     * valid in case our window size is larger than required trigger count */
     int times_for_rpm = (d->current_triggers_rpm < d->rpm_window_size) ?
         d->current_triggers_rpm : d->rpm_window_size;
     if (times_for_rpm) {
