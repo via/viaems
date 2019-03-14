@@ -61,7 +61,9 @@ static void trigger_update_rpm(struct decoder *d) {
     /* We have at least two data points to draw an rpm from */
     d->rpm = rpm_from_time_diff(d->times[0] - d->times[rpm_window_size - 1], 
       d->degrees_per_trigger * (rpm_window_size - 1));
-    d->trigger_cur_rpm_change = abs(d->rpm - slicerpm) / (float)d->rpm;
+    if (d->rpm) {
+      d->trigger_cur_rpm_change = abs(d->rpm - slicerpm) / (float)d->rpm;
+    }
   } else {
     d->rpm = 0;
   }
@@ -197,9 +199,9 @@ void decoder_init(struct decoder *d) {
       break;
     case TOYOTA_24_1_CAS:
       d->decode = cam_nplusone_decoder;
-      d->required_triggers_rpm = 9;
+      d->required_triggers_rpm = 8;
       d->degrees_per_trigger = 30;
-      d->rpm_window_size = 3;
+      d->rpm_window_size = 8;
       d->num_triggers = 24;
       break;
     default:

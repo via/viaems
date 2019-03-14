@@ -155,7 +155,7 @@ struct config config __attribute__((section(".configdata"))) = {
   },
   .sensors = {
     [SENSOR_BRV] = {.pin=0, .source=SENSOR_ADC, .method=METHOD_LINEAR,
-      .params={.range={.min=0, .max=24.5}},
+      .params={.range={.min=0, .max=24.5}}, .lag=80,
       .fault_config={.min = 100, .max = 4000, .fault_value = 13.8}},
     [SENSOR_IAT] = {.pin=1, .source=SENSOR_ADC, .method=METHOD_THERM,
       .fault_config={.min = 2, .max = 4095, .fault_value = 10.0},
