@@ -33,19 +33,69 @@ static void push_time(struct decoder *d, timeval_t t) {
   d->times[0] = t;
 }
 
+static unsigned int current_rpm_window_size(unsigned int current_triggers, 
+    unsigned int normal_window_size) {
+
+  if (current_triggers) {
+    return 0;
+  }
+
+  /* Use the minimum of rpm_window_size and current previous triggers so that
+   * rpm is valid in case our window size is larger than required trigger
+   * count */
+  if ((current_triggers - 1) < normal_window_size) {
+    return current_triggers - 1;
+  } else {
+    return normal_window_size;
+  }
+}
+
+/* Update rpm information and validate */
+static void trigger_update_rpm(struct decoder *d) { 
+  timeval_t diff = d->times[0] - d->times[1];
+  unsigned int slicerpm = rpm_from_time_diff(diff, d->degrees_per_trigger);
+  unsigned int rpm_window_size = current_rpm_window_size(d->current_triggers_rpm,
+      d->rpm_window_size);
+
+  if (rpm_window_size) {
+    /* We have at least two data points to draw an rpm from */
+    d->rpm = rpm_from_time_diff(d->times[0] - d->times[rpm_window_size], 
+      d->degrees_per_trigger * rpm_window_size);
+    d->trigger_cur_rpm_change = abs(d->rpm - slicerpm) / (float)d->rpm;
+  } else {
+    d->rpm = 0;
+  }
+
+  /* Check for excessive per-tooth variation */
+  if ((slicerpm <= d->trigger_min_rpm) ||
+       (slicerpm > d->rpm + (d->rpm * d->trigger_max_rpm_change)) ||
+       (slicerpm < d->rpm - (d->rpm * d->trigger_max_rpm_change))) {
+    d->state = DECODER_NOSYNC;
+    d->loss = DECODER_VARIATION;
+  }
+
+  /* Check for too many triggers between syncs */
+  if (d->triggers_since_last_sync > d->num_triggers) {
+    d->state = DECODER_NOSYNC;
+    d->loss = DECODER_TRIGGERCOUNT_HIGH;
+  }
+
+  /* TODO here is the place to handle a missing tooth */
+
+  /* If we pass 150% of a inter-tooth delay, lose sync */
+  d->expiration = d->times[0] + diff * 1.5;
+  set_expire_event(d->expiration);
+}
+
+
 static void trigger_update(struct decoder *d, timeval_t t) {
+  /* Bookkeeping */
   push_time(d, t);
   d->t0_count++;
   d->triggers_since_last_sync++;
-  timeval_t diff = d->times[0] - d->times[1];
-  unsigned int slicerpm = rpm_from_time_diff(diff, d->degrees_per_trigger);
 
-  /* Count current triggers toward rpm until the maximum of our window or
-   * required triggers */
-  if (d->current_triggers_rpm <
-        ((d->rpm_window_size > d->required_triggers_rpm) ?
-          d->rpm_window_size :
-          d->required_triggers_rpm))  {
+  /* Count triggers up until a full wheel */
+  if (d->current_triggers_rpm < MAX_TRIGGERS) {
     d->current_triggers_rpm++;
   }
 
@@ -63,39 +113,7 @@ static void trigger_update(struct decoder *d, timeval_t t) {
   }
 
   if (d->state == DECODER_RPM || d->state == DECODER_SYNC) {
-    /* Use the minimum of rpm_window_size and current previous triggers so that
-     * rpm is valid in case our window size is larger than required trigger
-     * count */
-    int times_for_rpm = ((d->current_triggers_rpm - 1) < d->rpm_window_size) ?
-        (d->current_triggers_rpm - 1) :
-        d->rpm_window_size;
-
-    if (times_for_rpm) {
-      /* We have at least two data points to draw an rpm from */
-      d->rpm = rpm_from_time_diff(d->times[0] - d->times[times_for_rpm], 
-        d->degrees_per_trigger * times_for_rpm);
-      d->trigger_cur_rpm_change = abs(d->rpm - slicerpm) / (float)d->rpm;
-    } else {
-      d->rpm = 0;
-    }
-
-    /* Check for excessive per-tooth variation */
-    if ((slicerpm <= d->trigger_min_rpm) ||
-         (slicerpm > d->rpm + (d->rpm * d->trigger_max_rpm_change)) ||
-         (slicerpm < d->rpm - (d->rpm * d->trigger_max_rpm_change))) {
-      d->state = DECODER_NOSYNC;
-      d->loss = DECODER_VARIATION;
-    }
-
-    /* Check for too many triggers between syncs */
-    if (d->triggers_since_last_sync > d->num_triggers) {
-      d->state = DECODER_NOSYNC;
-      d->loss = DECODER_TRIGGERCOUNT_HIGH;
-    }
-
-    /* If we pass 150% of a inter-tooth delay, lose sync */
-    d->expiration = t + diff * 1.5;
-    set_expire_event(d->expiration);
+    trigger_update_rpm(d);
   }
 
 }
