@@ -359,6 +359,7 @@ START_TEST(check_cam_nplusone_startup_normal) {
     {1, 0, 225000, DECODER_SYNC, 1, 0},
   };
   prepare_decoder(TOYOTA_24_1_CAS);
+  config.decoder.required_triggers_rpm = 9;
   validate_decoder_sequence(cam_nplusone_startup_events, 11);
   ck_assert_int_eq(config.decoder.last_trigger_angle, 30);
 
@@ -381,6 +382,7 @@ START_TEST(check_cam_nplusone_startup_normal_then_die) {
   };
 
   prepare_decoder(TOYOTA_24_1_CAS);
+  config.decoder.required_triggers_rpm = 9;
   validate_decoder_sequence(cam_nplusone_startup_death_events, 12);
 
 } END_TEST
@@ -427,6 +429,7 @@ START_TEST(check_cam_nplusone_startup_normal_sustained) {
   };
 
   prepare_decoder(TOYOTA_24_1_CAS);
+  config.decoder.required_triggers_rpm = 9;
   validate_decoder_sequence(cam_nplusone_startup_events, 37);
   ck_assert_int_eq(config.decoder.last_trigger_angle, 60);
 
@@ -473,6 +476,7 @@ START_TEST(check_cam_nplusone_startup_normal_no_second_trigger) {
   };
 
   prepare_decoder(TOYOTA_24_1_CAS);
+  config.decoder.required_triggers_rpm = 9;
   validate_decoder_sequence(cam_nplusone_startup_events, 36);
 
 } END_TEST
@@ -492,6 +496,7 @@ START_TEST(check_nplusone_decoder_syncloss_expire) {
     {1, 0, 225000, DECODER_SYNC, 1, 0},
   };
   prepare_decoder(TOYOTA_24_1_CAS);
+  config.decoder.required_triggers_rpm = 9;
   validate_decoder_sequence(cam_nplusone_startup_events, 11);
 
   ck_assert_int_eq(config.decoder.expiration, 262500);
