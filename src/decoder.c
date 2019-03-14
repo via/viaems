@@ -27,7 +27,7 @@ static void set_expire_event(timeval_t t) {
 }
 
 static void push_time(struct decoder *d, timeval_t t) {
-  for (int i = d->rpm_window_size - 1; i > 0; --i) {
+  for (int i = MAX_TRIGGERS - 1; i > 0; --i) {
     d->times[i] = d->times[i - 1];
   }
   d->times[0] = t;
@@ -36,15 +36,15 @@ static void push_time(struct decoder *d, timeval_t t) {
 static unsigned int current_rpm_window_size(unsigned int current_triggers, 
     unsigned int normal_window_size) {
 
-  if (current_triggers) {
+  if (!current_triggers) {
     return 0;
   }
 
   /* Use the minimum of rpm_window_size and current previous triggers so that
    * rpm is valid in case our window size is larger than required trigger
    * count */
-  if ((current_triggers - 1) < normal_window_size) {
-    return current_triggers - 1;
+  if (current_triggers < normal_window_size) {
+    return current_triggers;
   } else {
     return normal_window_size;
   }
@@ -57,10 +57,10 @@ static void trigger_update_rpm(struct decoder *d) {
   unsigned int rpm_window_size = current_rpm_window_size(d->current_triggers_rpm,
       d->rpm_window_size);
 
-  if (rpm_window_size) {
+  if (rpm_window_size > 1) {
     /* We have at least two data points to draw an rpm from */
-    d->rpm = rpm_from_time_diff(d->times[0] - d->times[rpm_window_size], 
-      d->degrees_per_trigger * rpm_window_size);
+    d->rpm = rpm_from_time_diff(d->times[0] - d->times[rpm_window_size - 1], 
+      d->degrees_per_trigger * (rpm_window_size - 1));
     d->trigger_cur_rpm_change = abs(d->rpm - slicerpm) / (float)d->rpm;
   } else {
     d->rpm = 0;
@@ -190,16 +190,16 @@ void decoder_init(struct decoder *d) {
   switch (d->type) {
     case FORD_TFI:
       d->decode = tfi_pip_decoder;
-      d->required_triggers_rpm = 3;
+      d->required_triggers_rpm = 4;
       d->degrees_per_trigger = 90;
-      d->rpm_window_size = 2;
+      d->rpm_window_size = 3;
       d->num_triggers = 8;
       break;
     case TOYOTA_24_1_CAS:
       d->decode = cam_nplusone_decoder;
-      d->required_triggers_rpm = 8;
+      d->required_triggers_rpm = 9;
       d->degrees_per_trigger = 30;
-      d->rpm_window_size = 12;
+      d->rpm_window_size = 3;
       d->num_triggers = 24;
       break;
     default:
@@ -324,6 +324,7 @@ START_TEST(check_tfi_decoder_syncloss_variation) {
     {1, 0, 150000, DECODER_SYNC, 1, 0},
     {1, 0, 155000, DECODER_NOSYNC, 0, DECODER_VARIATION},
   };
+  printf("running\n");
   validate_decoder_sequence(ev, 2);
   ck_assert_int_eq(0, config.decoder.current_triggers_rpm);
 } END_TEST

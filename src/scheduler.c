@@ -719,7 +719,6 @@ START_TEST(check_schedule_fuel_immediately_after_finish) {
   oev->angle = 60;
   config.decoder.rpm = 6000;
   schedule_fuel_event(oev, &config.decoder, 1000);
-  printf("%d - %d\n", oev->start.time, oev->stop.time);
   
   /* Emulate firing of the event */
   set_current_time(oev->stop.time + 5);
