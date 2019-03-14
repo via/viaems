@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <assert.h>
 #include "platform.h"
 #include "util.h"
 #include "decoder.h"
@@ -18,6 +19,8 @@ int main() {
   platform_init(0, NULL);
   initialize_scheduler();
 
+  assert(config_valid());
+
   enable_test_trigger(FORD_TFI, 2000);
 
   while (1) {                   
@@ -28,9 +31,7 @@ int main() {
     handle_boost_control();
     handle_idle_control();
 
-    if (!config.decoder.valid) {
-      adc_gather();
-    }
+    adc_gather();
   }
 
   return 0;

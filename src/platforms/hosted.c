@@ -89,13 +89,15 @@ void disable_event_timer() {
 } 
 
 static int interrupts_disabled = 0;
-void disable_interrupts() {
+int disable_interrupts() {
+  int old = interrupts_disabled;
   sigset_t sm;
   sigemptyset(&sm);
   sigaddset(&sm, SIGVTALRM);
   sigprocmask(SIG_BLOCK, &sm, NULL);
   interrupts_disabled = 1;
   stats_start_timing(STATS_INT_DISABLE_TIME);
+  return !old;
 }
 
 void enable_interrupts() {
@@ -213,16 +215,17 @@ static void hosted_platform_timer() {
     return;
   }
 
-  if (test_trigger_rpm) {
+  int failing = (current_time() % 1000000) > 500000;
+  if (test_trigger_rpm && !failing) {
     timeval_t time_between = time_from_rpm_diff(test_trigger_rpm, 90);
     static uint32_t trigger_count = 0;
-    if (curtime == test_trigger_last + time_between) {
+    if (curtime >= test_trigger_last + time_between) {
       test_trigger_last = curtime;
       decoder_update_scheduling(0, curtime);
       trigger_count++;
 
       if ((config.decoder.type == TOYOTA_24_1_CAS) &&
-          (trigger_count == config.decoder.num_triggers)) {
+          (trigger_count >= config.decoder.num_triggers)) {
         trigger_count = 0;
         decoder_update_scheduling(1, curtime);
       }

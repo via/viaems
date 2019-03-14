@@ -2,7 +2,7 @@
 #define _DECODER_H
 
 #include "platform.h"
-#define MAX_DECODER_TIMES 8
+#define MAX_TRIGGERS 36
 
 struct decoder;
 typedef void (*decoder_func)(struct decoder *);
@@ -60,7 +60,7 @@ struct decoder {
   decoder_state state;
   unsigned int current_triggers_rpm;
   unsigned int triggers_since_last_sync;
-  timeval_t times[MAX_DECODER_TIMES];
+  timeval_t times[MAX_TRIGGERS];
 };
 
 void decoder_init(struct decoder *);

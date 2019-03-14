@@ -568,8 +568,8 @@ static void console_get_events(
         ev_type = "disabled";
         break;
     }
-    sprintf(dest, "type=%s angle=%d output=%d inverted=%d", 
-        ev_type, ev->angle, ev->output_id, ev->inverted);
+    sprintf(dest, "type=%s angle=%.0f output=%d inverted=%d", 
+        ev_type, ev->angle, ev->pin, ev->inverted);
   } else {
     strcpy(dest, "event out of range");
   }
@@ -613,7 +613,7 @@ static void console_set_events(
     } else if (!strcmp("angle", k)) {
       ev->angle = atoi(v);
     } else if (!strcmp("output", k)) {
-      ev->output_id = atoi(v);
+      ev->pin = atoi(v);
     } else if (!strcmp("inverted", k)) {
       ev->inverted = atoi(v);
     }
@@ -723,7 +723,7 @@ static struct console_config_node console_config_nodes[] = {
   {.name="config.decoder.max_variance", .val=&config.decoder.trigger_cur_rpm_change,
    .get=console_get_float, .set=console_set_float},
   {.name="config.decoder.offset", .val=&config.decoder.offset,
-   .get=console_get_uint, .set=console_set_uint},
+   .get=console_get_float, .set=console_set_float},
   {.name="config.decoder.min_rpm", .val=&config.decoder.trigger_min_rpm,
    .get=console_get_uint, .set=console_set_uint},
 
@@ -1534,7 +1534,7 @@ START_TEST(check_console_get_events) {
     .type = FUEL_EVENT,
     .inverted = 1,
     .angle = 100,
-    .output_id = 5,
+    .pin = 5,
   };
 
   strcpy(cmd, "3");
@@ -1548,7 +1548,7 @@ START_TEST(check_console_get_events) {
     .type = IGNITION_EVENT,
     .inverted = 0,
     .angle = 5,
-    .output_id = 4,
+    .pin = 4,
   };
 
   strcpy(cmd, "3");
@@ -1572,7 +1572,7 @@ START_TEST(check_console_set_events) {
   ck_assert_int_eq(config.events[2].type, FUEL_EVENT);
   ck_assert_int_eq(config.events[2].inverted, 1);
   ck_assert_int_eq(config.events[2].angle, 12);
-  ck_assert_int_eq(config.events[2].output_id, 6);
+  ck_assert_int_eq(config.events[2].pin, 6);
 } END_TEST
 
 

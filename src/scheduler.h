@@ -17,8 +17,8 @@ struct sched_entry {
   timeval_t time;
 
   /* Otherwise an output change */
-  unsigned char output_id;
-  unsigned char output_val;
+  unsigned char pin;
+  unsigned char val;
 
   volatile unsigned char fired;
   volatile unsigned char scheduled; /* current time is valid */
@@ -43,7 +43,7 @@ struct timed_callback {
 struct output_event {
   event_type_t type;
   degrees_t angle;
-  unsigned char output_id;
+  unsigned char pin;
   unsigned int inverted;
 
   struct sched_entry start;

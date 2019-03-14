@@ -74,6 +74,36 @@ interpolate_table_twoaxis(struct table *t, float x, float y) {
   return xy;
 }
 
+static int table_valid_axis(struct table_axis *a) {
+  if (a->num > MAX_AXIS_SIZE) {
+    return 0;
+  }
+  for (int i = 0; i < a->num - 1; i++) {
+    if (a->values[i] > a->values[i + 1]) {
+      return 0;
+    }
+  }
+  return 1;
+}
+
+int table_valid(struct table *t) {
+  
+  if ((t->num_axis != 1) && (t->num_axis != 2)) {
+    return 0;
+  }
+
+  if (!table_valid_axis(&t->axis[0])) {
+    return 0;
+  }
+
+  if ((t->num_axis == 2) && !table_valid_axis(&t->axis[1])) {
+    return 0;
+  }
+
+  return 1;
+}
+
+
 #ifdef UNITTEST
 #include <check.h>
 

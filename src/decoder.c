@@ -27,18 +27,85 @@ static void set_expire_event(timeval_t t) {
 }
 
 static void push_time(struct decoder *d, timeval_t t) {
-  for (int i = d->required_triggers_rpm - 1; i > 0; --i) {
+  for (int i = MAX_TRIGGERS - 1; i > 0; --i) {
     d->times[i] = d->times[i - 1];
   }
   d->times[0] = t;
 }
 
+static unsigned int current_rpm_window_size(unsigned int current_triggers, 
+    unsigned int normal_window_size) {
+
+  if (!current_triggers) {
+    return 0;
+  }
+
+  /* Use the minimum of rpm_window_size and current previous triggers so that
+   * rpm is valid in case our window size is larger than required trigger
+   * count */
+  if (current_triggers < normal_window_size) {
+    return current_triggers;
+  } else {
+    return normal_window_size;
+  }
+}
+
+/* Update rpm information and validate */
+static void trigger_update_rpm(struct decoder *d) { 
+  timeval_t diff = d->times[0] - d->times[1];
+  unsigned int slicerpm = rpm_from_time_diff(diff, d->degrees_per_trigger);
+  unsigned int rpm_window_size = current_rpm_window_size(d->current_triggers_rpm,
+      d->rpm_window_size);
+
+  if (rpm_window_size > 1) {
+    /* We have at least two data points to draw an rpm from */
+    d->rpm = rpm_from_time_diff(d->times[0] - d->times[rpm_window_size - 1], 
+      d->degrees_per_trigger * (rpm_window_size - 1));
+    if (d->rpm) {
+      d->trigger_cur_rpm_change = abs(d->rpm - slicerpm) / (float)d->rpm;
+    }
+  } else {
+    d->rpm = 0;
+  }
+
+  /* Check for excessive per-tooth variation */
+  if ((slicerpm <= d->trigger_min_rpm) ||
+       (slicerpm > d->rpm + (d->rpm * d->trigger_max_rpm_change)) ||
+       (slicerpm < d->rpm - (d->rpm * d->trigger_max_rpm_change))) {
+    d->state = DECODER_NOSYNC;
+    d->loss = DECODER_VARIATION;
+  }
+
+  /* Check for too many triggers between syncs */
+  if (d->triggers_since_last_sync > d->num_triggers) {
+    d->state = DECODER_NOSYNC;
+    d->loss = DECODER_TRIGGERCOUNT_HIGH;
+  }
+
+  /* TODO here is the place to handle a missing tooth */
+
+  /* If we pass 150% of a inter-tooth delay, lose sync */
+  d->expiration = d->times[0] + diff * 1.5;
+  set_expire_event(d->expiration);
+}
+
+
 static void trigger_update(struct decoder *d, timeval_t t) {
+  /* Bookkeeping */
   push_time(d, t);
   d->t0_count++;
   d->triggers_since_last_sync++;
-  timeval_t diff = d->times[0] - d->times[1];
-  unsigned int slicerpm = rpm_from_time_diff(diff, d->degrees_per_trigger);
+
+  /* Count triggers up until a full wheel */
+  if (d->current_triggers_rpm < MAX_TRIGGERS) {
+    d->current_triggers_rpm++;
+  }
+
+  /* If we get enough triggers, we now have RPM */
+  if ((d->state == DECODER_NOSYNC) && 
+      (d->current_triggers_rpm >= d->required_triggers_rpm)) {
+      d->state = DECODER_RPM;
+  }
 
   if (d->state == DECODER_SYNC) {
     d->last_trigger_angle += d->degrees_per_trigger;
@@ -48,23 +115,7 @@ static void trigger_update(struct decoder *d, timeval_t t) {
   }
 
   if (d->state == DECODER_RPM || d->state == DECODER_SYNC) {
-    d->rpm = rpm_from_time_diff(d->times[0] - d->times[d->rpm_window_size], 
-      d->degrees_per_trigger * d->rpm_window_size);
-    if (d->rpm) {
-      d->trigger_cur_rpm_change = abs(d->rpm - slicerpm) / (float)d->rpm;
-    }
-    if ((slicerpm <= d->trigger_min_rpm) ||
-         (slicerpm > d->rpm + (d->rpm * d->trigger_max_rpm_change)) ||
-         (slicerpm < d->rpm - (d->rpm * d->trigger_max_rpm_change))) {
-      d->state = DECODER_NOSYNC;
-      d->loss = DECODER_VARIATION;
-    }
-    if (d->triggers_since_last_sync > d->num_triggers) {
-      d->state = DECODER_NOSYNC;
-      d->loss = DECODER_TRIGGERCOUNT_HIGH;
-    }
-    d->expiration = t + diff * 1.5;
-    set_expire_event(d->expiration);
+    trigger_update_rpm(d);
   }
 
 }
@@ -87,40 +138,16 @@ static void sync_update(struct decoder *d) {
 }
 
 void cam_nplusone_decoder(struct decoder *d) {
-  timeval_t t0, t1;
-  int sync, trigger;
+  timeval_t t0 = d->last_t0;
   decoder_state oldstate = d->state;
 
-  t0 = d->last_t0;
-  t1 = d->last_t1;
-
-  trigger = d->needs_decoding_t0;
-  d->needs_decoding_t0 = 0;
-
-  sync = d->needs_decoding_t1;
-  d->needs_decoding_t1 = 0;
-
-  if (d->state == DECODER_NOSYNC && trigger) {
-    if (d->current_triggers_rpm >= d->required_triggers_rpm) {
-      d->state = DECODER_RPM;
-    } else {
-      d->current_triggers_rpm++;
-    }
-  }
-
-  if (trigger && sync) {
-    /* Which came first? */
-    if (time_in_range(t1, t0, current_time())) {
-      trigger_update(d, t0);
-      sync_update(d);
-    } else {
-      sync_update(d);
-      trigger_update(d, t0);
-    }
-  } else if (trigger) {
+  if (d->needs_decoding_t0) {
     trigger_update(d, t0);
-  } else {
+    d->needs_decoding_t0 = 0;
+  } 
+  if (d->needs_decoding_t1) {
     sync_update(d);
+    d->needs_decoding_t1 = 0;
   }
 
   if (d->state == DECODER_SYNC) {
@@ -141,14 +168,6 @@ void tfi_pip_decoder(struct decoder *d) {
 
   t0 = d->last_t0;
   d->needs_decoding_t0 = 0;
-
-  if (d->state == DECODER_NOSYNC) {
-    if (d->current_triggers_rpm >= d->required_triggers_rpm) {
-      d->state = DECODER_RPM;
-    } else {
-      d->current_triggers_rpm++;
-    }
-  }
 
   trigger_update(d, t0);
   if (d->state == DECODER_RPM || d->state == DECODER_SYNC) {
@@ -173,16 +192,16 @@ void decoder_init(struct decoder *d) {
   switch (d->type) {
     case FORD_TFI:
       d->decode = tfi_pip_decoder;
-      d->required_triggers_rpm = 3;
+      d->required_triggers_rpm = 4;
       d->degrees_per_trigger = 90;
-      d->rpm_window_size = 2;
+      d->rpm_window_size = 3;
       d->num_triggers = 8;
       break;
     case TOYOTA_24_1_CAS:
       d->decode = cam_nplusone_decoder;
       d->required_triggers_rpm = 8;
       d->degrees_per_trigger = 30;
-      d->rpm_window_size = 3;
+      d->rpm_window_size = 8;
       d->num_triggers = 24;
       break;
     default:
@@ -307,6 +326,7 @@ START_TEST(check_tfi_decoder_syncloss_variation) {
     {1, 0, 150000, DECODER_SYNC, 1, 0},
     {1, 0, 155000, DECODER_NOSYNC, 0, DECODER_VARIATION},
   };
+  printf("running\n");
   validate_decoder_sequence(ev, 2);
   ck_assert_int_eq(0, config.decoder.current_triggers_rpm);
 } END_TEST
@@ -339,6 +359,7 @@ START_TEST(check_cam_nplusone_startup_normal) {
     {1, 0, 225000, DECODER_SYNC, 1, 0},
   };
   prepare_decoder(TOYOTA_24_1_CAS);
+  config.decoder.required_triggers_rpm = 9;
   validate_decoder_sequence(cam_nplusone_startup_events, 11);
   ck_assert_int_eq(config.decoder.last_trigger_angle, 30);
 
@@ -361,6 +382,7 @@ START_TEST(check_cam_nplusone_startup_normal_then_die) {
   };
 
   prepare_decoder(TOYOTA_24_1_CAS);
+  config.decoder.required_triggers_rpm = 9;
   validate_decoder_sequence(cam_nplusone_startup_death_events, 12);
 
 } END_TEST
@@ -407,6 +429,7 @@ START_TEST(check_cam_nplusone_startup_normal_sustained) {
   };
 
   prepare_decoder(TOYOTA_24_1_CAS);
+  config.decoder.required_triggers_rpm = 9;
   validate_decoder_sequence(cam_nplusone_startup_events, 37);
   ck_assert_int_eq(config.decoder.last_trigger_angle, 60);
 
@@ -453,6 +476,7 @@ START_TEST(check_cam_nplusone_startup_normal_no_second_trigger) {
   };
 
   prepare_decoder(TOYOTA_24_1_CAS);
+  config.decoder.required_triggers_rpm = 9;
   validate_decoder_sequence(cam_nplusone_startup_events, 36);
 
 } END_TEST
@@ -472,6 +496,7 @@ START_TEST(check_nplusone_decoder_syncloss_expire) {
     {1, 0, 225000, DECODER_SYNC, 1, 0},
   };
   prepare_decoder(TOYOTA_24_1_CAS);
+  config.decoder.required_triggers_rpm = 9;
   validate_decoder_sequence(cam_nplusone_startup_events, 11);
 
   ck_assert_int_eq(config.decoder.expiration, 262500);

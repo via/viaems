@@ -2,13 +2,18 @@
 - New frequency sensors that use DMA (TBD)
 + Improve decoder tests to be less brittle on slight config changes
 + Trigger input DMA to circular buffer
-+ Refactor decoder trigger interface now that it is synchronous
++ Refactor decoder trigger interface now that it is synchronous (also to move
+  handling of similtaneous triggers somewhere not platform-specific)
 + Refactor sensor interface now that it is synchronous
 + Dwell time vs BRV
-+ CLT/IAT enrich/timing code
 + Basic tasks
     + Boost control
     + Fan control
     + Idle Control
     + Priming
     + Tip in Enrich
+
+- Determine better ADC strategy, the graphs look awful for every-tooth (for now
+  just gather adc async)
+- Fix callback handling in interrupts (fix fuel event resched)
+- Make trigger edge configurable

@@ -13,10 +13,10 @@ struct table enrich_vs_temp_and_map __attribute__((section(".configdata"))) = {
   },
   .data = {
     .two = {
-      {2.5, 2.0, 1.5, 1.0, 1.0, 1.2},
-      {2.0, 1.5, 1.3, 1.0, 1.0, 1.2},
-      {1.5, 1.4, 1.2, 1.0, 1.0, 1.2},
-      {1.2, 1.2, 1.1, 1.0, 1.0, 1.2},
+      {2.5, 1.8, 1.5, 1.0, 1.0, 1.2},
+      {2.0, 1.8, 1.3, 1.0, 1.0, 1.2},
+      {1.5, 1.5, 1.2, 1.0, 1.0, 1.2},
+      {1.2, 1.3, 1.1, 1.0, 1.0, 1.2},
     },
   },
 };
@@ -131,37 +131,34 @@ struct table injector_dead_time __attribute__((section(".configdata"))) = {
 };
 
 struct config config __attribute__((section(".configdata"))) = {
-  .num_events = 14,
+  .num_events = 12,
   .events = {
-    {.type=IGNITION_EVENT, .angle=0, .output_id=0},
-    {.type=IGNITION_EVENT, .angle=120, .output_id=1},
-    {.type=IGNITION_EVENT, .angle=240, .output_id=2},
-    {.type=IGNITION_EVENT, .angle=360, .output_id=0},
-    {.type=IGNITION_EVENT, .angle=480, .output_id=1},
-    {.type=IGNITION_EVENT, .angle=600, .output_id=2},
+    {.type=IGNITION_EVENT, .angle=0, .pin=0},
+    {.type=IGNITION_EVENT, .angle=120, .pin=1},
+    {.type=IGNITION_EVENT, .angle=240, .pin=2},
+    {.type=IGNITION_EVENT, .angle=360, .pin=0},
+    {.type=IGNITION_EVENT, .angle=480, .pin=1},
+    {.type=IGNITION_EVENT, .angle=600, .pin=2},
 
-
-    {.type=ADC_EVENT, .angle=0},
-    {.type=ADC_EVENT, .angle=360},
-
-    {.type=FUEL_EVENT, .angle=0, .output_id=8},
-    {.type=FUEL_EVENT, .angle=120,   .output_id=9},
-    {.type=FUEL_EVENT, .angle=240,  .output_id=10},
-    {.type=FUEL_EVENT, .angle=360, .output_id=8},
-    {.type=FUEL_EVENT, .angle=480, .output_id=9},
-    {.type=FUEL_EVENT, .angle=600, .output_id=10},
+    {.type=FUEL_EVENT, .angle=0, .pin=8},
+    {.type=FUEL_EVENT, .angle=120, .pin=9},
+    {.type=FUEL_EVENT, .angle=240, .pin=10},
+    {.type=FUEL_EVENT, .angle=360, .pin=8},
+    {.type=FUEL_EVENT, .angle=480, .pin=9},
+    {.type=FUEL_EVENT, .angle=600, .pin=10},
   },
   .decoder = {
     .type = TOYOTA_24_1_CAS,
-    .offset = 20,
+    .offset = 50,
     .trigger_max_rpm_change = 0.55, /*Startup sucks with only 90* trigger */
     .trigger_min_rpm = 80,
   },
   .sensors = {
     [SENSOR_BRV] = {.pin=0, .source=SENSOR_ADC, .method=METHOD_LINEAR,
-      .params={.range={.min=0, .max=24.5}},
+      .params={.range={.min=0, .max=24.5}}, .lag=80,
       .fault_config={.min = 100, .max = 4000, .fault_value = 13.8}},
     [SENSOR_IAT] = {.pin=1, .source=SENSOR_ADC, .method=METHOD_THERM,
+      .fault_config={.min = 2, .max = 4095, .fault_value = 10.0},
       .params={.therm={
         .bias=2490,
         .a=0.00146167419060305,
@@ -169,6 +166,7 @@ struct config config __attribute__((section(".configdata"))) = {
         .c=1.64484831669638E-07,
       }}},
     [SENSOR_CLT] = {.pin=2, .source=SENSOR_ADC, .method=METHOD_THERM,
+      .fault_config={.min = 2, .max = 4095, .fault_value = 50.0},
       .params={.therm={
         .bias=2490,
         .a=0.00131586818223649,
@@ -182,7 +180,7 @@ struct config config __attribute__((section(".configdata"))) = {
     [SENSOR_EGO] = {.pin=4, .source=SENSOR_ADC, .method=METHOD_LINEAR,
       .params={.range={.min=0.5, .max=1.5}}},
     [SENSOR_MAP] = {.pin=5, .source=SENSOR_ADC, .method=METHOD_LINEAR,
-      .params={.range={.min=-44.45, .max=386.48}}, /* AEM 3.5 bar MAP sensor*/
+      .params={.range={.min=-35, .max=395}}, /* AEM 3.5 bar MAP sensor*/
       .fault_config={.min = 10, .max = 4050, .fault_value = 50.0}},
     [SENSOR_AAP] = {.source=SENSOR_CONST, .params={.fixed_value = 102.0}},
     [SENSOR_FRT] = {.source=SENSOR_CONST, .params={.fixed_value = 15.0}},
@@ -205,8 +203,27 @@ struct config config __attribute__((section(".configdata"))) = {
   },
   .ignition = {
     .dwell = DWELL_FIXED_TIME,
-    .dwell_us = 4000,
+    .dwell_us = 2800,
     .min_fire_time_us = 500,
   },
 };
 
+int config_valid() {
+  if (config.ve && !table_valid(config.ve)) {
+    return 0;
+  }
+
+  if (config.timing && !table_valid(config.timing)) {
+    return 0;
+  }
+
+  if (config.injector_pw_compensation && !table_valid(config.injector_pw_compensation)) {
+    return 0;
+  }
+
+  if (config.commanded_lambda && !table_valid(config.commanded_lambda)) {
+    return 0;
+  }
+
+  return 1;
+}
