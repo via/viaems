@@ -865,8 +865,7 @@ void dma1_stream3_isr(void) {
     }
   }
   
-  sensor_adc_new_data();
-  sensors_process();
+  sensors_process(SENSOR_ADC);
   adc_gather_in_progress = 0;
 }
 

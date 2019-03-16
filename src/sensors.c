@@ -5,9 +5,6 @@
 #include "platform.h"
 #include "stats.h"
 
-static volatile int adc_data_ready;
-static volatile int freq_data_ready;
-
 static float sensor_convert_linear(struct sensor_input *in, float raw) {
   float partial = raw / 4096.0f;
   return in->params.range.min + partial * 
@@ -84,46 +81,14 @@ static void sensor_convert(struct sensor_input *in) {
 }
   
 void
-sensors_process() {
+sensors_process(sensor_source source) {
   for (int i = 0; i < NUM_SENSORS; ++i) {
-    switch(config.sensors[i].source) {
-      case SENSOR_ADC:
-        if (adc_data_ready) {
-          sensor_convert(&config.sensors[i]);
-        }
-        break;
-      case SENSOR_FREQ:
-        if (freq_data_ready) {
-          sensor_convert(&config.sensors[i]);
-        }
-        break;
-      case SENSOR_DIGITAL:
-      case SENSOR_PWM:
-      case SENSOR_CONST:
-        sensor_convert(&config.sensors[i]);
-        break;
-      default:
-        break;
+    if (config.sensors[i].source != source) {
+      return;
     }
+    sensor_convert(&config.sensors[i]);
   }
-  for (int i = 0; i < NUM_SENSORS; ++i) {
-    if (config.sensors[i].source == SENSOR_CONST) {
-      config.sensors[i].processed_value = config.sensors[i].params.fixed_value;
-    }
-  }
-
-  adc_data_ready = 0;
-  freq_data_ready = 0;
 }
-
-void sensor_adc_new_data() {
-  adc_data_ready = 1;
-}
-
-void sensor_freq_new_data() {
-  freq_data_ready = 1;
-}
-
 uint32_t sensor_fault_status() {
   uint32_t faults = 0;
   for (int i = 0; i < NUM_SENSORS; ++i) {
