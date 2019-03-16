@@ -1,6 +1,6 @@
 - Detect overlapping output schedules on same pin
 - New frequency sensors that use DMA (TBD)
-+ Improve decoder tests to be less brittle on slight config changes
+
 + Trigger input DMA to circular buffer
 + Refactor decoder trigger interface now that it is synchronous (also to move
   handling of similtaneous triggers somewhere not platform-specific)
@@ -15,5 +15,3 @@
 
 - Determine better ADC strategy, the graphs look awful for every-tooth (for now
   just gather adc async)
-- Fix callback handling in interrupts (fix fuel event resched)
-- Make trigger edge configurable
