@@ -339,7 +339,7 @@ static void validate_decoder_sequence(struct decoder_event *ev) {
     }
 
     set_current_time(ev->time);
-    config.decoder.decode(&config.decoder);
+    decoder_update_scheduling(ev, 1);
     ck_assert_msg(config.decoder.state == ev->state, 
         "expected event at %d: (state=%d, valid=%d). Got (state=%d, valid=%d)",
         ev->time, ev->state, ev->valid, 
