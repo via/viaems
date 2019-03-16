@@ -169,7 +169,7 @@ void tim1_cc_isr() {
       config.sensors[i].raw_value = (uint16_t)(cur - prev[pin - 1].value);
       prev[pin - 1].value = cur;
       prev[pin - 1].time = current_time();
-      sensor_freq_new_data();
+      sensors_process(SENSOR_FREQ);
       config.sensors[i].fault = FAULT_NONE;
       timer_clear_flag(TIM1, timer_flag);
     } else if ((current_time() - prev[pin - 1].time) > TICKRATE) {
@@ -865,8 +865,7 @@ void dma1_stream3_isr(void) {
     }
   }
   
-  sensor_adc_new_data();
-  sensors_process();
+  sensors_process(SENSOR_ADC);
   adc_gather_in_progress = 0;
 }
 
@@ -883,7 +882,7 @@ void tim2_isr() {
   stats_increment_counter(STATS_INT_RATE);
   stats_increment_counter(STATS_INT_EVENTTIMER_RATE);
   stats_start_timing(STATS_INT_TOTAL_TIME);
-  if (timer_get_flag(TIM2, TIM_SR_CC1IF) &&
+  if (timer_get_flag(TIM2, TIM_SR_CC2IF) &&
       timer_get_flag(TIM2, TIM_SR_CC3IF)) {
     timer_clear_flag(TIM2, TIM_SR_CC2IF);
     timer_clear_flag(TIM2, TIM_SR_CC3IF);

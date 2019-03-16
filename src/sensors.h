@@ -68,10 +68,7 @@ struct sensor_input {
   sensor_fault fault;
 };
 
-void sensors_process();
-
-void sensor_adc_new_data();
-void sensor_freq_new_data();
+void sensors_process(sensor_source source);
 uint32_t sensor_fault_status();
 
 #ifdef UNITTEST

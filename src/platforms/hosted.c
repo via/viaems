@@ -272,9 +272,8 @@ static void hosted_platform_timer() {
     scheduler_callback_timer_execute();
   }
 
-  sensor_adc_new_data();
-  sensor_freq_new_data();
-  sensors_process();
+  sensors_process(SENSOR_ADC);
+  sensors_process(SENSOR_FREQ);
 
   stats_finish_timing(STATS_INT_TOTAL_TIME);
 }

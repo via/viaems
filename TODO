@@ -2,7 +2,6 @@
 - New frequency sensors that use DMA (TBD)
 
 + Trigger input DMA to circular buffer
-+ Refactor sensor interface now that it is synchronous
 + Dwell time vs BRV
 + Basic tasks
     + Boost control
