@@ -82,6 +82,7 @@ void calculate_fueling() {
   float lambda;
   float idt;
   float ete;
+  float tipin;
 
   float iat = config.sensors[SENSOR_IAT].processed_value;
   float brv = config.sensors[SENSOR_BRV].processed_value;
@@ -89,6 +90,7 @@ void calculate_fueling() {
   float aap = config.sensors[SENSOR_AAP].processed_value;
   float frt = config.sensors[SENSOR_FRT].processed_value;
   float clt = config.sensors[SENSOR_CLT].processed_value;
+  float tpsrate = config.sensors[SENSOR_TPS].derivative;
 
   if (config.ve) {
     float load = map / aap * 100.0;
@@ -116,6 +118,12 @@ void calculate_fueling() {
     ete = 1.0;
   }
 
+  if (config.tipin_enrich) {
+    tipin = interpolate_table_twoaxis(config.tipin_enrich, tpsrate, config.decoder.rpm);
+  } else {
+    tipin = 0.0;
+  }
+
   calculated_values.airmass_per_cycle = calculate_airmass(ve, map, aap, iat);
 
   float fuel_vol_at_stoich = calculate_fuel_volume(
@@ -128,9 +136,12 @@ void calculate_fueling() {
     config.fueling.injector_cc_per_minute * 60000000 / /* uS per minute */
     config.fueling.injections_per_cycle; /* This many pulses */
 
+  raw_pw_us += (raw_pw_us * tipin);
+
   calculated_values.ete = ete;
   calculated_values.idt = idt;
   calculated_values.ve = ve;
+  calculated_values.tipin = tipin;
   calculated_values.lambda = lambda;
   calculated_values.fueling_us = (raw_pw_us * ete) + (idt * 1000);
 

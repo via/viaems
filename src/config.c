@@ -2,7 +2,7 @@
 #include "sensors.h"
 
 struct table enrich_vs_temp_and_map __attribute__((section(".configdata"))) = {
-  .title = "ve", .num_axis = 2,
+  .title = "temp_enrich", .num_axis = 2,
   .axis = { { 
       .name = "TEMP", .num = 6,
       .values = {-20, 0, 20, 40, 102, 120},
@@ -17,6 +17,26 @@ struct table enrich_vs_temp_and_map __attribute__((section(".configdata"))) = {
       {2.0, 1.8, 1.3, 1.0, 1.0, 1.2},
       {1.5, 1.5, 1.2, 1.0, 1.0, 1.2},
       {1.2, 1.3, 1.1, 1.0, 1.0, 1.2},
+    },
+  },
+};
+
+struct table enrich_vs_tpsrate_and_rpm __attribute__((section(".configdata"))) = {
+  .title = "tipin_enrich", .num_axis = 2,
+  .axis = { { 
+      .name = "TPSRATE", .num = 4,
+      .values = {-1000, 0, 500, 1000},
+    },
+    { .name = "RPM", .num = 4,
+      .values = {400, 1600, 3000, 8000},
+    },
+  },
+  .data = {
+    .two = {
+      {-0.5, 0.0, 1.0, 1.0},
+      {-0.5, 0.0, 1.0, 1.0},
+      {-0.2, 0.0, 0.4, 0.4},
+      {-0.2, 0.0, 0.2, 0.2},
     },
   },
 };
@@ -186,6 +206,7 @@ struct config config __attribute__((section(".configdata"))) = {
     [SENSOR_FRT] = {.source=SENSOR_CONST, .params={.fixed_value = 15.0}},
   },
   .timing = &timing_vs_rpm_and_map,
+  .tipin_enrich = &enrich_vs_tpsrate_and_rpm,
   .injector_pw_compensation = &injector_dead_time,
   .ve = &ve_vs_rpm_and_map,
   .commanded_lambda = &lambda_vs_rpm_and_map,
@@ -222,6 +243,10 @@ int config_valid() {
   }
 
   if (config.commanded_lambda && !table_valid(config.commanded_lambda)) {
+    return 0;
+  }
+
+  if (config.tipin_enrich && !table_valid(config.tipin_enrich)) {
     return 0;
   }
 

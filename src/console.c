@@ -715,6 +715,8 @@ static struct console_config_node console_config_nodes[] = {
    .get=console_get_table, .set=console_set_table},
   {.name="config.tables.engine_temp_enrich", .val=&enrich_vs_temp_and_map,
    .get=console_get_table, .set=console_set_table},
+  {.name="config.tables.tipin_enrich", .val=&enrich_vs_tpsrate_and_rpm,
+   .get=console_get_table, .set=console_set_table},
 
   /* Decoding */
   {.name="config.decoder"},
@@ -802,7 +804,7 @@ static struct console_config_node console_config_nodes[] = {
    .get=console_get_float},
   {.name="status.dwell_us", .val=&calculated_values.dwell_us,
    .get=console_get_uint},
-  {.name="status.tipin", .val=&calculated_values.tipin_factor,
+  {.name="status.tipin", .val=&calculated_values.tipin,
    .get=console_get_float},
   
   /* Sensor values */
@@ -824,8 +826,6 @@ static struct console_config_node console_config_nodes[] = {
   {.name="status.sensors.brv.fault", .val=&config.sensors[SENSOR_BRV].fault,
    .get=console_get_sensor_fault},
   {.name="status.sensors.tps", .val=&config.sensors[SENSOR_TPS].processed_value,
-   .get=console_get_float},
-  {.name="status.sensors.tps.derivative", .val=&config.sensors[SENSOR_TPS].derivative,
    .get=console_get_float},
   {.name="status.sensors.tps.fault", .val=&config.sensors[SENSOR_TPS].fault,
    .get=console_get_sensor_fault},
@@ -930,7 +930,6 @@ void console_init() {
     "status.lambda",
     "status.idt",
     "status.tipin",
-    "status.sensors.tps.derivative",
     "status.sensors.brv",
     "status.sensors.map",
     "status.sensors.tps",
@@ -944,6 +943,7 @@ void console_init() {
   while (console_feed_defaults[count]) {
     console_feed_config.nodes[count] = 
       console_search_node(console_config_nodes, console_feed_defaults[count]);
+    assert(console_feed_config.nodes[count]);
     count++;
   }
   console_feed_config.n_nodes = count;

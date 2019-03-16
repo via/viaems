@@ -2,7 +2,6 @@
 #define TASKS_H
 
 void handle_fuel_pump();
-void handle_tipin_enrich();
 void handle_boost_control();
 void handle_idle_control();
 void handle_emergency_shutdown();
