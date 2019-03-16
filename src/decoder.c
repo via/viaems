@@ -36,10 +36,6 @@ static void push_time(struct decoder *d, timeval_t t) {
 static unsigned int current_rpm_window_size(unsigned int current_triggers, 
     unsigned int normal_window_size) {
 
-  if (!current_triggers) {
-    return 0;
-  }
-
   /* Use the minimum of rpm_window_size and current previous triggers so that
    * rpm is valid in case our window size is larger than required trigger
    * count */
@@ -268,40 +264,98 @@ struct decoder_event {
   decoder_state state;
   int valid;
   decoder_loss_reason reason;
+  struct decoder_event *next;
 }; 
 
+static struct decoder_event *find_last_trigger_event(struct decoder_event **entries) {
+  struct decoder_event *entry;
+  for (entry = *entries; entry->next; entry = entry->next);
+  return entry;
+}
 
-static struct decoder_event tfi_startup_events[] = {
-  {1, 0, 18000, DECODER_NOSYNC, 0, 0},
-  {1, 0, 25000, DECODER_NOSYNC, 0, 0},
-  {1, 0, 50000, DECODER_NOSYNC, 0, 0},
-  {1, 0, 75000, DECODER_SYNC, 1, 0},
-  {1, 0, 100000, DECODER_SYNC, 1, 0},
-  {1, 0, 125000, DECODER_SYNC, 1, 0},
-};
+static void append_trigger_event(struct decoder_event *last, struct decoder_event new) {
+  last->next = malloc(sizeof(struct decoder_event));
+  *(last->next) = new;
+}
 
-static void validate_decoder_sequence(struct decoder_event *ev, int num) {
-  int i;
-  for (i = 0; i < num; ++i) {
-    if (ev[i].t0) {
-      config.decoder.last_t0 = ev[i].time;
+static void add_trigger_event(struct decoder_event **entries, timeval_t duration, unsigned int primary, unsigned int secondary) {
+
+  if (!*entries) {
+    *entries = malloc(sizeof(struct decoder_event));
+    **entries = (struct decoder_event){
+      .t0 = primary, .t1 = secondary,
+      .time = duration, .state = DECODER_NOSYNC,
+    };
+    return;
+  }
+
+  struct decoder_event *last = find_last_trigger_event(entries);
+  struct decoder_event new = (struct decoder_event){
+    .t0 = primary, .t1 = secondary,
+      .time = last->time + duration, .state = last->state,
+      .valid = last->valid, .reason = last->reason,
+  };
+  append_trigger_event(last, new);
+}
+
+static void add_trigger_event_transition_rpm(struct decoder_event **entries, timeval_t duration, unsigned int primary, unsigned int secondary) {
+  ck_assert(*entries);
+
+  struct decoder_event *last = find_last_trigger_event(entries);
+  struct decoder_event new = (struct decoder_event){
+    .t0 = primary, .t1 = secondary,
+      .time = last->time + duration, .state = DECODER_RPM,
+      .valid = last->valid, .reason = last->reason,
+  };
+  append_trigger_event(last, new);
+
+}
+
+static void add_trigger_event_transition_sync(struct decoder_event **entries, timeval_t duration, unsigned int primary, unsigned int secondary) {
+  ck_assert(*entries);
+
+  struct decoder_event *last = find_last_trigger_event(entries);
+  struct decoder_event new = (struct decoder_event){
+    .t0 = primary, .t1 = secondary,
+      .time = last->time + duration, .state = DECODER_SYNC,
+      .valid = 1, .reason = 0,
+  };
+  append_trigger_event(last, new);
+}
+
+static void add_trigger_event_transition_loss(struct decoder_event **entries, timeval_t duration, unsigned int primary, unsigned int secondary, decoder_loss_reason reason) {
+  ck_assert(*entries);
+
+  struct decoder_event *last = find_last_trigger_event(entries);
+  struct decoder_event new = (struct decoder_event){
+    .t0 = primary, .t1 = secondary,
+      .time = last->time + duration, .state = DECODER_NOSYNC,
+      .valid = 0, .reason = reason,
+  };
+  append_trigger_event(last, new);
+}
+
+static void validate_decoder_sequence(struct decoder_event *ev) {
+  for (; ev; ev = ev->next) {
+    if (ev->t0) {
+      config.decoder.last_t0 = ev->time;
       config.decoder.needs_decoding_t0 = 1;
     }
-    if (ev[i].t1) {
-      config.decoder.last_t1 = ev[i].time;
+    if (ev->t1) {
+      config.decoder.last_t1 = ev->time;
       config.decoder.needs_decoding_t1 = 1;
     }
 
-    set_current_time(ev[i].time);
+    set_current_time(ev->time);
     config.decoder.decode(&config.decoder);
-    ck_assert_msg(config.decoder.state == ev[i].state, 
-        "expected event at %d: (%d, %d). Got (%d, %d)",
-        ev[i].time, ev[i].state, ev[i].valid, 
+    ck_assert_msg(config.decoder.state == ev->state, 
+        "expected event at %d: (state=%d, valid=%d). Got (state=%d, valid=%d)",
+        ev->time, ev->state, ev->valid, 
         config.decoder.state, config.decoder.valid);
-    if (!ev[i].valid) {
-      ck_assert_msg(config.decoder.loss == ev[i].reason,
+    if (!ev->valid) {
+      ck_assert_msg(config.decoder.loss == ev->reason,
       "reason mismatch at %d: %d. Got %d",
-      ev[i].time, ev[i].reason, config.decoder.loss);
+      ev->time, ev->reason, config.decoder.loss);
     }
   }
 }
@@ -313,197 +367,247 @@ static void prepare_decoder(trigger_type type) {
 
 
 START_TEST(check_tfi_decoder_startup_normal) {
-
+  struct decoder_event *entries = NULL;
   prepare_decoder(FORD_TFI);
-  validate_decoder_sequence(tfi_startup_events, 6);
-  ck_assert_int_eq(config.decoder.last_trigger_angle, 180);
+
+  /* Triggers to get RPM */
+  for (int i = 0; i < config.decoder.required_triggers_rpm - 1; ++i) {
+    add_trigger_event(&entries, 25000, 1, 0);
+  }
+  add_trigger_event_transition_sync(&entries, 25000, 1, 0);
+  add_trigger_event(&entries, 25000, 1, 0);
+
+  validate_decoder_sequence(entries);
+
+  ck_assert_int_eq(config.decoder.last_trigger_angle, 90);
 
 } END_TEST
 
 START_TEST(check_tfi_decoder_syncloss_variation) {
-
+  struct decoder_event *entries = NULL;
   prepare_decoder(FORD_TFI);
-  validate_decoder_sequence(tfi_startup_events, 6);
 
-  struct decoder_event ev[] = {
-    {1, 0, 150000, DECODER_SYNC, 1, 0},
-    {1, 0, 155000, DECODER_NOSYNC, 0, DECODER_VARIATION},
-  };
-  validate_decoder_sequence(ev, 2);
-  ck_assert_int_eq(0, config.decoder.current_triggers_rpm);
+  /* Triggers to get RPM */
+  for (int i = 0; i < config.decoder.required_triggers_rpm - 1; ++i) {
+    add_trigger_event(&entries, 25000, 1, 0);
+  }
+  add_trigger_event_transition_sync(&entries, 25000, 1, 0);
+  add_trigger_event(&entries, 25000, 1, 0);
+  /* Trigger far too soon */
+  add_trigger_event_transition_loss(&entries, 10000, 1, 0, DECODER_VARIATION);
+
+  validate_decoder_sequence(entries);
+
+  ck_assert_int_eq(config.decoder.current_triggers_rpm, 0);
 } END_TEST
 
-START_TEST(check_tfi_decoder_syncloss_expire) {
-  prepare_decoder(FORD_TFI);
-  validate_decoder_sequence(tfi_startup_events, 6);
-  ck_assert_int_eq(config.decoder.expiration, 162500);
 
-  set_current_time(170000);
+START_TEST(check_tfi_decoder_syncloss_expire) {
+  struct decoder_event *entries = NULL;
+  prepare_decoder(FORD_TFI);
+
+  /* Triggers to get RPM */
+  for (int i = 0; i < config.decoder.required_triggers_rpm - 1; ++i) {
+    add_trigger_event(&entries, 25000, 1, 0);
+  }
+  add_trigger_event_transition_sync(&entries, 25000, 1, 0);
+  add_trigger_event(&entries, 25000, 1, 0);
+
+  validate_decoder_sequence(entries);
+
+  /* Currently expiration is not dependent on variation setting, fixed 1.5x
+   * trigger time */
+  timeval_t expected_expiration = find_last_trigger_event(&entries)->time + 
+      (1.5 * 25000);
+  ck_assert_int_eq(config.decoder.expiration, expected_expiration);
+
+  set_current_time(expected_expiration + 500);
   handle_decoder_expire(&config.decoder);
+  ck_assert(!config.decoder.valid);
   ck_assert_int_eq(0, config.decoder.current_triggers_rpm);
-  ck_assert_int_eq(0, config.decoder.valid);
   ck_assert_int_eq(DECODER_EXPIRED, config.decoder.loss);
 } END_TEST
 
+/* Gets decoder up to sync, plus an additional trigger */
+static void cam_nplusone_normal_startup_to_sync(struct decoder_event **entries) {
+  /* Triggers to get RPM */
+  for (int i = 0; i < config.decoder.required_triggers_rpm - 1; ++i) {
+    add_trigger_event(entries, 25000, 1, 0);
+  }
+  add_trigger_event_transition_rpm(entries, 25000, 1, 0);
+
+  /* Wait a few triggers before sync */
+  add_trigger_event(entries, 25000, 1, 0);
+  add_trigger_event(entries, 25000, 1, 0);
+
+  /* Get a sync pulse and then continue to maintain sync for 3 triggers */
+  add_trigger_event_transition_sync(entries, 500, 0, 1);
+  add_trigger_event(entries, 24500, 1, 0);
+}
 
 START_TEST(check_cam_nplusone_startup_normal) {
-  struct decoder_event cam_nplusone_startup_events[] = {
-    {1, 0, 18000, DECODER_NOSYNC, 0, 0},
-    {1, 0, 25000, DECODER_NOSYNC, 0, 0},
-    {1, 0, 50000, DECODER_NOSYNC, 0, 0},
-    {1, 0, 75000, DECODER_NOSYNC, 0, 0},
-    {1, 0, 100000, DECODER_NOSYNC, 0, 0},
-    {1, 0, 125000, DECODER_NOSYNC, 0, 0},
-    {1, 0, 150000, DECODER_NOSYNC, 0, 0},
-    {1, 0, 175000, DECODER_NOSYNC, 0, 0},
-    {1, 0, 200000, DECODER_RPM, 0, 0},
-    {0, 1, 200500, DECODER_SYNC, 1, 0},
-    {1, 0, 225000, DECODER_SYNC, 1, 0},
-  };
+  struct decoder_event *entries = NULL;
   prepare_decoder(TOYOTA_24_1_CAS);
-  config.decoder.required_triggers_rpm = 9;
-  validate_decoder_sequence(cam_nplusone_startup_events, 11);
-  ck_assert_int_eq(config.decoder.last_trigger_angle, 30);
+
+  cam_nplusone_normal_startup_to_sync(&entries);
+  
+  /* Two additional triggers, three total after sync pulse */
+  add_trigger_event(&entries, 25000, 1, 0);
+  add_trigger_event(&entries, 25000, 1, 0);
+
+  validate_decoder_sequence(entries);
+
+  ck_assert_int_eq(config.decoder.last_trigger_angle, 
+      3 * config.decoder.degrees_per_trigger);
 
 } END_TEST
 
-START_TEST(check_cam_nplusone_startup_normal_then_die) {
-  struct decoder_event cam_nplusone_startup_death_events[] = {
-    {1, 0, 18000, DECODER_NOSYNC, 0, 0},
-    {1, 0, 25000, DECODER_NOSYNC, 0, 0},
-    {1, 0, 50000, DECODER_NOSYNC, 0, 0},
-    {1, 0, 75000, DECODER_NOSYNC, 0, 0},
-    {1, 0, 100000, DECODER_NOSYNC, 0, 0},
-    {1, 0, 125000, DECODER_NOSYNC, 0, 0},
-    {1, 0, 150000, DECODER_NOSYNC, 0, 0},
-    {1, 0, 175000, DECODER_NOSYNC, 0, 0},
-    {1, 0, 200000, DECODER_RPM, 0, 0},
-    {0, 1, 200500, DECODER_SYNC, 1, 0},
-    {1, 0, 225000, DECODER_SYNC, 1, 0},
-    {0, 1, 250000, DECODER_NOSYNC, 0, DECODER_TRIGGERCOUNT_LOW},
-  };
-
+START_TEST(check_cam_nplusone_startup_normal_then_early_sync) {
+  struct decoder_event *entries = NULL;
   prepare_decoder(TOYOTA_24_1_CAS);
-  config.decoder.required_triggers_rpm = 9;
-  validate_decoder_sequence(cam_nplusone_startup_death_events, 12);
+
+  cam_nplusone_normal_startup_to_sync(&entries);
+  
+  /* Two additional triggers, three total after sync pulse */
+  add_trigger_event(&entries, 25000, 1, 0);
+  add_trigger_event(&entries, 25000, 1, 0);
+
+  /* Spurious early sync */
+  add_trigger_event_transition_loss(&entries, 500, 0, 1, DECODER_TRIGGERCOUNT_LOW);
+
+  validate_decoder_sequence(entries);
+
+  ck_assert(!config.decoder.valid);
 
 } END_TEST
 
 START_TEST(check_cam_nplusone_startup_normal_sustained) {
-  struct decoder_event cam_nplusone_startup_events[] = {
-    {1, 0, 18000, DECODER_NOSYNC, 0, 0},
-    {1, 0, 25000, DECODER_NOSYNC, 0, 0},
-    {1, 0, 50000, DECODER_NOSYNC, 0, 0},
-    {1, 0, 75000, DECODER_NOSYNC, 0, 0},
-    {1, 0, 100000, DECODER_NOSYNC, 0, 0},
-    {1, 0, 125000, DECODER_NOSYNC, 0, 0},
-    {1, 0, 150000, DECODER_NOSYNC, 0, 0},
-    {1, 0, 175000, DECODER_NOSYNC, 0, 0},
-    {1, 0, 200000, DECODER_RPM, 0, 0},
-    {0, 1, 200500, DECODER_SYNC, 1, 0}, /* sync */
-    {1, 0, 225000, DECODER_SYNC, 1, 0},
-    {1, 0, 250000, DECODER_SYNC, 1, 0},
-    {1, 0, 275000, DECODER_SYNC, 1, 0},
-    {1, 0, 300000, DECODER_SYNC, 1, 0},
-    {1, 0, 325000, DECODER_SYNC, 1, 0},
-    {1, 0, 350000, DECODER_SYNC, 1, 0},
-    {1, 0, 375000, DECODER_SYNC, 1, 0},
-    {1, 0, 400000, DECODER_SYNC, 1, 0},
-    {1, 0, 425000, DECODER_SYNC, 1, 0},
-    {1, 0, 450000, DECODER_SYNC, 1, 0},
-    {1, 0, 475000, DECODER_SYNC, 1, 0},
-    {1, 0, 500000, DECODER_SYNC, 1, 0},
-    {1, 0, 525000, DECODER_SYNC, 1, 0},
-    {1, 0, 550000, DECODER_SYNC, 1, 0},
-    {1, 0, 575000, DECODER_SYNC, 1, 0},
-    {1, 0, 600000, DECODER_SYNC, 1, 0},
-    {1, 0, 625000, DECODER_SYNC, 1, 0},
-    {1, 0, 650000, DECODER_SYNC, 1, 0},
-    {1, 0, 675000, DECODER_SYNC, 1, 0},
-    {1, 0, 700000, DECODER_SYNC, 1, 0},
-    {1, 0, 725000, DECODER_SYNC, 1, 0},
-    {1, 0, 750000, DECODER_SYNC, 1, 0},
-    {1, 0, 775000, DECODER_SYNC, 1, 0},
-    {1, 0, 800000, DECODER_SYNC, 1, 0},
-    {0, 1, 800500, DECODER_SYNC, 1, 0}, /* sync */
-    {1, 0, 825000, DECODER_SYNC, 1, 0},
-    {1, 0, 850000, DECODER_SYNC, 1, 0},
-  };
-
+  struct decoder_event *entries = NULL;
   prepare_decoder(TOYOTA_24_1_CAS);
-  config.decoder.required_triggers_rpm = 9;
-  validate_decoder_sequence(cam_nplusone_startup_events, 37);
-  ck_assert_int_eq(config.decoder.last_trigger_angle, 60);
+
+  cam_nplusone_normal_startup_to_sync(&entries);
+  
+  /* continued wheel of additional triggers */
+  for (int i = 0; i < config.decoder.num_triggers - 1; ++i) {
+    add_trigger_event(&entries, 25000, 1, 0);
+  }
+  /* Plus another sync and trigger */
+  add_trigger_event(&entries, 500, 0, 1);
+  add_trigger_event(&entries, 24500, 1, 0);
+
+  validate_decoder_sequence(entries);
+
+  ck_assert_int_eq(config.decoder.last_trigger_angle, 
+      1 * config.decoder.degrees_per_trigger);
 
 } END_TEST
 
 START_TEST(check_cam_nplusone_startup_normal_no_second_trigger) {
-  struct decoder_event cam_nplusone_startup_events[] = {
-    {1, 0, 18000, DECODER_NOSYNC, 0, 0},
-    {1, 0, 25000, DECODER_NOSYNC, 0, 0},
-    {1, 0, 50000, DECODER_NOSYNC, 0, 0},
-    {1, 0, 75000, DECODER_NOSYNC, 0, 0},
-    {1, 0, 100000, DECODER_NOSYNC, 0, 0},
-    {1, 0, 125000, DECODER_NOSYNC, 0, 0},
-    {1, 0, 150000, DECODER_NOSYNC, 0, 0},
-    {1, 0, 175000, DECODER_NOSYNC, 0, 0},
-    {1, 0, 200000, DECODER_RPM, 0, 0},
-    {0, 1, 200500, DECODER_SYNC, 1, 0}, /* sync */
-    {1, 0, 225000, DECODER_SYNC, 1, 0},
-    {1, 0, 250000, DECODER_SYNC, 1, 0},
-    {1, 0, 275000, DECODER_SYNC, 1, 0},
-    {1, 0, 300000, DECODER_SYNC, 1, 0},
-    {1, 0, 325000, DECODER_SYNC, 1, 0},
-    {1, 0, 350000, DECODER_SYNC, 1, 0},
-    {1, 0, 375000, DECODER_SYNC, 1, 0},
-    {1, 0, 400000, DECODER_SYNC, 1, 0},
-    {1, 0, 425000, DECODER_SYNC, 1, 0},
-    {1, 0, 450000, DECODER_SYNC, 1, 0},
-    {1, 0, 475000, DECODER_SYNC, 1, 0},
-    {1, 0, 500000, DECODER_SYNC, 1, 0},
-    {1, 0, 525000, DECODER_SYNC, 1, 0},
-    {1, 0, 550000, DECODER_SYNC, 1, 0},
-    {1, 0, 575000, DECODER_SYNC, 1, 0},
-    {1, 0, 600000, DECODER_SYNC, 1, 0},
-    {1, 0, 625000, DECODER_SYNC, 1, 0},
-    {1, 0, 650000, DECODER_SYNC, 1, 0},
-    {1, 0, 675000, DECODER_SYNC, 1, 0},
-    {1, 0, 700000, DECODER_SYNC, 1, 0},
-    {1, 0, 725000, DECODER_SYNC, 1, 0},
-    {1, 0, 750000, DECODER_SYNC, 1, 0},
-    {1, 0, 775000, DECODER_SYNC, 1, 0},
-    {1, 0, 800000, DECODER_SYNC, 1, 0},
-    {1, 0, 825000, DECODER_NOSYNC, 0, DECODER_TRIGGERCOUNT_HIGH},
-    {1, 0, 850000, DECODER_NOSYNC, 0, DECODER_TRIGGERCOUNT_HIGH},
-  };
-
+  struct decoder_event *entries = NULL;
   prepare_decoder(TOYOTA_24_1_CAS);
-  config.decoder.required_triggers_rpm = 9;
-  validate_decoder_sequence(cam_nplusone_startup_events, 36);
 
+  cam_nplusone_normal_startup_to_sync(&entries);
+  
+  /* continued wheel of additional triggers */
+  for (int i = 0; i < config.decoder.num_triggers - 1; ++i) {
+    add_trigger_event(&entries, 25000, 1, 0);
+  }
+  /* Another trigger, no sync when there should be one */
+  add_trigger_event_transition_loss(&entries, 25000, 1, 0, DECODER_TRIGGERCOUNT_HIGH);
+
+  validate_decoder_sequence(entries);
+  ck_assert(!config.decoder.valid);
 } END_TEST
 
 START_TEST(check_nplusone_decoder_syncloss_expire) {
-  struct decoder_event cam_nplusone_startup_events[] = {
-    {1, 0, 18000, DECODER_NOSYNC, 0, 0},
-    {1, 0, 25000, DECODER_NOSYNC, 0, 0},
-    {1, 0, 50000, DECODER_NOSYNC, 0, 0},
-    {1, 0, 75000, DECODER_NOSYNC, 0, 0},
-    {1, 0, 100000, DECODER_NOSYNC, 0, 0},
-    {1, 0, 125000, DECODER_NOSYNC, 0, 0},
-    {1, 0, 150000, DECODER_NOSYNC, 0, 0},
-    {1, 0, 175000, DECODER_NOSYNC, 0, 0},
-    {1, 0, 200000, DECODER_RPM, 0, 0},
-    {0, 1, 200500, DECODER_SYNC, 1, 0},
-    {1, 0, 225000, DECODER_SYNC, 1, 0},
-  };
+  struct decoder_event *entries = NULL;
   prepare_decoder(TOYOTA_24_1_CAS);
-  config.decoder.required_triggers_rpm = 9;
-  validate_decoder_sequence(cam_nplusone_startup_events, 11);
 
-  ck_assert_int_eq(config.decoder.expiration, 262500);
+  cam_nplusone_normal_startup_to_sync(&entries);
+  
+  /* Three extra triggers */
+  add_trigger_event(&entries, 25000, 1, 0);
+  add_trigger_event(&entries, 25000, 1, 0);
+  add_trigger_event(&entries, 25000, 1, 0);
+
+  validate_decoder_sequence(entries);
+  /* Currently expiration is not dependent on variation setting, fixed 1.5x
+   * trigger time */
+  timeval_t expected_expiration = find_last_trigger_event(&entries)->time + 
+      (1.5 * 25000);
+  ck_assert_int_eq(config.decoder.expiration, expected_expiration);
+    
+  set_current_time(expected_expiration + 500);
+  handle_decoder_expire(&config.decoder);
+  ck_assert(!config.decoder.valid);
+  ck_assert_int_eq(0, config.decoder.current_triggers_rpm);
+  ck_assert_int_eq(DECODER_EXPIRED, config.decoder.loss);
 
 } END_TEST
+
+START_TEST(check_current_rpm_window_size) {
+  ck_assert_int_eq(current_rpm_window_size(0, 8), 0);
+  ck_assert_int_eq(current_rpm_window_size(1, 8), 1);
+  ck_assert_int_eq(current_rpm_window_size(8, 8), 8);
+  ck_assert_int_eq(current_rpm_window_size(10, 8), 8);
+} END_TEST
+
+START_TEST(check_update_rpm_single_point) {
+  struct decoder d = {
+    .times = {100},
+    .degrees_per_trigger = 30,
+    .current_triggers_rpm = 1,
+    .rpm_window_size = 4,
+    .trigger_max_rpm_change = 0.5,
+  };
+
+  trigger_update_rpm(&d);
+  ck_assert_int_eq(d.rpm, 0);
+  ck_assert_int_eq(d.state, DECODER_VARIATION);
+} END_TEST
+
+START_TEST(check_update_rpm_sufficient_points) {
+  struct decoder d = {
+    .times = {400, 300, 200, 100},
+    .degrees_per_trigger = 30,
+    .current_triggers_rpm = 4,
+    .rpm_window_size = 4,
+    .num_triggers = 24,
+    .trigger_max_rpm_change = 0.5,
+  };
+
+  trigger_update_rpm(&d);
+  ck_assert_int_eq(d.rpm, rpm_from_time_diff(100, d.degrees_per_trigger));
+} END_TEST
+
+START_TEST(check_update_rpm_window_larger) {
+  struct decoder d = {
+    .times = {800, 700, 700, 500, 400, 300, 200, 100},
+    .degrees_per_trigger = 30,
+    .current_triggers_rpm = 4,
+    .rpm_window_size = 8,
+    .num_triggers = 24,
+    .trigger_max_rpm_change = 0.5,
+  };
+
+  trigger_update_rpm(&d);
+  ck_assert_int_eq(d.rpm, rpm_from_time_diff(100, d.degrees_per_trigger));
+} END_TEST
+
+START_TEST(check_update_rpm_window_smaller) {
+  struct decoder d = {
+    .times = {800, 700, 700, 500, 400, 300, 200, 100},
+    .degrees_per_trigger = 30,
+    .current_triggers_rpm = 8,
+    .rpm_window_size = 4,
+    .num_triggers = 24,
+    .trigger_max_rpm_change = 0.5,
+  };
+
+  trigger_update_rpm(&d);
+  ck_assert_int_eq(d.rpm, rpm_from_time_diff(100, d.degrees_per_trigger));
+} END_TEST
+
 
 TCase *setup_decoder_tests() {
   TCase *decoder_tests = tcase_create("decoder");
@@ -511,10 +615,16 @@ TCase *setup_decoder_tests() {
   tcase_add_test(decoder_tests, check_tfi_decoder_syncloss_variation);
   tcase_add_test(decoder_tests, check_tfi_decoder_syncloss_expire);
   tcase_add_test(decoder_tests, check_cam_nplusone_startup_normal);
-  tcase_add_test(decoder_tests, check_cam_nplusone_startup_normal_then_die);
+  tcase_add_test(decoder_tests, check_cam_nplusone_startup_normal_then_early_sync);
   tcase_add_test(decoder_tests, check_cam_nplusone_startup_normal_sustained);
   tcase_add_test(decoder_tests, check_cam_nplusone_startup_normal_no_second_trigger);
   tcase_add_test(decoder_tests, check_nplusone_decoder_syncloss_expire);
+
+  tcase_add_test(decoder_tests, check_current_rpm_window_size);
+  tcase_add_test(decoder_tests, check_update_rpm_single_point);
+  tcase_add_test(decoder_tests, check_update_rpm_sufficient_points);
+  tcase_add_test(decoder_tests, check_update_rpm_window_larger);
+  tcase_add_test(decoder_tests, check_update_rpm_window_smaller);
   return decoder_tests;
 }
 #endif
