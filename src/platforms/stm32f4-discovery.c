@@ -1,3 +1,4 @@
+
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/timer.h>
@@ -181,6 +182,18 @@ void tim1_cc_isr() {
   stats_finish_timing(STATS_INT_TOTAL_TIME);
 }
 
+static int capture_edge_from_config(trigger_edge e) {
+  switch (e) {
+    case RISING_EDGE:
+      return TIM_IC_RISING;
+    case FALLING_EDGE:
+      return TIM_IC_FALLING;
+    case BOTH_EDGES:
+      return TIM_IC_BOTH;
+  }
+}
+
+
 static void platform_init_eventtimer() {
   /* Set up TIM2 as 32bit clock that is slaved off TIM8*/
 
@@ -207,14 +220,14 @@ static void platform_init_eventtimer() {
   gpio_set_af(GPIOB, GPIO_AF1, GPIO3);
   timer_ic_set_input(TIM2, TIM_IC2, TIM_IC_IN_TI2);
   timer_ic_set_filter(TIM2, TIM_IC2, TIM_IC_CK_INT_N_2);
-  timer_ic_set_polarity(TIM2, TIM_IC2, TIM_IC_RISING);
+  timer_ic_set_polarity(TIM2, TIM_IC2, capture_edge_from_config(config.decoder.t0_edge));
   timer_ic_enable(TIM2, TIM_IC2);
 
   gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_PULLDOWN, GPIO10);
   gpio_set_af(GPIOB, GPIO_AF1, GPIO10);
   timer_ic_set_input(TIM2, TIM_IC3, TIM_IC_IN_TI3);
   timer_ic_set_filter(TIM2, TIM_IC3, TIM_IC_CK_INT_N_2);
-  timer_ic_set_polarity(TIM2, TIM_IC3, TIM_IC_RISING);
+  timer_ic_set_polarity(TIM2, TIM_IC3, capture_edge_from_config(config.decoder.t1_edge));
   timer_ic_enable(TIM2, TIM_IC3);
 
   gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_PULLDOWN, GPIO11);
