@@ -169,7 +169,7 @@ void tim1_cc_isr() {
       config.sensors[i].raw_value = (uint16_t)(cur - prev[pin - 1].value);
       prev[pin - 1].value = cur;
       prev[pin - 1].time = current_time();
-      sensor_freq_new_data();
+      sensors_process(SENSOR_FREQ);
       config.sensors[i].fault = FAULT_NONE;
       timer_clear_flag(TIM1, timer_flag);
     } else if ((current_time() - prev[pin - 1].time) > TICKRATE) {
