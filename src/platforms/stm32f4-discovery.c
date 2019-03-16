@@ -882,7 +882,7 @@ void tim2_isr() {
   stats_increment_counter(STATS_INT_RATE);
   stats_increment_counter(STATS_INT_EVENTTIMER_RATE);
   stats_start_timing(STATS_INT_TOTAL_TIME);
-  if (timer_get_flag(TIM2, TIM_SR_CC1IF) &&
+  if (timer_get_flag(TIM2, TIM_SR_CC2IF) &&
       timer_get_flag(TIM2, TIM_SR_CC3IF)) {
     timer_clear_flag(TIM2, TIM_SR_CC2IF);
     timer_clear_flag(TIM2, TIM_SR_CC3IF);

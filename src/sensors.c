@@ -84,7 +84,7 @@ void
 sensors_process(sensor_source source) {
   for (int i = 0; i < NUM_SENSORS; ++i) {
     if (config.sensors[i].source != source) {
-      return;
+      continue;
     }
     sensor_convert(&config.sensors[i]);
   }
