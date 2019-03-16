@@ -71,8 +71,20 @@ struct decoder {
   timeval_t times[MAX_TRIGGERS];
 };
 
+struct decoder_event {
+  unsigned int t0 : 1;
+  unsigned int t1 : 1;
+  timeval_t time;
+#ifdef UNITTEST
+  decoder_state state;
+  int valid;
+  decoder_loss_reason reason;
+  struct decoder_event *next;
+#endif
+}; 
+
 void decoder_init(struct decoder *);
-void decoder_update_scheduling(int trigger, timeval_t time);
+void decoder_update_scheduling(struct decoder_event *, unsigned int count);
 void enable_test_trigger(trigger_type t, unsigned int rpm);
 
 #ifdef UNITTEST

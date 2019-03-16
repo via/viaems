@@ -221,13 +221,15 @@ static void hosted_platform_timer() {
     static uint32_t trigger_count = 0;
     if (curtime >= test_trigger_last + time_between) {
       test_trigger_last = curtime;
-      decoder_update_scheduling(0, curtime);
+      struct decoder_event ev = {.t0 = 1, .time = curtime};
+      decoder_update_scheduling(&ev, 1);
       trigger_count++;
 
       if ((config.decoder.type == TOYOTA_24_1_CAS) &&
           (trigger_count >= config.decoder.num_triggers)) {
         trigger_count = 0;
-        decoder_update_scheduling(1, curtime);
+        struct decoder_event ev = {.t1 = 1, .time = curtime};
+        decoder_update_scheduling(&ev, 1);
       }
     }
   }

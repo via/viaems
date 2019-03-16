@@ -5,6 +5,7 @@
 #include "config.h"
 #include "stats.h"
 
+#include <assert.h>
 #include <stdlib.h>
 
 static struct timed_callback expire_event;
@@ -219,24 +220,25 @@ void decoder_init(struct decoder *d) {
 }
 
 /* When decoder has new information, reschedule everything */
-void decoder_update_scheduling(int trigger, timeval_t time) {
+void decoder_update_scheduling(struct decoder_event *events, unsigned int count) {
   stats_start_timing(STATS_SCHEDULE_LATENCY);
 
-  switch (trigger) {
-  case 0:
-    config.decoder.last_t0 = time;
-    config.decoder.needs_decoding_t0 = 1;
-    break;
-  case 1:
-    config.decoder.last_t1 = time;
-    config.decoder.needs_decoding_t1 = 1;
-    break;
+  for (struct decoder_event *ev = events; count > 0; count--, ev++) {
+    assert(!(ev->t0 && ev->t1));
+    if (ev->t0) {
+      config.decoder.last_t0 = ev->time;
+      config.decoder.needs_decoding_t0 = 1;
+    }
+    if (ev->t1) {
+      config.decoder.last_t1 = ev->time;
+      config.decoder.needs_decoding_t1 = 1;
+    }
+    console_record_event((struct logged_event){
+      .type = ev->t0 ? EVENT_TRIGGER0 : EVENT_TRIGGER1,
+      .time = ev->time,
+    });
+    config.decoder.decode(&config.decoder);
   }
-  console_record_event((struct logged_event){
-    .type = trigger == 0 ? EVENT_TRIGGER0 : EVENT_TRIGGER1,
-    .time = time,
-  });
-  config.decoder.decode(&config.decoder);
 
   if (config.decoder.valid) {
     calculate_ignition();
@@ -256,16 +258,6 @@ void decoder_update_scheduling(int trigger, timeval_t time) {
 #include "decoder.h"
 
 #include <check.h>
-
-struct decoder_event {
-  unsigned int t0 : 1;
-  unsigned int t1 : 1;
-  timeval_t time;
-  decoder_state state;
-  int valid;
-  decoder_loss_reason reason;
-  struct decoder_event *next;
-}; 
 
 static struct decoder_event *find_last_trigger_event(struct decoder_event **entries) {
   struct decoder_event *entry;

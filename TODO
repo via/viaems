@@ -2,8 +2,6 @@
 - New frequency sensors that use DMA (TBD)
 
 + Trigger input DMA to circular buffer
-+ Refactor decoder trigger interface now that it is synchronous (also to move
-  handling of similtaneous triggers somewhere not platform-specific)
 + Refactor sensor interface now that it is synchronous
 + Dwell time vs BRV
 + Basic tasks
