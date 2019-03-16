@@ -5,6 +5,7 @@
 #include "config.h"
 #include "stats.h"
 
+#include <assert.h>
 #include <stdlib.h>
 
 static struct timed_callback expire_event;
@@ -219,24 +220,25 @@ void decoder_init(struct decoder *d) {
 }
 
 /* When decoder has new information, reschedule everything */
-void decoder_update_scheduling(int trigger, timeval_t time) {
+void decoder_update_scheduling(struct decoder_event *events, unsigned int count) {
   stats_start_timing(STATS_SCHEDULE_LATENCY);
 
-  switch (trigger) {
-  case 0:
-    config.decoder.last_t0 = time;
-    config.decoder.needs_decoding_t0 = 1;
-    break;
-  case 1:
-    config.decoder.last_t1 = time;
-    config.decoder.needs_decoding_t1 = 1;
-    break;
+  for (struct decoder_event *ev = events; count > 0; count--, ev++) {
+    assert(!(ev->t0 && ev->t1));
+    if (ev->t0) {
+      config.decoder.last_t0 = ev->time;
+      config.decoder.needs_decoding_t0 = 1;
+    }
+    if (ev->t1) {
+      config.decoder.last_t1 = ev->time;
+      config.decoder.needs_decoding_t1 = 1;
+    }
+    console_record_event((struct logged_event){
+      .type = ev->t0 ? EVENT_TRIGGER0 : EVENT_TRIGGER1,
+      .time = ev->time,
+    });
+    config.decoder.decode(&config.decoder);
   }
-  console_record_event((struct logged_event){
-    .type = trigger == 0 ? EVENT_TRIGGER0 : EVENT_TRIGGER1,
-    .time = time,
-  });
-  config.decoder.decode(&config.decoder);
 
   if (config.decoder.valid) {
     calculate_ignition();
@@ -256,16 +258,6 @@ void decoder_update_scheduling(int trigger, timeval_t time) {
 #include "decoder.h"
 
 #include <check.h>
-
-struct decoder_event {
-  unsigned int t0 : 1;
-  unsigned int t1 : 1;
-  timeval_t time;
-  decoder_state state;
-  int valid;
-  decoder_loss_reason reason;
-  struct decoder_event *next;
-}; 
 
 static struct decoder_event *find_last_trigger_event(struct decoder_event **entries) {
   struct decoder_event *entry;
@@ -347,7 +339,7 @@ static void validate_decoder_sequence(struct decoder_event *ev) {
     }
 
     set_current_time(ev->time);
-    config.decoder.decode(&config.decoder);
+    decoder_update_scheduling(ev, 1);
     ck_assert_msg(config.decoder.state == ev->state, 
         "expected event at %d: (state=%d, valid=%d). Got (state=%d, valid=%d)",
         ev->time, ev->state, ev->valid, 
@@ -502,6 +494,27 @@ START_TEST(check_cam_nplusone_startup_normal_sustained) {
 
 } END_TEST
 
+START_TEST(check_bulk_decoder_updates) {
+  struct decoder_event *entries = NULL;
+  prepare_decoder(TOYOTA_24_1_CAS);
+
+  cam_nplusone_normal_startup_to_sync(&entries);
+
+  /* Turn entries linked list into array usable by interface */
+  struct decoder_event *entry_list = malloc(sizeof(struct decoder_event));
+  struct decoder_event *ev;
+  int len;
+  for (len = 0, ev = entries; ev != NULL; ++len, ev = ev->next) {
+    entry_list[len] = *ev;
+    entry_list = realloc(entry_list, sizeof(struct decoder) * (len + 1));
+  }
+  decoder_update_scheduling(entry_list, len);
+
+  ck_assert(config.decoder.valid);
+  ck_assert_int_eq(config.decoder.last_trigger_angle, 
+      1 * config.decoder.degrees_per_trigger);
+} END_TEST
+
 START_TEST(check_cam_nplusone_startup_normal_no_second_trigger) {
   struct decoder_event *entries = NULL;
   prepare_decoder(TOYOTA_24_1_CAS);
@@ -619,6 +632,7 @@ TCase *setup_decoder_tests() {
   tcase_add_test(decoder_tests, check_cam_nplusone_startup_normal_sustained);
   tcase_add_test(decoder_tests, check_cam_nplusone_startup_normal_no_second_trigger);
   tcase_add_test(decoder_tests, check_nplusone_decoder_syncloss_expire);
+  tcase_add_test(decoder_tests, check_bulk_decoder_updates);
 
   tcase_add_test(decoder_tests, check_current_rpm_window_size);
   tcase_add_test(decoder_tests, check_update_rpm_single_point);

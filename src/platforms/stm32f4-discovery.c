@@ -191,8 +191,8 @@ static int capture_edge_from_config(trigger_edge e) {
     case BOTH_EDGES:
       return TIM_IC_BOTH;
   }
+  return RISING_EDGE;
 }
-
 
 static void platform_init_eventtimer() {
   /* Set up TIM2 as 32bit clock that is slaved off TIM8*/
@@ -884,20 +884,32 @@ void tim2_isr() {
   stats_increment_counter(STATS_INT_EVENTTIMER_RATE);
   stats_start_timing(STATS_INT_TOTAL_TIME);
   if (timer_get_flag(TIM2, TIM_SR_CC1IF) &&
-      timer_get_flag(TIM2, TIM_SR_CC3IF) &&
-      time_in_range(TIM2_CCR2, TIM2_CCR3, current_time())) {
-      timer_clear_flag(TIM2, TIM_SR_CC2IF);
-      timer_clear_flag(TIM2, TIM_SR_CC3IF);
-      decoder_update_scheduling(1, TIM2_CCR3);
-      decoder_update_scheduling(0, TIM2_CCR2);
+      timer_get_flag(TIM2, TIM_SR_CC3IF)) {
+    timer_clear_flag(TIM2, TIM_SR_CC2IF);
+    timer_clear_flag(TIM2, TIM_SR_CC3IF);
+    if (time_in_range(TIM2_CCR2, TIM2_CCR3, current_time())) {
+      struct decoder_event ev[] = {
+        {.t1 = 1, .time = TIM2_CCR3},
+        {.t0 = 1, .time = TIM2_CCR2},
+      };
+      decoder_update_scheduling(ev, 2);
+    } else {
+      struct decoder_event ev[] = {
+        {.t0 = 1, .time = TIM2_CCR2},
+        {.t1 = 1, .time = TIM2_CCR3},
+      };
+      decoder_update_scheduling(ev, 2);
+    }
   } else {
     if (timer_get_flag(TIM2, TIM_SR_CC2IF)) {
       timer_clear_flag(TIM2, TIM_SR_CC2IF);
-      decoder_update_scheduling(0, TIM2_CCR2);
+      struct decoder_event ev = {.t0 = 1, .time = TIM2_CCR2};
+      decoder_update_scheduling(&ev, 1);
     }
     if (timer_get_flag(TIM2, TIM_SR_CC3IF)) {
       timer_clear_flag(TIM2, TIM_SR_CC3IF);
-      decoder_update_scheduling(1, TIM2_CCR3);
+      struct decoder_event ev = {.t1 = 1, .time = TIM2_CCR3};
+      decoder_update_scheduling(&ev, 1);
     }
   }
   if (timer_get_flag(TIM2, TIM_SR_CC1IF)) {
