@@ -494,6 +494,27 @@ START_TEST(check_cam_nplusone_startup_normal_sustained) {
 
 } END_TEST
 
+START_TEST(check_bulk_decoder_updates) {
+  struct decoder_event *entries = NULL;
+  prepare_decoder(TOYOTA_24_1_CAS);
+
+  cam_nplusone_normal_startup_to_sync(&entries);
+
+  /* Turn entries linked list into array usable by interface */
+  struct decoder_event *entry_list = malloc(sizeof(struct decoder_event));
+  struct decoder_event *ev;
+  int len;
+  for (len = 0, ev = entries; ev != NULL; ++len, ev = ev->next) {
+    entry_list[len] = *ev;
+    entry_list = realloc(entry_list, sizeof(struct decoder) * (len + 1));
+  }
+  decoder_update_scheduling(entry_list, len);
+
+  ck_assert(config.decoder.valid);
+  ck_assert_int_eq(config.decoder.last_trigger_angle, 
+      1 * config.decoder.degrees_per_trigger);
+} END_TEST
+
 START_TEST(check_cam_nplusone_startup_normal_no_second_trigger) {
   struct decoder_event *entries = NULL;
   prepare_decoder(TOYOTA_24_1_CAS);
@@ -611,6 +632,7 @@ TCase *setup_decoder_tests() {
   tcase_add_test(decoder_tests, check_cam_nplusone_startup_normal_sustained);
   tcase_add_test(decoder_tests, check_cam_nplusone_startup_normal_no_second_trigger);
   tcase_add_test(decoder_tests, check_nplusone_decoder_syncloss_expire);
+  tcase_add_test(decoder_tests, check_bulk_decoder_updates);
 
   tcase_add_test(decoder_tests, check_current_rpm_window_size);
   tcase_add_test(decoder_tests, check_update_rpm_single_point);
