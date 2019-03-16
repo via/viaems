@@ -36,10 +36,6 @@ static void push_time(struct decoder *d, timeval_t t) {
 static unsigned int current_rpm_window_size(unsigned int current_triggers, 
     unsigned int normal_window_size) {
 
-  if (!current_triggers) {
-    return 0;
-  }
-
   /* Use the minimum of rpm_window_size and current previous triggers so that
    * rpm is valid in case our window size is larger than required trigger
    * count */
@@ -549,6 +545,70 @@ START_TEST(check_nplusone_decoder_syncloss_expire) {
 
 } END_TEST
 
+START_TEST(check_current_rpm_window_size) {
+  ck_assert_int_eq(current_rpm_window_size(0, 8), 0);
+  ck_assert_int_eq(current_rpm_window_size(1, 8), 1);
+  ck_assert_int_eq(current_rpm_window_size(8, 8), 8);
+  ck_assert_int_eq(current_rpm_window_size(10, 8), 8);
+} END_TEST
+
+START_TEST(check_update_rpm_single_point) {
+  struct decoder d = {
+    .times = {100},
+    .degrees_per_trigger = 30,
+    .current_triggers_rpm = 1,
+    .rpm_window_size = 4,
+    .trigger_max_rpm_change = 0.5,
+  };
+
+  trigger_update_rpm(&d);
+  ck_assert_int_eq(d.rpm, 0);
+  ck_assert_int_eq(d.state, DECODER_VARIATION);
+} END_TEST
+
+START_TEST(check_update_rpm_sufficient_points) {
+  struct decoder d = {
+    .times = {400, 300, 200, 100},
+    .degrees_per_trigger = 30,
+    .current_triggers_rpm = 4,
+    .rpm_window_size = 4,
+    .num_triggers = 24,
+    .trigger_max_rpm_change = 0.5,
+  };
+
+  trigger_update_rpm(&d);
+  ck_assert_int_eq(d.rpm, rpm_from_time_diff(100, d.degrees_per_trigger));
+} END_TEST
+
+START_TEST(check_update_rpm_window_larger) {
+  struct decoder d = {
+    .times = {800, 700, 700, 500, 400, 300, 200, 100},
+    .degrees_per_trigger = 30,
+    .current_triggers_rpm = 4,
+    .rpm_window_size = 8,
+    .num_triggers = 24,
+    .trigger_max_rpm_change = 0.5,
+  };
+
+  trigger_update_rpm(&d);
+  ck_assert_int_eq(d.rpm, rpm_from_time_diff(100, d.degrees_per_trigger));
+} END_TEST
+
+START_TEST(check_update_rpm_window_smaller) {
+  struct decoder d = {
+    .times = {800, 700, 700, 500, 400, 300, 200, 100},
+    .degrees_per_trigger = 30,
+    .current_triggers_rpm = 8,
+    .rpm_window_size = 4,
+    .num_triggers = 24,
+    .trigger_max_rpm_change = 0.5,
+  };
+
+  trigger_update_rpm(&d);
+  ck_assert_int_eq(d.rpm, rpm_from_time_diff(100, d.degrees_per_trigger));
+} END_TEST
+
+
 TCase *setup_decoder_tests() {
   TCase *decoder_tests = tcase_create("decoder");
   tcase_add_test(decoder_tests, check_tfi_decoder_startup_normal);
@@ -559,6 +619,12 @@ TCase *setup_decoder_tests() {
   tcase_add_test(decoder_tests, check_cam_nplusone_startup_normal_sustained);
   tcase_add_test(decoder_tests, check_cam_nplusone_startup_normal_no_second_trigger);
   tcase_add_test(decoder_tests, check_nplusone_decoder_syncloss_expire);
+
+  tcase_add_test(decoder_tests, check_current_rpm_window_size);
+  tcase_add_test(decoder_tests, check_update_rpm_single_point);
+  tcase_add_test(decoder_tests, check_update_rpm_sufficient_points);
+  tcase_add_test(decoder_tests, check_update_rpm_window_larger);
+  tcase_add_test(decoder_tests, check_update_rpm_window_smaller);
   return decoder_tests;
 }
 #endif
