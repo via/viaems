@@ -31,6 +31,7 @@ int main() {
     handle_fuel_pump();
     handle_boost_control();
     handle_idle_control();
+    handle_tipin_enrich();
 
     adc_gather();
   }

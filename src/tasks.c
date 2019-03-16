@@ -25,6 +25,10 @@ void handle_fuel_pump() {
   }
 }
 
+void handle_tipin_enrich() {
+  calculated_values.tipin_factor = 0.0;
+}
+
 void handle_boost_control() {
 }
 

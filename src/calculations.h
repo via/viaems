@@ -35,6 +35,7 @@ struct calculated_values {
 
   /* Fueling */
   unsigned int fueling_us;
+  float tipin_factor;
   float airmass_per_cycle;
   float fuelvol_per_cycle;
   float idt;
