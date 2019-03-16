@@ -196,6 +196,7 @@ void decoder_init(struct decoder *d) {
       d->degrees_per_trigger = 90;
       d->rpm_window_size = 3;
       d->num_triggers = 8;
+      d->t0_edge = FALLING_EDGE;
       break;
     case TOYOTA_24_1_CAS:
       d->decode = cam_nplusone_decoder;
@@ -203,6 +204,8 @@ void decoder_init(struct decoder *d) {
       d->degrees_per_trigger = 30;
       d->rpm_window_size = 8;
       d->num_triggers = 24;
+      d->t0_edge = RISING_EDGE;
+      d->t1_edge = RISING_EDGE;
       break;
     default:
       break;
@@ -326,7 +329,6 @@ START_TEST(check_tfi_decoder_syncloss_variation) {
     {1, 0, 150000, DECODER_SYNC, 1, 0},
     {1, 0, 155000, DECODER_NOSYNC, 0, DECODER_VARIATION},
   };
-  printf("running\n");
   validate_decoder_sequence(ev, 2);
   ck_assert_int_eq(0, config.decoder.current_triggers_rpm);
 } END_TEST
