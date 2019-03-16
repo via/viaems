@@ -44,7 +44,9 @@ Member | Meaning
 `decoder.trigger_max_rpm_change` | Percentage of rpm change between trigger events. 1.00 would mean the engine speed can double or halve between triggers without sync loss.
 `decoder.trigger_min_rpm` | Minimum RPM for sync.  Should be just below the slowest cranking speed.
 `decoder.t0_pin` | PORTB Pin for primary trigger
+`decoder.t0_edge` | Edge to trigger on for primary trigger
 `decoder.t1_pin` | PORTB Pin for secondary trigger
+`decoder.t1_edge` | Edge to trigger on for secondary trigger
 `sensors` | Array of configured analog sensors.  See Sensor Configuration below.
 `timing` | Points to table to do MAP/RPM lookup on for timing advance.
 `ve` | Points to table for volumetric efficiency lookups
