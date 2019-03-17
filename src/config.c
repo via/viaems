@@ -25,7 +25,7 @@ struct table tipin_vs_tpsrate_and_tps __attribute__((section(".configdata"))) = 
   .title = "tipin_enrich_amount", .num_axis = 2,
   .axis = { { 
       .name = "TPSRATE", .num = 5,
-      .values = {-1000, 0, 40, 500, 1000},
+      .values = {-1000, 0, 100, 500, 1000},
     },
     { .name = "TPS", .num = 4,
       .values = {0, 20, 50, 80},
@@ -33,9 +33,9 @@ struct table tipin_vs_tpsrate_and_tps __attribute__((section(".configdata"))) = 
   },
   .data = {
     .two = {
-      {-0.4, 0.0, 0.0, 4.0, 4.0},
-      {-0.4, 0.0, 0.0, 3.5, 3.5},
-      {-0.2, 0.0, 0.0, 2.0, 2.0},
+      {-0.8, 0.0, 1.0, 4.0, 4.0},
+      {-0.8, 0.0, 0.0, 3.5, 3.5},
+      {-0.4, 0.0, 0.0, 2.0, 2.0},
       {-0.0, 0.0, 0.0, 1.0, 1.0},
     },
   },
@@ -49,7 +49,7 @@ struct table tipin_duration_vs_rpm __attribute__((section(".configdata"))) = {
     },
   },
   .data = {
-    .one = {400.0, 200.0, 100.0, 50.0}
+    .one = {300.0, 150.0, 80.0, 40.0}
   },
 };
 
