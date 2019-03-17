@@ -21,14 +21,14 @@ struct table enrich_vs_temp_and_map __attribute__((section(".configdata"))) = {
   },
 };
 
-struct table enrich_vs_tpsrate_and_rpm __attribute__((section(".configdata"))) = {
-  .title = "tipin_enrich", .num_axis = 2,
+struct table tipin_vs_tpsrate_and_tps __attribute__((section(".configdata"))) = {
+  .title = "tipin_enrich_amount", .num_axis = 2,
   .axis = { { 
       .name = "TPSRATE", .num = 4,
       .values = {-1000, 0, 500, 1000},
     },
-    { .name = "RPM", .num = 4,
-      .values = {400, 1600, 3000, 8000},
+    { .name = "TPS", .num = 4,
+      .values = {0, 20, 50, 80},
     },
   },
   .data = {
@@ -38,6 +38,18 @@ struct table enrich_vs_tpsrate_and_rpm __attribute__((section(".configdata"))) =
       {-0.2, 0.0, 0.4, 0.4},
       {-0.2, 0.0, 0.2, 0.2},
     },
+  },
+};
+
+struct table tipin_duration_vs_rpm __attribute__((section(".configdata"))) = {
+  .title = "tipin_enrich_duration", .num_axis = 1,
+  .axis = { { 
+      .name = "RPM", .num = 4,
+      .values = {0, 1000, 2000, 4000},
+    },
+  },
+  .data = {
+    .one = {1.0, 0.6, 0.4, 0.2}
   },
 };
 
@@ -206,11 +218,12 @@ struct config config __attribute__((section(".configdata"))) = {
     [SENSOR_FRT] = {.source=SENSOR_CONST, .params={.fixed_value = 15.0}},
   },
   .timing = &timing_vs_rpm_and_map,
-  .tipin_enrich = &enrich_vs_tpsrate_and_rpm,
   .injector_pw_compensation = &injector_dead_time,
   .ve = &ve_vs_rpm_and_map,
   .commanded_lambda = &lambda_vs_rpm_and_map,
   .engine_temp_enrich = &enrich_vs_temp_and_map,
+  .tipin_enrich_factor = &tipin_vs_tpsrate_and_tps,
+  .tipin_enrich_duration = &tipin_duration_vs_rpm,
   .rpm_stop = 6700,
   .rpm_start = 6200,
   .fueling = {
@@ -246,7 +259,11 @@ int config_valid() {
     return 0;
   }
 
-  if (config.tipin_enrich && !table_valid(config.tipin_enrich)) {
+  if (config.tipin_enrich_factor && !table_valid(config.tipin_enrich_factor)) {
+    return 0;
+  }
+
+  if (config.tipin_enrich_duration && !table_valid(config.tipin_enrich_duration)) {
     return 0;
   }
 

@@ -75,6 +75,40 @@ static float calculate_fuel_volume(float airmass, float frt) {
   return fuel_volume;
 }
 
+static float calculate_tipin_enrichment(float tps, float tpsrate, int rpm) {
+  static struct {
+    timeval_t time;
+    timeval_t length;
+    float factor;
+    int active;
+  } current = {0};
+
+  if (!config.tipin_enrich_factor || !config.tipin_enrich_duration) {
+    return 0.0;
+  }
+
+  float new_tipin_factor = interpolate_table_twoaxis(config.tipin_enrich_factor, 
+      tpsrate, tps);
+
+  /* Update status flag */
+  if (current.active &&
+      !time_in_range(current_time(), current.time, current.time +
+        current.length)) {
+    current.active = 0;
+  }
+
+  if ((new_tipin_factor > current.factor) ||
+       !current.active) {
+      /* Overwrite our event */
+    current.time = current_time();
+    current.length = interpolate_table_oneaxis(config.tipin_enrich_duration, rpm);
+    current.factor = new_tipin_factor;
+    current.active = 1;
+  }
+
+  return current.factor;
+}
+
 void calculate_fueling() {
   stats_start_timing(STATS_FUELCALC_TIME);
 
@@ -82,7 +116,6 @@ void calculate_fueling() {
   float lambda;
   float idt;
   float ete;
-  float tipin;
 
   float iat = config.sensors[SENSOR_IAT].processed_value;
   float brv = config.sensors[SENSOR_BRV].processed_value;
@@ -90,6 +123,8 @@ void calculate_fueling() {
   float aap = config.sensors[SENSOR_AAP].processed_value;
   float frt = config.sensors[SENSOR_FRT].processed_value;
   float clt = config.sensors[SENSOR_CLT].processed_value;
+
+  float tps = config.sensors[SENSOR_TPS].processed_value;
   float tpsrate = config.sensors[SENSOR_TPS].derivative;
 
   if (config.ve) {
@@ -109,7 +144,7 @@ void calculate_fueling() {
   if (config.injector_pw_compensation) {
     idt = interpolate_table_oneaxis(config.injector_pw_compensation, brv);
   } else {
-    idt = 1000;
+    idt = 1.0;
   }
 
   if (config.engine_temp_enrich) {
@@ -118,11 +153,8 @@ void calculate_fueling() {
     ete = 1.0;
   }
 
-  if (config.tipin_enrich) {
-    tipin = interpolate_table_twoaxis(config.tipin_enrich, tpsrate, config.decoder.rpm);
-  } else {
-    tipin = 0.0;
-  }
+  calculated_values.tipin = calculate_tipin_enrichment(tps, tpsrate, 
+      config.decoder.rpm);
 
   calculated_values.airmass_per_cycle = calculate_airmass(ve, map, aap, iat);
 
@@ -136,12 +168,11 @@ void calculate_fueling() {
     config.fueling.injector_cc_per_minute * 60000000 / /* uS per minute */
     config.fueling.injections_per_cycle; /* This many pulses */
 
-  raw_pw_us += (raw_pw_us * tipin);
+  raw_pw_us += (raw_pw_us * calculated_values.tipin);
 
   calculated_values.ete = ete;
   calculated_values.idt = idt;
   calculated_values.ve = ve;
-  calculated_values.tipin = tipin;
   calculated_values.lambda = lambda;
   calculated_values.fueling_us = (raw_pw_us * ete) + (idt * 1000);
 

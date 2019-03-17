@@ -715,7 +715,9 @@ static struct console_config_node console_config_nodes[] = {
    .get=console_get_table, .set=console_set_table},
   {.name="config.tables.engine_temp_enrich", .val=&enrich_vs_temp_and_map,
    .get=console_get_table, .set=console_set_table},
-  {.name="config.tables.tipin_enrich", .val=&enrich_vs_tpsrate_and_rpm,
+  {.name="config.tables.tipin_enrich_factor", .val=&tipin_vs_tpsrate_and_tps,
+   .get=console_get_table, .set=console_set_table},
+  {.name="config.tables.tipin_enrich_duration", .val=&tipin_duration_vs_rpm,
    .get=console_get_table, .set=console_set_table},
 
   /* Decoding */
