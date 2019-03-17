@@ -101,7 +101,8 @@ static float calculate_tipin_enrichment(float tps, float tpsrate, int rpm) {
        !current.active) {
       /* Overwrite our event */
     current.time = current_time();
-    current.length = interpolate_table_oneaxis(config.tipin_enrich_duration, rpm);
+    current.length = time_from_us(
+        interpolate_table_oneaxis(config.tipin_enrich_duration, rpm) * 1000);
     current.factor = new_tipin_factor;
     current.active = 1;
   }
@@ -280,6 +281,72 @@ START_TEST(check_calculate_ignition_fixedduty) {
   ck_assert(abs(calculated_values.dwell_us - (10000 / 8)) < 5);
 } END_TEST
 
+static struct table tipin_factor = {
+    .num_axis = 2,
+    .axis = { { .num = 2, .values = {0, 100} }, { .num = 2, .values = {0, 100}} },
+    .data = { .two = { {0, 0}, {0, 2.0} } },
+};
+
+static struct table tipin_duration = {
+    .num_axis = 1,
+    .axis = { { .num = 2, .values = {100, 6000}}},
+    .data = { .one = {1.0, 5.0}},
+};
+
+
+START_TEST(check_calculate_tipin_newevent) {
+
+  config.tipin_enrich_factor = &tipin_factor;
+  config.tipin_enrich_duration = &tipin_duration;
+
+  set_current_time(0);
+
+  ck_assert_float_eq_tol(calculate_tipin_enrichment(0, 0, 100), 0, 0.001);
+  ck_assert_float_eq_tol(calculate_tipin_enrichment(100, 100, 100), 2.0, 0.001);
+  /* At 100 rpm, should last 1 ms */
+
+  set_current_time(time_from_us(900));
+  ck_assert_float_eq_tol(calculate_tipin_enrichment(0, 0, 100), 2.0, 0.001);
+  set_current_time(time_from_us(1005));
+  ck_assert_float_eq_tol(calculate_tipin_enrichment(0, 0, 100), 0.0, 0.001);
+
+} END_TEST
+
+START_TEST(check_calculate_tipin_overriding_event) {
+
+  config.tipin_enrich_factor = &tipin_factor;
+  config.tipin_enrich_duration = &tipin_duration;
+
+  set_current_time(0);
+
+  ck_assert_float_eq_tol(calculate_tipin_enrichment(0, 0, 100), 0, 0.001);
+  ck_assert_float_eq_tol(calculate_tipin_enrichment(100, 50, 100), 1.0, 0.001);
+
+  /* At 100 rpm, should last 1 ms */
+  set_current_time(time_from_us(500));
+  /* Milder tipin should not affect anything */
+  ck_assert_float_eq_tol(calculate_tipin_enrichment(100, 20, 100), 1.0, 0.001);
+
+  set_current_time(time_from_us(1005));
+  ck_assert_float_eq_tol(calculate_tipin_enrichment(0, 0, 100), 0.0, 0.001);
+
+  /* Test a higher overriding event */
+  ck_assert_float_eq_tol(calculate_tipin_enrichment(100, 20, 100), 0.4, 0.001);
+
+  set_current_time(time_from_us(1500));
+  /* New tipin should override, since its higher */
+  ck_assert_float_eq_tol(calculate_tipin_enrichment(100, 50, 100), 1.0, 0.001);
+  
+  /* and should still be ongoing for the full time */
+  set_current_time(time_from_us(2400));
+  ck_assert_float_eq_tol(calculate_tipin_enrichment(0, 0, 100), 1.0, 0.001);
+
+  /*and now finished */
+  set_current_time(time_from_us(2600));
+  ck_assert_float_eq_tol(calculate_tipin_enrichment(0, 0, 100), 0.0, 0.001);
+
+} END_TEST
+
 TCase *setup_calculations_tests() {
   TCase *tc = tcase_create("calculations");
   tcase_add_test(tc, check_air_density);
@@ -289,6 +356,8 @@ TCase *setup_calculations_tests() {
   tcase_add_test(tc, check_calculate_ignition_cut);
   tcase_add_test(tc, check_calculate_ignition_fixedduty);
 
+  tcase_add_test(tc, check_calculate_tipin_newevent);
+  tcase_add_test(tc, check_calculate_tipin_overriding_event);
   return tc;
 }
 #endif

@@ -28,7 +28,7 @@ CFLAGS+= -fsanitize=undefined
 CFLAGS!=pkg-config --cflags check
 LDFLAGS!=pkg-config --libs check
 CC=gcc
-CFLAGS+= -I. -Itest -std=c99 -Wall -Wwrite-strings -O0 -g
+CFLAGS+= -I. -std=c99 -Wall -Wwrite-strings -O0 -g
 CFLAGS+= -D TICKRATE=4000000 -DUNITTEST
 CFLAGS+= -fprofile-arcs -ftest-coverage 
 CFLAGS+= -fsanitize=undefined
