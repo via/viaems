@@ -78,6 +78,13 @@ static void sensor_convert(struct sensor_input *in) {
   in->processed_value = ((old_value * in->lag) +
                         (in->processed_value * (100.0 - in->lag))) / 100.0;
 
+  /* Process derivative */
+  timeval_t process_time = current_time();
+  if (process_time != in->process_time) {
+    in->derivative = TICKRATE * (in->processed_value - old_value) / (process_time - in->process_time);
+  }
+  in->process_time = process_time;
+
 }
   
 void

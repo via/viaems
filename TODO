@@ -8,7 +8,6 @@
     + Fan control
     + Idle Control
     + Priming
-    + Tip in Enrich
 
 - Determine better ADC strategy, the graphs look awful for every-tooth (for now
   just gather adc async)

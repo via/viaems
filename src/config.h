@@ -32,6 +32,8 @@ struct config {
   struct table *commanded_lambda;
   struct table *injector_pw_compensation;
   struct table *engine_temp_enrich;
+  struct table *tipin_enrich_factor;
+  struct table *tipin_enrich_duration;
 
   /* Fuel information */
   struct fueling_config fueling;
@@ -53,6 +55,8 @@ extern struct table lambda_vs_rpm_and_map;
 extern struct table ve_vs_rpm_and_map;
 extern struct table injector_dead_time;
 extern struct table enrich_vs_temp_and_map;
+extern struct table tipin_vs_tpsrate_and_tps;
+extern struct table tipin_duration_vs_rpm;
 
 int config_valid();
 

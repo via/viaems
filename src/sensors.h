@@ -60,6 +60,8 @@ struct sensor_input {
   uint32_t raw_value;
   float processed_value;
   float lag;
+  timeval_t process_time;
+  float derivative;
   struct {
     uint32_t min;
     uint32_t max;
