@@ -75,19 +75,20 @@ static float calculate_fuel_volume(float airmass, float frt) {
   return fuel_volume;
 }
 
+/* Returns cm^3 of fuel per cycle to add */
 static float calculate_tipin_enrichment(float tps, float tpsrate, int rpm) {
   static struct {
     timeval_t time;
     timeval_t length;
-    float factor;
+    float amount;
     int active;
   } current = {0};
 
-  if (!config.tipin_enrich_factor || !config.tipin_enrich_duration) {
+  if (!config.tipin_enrich_amount || !config.tipin_enrich_duration) {
     return 0.0;
   }
 
-  float new_tipin_factor = interpolate_table_twoaxis(config.tipin_enrich_factor, 
+  float new_tipin_amount = interpolate_table_twoaxis(config.tipin_enrich_amount, 
       tpsrate, tps);
 
   /* Update status flag */
@@ -97,17 +98,17 @@ static float calculate_tipin_enrichment(float tps, float tpsrate, int rpm) {
     current.active = 0;
   }
 
-  if ((new_tipin_factor > current.factor) ||
+  if ((new_tipin_amount > current.amount) ||
        !current.active) {
       /* Overwrite our event */
     current.time = current_time();
     current.length = time_from_us(
         interpolate_table_oneaxis(config.tipin_enrich_duration, rpm) * 1000);
-    current.factor = new_tipin_factor;
+    current.amount = new_tipin_amount;
     current.active = 1;
   }
 
-  return current.factor;
+  return current.amount / 1000.0;
 }
 
 void calculate_fueling() {
@@ -165,11 +166,9 @@ void calculate_fueling() {
 
   calculated_values.fuelvol_per_cycle = fuel_vol_at_stoich / lambda;
 
-  float raw_pw_us = calculated_values.fuelvol_per_cycle / 
+  float raw_pw_us = (calculated_values.fuelvol_per_cycle + calculated_values.tipin) / 
     config.fueling.injector_cc_per_minute * 60000000 / /* uS per minute */
     config.fueling.injections_per_cycle; /* This many pulses */
-
-  raw_pw_us += (raw_pw_us * calculated_values.tipin);
 
   calculated_values.ete = ete;
   calculated_values.idt = idt;
@@ -281,10 +280,10 @@ START_TEST(check_calculate_ignition_fixedduty) {
   ck_assert(abs(calculated_values.dwell_us - (10000 / 8)) < 5);
 } END_TEST
 
-static struct table tipin_factor = {
+static struct table tipin_amount = {
     .num_axis = 2,
     .axis = { { .num = 2, .values = {0, 100} }, { .num = 2, .values = {0, 100}} },
-    .data = { .two = { {0, 0}, {0, 2.0} } },
+    .data = { .two = { {0, 0}, {0, 2000} } },
 };
 
 static struct table tipin_duration = {
@@ -296,7 +295,7 @@ static struct table tipin_duration = {
 
 START_TEST(check_calculate_tipin_newevent) {
 
-  config.tipin_enrich_factor = &tipin_factor;
+  config.tipin_enrich_amount = &tipin_amount;
   config.tipin_enrich_duration = &tipin_duration;
 
   set_current_time(0);
@@ -314,7 +313,7 @@ START_TEST(check_calculate_tipin_newevent) {
 
 START_TEST(check_calculate_tipin_overriding_event) {
 
-  config.tipin_enrich_factor = &tipin_factor;
+  config.tipin_enrich_amount = &tipin_amount;
   config.tipin_enrich_duration = &tipin_duration;
 
   set_current_time(0);
