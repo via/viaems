@@ -154,7 +154,7 @@ struct table timing_vs_rpm_and_map __attribute__((section(".configdata"))) = {
 
 
 struct table injector_dead_time __attribute__((section(".configdata"))) = {
-  .title = "Dead Time", .num_axis = 1,
+  .title = "dead_time", .num_axis = 1,
   .axis = { { .name = "BRV", .num = 16,
       .values = {8.5, 9, 9.5, 10, 10.5, 11, 11.5, 12, 12.5, 13, 13.5, 14, 14.5, 15, 15.5, 16},
     },

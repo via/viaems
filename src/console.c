@@ -234,11 +234,15 @@ static void console_get_table(const struct console_config_node *self, char *dest
   const struct table *t = self->val;
   if (remaining && (remaining[0] == '[')) {
     float val;
-    if (console_get_table_element(t, remaining, &val)) {
-      sprintf(dest, "%.2f", val);
-    } else {
-      strcpy(dest, "invalid");
-    }
+    char *saveptr;
+    char *element = strtok_r(remaining, " ", &saveptr);
+    do {
+      if (console_get_table_element(t, element, &val)) {
+        dest += sprintf(dest, "%s%.2f", (element == remaining) ? "": " ", val);
+      } else {
+        strcpy(dest, "invalid");
+      }
+    } while ((element = strtok_r(NULL, " ", &saveptr)));
   } else {
     dest += sprintf(dest, "name=%s naxis=%d rows=%d rowname=%s "
         "cols=%d colname=%s ",
