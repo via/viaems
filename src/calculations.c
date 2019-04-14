@@ -75,7 +75,7 @@ static float calculate_fuel_volume(float airmass, float frt) {
   return fuel_volume;
 }
 
-/* Returns cm^3 of fuel per cycle to add */
+/* Returns mm^3 of fuel per cycle to add */
 static float calculate_tipin_enrichment(float tps, float tpsrate, int rpm) {
   static struct {
     timeval_t time;
@@ -108,7 +108,7 @@ static float calculate_tipin_enrichment(float tps, float tpsrate, int rpm) {
     current.active = 1;
   }
 
-  return current.amount / 1000.0;
+  return current.amount;
 }
 
 void calculate_fueling() {
@@ -166,7 +166,8 @@ void calculate_fueling() {
 
   calculated_values.fuelvol_per_cycle = fuel_vol_at_stoich / lambda;
 
-  float raw_pw_us = (calculated_values.fuelvol_per_cycle + calculated_values.tipin) / 
+  float raw_pw_us = (calculated_values.fuelvol_per_cycle + 
+      (calculated_values.tipin / 1000)) / /* Tipin unit is mm^3 */
     config.fueling.injector_cc_per_minute * 60000000 / /* uS per minute */
     config.fueling.injections_per_cycle; /* This many pulses */
 
@@ -301,11 +302,11 @@ START_TEST(check_calculate_tipin_newevent) {
   set_current_time(0);
 
   ck_assert_float_eq_tol(calculate_tipin_enrichment(0, 0, 100), 0, 0.001);
-  ck_assert_float_eq_tol(calculate_tipin_enrichment(100, 100, 100), 2.0, 0.001);
+  ck_assert_float_eq_tol(calculate_tipin_enrichment(100, 100, 100), 2000.0, 0.001);
   /* At 100 rpm, should last 1 ms */
 
   set_current_time(time_from_us(900));
-  ck_assert_float_eq_tol(calculate_tipin_enrichment(0, 0, 100), 2.0, 0.001);
+  ck_assert_float_eq_tol(calculate_tipin_enrichment(0, 0, 100), 2000.0, 0.001);
   set_current_time(time_from_us(1005));
   ck_assert_float_eq_tol(calculate_tipin_enrichment(0, 0, 100), 0.0, 0.001);
 
@@ -319,26 +320,26 @@ START_TEST(check_calculate_tipin_overriding_event) {
   set_current_time(0);
 
   ck_assert_float_eq_tol(calculate_tipin_enrichment(0, 0, 100), 0, 0.001);
-  ck_assert_float_eq_tol(calculate_tipin_enrichment(100, 50, 100), 1.0, 0.001);
+  ck_assert_float_eq_tol(calculate_tipin_enrichment(100, 50, 100), 1000, 0.001);
 
   /* At 100 rpm, should last 1 ms */
   set_current_time(time_from_us(500));
   /* Milder tipin should not affect anything */
-  ck_assert_float_eq_tol(calculate_tipin_enrichment(100, 20, 100), 1.0, 0.001);
+  ck_assert_float_eq_tol(calculate_tipin_enrichment(100, 20, 100), 1000, 0.001);
 
   set_current_time(time_from_us(1005));
   ck_assert_float_eq_tol(calculate_tipin_enrichment(0, 0, 100), 0.0, 0.001);
 
   /* Test a higher overriding event */
-  ck_assert_float_eq_tol(calculate_tipin_enrichment(100, 20, 100), 0.4, 0.001);
+  ck_assert_float_eq_tol(calculate_tipin_enrichment(100, 20, 100), 400, 0.001);
 
   set_current_time(time_from_us(1500));
   /* New tipin should override, since its higher */
-  ck_assert_float_eq_tol(calculate_tipin_enrichment(100, 50, 100), 1.0, 0.001);
+  ck_assert_float_eq_tol(calculate_tipin_enrichment(100, 50, 100), 1000, 0.001);
   
   /* and should still be ongoing for the full time */
   set_current_time(time_from_us(2400));
-  ck_assert_float_eq_tol(calculate_tipin_enrichment(0, 0, 100), 1.0, 0.001);
+  ck_assert_float_eq_tol(calculate_tipin_enrichment(0, 0, 100), 1000, 0.001);
 
   /*and now finished */
   set_current_time(time_from_us(2600));
