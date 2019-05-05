@@ -1543,7 +1543,7 @@ START_TEST(check_console_set_sensor) {
 
 START_TEST(check_console_get_events) {
 
-  char cmd[] = "";
+  char cmd[16] = "";
   char buf[128];
 
   config.num_events = 4;
