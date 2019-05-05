@@ -215,9 +215,15 @@ static void hosted_platform_timer() {
     return;
   }
 
-  int failing = (current_time() % 1000000) > 500000;
+  int failing = 0; // (current_time() % 1000000) > 500000;
+  if (current_time() % 100 == 0) {
+    test_trigger_rpm += 1;
+    if (test_trigger_rpm > 9000) {
+      test_trigger_rpm = 800;
+    }
+  }
   if (test_trigger_rpm && !failing) {
-    timeval_t time_between = time_from_rpm_diff(test_trigger_rpm, 90);
+    timeval_t time_between = time_from_rpm_diff(test_trigger_rpm, 30);
     static uint32_t trigger_count = 0;
     if (curtime >= test_trigger_last + time_between) {
       test_trigger_last = curtime;

@@ -58,7 +58,7 @@
  *    TIM14 PA7
  *
  *  TLC2543 on SPI2 (PB12-15) CS, SCK, MISO, MOSI
- *    - Uses TIM5 dma1 stream 1 chan 7 to trigger DMA at about 40 khz for 10
+ *    - Uses TIM6 dma1 stream 1 chan 7 to trigger DMA at about 50 khz for 10
  *     inputs
  *    - RX uses SPI2 dma1 stream 3 chan 0
  *    - On end of RX dma, trigger interrupt

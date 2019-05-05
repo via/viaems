@@ -234,11 +234,15 @@ static void console_get_table(const struct console_config_node *self, char *dest
   const struct table *t = self->val;
   if (remaining && (remaining[0] == '[')) {
     float val;
-    if (console_get_table_element(t, remaining, &val)) {
-      sprintf(dest, "%.2f", val);
-    } else {
-      strcpy(dest, "invalid");
-    }
+    char *saveptr;
+    char *element = strtok_r(remaining, " ", &saveptr);
+    do {
+      if (console_get_table_element(t, element, &val)) {
+        dest += sprintf(dest, "%s%.2f", (element == remaining) ? "": " ", val);
+      } else {
+        strcpy(dest, "invalid");
+      }
+    } while ((element = strtok_r(NULL, " ", &saveptr)));
   } else {
     dest += sprintf(dest, "name=%s naxis=%d rows=%d rowname=%s "
         "cols=%d colname=%s ",
@@ -715,7 +719,7 @@ static struct console_config_node console_config_nodes[] = {
    .get=console_get_table, .set=console_set_table},
   {.name="config.tables.engine_temp_enrich", .val=&enrich_vs_temp_and_map,
    .get=console_get_table, .set=console_set_table},
-  {.name="config.tables.tipin_enrich_factor", .val=&tipin_vs_tpsrate_and_tps,
+  {.name="config.tables.tipin_enrich_amount", .val=&tipin_vs_tpsrate_and_tps,
    .get=console_get_table, .set=console_set_table},
   {.name="config.tables.tipin_enrich_duration", .val=&tipin_duration_vs_rpm,
    .get=console_get_table, .set=console_set_table},
@@ -806,6 +810,8 @@ static struct console_config_node console_config_nodes[] = {
    .get=console_get_float},
   {.name="status.dwell_us", .val=&calculated_values.dwell_us,
    .get=console_get_uint},
+  {.name="status.fuel_volume", .val=&calculated_values.fuelvol_per_cycle,
+   .get=console_get_float},
   {.name="status.tipin", .val=&calculated_values.tipin,
    .get=console_get_float},
   
@@ -927,6 +933,7 @@ void console_init() {
     "status.decoder_t1_count",
     "status.timing_advance",
     "status.fueling_us",
+    "status.fuel_volume",
     "status.ete",
     "status.ve",
     "status.lambda",
@@ -1536,7 +1543,7 @@ START_TEST(check_console_set_sensor) {
 
 START_TEST(check_console_get_events) {
 
-  char cmd[] = "";
+  char cmd[16] = "";
   char buf[128];
 
   config.num_events = 4;

@@ -32,7 +32,7 @@ struct config {
   struct table *commanded_lambda;
   struct table *injector_pw_compensation;
   struct table *engine_temp_enrich;
-  struct table *tipin_enrich_factor;
+  struct table *tipin_enrich_amount;
   struct table *tipin_enrich_duration;
 
   /* Fuel information */
