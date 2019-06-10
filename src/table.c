@@ -1,3 +1,5 @@
+#include <math.h>
+
 #include "table.h"
 
 float
@@ -73,6 +75,124 @@ interpolate_table_twoaxis(struct table *t, float x, float y) {
        (y - y1) / (y2 - y1) * xy2;
   return xy;
 }
+
+static float table_distance_factor(float x1, float x2, float x_radius) {
+  float x_distance = fabsf(x1 - x2);
+  float factor = (x_radius - x_distance) / x_radius;
+  if (factor > 0) {
+    return factor;
+  } else {
+    return 0.0;
+  }
+}
+
+void table_apply_correction_oneaxis(struct table *t,
+    float new_value,
+    float x, float x_radius) {
+
+  int xind_1 = -1, xind_2 = -1;
+
+  if (x <= t->axis[0].values[0]) {
+    /* Value off the scale to left */
+    xind_1 = 0;
+  } else if (x >= t->axis[0].values[t->axis[0].num - 1]) {
+    xind_1 = t->axis[0].num - 1;
+  } else {
+    for (int x_ind = 0; x_ind < t->axis[0].num - 1; ++x_ind) {
+      if ((x >= t->axis[0].values[x_ind]) &&
+          (x <= t->axis[0].values[x_ind])) {
+        xind_1 = x_ind;
+        xind_2 = x_ind + 1;
+        break;
+      }
+    }
+  }
+
+  if (xind_1 >= 0) {
+    float factor = table_distance_factor(t->axis[0].values[xind_1], x, x_radius);
+    float new = (new_value * factor) + (t->data.one[xind_1] * (1.0 - factor));
+    t->data.one[xind_1] = new;
+  }
+  if (xind_2 >= 0) {
+    float factor = table_distance_factor(t->axis[0].values[xind_2], x, x_radius);
+    float new = (new_value * factor) + (t->data.one[xind_2] * (1.0 - factor));
+    t->data.one[xind_2] = new;
+  }
+
+}
+
+static void table_apply_correction_twoaxis_point(
+    struct table *t, float new_value, float x, float y, 
+    float x_radius, float y_radius,
+    int x_index, int y_index) {
+
+    float factor = table_distance_factor(t->axis[0].values[x_index], x, x_radius) *
+        table_distance_factor(t->axis[0].values[y_index], y, y_radius);
+    float new = (new_value * factor) + (t->data.two[y_index][x_index] * (1.0 - factor));
+    t->data.two[y_index][x_index] = new;
+}
+
+void table_apply_correction_twoaxis(struct table *t, 
+    float new_value,
+    float x, float y, 
+    float x_radius, float y_radius) {
+
+  int xind_1 = -1, xind_2 = -1;
+  int yind_1 = -1, yind_2 = -1;
+
+  if (x <= t->axis[0].values[0]) {
+    /* Value off the scale to left */
+    xind_1 = 0;
+  } else if (x >= t->axis[0].values[t->axis[0].num - 1]) {
+    xind_1 = t->axis[0].num - 1;
+  } else {
+    for (int x_ind = 0; x_ind < t->axis[0].num - 1; ++x_ind) {
+      if ((x >= t->axis[0].values[x_ind]) &&
+          (x <= t->axis[0].values[x_ind])) {
+        xind_1 = x_ind;
+        xind_2 = x_ind + 1;
+        break;
+      }
+    }
+  }
+
+  if (y <= t->axis[1].values[0]) {
+    /* Value off the scale to bottom */
+    yind_1 = 0;
+  } else if (y >= t->axis[1].values[t->axis[1].num - 1]) {
+    yind_1 = t->axis[1].num - 1;
+  } else {
+    for (int y_ind = 0; y_ind < t->axis[1].num - 1; ++y_ind) {
+      if ((y >= t->axis[1].values[y_ind]) &&
+          (y <= t->axis[1].values[y_ind])) {
+        yind_1 = y_ind;
+        yind_2 = y_ind + 1;
+        break;
+      }
+    }
+  }
+
+  if ((xind_1 >= 0) && (yind_1 >= 0)) {
+    table_apply_correction_twoaxis_point(t, new_value, x, y, x_radius, y_radius, 
+        xind_1, yind_1);
+  }
+
+  if ((xind_2 >= 0) && (yind_1 >= 0)) {
+    table_apply_correction_twoaxis_point(t, new_value, x, y, x_radius, y_radius, 
+        xind_2, yind_1);
+  }
+
+  if ((xind_1 >= 0) && (yind_2 >= 0)) {
+    table_apply_correction_twoaxis_point(t, new_value, x, y, x_radius, y_radius, 
+        xind_1, yind_2);
+  }
+
+  if ((xind_2 >= 0) && (yind_2 >= 0)) {
+    table_apply_correction_twoaxis_point(t, new_value, x, y, x_radius, y_radius, 
+        xind_2, yind_2);
+  }
+}
+
 
 static int table_valid_axis(struct table_axis *a) {
   if (a->num > MAX_AXIS_SIZE) {

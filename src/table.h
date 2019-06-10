@@ -23,6 +23,15 @@ struct table {
 float interpolate_table_oneaxis(struct table *, float a);
 float interpolate_table_twoaxis(struct table *, float a1, float a2);
 
+void table_apply_correction_twoaxis(struct table *t, 
+    float new_value,
+    float x, float y, 
+    float x_radius, float y_radius);
+
+void table_apply_correction_oneaxis(struct table *t,
+    float new_value,
+    float x, float x_radius);
+
 int table_valid(struct table *);
 
 #ifdef UNITTEST

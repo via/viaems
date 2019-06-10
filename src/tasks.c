@@ -1,3 +1,6 @@
+#include <math.h>
+#include <stdio.h>
+
 #include "platform.h"
 #include "config.h"
 #include "decoder.h"
@@ -46,6 +49,73 @@ void handle_emergency_shutdown() {
       set_output(config.events[i].pin, config.events[i].inverted);
     }
   }
+}
+
+struct auto_calibration_data {
+  float map;
+  float rpm;
+  float tps;
+  float ego;
+  float lambda;
+};
+
+static int auto_calibration_data_is_stable(struct auto_calibration_data *old,
+    struct auto_calibration_data *new) {
+  if (fabsf(old->map - new->map) > 2.0) {
+    return 0;
+  }
+  if (fabsf(old->rpm - new->rpm) > 100) {
+    return 0;
+  }
+  if (fabsf(old->tps - new->tps) > 5) {
+    return 0;
+  }
+  if (fabsf(old->ego - new->ego) > 0.03) {
+    return 0;
+  }
+  if ((new->ego < 0.65) || (new->ego > 1.4)) {
+    return 0;
+  }
+  if (fabsf(calculated_values.tipin) > 20) {
+    return 0;
+  }
+  if (fabsf(calculated_values.ete - 1.0) > 0.01) {
+    return 0;
+  }
+  return 1;
+}
+
+void handle_auto_calibration() {
+  static timeval_t last_run = 0;
+  static struct auto_calibration_data last_reading, current_reading;
+
+  /* Run about every 1/10th second */
+  if (current_time() - last_run < time_from_us(100000)) {
+    return;
+  }
+  last_run = current_time();
+
+  current_reading.map = config.sensors[SENSOR_MAP].processed_value;
+  current_reading.rpm = config.decoder.rpm;
+  current_reading.tps = config.sensors[SENSOR_TPS].processed_value;
+  current_reading.ego = config.sensors[SENSOR_EGO].processed_value;
+  current_reading.lambda = calculated_values.lambda;
+
+  if (auto_calibration_data_is_stable(&last_reading, &current_reading)) {
+    float new_ve = (last_reading.ego / last_reading.lambda) * 
+      calculated_values.ve;
+
+    /* Lag filter the VE change */
+    new_ve = ((calculated_values.ve * 90.0) +
+      (new_ve * (100.0 - 90.0))) / 100.0;
+
+
+   table_apply_correction_twoaxis(config.ve, new_ve,
+       last_reading.rpm, last_reading.map, 800, 30);
+
+  }
+
+  last_reading = current_reading;
 }
 
 #ifdef UNITTEST
