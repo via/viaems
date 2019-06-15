@@ -507,7 +507,7 @@ static void platform_init_spi_tlc2543() {
   dma_set_peripheral_address(DMA1, DMA_STREAM3, (uint32_t) &SPI2_DR);
   dma_enable_circular_mode(DMA1, DMA_STREAM3);
   dma_set_memory_address(DMA1, DMA_STREAM3, (uint32_t)spi_rx_raw_adc);
-  dma_set_number_of_data(DMA1, DMA_STREAM3, 13);
+  dma_set_number_of_data(DMA1, DMA_STREAM3, 9);
   dma_channel_select(DMA1, DMA_STREAM3, DMA_SxCR_CHSEL_0);
   dma_enable_direct_mode(DMA1, DMA_STREAM3);
   dma_enable_transfer_complete_interrupt(DMA1, DMA_STREAM3);
@@ -797,6 +797,7 @@ uint32_t cycle_count() {
 
 static volatile int adc_gather_in_progress = 0;
 void adc_gather() {
+#ifdef SPI_TLC2543
   static uint16_t spi_tx_list[] =
     {0x0C00,
      0x1C00,
@@ -812,6 +813,20 @@ void adc_gather() {
      0xBC00, /* Check value (Vref+ + Vref-) / 2 */
      0xBC00, /* Duplicated to actually get previous read */
     };
+#else
+  static uint16_t spi_tx_list[] =
+  {
+    0x0400,
+    0x0C00,
+    0x1400,
+    0x1C00,
+    0x2400,
+    0x2C00,
+    0x3400,
+    0x3C00,
+    0x3C00,
+    };
+#endif
 
   if (adc_gather_in_progress) {
     return; /* Don't start another until RX completes */
@@ -831,7 +846,7 @@ void adc_gather() {
   dma_set_transfer_mode(DMA1, DMA_STREAM1, DMA_SxCR_DIR_MEM_TO_PERIPHERAL);
   dma_set_peripheral_address(DMA1, DMA_STREAM1, (uint32_t) &SPI2_DR);
   dma_set_memory_address(DMA1, DMA_STREAM1, (uint32_t)spi_tx_list);
-  dma_set_number_of_data(DMA1, DMA_STREAM1, 13);
+  dma_set_number_of_data(DMA1, DMA_STREAM1, sizeof(spi_tx_list) / sizeof(spi_tx_list[0]));
   dma_channel_select(DMA1, DMA_STREAM1, DMA_SxCR_CHSEL_7);
   dma_enable_direct_mode(DMA1, DMA_STREAM1);
   dma_enable_stream(DMA1, DMA_STREAM1);
@@ -854,17 +869,19 @@ void dma1_stream3_isr(void) {
   timer_disable_counter(TIM6);
 
   int fault = 0;
+#if 0
   if (((spi_rx_raw_adc[12] >> 4) > (2048 + 10)) ||
       ((spi_rx_raw_adc[12] >> 4) < (2048 - 10))) {
     fault = 1; /* Check value is vref/2 */
   }
+#endif
 
   for (int i = 0; i < NUM_SENSORS; ++i) {
     if (config.sensors[i].source == SENSOR_ADC) {
       int pin = (config.sensors[i].pin + 1) % 10;
       config.sensors[i].fault = fault ? FAULT_CONN : FAULT_NONE;
       config.sensors[i].raw_value = 
-        spi_rx_raw_adc[pin] >> 4; /* 12 bit value is left justified */
+        spi_rx_raw_adc[pin];// >> 4; /* 12 bit value is left justified */
     }
   }
   

@@ -941,6 +941,7 @@ void console_init() {
     "status.tipin",
     "status.sensors.brv",
     "status.sensors.map",
+    "status.sensors.aap",
     "status.sensors.tps",
     "status.sensors.iat",
     "status.sensors.clt",
