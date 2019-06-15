@@ -762,6 +762,9 @@ void platform_init() {
   rcc_periph_clock_enable(RCC_SPI2);
   rcc_periph_clock_enable(RCC_OTGFS);
 
+  /* Wait for clock to spin up */
+  rcc_wait_for_osc_ready(RCC_HSE);
+
   scb_set_priority_grouping(SCB_AIRCR_PRIGROUP_GROUP16_NOSUB);
   platform_init_scheduled_outputs();
   platform_init_eventtimer();
