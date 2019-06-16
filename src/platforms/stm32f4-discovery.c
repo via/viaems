@@ -57,7 +57,7 @@
  *    TIM13 PA6
  *    TIM14 PA7
  *
- *  TLC2543 on SPI2 (PB12-15) CS, SCK, MISO, MOSI
+ *  TLC2543 or ADC7888 on SPI2 (PB12-15) CS, SCK, MISO, MOSI
  *    - Uses TIM6 dma1 stream 1 chan 7 to trigger DMA at about 50 khz for 10
  *     inputs
  *    - RX uses SPI2 dma1 stream 3 chan 0
@@ -464,14 +464,13 @@ void exti15_10_isr() {
  * the SPI RX buffer is filled, the RX DMA event will fill, and populate
  * spi_rx_raw_adc.
  *
- * For configured for the TLC2543, currently using 10 inputs, spi_tx_list 
- * contains the 16bit data words to
- * trigger reads on AIN0-AIN10 and vref/2 on the TLC2543.  The AD7888 has no
- * self checkable channels, and is configured for 8 inputs. DMA is set up
- * such that each channel is sampled in order.  DMA RX is set up
- * accordingly, but note that because the ADC returns the previous sample
- * result each time, command 1 in spi_tx_list corresponds to response 2 in
- * spi_rx_raw_adc, and so forth.
+ * When configured for the TLC2543, currently using 10 inputs, spi_tx_list
+ * contains the 16bit data words to trigger reads on AIN0-AIN10 and vref/2 on
+ * the TLC2543.  The AD7888 has no self checkable channels, and is configured
+ * for 8 inputs. DMA is set up such that each channel is sampled in order.  DMA
+ * RX is set up accordingly, but note that because the ADC returns the previous
+ * sample result each time, command 1 in spi_tx_list corresponds to response 2
+ * in spi_rx_raw_adc, and so forth.
  *
  * Currently sample rate is about 50 khz, with a SPI bus frequency of 1.3ish MHz
  *
@@ -486,7 +485,7 @@ void exti15_10_isr() {
 #endif
 static volatile uint16_t spi_rx_raw_adc[SPI_WRITE_COUNT] = {0};
 
-static void platform_init_spi_tlc2543() {
+static void platform_init_spi_adc() {
   /* Configure SPI output */
   gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO13 | GPIO14 | GPIO15);
   gpio_set_af(GPIOB, GPIO_AF5, GPIO13 | GPIO14 | GPIO15);
@@ -776,7 +775,7 @@ void platform_init() {
   scb_set_priority_grouping(SCB_AIRCR_PRIGROUP_GROUP16_NOSUB);
   platform_init_scheduled_outputs();
   platform_init_eventtimer();
-  platform_init_spi_tlc2543();
+  platform_init_spi_adc();
   platform_init_pwm();
   platform_init_freqsensor();
   platform_init_usb();
@@ -796,6 +795,9 @@ void platform_init() {
   }
   dwt_enable_cycle_counter();
   stats_init(168000000);
+}
+
+void platform_reset_into_bootloader() {
 }
 
 
