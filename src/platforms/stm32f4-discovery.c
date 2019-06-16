@@ -75,7 +75,6 @@
  *
  */
 
-static volatile uint16_t spi_rx_raw_adc[13] = {0};
 
 static void platform_init_freqsensor() {
   timer_reset(TIM1);
@@ -465,19 +464,28 @@ void exti15_10_isr() {
  * the SPI RX buffer is filled, the RX DMA event will fill, and populate
  * spi_rx_raw_adc.
  *
- * Currently using 10 inputs, spi_tx_list contains the 16bit data words to
- * trigger reads on AIN0-AIN10 and vref/2 on the TLC2543.  DMA is set up
+ * For configured for the TLC2543, currently using 10 inputs, spi_tx_list 
+ * contains the 16bit data words to
+ * trigger reads on AIN0-AIN10 and vref/2 on the TLC2543.  The AD7888 has no
+ * self checkable channels, and is configured for 8 inputs. DMA is set up
  * such that each channel is sampled in order.  DMA RX is set up
- * accordingly, but note that because the TLC2543 returns the previous sample
+ * accordingly, but note that because the ADC returns the previous sample
  * result each time, command 1 in spi_tx_list corresponds to response 2 in
  * spi_rx_raw_adc, and so forth.
  *
  * Currently sample rate is about 50 khz, with a SPI bus frequency of 1.3ish MHz
  *
  * Each call to adc_gather reconfigures TX DMA, resets and starts TIM6, and
- * lowers CS Once all 13 receives are complete, RX dma completes, notifies
+ * lowers CS Once all receives are complete, RX dma completes, notifies
  * completion, and raises CS.
  */
+#ifdef SPI_TLC2543
+#define SPI_WRITE_COUNT 13
+#else
+#define SPI_WRITE_COUNT 9
+#endif
+static volatile uint16_t spi_rx_raw_adc[SPI_WRITE_COUNT] = {0};
+
 static void platform_init_spi_tlc2543() {
   /* Configure SPI output */
   gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO13 | GPIO14 | GPIO15);
@@ -507,7 +515,7 @@ static void platform_init_spi_tlc2543() {
   dma_set_peripheral_address(DMA1, DMA_STREAM3, (uint32_t) &SPI2_DR);
   dma_enable_circular_mode(DMA1, DMA_STREAM3);
   dma_set_memory_address(DMA1, DMA_STREAM3, (uint32_t)spi_rx_raw_adc);
-  dma_set_number_of_data(DMA1, DMA_STREAM3, 9);
+  dma_set_number_of_data(DMA1, DMA_STREAM3, SPI_WRITE_COUNT);
   dma_channel_select(DMA1, DMA_STREAM3, DMA_SxCR_CHSEL_0);
   dma_enable_direct_mode(DMA1, DMA_STREAM3);
   dma_enable_transfer_complete_interrupt(DMA1, DMA_STREAM3);
@@ -869,7 +877,7 @@ void dma1_stream3_isr(void) {
   timer_disable_counter(TIM6);
 
   int fault = 0;
-#if 0
+#ifdef SPI_TLC2543
   if (((spi_rx_raw_adc[12] >> 4) > (2048 + 10)) ||
       ((spi_rx_raw_adc[12] >> 4) < (2048 - 10))) {
     fault = 1; /* Check value is vref/2 */
@@ -878,10 +886,13 @@ void dma1_stream3_isr(void) {
 
   for (int i = 0; i < NUM_SENSORS; ++i) {
     if (config.sensors[i].source == SENSOR_ADC) {
-      int pin = (config.sensors[i].pin + 1) % 10;
+      int pin = (config.sensors[i].pin + 1) % SPI_WRITE_COUNT;
       config.sensors[i].fault = fault ? FAULT_CONN : FAULT_NONE;
-      config.sensors[i].raw_value = 
-        spi_rx_raw_adc[pin];// >> 4; /* 12 bit value is left justified */
+      uint16_t adc_value = spi_rx_raw_adc[pin];
+#ifdef SPI_TLC2543
+      adc_value >>= 4; /* 12 bit value is left justified */
+#endif
+      config.sensors[i].raw_value = adc_value;
     }
   }
   
