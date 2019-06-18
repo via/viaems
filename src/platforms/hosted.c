@@ -56,6 +56,9 @@ void platform_disable_event_logging() {
   event_logging_enabled = 0;
 }
 
+void platform_reset_into_bootloader() {
+}
+
 uint16_t cur_outputs = 0;
 
 timeval_t current_time() {

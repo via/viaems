@@ -266,6 +266,13 @@ static void console_save_to_flash(
   platform_save_config();
 }
 
+static void console_bootloader(
+    const struct console_config_node *self __attribute__((unused)), 
+    char *dest __attribute__((unused)),
+    char *rem __attribute__((unused))) {
+  platform_reset_into_bootloader();
+}
+
 static void console_get_sensor(const struct console_config_node *self, char *dest,
     char *remaining __attribute__((unused))) {
   assert(self);
@@ -853,6 +860,7 @@ static struct console_config_node console_config_nodes[] = {
   /* Misc commands */
   {.name="flash", .set=console_save_to_flash},
   {.name="stats", .get=console_get_stats},
+  {.name="bootloader", .get=console_bootloader},
 
   /* Host commands */
   {.name="sim"},

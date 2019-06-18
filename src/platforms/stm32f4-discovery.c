@@ -77,7 +77,6 @@
 
 
 static void platform_init_freqsensor() {
-  timer_reset(TIM1);
   timer_set_mode(TIM1, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
   timer_set_period(TIM1, 0xFFFFFFFF);
   timer_disable_preload(TIM1);
@@ -197,7 +196,6 @@ static void platform_init_eventtimer() {
   /* Set up TIM2 as 32bit clock that is slaved off TIM8*/
 
 
-  timer_reset(TIM2);
   timer_set_mode(TIM2, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
   timer_slave_set_mode(TIM2, TIM_SMCR_SMS_ECM1);
   timer_slave_set_trigger(TIM2, TIM_SMCR_TS_ITR1); /* TIM2 slaved off TIM8 */
@@ -247,7 +245,6 @@ static void platform_init_eventtimer() {
   *((volatile uint32_t *)0xE0042008) |= 19; /*TIM2, TIM5, and TIM6 */
   *((volatile uint32_t *)0xE004200C) |= 2; /* TIM8 stop */
 
-  timer_reset(TIM8);
   timer_set_mode(TIM8, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
   timer_set_period(TIM8, 41); /* 0.25 uS */
   timer_set_prescaler(TIM8, 0);
@@ -327,7 +324,6 @@ static void platform_init_pwm() {
   gpio_set_af(GPIOC, GPIO_AF2, GPIO8);
   gpio_set_af(GPIOC, GPIO_AF2, GPIO9);
 
-  timer_reset(TIM3);
   timer_disable_oc_output(TIM3, TIM_OC1);
   timer_set_mode(TIM3, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
   /* 72ish Hz, close to 60 */
@@ -525,7 +521,6 @@ static void platform_init_spi_adc() {
 
 
   /* Configure TIM6 to drive DMA for SPI */
-  timer_reset(TIM6);
   timer_set_mode(TIM6, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
   timer_set_period(TIM6, 1800); /* Approx 50 khz sampling rate */
   timer_disable_preload(TIM6);
@@ -750,7 +745,7 @@ void platform_init_usb() {
 void platform_init() {
 
   /* 168 Mhz clock */
-  rcc_clock_setup_hse_3v3(&rcc_hse_8mhz_3v3[RCC_CLOCK_3V3_168MHZ]);
+  rcc_clock_setup_pll(&rcc_hse_8mhz_3v3[RCC_CLOCK_3V3_168MHZ]);
 
   /* Enable clocks for subsystems */
   rcc_periph_clock_enable(RCC_GPIOA);
@@ -798,6 +793,62 @@ void platform_init() {
 }
 
 void platform_reset_into_bootloader() {
+  handle_emergency_shutdown();
+
+  rcc_periph_reset_pulse(RST_OTGFS);
+
+  /* Shut down subsystems */
+  rcc_periph_reset_pulse(RST_GPIOA);
+  rcc_periph_clock_disable(RCC_GPIOA);
+
+  rcc_periph_reset_pulse(RST_GPIOB);
+  rcc_periph_clock_disable(RCC_GPIOB);
+
+  rcc_periph_reset_pulse(RST_GPIOC);
+  rcc_periph_clock_disable(RCC_GPIOC);
+
+  rcc_periph_reset_pulse(RST_GPIOD);
+  rcc_periph_clock_disable(RCC_GPIOD);
+
+  rcc_periph_reset_pulse(RST_GPIOE);
+  rcc_periph_clock_disable(RCC_GPIOE);
+
+  rcc_periph_reset_pulse(RST_SYSCFG);
+  rcc_periph_clock_disable(RCC_SYSCFG);
+
+  rcc_periph_reset_pulse(RST_DMA1);
+  rcc_periph_clock_disable(RCC_DMA1);
+
+  rcc_periph_reset_pulse(RST_DMA2);
+  rcc_periph_clock_disable(RCC_DMA2);
+
+  rcc_periph_reset_pulse(RST_TIM1);
+  rcc_periph_clock_disable(RCC_TIM1);
+  
+  rcc_periph_reset_pulse(RST_TIM2);
+  rcc_periph_clock_disable(RCC_TIM2);
+
+  rcc_periph_reset_pulse(RST_TIM3);
+  rcc_periph_clock_disable(RCC_TIM3);
+
+  rcc_periph_reset_pulse(RST_TIM6);
+  rcc_periph_clock_disable(RCC_TIM6);
+  
+  rcc_periph_reset_pulse(RST_TIM8);
+  rcc_periph_clock_disable(RCC_TIM8);
+
+  rcc_periph_reset_pulse(RST_SPI2);
+  rcc_periph_clock_disable(RCC_SPI2);
+
+  rcc_periph_reset_pulse(RST_OTGFS);
+  rcc_periph_clock_disable(RCC_OTGFS);
+
+  /* 168 Mhz clock */
+  rcc_clock_setup_pll(&rcc_hsi_configs[RCC_CLOCK_3V3_168MHZ]);
+
+  __asm__ volatile("msr msp, %0"::"g" (*(volatile uint32_t *)0x20001000));
+  (*(void (**)())(0x1fff0004))();
+  while (1);
 }
 
 
@@ -1038,7 +1089,6 @@ void enable_test_trigger(trigger_type trig, unsigned int rpm) {
   rcc_periph_clock_enable(RCC_TIM5);
   gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO0);
   gpio_set_af(GPIOA, GPIO_AF2, GPIO0);
-  timer_reset(TIM5);
   timer_disable_oc_output(TIM5, TIM_OC1);
   timer_set_mode(TIM5, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
   timer_set_period(TIM5, (unsigned int)t);

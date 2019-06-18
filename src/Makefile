@@ -10,7 +10,7 @@ AR=arm-none-eabi-ar
 OBJS=libssp.a libssp_nonshared.a
 OBJCOPY=arm-none-eabi-objcopy
 OPENCM3_DIR=../libopencm3
-CFLAGS=  -I. -std=c99 -Wall -Og -Wextra -g -flto
+CFLAGS=  -I. -std=c99 -Wall -O3 -Wextra -g -flto
 CFLAGS+= -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mthumb -mcpu=cortex-m4
 CFLAGS+= -D TICKRATE=4000000
 CFLAGS+=  -L${OPENCM3_DIR}/lib -I${OPENCM3_DIR}/include -DSTM32F4
