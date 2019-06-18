@@ -146,6 +146,7 @@ Node | Meaning
 `config.sensors.iat` | IAT sensor
 `config.feed` | comma-delimited list of config nodes to output
 `flash` | Set to save current configuration
+`bootloader` | Set to reboot into dfu mode for firmware updates
 
 Any config node that is a simple value (string, float, int) can be used with
 `config.feed`.  Some config nodes are detailed. On get they will return a
