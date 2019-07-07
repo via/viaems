@@ -186,7 +186,7 @@ struct config config __attribute__((section(".configdata"))) = {
     {.type=FUEL_EVENT, .angle=600, .pin=10},
   },
   .decoder = {
-    .type = TOYOTA_24_1_CAS,
+    .type = FORD_TFI, //TOYOTA_24_1_CAS,
     .offset = 50,
     .trigger_max_rpm_change = 0.55, /*Startup sucks with only 90* trigger */
     .trigger_min_rpm = 80,
