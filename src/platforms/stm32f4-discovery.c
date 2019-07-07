@@ -538,10 +538,6 @@ static void platform_init_spi_adc() {
 static uint8_t usbd_control_buffer[128];
 static usbd_device *usbd_dev;
 
-static char *usb_rx_ptr;
-static uint16_t usb_rx_bytes_max;
-static uint16_t usb_rx_bytes_read;
-
 /* Most of the following is copied from libopencm3-examples */
 static enum usbd_request_return_codes cdcacm_control_request(usbd_device *usbd_dev,
   struct usb_setup_data *req, uint8_t **buf, uint16_t *len,
@@ -571,10 +567,13 @@ static enum usbd_request_return_codes cdcacm_control_request(usbd_device *usbd_d
 }
 
 
+#define USB_RX_BUF_LEN 1024
+static char usb_rx_buf[USB_RX_BUF_LEN];
+static size_t usb_rx_len = 0;
 static void cdcacm_data_rx_cb(usbd_device *usbd_dev, uint8_t ep)
 {
   (void)ep;
-  usb_rx_bytes_read = usbd_ep_read_packet(usbd_dev, 0x01, usb_rx_ptr, usb_rx_bytes_max);
+  usb_rx_len += usbd_ep_read_packet(usbd_dev, 0x01, usb_rx_buf, USB_RX_BUF_LEN - usb_rx_len);
 }
 
 static void cdcacm_set_config(usbd_device *usbd_dev, uint16_t wValue)
@@ -729,6 +728,16 @@ static const char * usb_strings[] = {
   "0",
 };
 
+void otg_fs_isr() {
+  stats_increment_counter(STATS_INT_RATE);
+  stats_increment_counter(STATS_USB_INTERRUPT_RATE);
+  stats_start_timing(STATS_USB_INTERRUPT_TIME);
+  stats_start_timing(STATS_INT_TOTAL_TIME);
+  usbd_poll(usbd_dev);
+  stats_finish_timing(STATS_USB_INTERRUPT_TIME);
+  stats_finish_timing(STATS_INT_TOTAL_TIME);
+}
+
 void platform_init_usb() {
 
   gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE,
@@ -740,6 +749,7 @@ void platform_init_usb() {
       usbd_control_buffer, sizeof(usbd_control_buffer));
 
   usbd_register_set_config_callback(usbd_dev, cdcacm_set_config);
+  nvic_enable_irq(NVIC_OTG_FS_IRQ);
 }
 
 void platform_init() {
@@ -1138,19 +1148,21 @@ void platform_save_config() {
 }
 
 size_t console_read(void *buf, size_t max) {
-  usb_rx_ptr = buf;
-  usb_rx_bytes_max = max > 64 ? 64 : max;
-  usb_rx_bytes_read = 0;
-  usbd_poll(usbd_dev);
-  return usb_rx_bytes_read;
+  disable_interrupts();
+  stats_start_timing(STATS_CONSOLE_READ_TIME);
+  size_t amt = usb_rx_len > max ? max : usb_rx_len;
+  memcpy(buf, usb_rx_buf, amt);
+  memmove(usb_rx_buf, usb_rx_buf + amt, usb_rx_len - amt);
+  usb_rx_len -= amt;
+  stats_finish_timing(STATS_CONSOLE_READ_TIME);
+  enable_interrupts();
+  return amt;
+  
 }
 
 size_t console_write(const void *buf, size_t count) {
   size_t rem = count > 64 ? 64 : count;
-
-  disable_interrupts();
   rem = usbd_ep_write_packet(usbd_dev, 0x82, buf, rem);
-  enable_interrupts();
   return rem;
 }
 
@@ -1165,7 +1177,6 @@ ssize_t _write(int fd, const void *buf, size_t count) {
     }
     buf += written;
     count -= written;
-    usbd_poll(usbd_dev);
   }
   return count;
 }
@@ -1174,9 +1185,7 @@ void _exit(int status) {
   (void)status;
   
   handle_emergency_shutdown();
-  while (1) {
-    usbd_poll(usbd_dev);
-  }
+  while (1);
 }
 
 /* TODO: implement graceful shutdown of outputs on fault */
