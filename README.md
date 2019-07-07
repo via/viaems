@@ -176,10 +176,9 @@ Requires:
 
 ```
 cd libopencm3
-make
+make CC=clang CFLAGS="-target arm-none-eabihf -mfloat-abi=hard -mfpu=fpv4-sp-d16 --sysroot /usr/lib/arm-none-eabi -O3 -flto"
 cd ../src/
-make clean
-make PLATFORM=stm32f4-discovery
+zig build -Drelease-fast
 ```
 `tfi` is the resultant executable that can be loaded.
 
