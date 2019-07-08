@@ -29,6 +29,9 @@ void platform_disable_event_logging() {
 void platform_reset_into_bootloader() {
 }
 
+void set_pwm(int pin, float val) {
+}
+
 void check_platform_reset() {
   curtime = 0;
   current_buffer = 0;
