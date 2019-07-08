@@ -175,7 +175,7 @@ struct table boost_control_pwm __attribute__((section(".configdata"))) = {
     },
   },
   .data = {
-    .one = {0.55, 0.55, 0.55, 0.55, 0.55, 0.55},
+    .one = {0.55, 0.55, 0.55, 0.55, 0.60, 0.60},
   },
 };
 
@@ -261,7 +261,7 @@ struct config config __attribute__((section(".configdata"))) = {
   },
   .boost_control = {
     .pwm_duty_vs_rpm = &boost_control_pwm,
-    .threshhold_kpa = 150.0,
+    .threshhold_kpa = 130.0,
     .pin = 1,
   },
 };
