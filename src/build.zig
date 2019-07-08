@@ -6,25 +6,31 @@ pub fn build(b: *Builder) void {
     const exe = b.addExecutable("tfi", "main.zig");
     exe.setBuildMode(mode);
 
-    exe.setTarget(builtin.Arch{.thumb = builtin.Arch.Arm32.v7em},
-    builtin.Os.freestanding, builtin.Abi.eabihf);
+    exe.setTarget(builtin.Arch{ .thumb = builtin.Arch.Arm32.v7em }, builtin.Os.freestanding, builtin.Abi.eabihf);
 
-    const args = [_][]const u8{"-O3", "-DSTM32F4", "-DTICKRATE=4000000",
-    "-mfloat-abi=hard", "-mfpu=fpv4-sp-d16", "-mthumb", "-mcpu=cortex-m4",
-    "-fno-strict-aliasing", "-flto"};
+    const args = [_][]const u8{
+        "-O3",              "-DSTM32F4",            "-DTICKRATE=4000000",
+        "-mfloat-abi=hard", "-mfpu=fpv4-sp-d16",    "-mthumb",
+        "-mcpu=cortex-m4",  "-fno-strict-aliasing", "-flto",
+    };
+    const c_sources = [_][]const u8{
+        "decoder.c",
+        "util.c",
+        "scheduler.c",
+        "console.c",
+        "calculations.c",
+        "config.c",
+        "table.c",
+        "sensors.c",
+        "stats.c",
+        "tasks.c",
+    };
     exe.setLinkerScriptPath("platforms/stm32f4-discovery.ld");
     exe.addCSourceFile("platforms/stm32f4-discovery.c", args);
-    exe.addCSourceFile("decoder.c", args);
-    exe.addCSourceFile("util.c", args);
-    exe.addCSourceFile("scheduler.c", args);
-    exe.addCSourceFile("console.c", args);
-    exe.addCSourceFile("calculations.c", args);
-    exe.addCSourceFile("config.c", args);
-    exe.addCSourceFile("table.c", args);
-    exe.addCSourceFile("sensors.c", args);
-    exe.addCSourceFile("stats.c", args);
-    exe.addCSourceFile("tasks.c", args);
-    exe.addCSourceFile("tfi.c", args);
+    for (c_sources) |source| {
+        exe.addCSourceFile(source, args);
+    }
+
     exe.addIncludeDir(".");
     exe.addIncludeDir("../libopencm3/include");
     exe.addIncludeDir("/usr/lib/arm-none-eabi/include");
