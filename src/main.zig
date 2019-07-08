@@ -16,6 +16,7 @@ export fn main() c_int {
     c_tfi.decoder_init(&c_tfi.config.decoder);
     c_tfi.console_init();
     c_tfi.platform_init();
+    c_tfi.initialize_scheduler();
     c_tfi.enable_test_trigger(c_tfi.trigger_type.FORD_TFI, 2000);
     c_tfi.sensors_process(c_tfi.sensor_source.SENSOR_CONST);
 
