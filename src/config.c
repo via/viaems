@@ -168,6 +168,17 @@ struct table injector_dead_time __attribute__((section(".configdata"))) = {
   },
 };
 
+struct table boost_control_pwm __attribute__((section(".configdata"))) = {
+  .title = "boost_control", .num_axis = 1,
+  .axis = { { .name = "RPM", .num = 6,
+      .values = {1000.0, 2000.0, 3000.0, 4000.0, 5000.0, 6000.0},
+    },
+  },
+  .data = {
+    .one = {0.55, 0.55, 0.55, 0.55, 0.55, 0.55},
+  },
+};
+
 struct config config __attribute__((section(".configdata"))) = {
   .num_events = 12,
   .events = {
@@ -247,6 +258,11 @@ struct config config __attribute__((section(".configdata"))) = {
     .dwell = DWELL_FIXED_TIME,
     .dwell_us = 2800,
     .min_fire_time_us = 500,
+  },
+  .boost_control = {
+    .pwm_duty_vs_rpm = &boost_control_pwm,
+    .threshhold_kpa = 150.0,
+    .pin = 1,
   },
 };
 

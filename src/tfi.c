@@ -24,7 +24,6 @@ int main() {
   enable_test_trigger(FORD_TFI, 2000);
 
   sensors_process(SENSOR_CONST);
-  set_pwm(1, 0.55);
   while (1) {                   
     stats_increment_counter(STATS_MAINLOOP_RATE);
 

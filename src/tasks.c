@@ -26,6 +26,13 @@ void handle_fuel_pump() {
 }
 
 void handle_boost_control() {
+  float duty;
+  if (config.sensors[SENSOR_MAP].processed_value < config.boost_control.threshhold_kpa) {
+    duty = 100.0;
+  } else {
+    duty = interpolate_table_oneaxis(config.boost_control.pwm_duty_vs_rpm, config.decoder.rpm);
+  }
+  set_pwm(config.boost_control.pin, duty);
 }
 
 void handle_idle_control() {
