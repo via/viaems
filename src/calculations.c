@@ -12,19 +12,26 @@ static int fuel_overduty() {
   return time_from_us(calculated_values.fueling_us) >= max_pw;
 }
 
-int ignition_cut() {
+static int rpm_limit() {
   if (config.decoder.rpm >= config.rpm_stop) {
     calculated_values.rpm_limit_cut = 1;
   }
   if (config.decoder.rpm < config.rpm_start) {
     calculated_values.rpm_limit_cut = 0;
   }
-  return calculated_values.rpm_limit_cut || fuel_overduty();
+  return calculated_values.rpm_limit_cut;
+}
+
+int boost_cut() {
+  return (config.sensors[SENSOR_MAP].processed_value > 200.0);
+}
+
+int ignition_cut() {
+  return rpm_limit() || fuel_overduty() || boost_cut();
 }
 
 int fuel_cut() {
-
-  return ignition_cut() || fuel_overduty();
+  return ignition_cut();
 }
 
 void calculate_ignition() {

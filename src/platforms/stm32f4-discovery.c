@@ -326,15 +326,15 @@ static void platform_init_pwm() {
 
   timer_disable_oc_output(TIM3, TIM_OC1);
   timer_set_mode(TIM3, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
-  /* 72ish Hz, close to 60 */
+  /* 30ish Hz */
   timer_set_period(TIM3, 65535);
-  timer_set_prescaler(TIM3, 16);
-  timer_disable_preload(TIM3);
+  timer_set_prescaler(TIM3, 32);
+  timer_enable_preload(TIM3);
   timer_continuous_mode(TIM3);
   /* Setup output compare registers */
   timer_ic_set_input(TIM3,  TIM_IC1, TIM_IC_OUT);
   timer_disable_oc_clear(TIM3, TIM_OC1);
-  timer_disable_oc_preload(TIM3, TIM_OC1);
+  timer_enable_oc_preload(TIM3, TIM_OC1);
   timer_set_oc_slow_mode(TIM3, TIM_OC1);
   timer_set_oc_mode(TIM3, TIM_OC1, TIM_OCM_PWM1);
   timer_set_oc_value(TIM3, TIM_OC1, 0);
@@ -343,7 +343,7 @@ static void platform_init_pwm() {
 
   timer_ic_set_input(TIM3,  TIM_IC2, TIM_IC_OUT);
   timer_disable_oc_clear(TIM3, TIM_OC2);
-  timer_disable_oc_preload(TIM3, TIM_OC2);
+  timer_enable_oc_preload(TIM3, TIM_OC2);
   timer_set_oc_slow_mode(TIM3, TIM_OC2);
   timer_set_oc_mode(TIM3, TIM_OC2, TIM_OCM_PWM1);
   timer_set_oc_value(TIM3, TIM_OC2, 0);
@@ -352,7 +352,7 @@ static void platform_init_pwm() {
 
   timer_ic_set_input(TIM3,  TIM_IC3, TIM_IC_OUT);
   timer_disable_oc_clear(TIM3, TIM_OC3);
-  timer_disable_oc_preload(TIM3, TIM_OC3);
+  timer_enable_oc_preload(TIM3, TIM_OC3);
   timer_set_oc_slow_mode(TIM3, TIM_OC3);
   timer_set_oc_mode(TIM3, TIM_OC3, TIM_OCM_PWM1);
   timer_set_oc_value(TIM3, TIM_OC3, 0);
@@ -361,7 +361,7 @@ static void platform_init_pwm() {
 
   timer_ic_set_input(TIM3,  TIM_IC4, TIM_IC_OUT);
   timer_disable_oc_clear(TIM3, TIM_OC4);
-  timer_disable_oc_preload(TIM3, TIM_OC4);
+  timer_enable_oc_preload(TIM3, TIM_OC4);
   timer_set_oc_slow_mode(TIM3, TIM_OC4);
   timer_set_oc_mode(TIM3, TIM_OC4, TIM_OCM_PWM1);
   timer_set_oc_value(TIM3, TIM_OC4, 0);
