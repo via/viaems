@@ -167,7 +167,7 @@ void adc_gather() {
 
 timeval_t last_tx = 0;
 size_t console_write(const void *buf, size_t len) {
-  if (curtime - last_tx < 1000) {
+  if (curtime - last_tx < 200) {
     return 0;
   }
   ssize_t written = -1;
@@ -238,8 +238,8 @@ static void hosted_platform_timer(int sig, siginfo_t *info, void *ucontext) {
   }
 
   int failing = 0; // (current_time() % 1000000) > 500000;
-  if (current_time() % 100 == 0) {
-    test_trigger_rpm += 1;
+  if (current_time() % 1000 == 0) {
+    //test_trigger_rpm += 1;
     if (test_trigger_rpm > 9000) {
       test_trigger_rpm = 800;
     }

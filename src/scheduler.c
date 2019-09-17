@@ -302,7 +302,7 @@ schedule_ignition_event(struct output_event *ev,
   
   timeval_t stop_time;
   timeval_t start_time;
-  int firing_angle;
+  degrees_t firing_angle;
 
   if (!d->rpm || !config.decoder.valid) {
     return 0;
@@ -312,7 +312,7 @@ schedule_ignition_event(struct output_event *ev,
       d->last_trigger_angle + d->offset, 720);
 
   stop_time = d->last_trigger_time + 
-    time_from_rpm_diff(d->rpm, (degrees_t)firing_angle);
+    time_from_rpm_diff(d->rpm, firing_angle);
   start_time = stop_time - time_from_us(usecs_dwell);
 
   if (event_has_fired(ev)) {
@@ -356,7 +356,7 @@ schedule_fuel_event(struct output_event *ev,
 
   timeval_t stop_time;
   timeval_t start_time;
-  int firing_angle;
+  degrees_t firing_angle;
 
   if (!d->rpm || !config.decoder.valid) {
     return 0;
@@ -424,7 +424,7 @@ void schedule_event(struct output_event *ev) {
         return;
       }
       schedule_ignition_event(ev, &config.decoder, 
-          (degrees_t)calculated_values.timing_advance, 
+          (degrees_t)calculated_values.timing_advance,
           calculated_values.dwell_us);
       break;
 
