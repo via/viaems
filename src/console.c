@@ -116,6 +116,18 @@ static void console_set_uint(const struct console_config_node *self, char *remai
   *v = (unsigned int)atoi(remaining);
 }
 
+static void console_get_fuel_cut(
+    const struct console_config_node *self __attribute__((unused)), 
+    char *dest, char *remaining __attribute__((unused))) {
+  sprintf(dest, "%u", fuel_cut());
+}
+
+static void console_get_ignition_cut(
+    const struct console_config_node *self __attribute__((unused)), 
+    char *dest, char *remaining __attribute__((unused))) {
+  sprintf(dest, "%u", ignition_cut());
+}
+
 static int parse_keyval_pair(char **key, char **val, char **str) {
   char *saveptr;
   *key = strtok_r(*str, "=", &saveptr);
@@ -639,7 +651,7 @@ static struct {
   struct logged_event events[32];
   int read;
   int write;
-} event_log = {0};
+} event_log = {.enabled = 1};
 
 static struct logged_event platform_get_logged_event() {
   if (!event_log.enabled || (event_log.read == event_log.write)) {
@@ -792,41 +804,43 @@ static struct console_config_node console_config_nodes[] = {
 
   {.name="status"},
   {.name="status.current_time", .get=console_get_time},
-  {.name="status.timing_advance", 
-    .val=&calculated_values.timing_advance, .get=console_get_float},
-  {.name="status.decoder_state", .val=&config.decoder.state,
+
+  {.name="status.decoder.state", .val=&config.decoder.state,
    .get=console_get_decoder_state},
-  {.name="status.decoder_loss_reason", .val=&config.decoder.loss,
+  {.name="status.decoder.loss_reason", .val=&config.decoder.loss,
    .get=console_get_decoder_loss_reason},
-  {.name="status.decoder_t0_count", .val=&config.decoder.t0_count,
+  {.name="status.decoder.t0_count", .val=&config.decoder.t0_count,
    .get=console_get_uint},
-  {.name="status.decoder_t1_count", .val=&config.decoder.t1_count,
+  {.name="status.decoder.t1_count", .val=&config.decoder.t1_count,
    .get=console_get_uint},
-  {.name="status.rpm", .val=&config.decoder.rpm,
+  {.name="status.decoder.rpm", .val=&config.decoder.rpm,
    .get=console_get_uint},
-  {.name="status.rpm_variance", .val=&config.decoder.trigger_cur_rpm_change,
+  {.name="status.decoder.rpm_variance", .val=&config.decoder.trigger_cur_rpm_change,
    .get=console_get_float},
-  {.name="status.rpm_cut", .val=&calculated_values.rpm_limit_cut,
+
+  {.name="status.fueling.cut", .get=console_get_fuel_cut},
+  {.name="status.fueling.pw_us", .val=&calculated_values.fueling_us,
    .get=console_get_uint},
-  {.name="status.fueling_us", .val=&calculated_values.fueling_us,
+  {.name="status.fueling.ete", .val=&calculated_values.ete,
+   .get=console_get_float},
+  {.name="status.fueling.ve", .val=&calculated_values.ve,
+   .get=console_get_float},
+  {.name="status.fueling.lambda", .val=&calculated_values.lambda,
+   .get=console_get_float},
+  {.name="status.fueling.idt", .val=&calculated_values.idt,
+   .get=console_get_float},
+  {.name="status.fueling.fuel_volume", .val=&calculated_values.fuelvol_per_cycle,
+   .get=console_get_float},
+  {.name="status.fueling.tipin", .val=&calculated_values.tipin,
+   .get=console_get_float},
+
+  {.name="status.ignition.timing_advance", 
+    .val=&calculated_values.timing_advance, .get=console_get_float},
+  {.name="status.ignition.dwell_us", .val=&calculated_values.dwell_us,
    .get=console_get_uint},
-  {.name="status.ete", .val=&calculated_values.ete,
-   .get=console_get_float},
-  {.name="status.ve", .val=&calculated_values.ve,
-   .get=console_get_float},
-  {.name="status.lambda", .val=&calculated_values.lambda,
-   .get=console_get_float},
-  {.name="status.idt", .val=&calculated_values.idt,
-   .get=console_get_float},
-  {.name="status.dwell_us", .val=&calculated_values.dwell_us,
-   .get=console_get_uint},
-  {.name="status.fuel_volume", .val=&calculated_values.fuelvol_per_cycle,
-   .get=console_get_float},
-  {.name="status.tipin", .val=&calculated_values.tipin,
-   .get=console_get_float},
+  {.name="status.ignition.cut", .get=console_get_ignition_cut},
   
   /* Sensor values */
-  {.name="status.sensors"},
   {.name="status.sensors.map", .val=&config.sensors[SENSOR_MAP].processed_value,
    .get=console_get_float},
   {.name="status.sensors.map.fault", .val=&config.sensors[SENSOR_MAP].fault,
@@ -936,20 +950,20 @@ int console_parse_request(char *dest, char *line) {
 void console_init() {
   const char *console_feed_defaults[] = {
     "status.current_time",
-    "status.decoder_state",
-    "status.rpm",
-    "status.decoder_loss_reason",
-    "status.rpm_variance",
-    "status.decoder_t0_count",
-    "status.decoder_t1_count",
-    "status.timing_advance",
-    "status.fueling_us",
-    "status.fuel_volume",
-    "status.ete",
-    "status.ve",
-    "status.lambda",
-    "status.idt",
-    "status.tipin",
+    "status.decoder.state",
+    "status.decoder.rpm",
+    "status.decoder.loss_reason",
+    "status.decoder.rpm_variance",
+    "status.decoder.t0_count",
+    "status.decoder.t1_count",
+    "status.ignition.timing_advance",
+    "status.fueling.pw_us",
+    "status.fueling.fuel_volume",
+    "status.fueling.ete",
+    "status.fueling.ve",
+    "status.fueling.lambda",
+    "status.fueling.idt",
+    "status.fueling.tipin",
     "status.sensors.brv",
     "status.sensors.map",
     "status.sensors.aap",
