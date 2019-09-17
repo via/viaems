@@ -54,11 +54,14 @@ struct stats_entry stats_entries[] = {
     .name = "total interrupt time",
     .is_interrupt = 1,
   },
-	[STATS_USB_POLL_TIME] = {
-		.name = "usb time",
+	[STATS_USB_INTERRUPT_TIME] = {
+		.name = "time spent in usb interrupt",
 	},
-	[STATS_USB_WRITE_TIME] = {
-		.name = "usb write time",
+	[STATS_USB_INTERRUPT_RATE] = {
+		.name = "usb interrupt rate",
+	},
+	[STATS_CONSOLE_READ_TIME] = {
+		.name = "time spent moving data from rx buffer",
 	},
 	[STATS_SCHEDULE_LATENCY] = {
 		.name = "time from trigger to finish scheduling",

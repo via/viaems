@@ -50,6 +50,7 @@ int current_output_slot();
 
 void platform_enable_event_logging();
 void platform_disable_event_logging();
+void platform_reset_into_bootloader();
 
 #ifdef UNITTEST
 #include <check.h>
