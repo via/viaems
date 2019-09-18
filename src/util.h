@@ -9,7 +9,7 @@ timeval_t time_from_us(unsigned int us);
 unsigned int rpm_from_time_diff(timeval_t t1, degrees_t degrees);
 timeval_t time_from_rpm_diff(unsigned int rpm, degrees_t degrees);
 int time_in_range(timeval_t val, timeval_t t1, timeval_t t2);
-degrees_t clamp_angle(int, degrees_t);
+degrees_t clamp_angle(degrees_t, degrees_t);
 
 #ifdef UNITTEST
 #include <check.h>

@@ -91,13 +91,25 @@ void disable_event_timer() {
   eventtimer_enable = 0;
 } 
 
+static ucontext_t *sig_context = NULL;
+static void signal_handler_entered(struct ucontext_t *context) {
+  sig_context = context;
+}
+static void signal_handler_exited() {
+  sig_context = NULL;
+}
+
 static int interrupts_disabled = 0;
 int disable_interrupts() {
   int old = interrupts_disabled;
-  sigset_t sm;
-  sigemptyset(&sm);
-  sigaddset(&sm, SIGVTALRM);
-  sigprocmask(SIG_BLOCK, &sm, NULL);
+  if (sig_context) {
+    sigaddset(&sig_context->uc_sigmask, SIGVTALRM);
+  } else {
+    sigset_t sm;
+    sigemptyset(&sm);
+    sigaddset(&sm, SIGVTALRM);
+    sigprocmask(SIG_BLOCK, &sm, NULL);
+  }
   interrupts_disabled = 1;
   stats_start_timing(STATS_INT_DISABLE_TIME);
   return !old;
@@ -106,10 +118,14 @@ int disable_interrupts() {
 void enable_interrupts() {
   interrupts_disabled = 0;
   stats_finish_timing(STATS_INT_DISABLE_TIME);
-  sigset_t sm;
-  sigemptyset(&sm);
-  sigaddset(&sm, SIGVTALRM);
-  sigprocmask(SIG_UNBLOCK, &sm, NULL);
+  if (sig_context) {
+    sigdelset(&sig_context->uc_sigmask, SIGVTALRM);
+  } else {
+    sigset_t sm;
+    sigemptyset(&sm);
+    sigaddset(&sm, SIGVTALRM);
+    sigprocmask(SIG_UNBLOCK, &sm, NULL);
+  }
 }
 
 int interrupts_enabled() {
@@ -151,10 +167,11 @@ void adc_gather() {
 
 timeval_t last_tx = 0;
 size_t console_write(const void *buf, size_t len) {
-  if (curtime - last_tx < 1000) {
+  if (curtime - last_tx < 200) {
     return 0;
   }
-  size_t written = write(STDOUT_FILENO, buf, len);
+  ssize_t written = -1;
+  while ((written = write(STDOUT_FILENO, buf, len)) < 0);
   if (written > 0) {
     last_tx = curtime;
     return written;
@@ -200,7 +217,7 @@ void enable_test_trigger(trigger_type t, unsigned int rpm) {
   test_trigger_rpm = rpm;
 }
 
-static void hosted_platform_timer() {
+static void hosted_platform_timer(int sig, siginfo_t *info, void *ucontext) {
   /* - Increase "time"
    * - Trigger appropriate interrupts
    *     timer event
@@ -210,17 +227,19 @@ static void hosted_platform_timer() {
    * - Set outputs from buffer
    */
 
+  signal_handler_entered(ucontext);
   stats_increment_counter(STATS_INT_RATE);
   stats_start_timing(STATS_INT_TOTAL_TIME);
 
   if (!output_slots[0]) {
     /* Not initialized */
+    signal_handler_exited();
     return;
   }
 
   int failing = 0; // (current_time() % 1000000) > 500000;
-  if (current_time() % 100 == 0) {
-    test_trigger_rpm += 1;
+  if (current_time() % 1000 == 0) {
+    //test_trigger_rpm += 1;
     if (test_trigger_rpm > 9000) {
       test_trigger_rpm = 800;
     }
@@ -285,6 +304,7 @@ static void hosted_platform_timer() {
   sensors_process(SENSOR_FREQ);
 
   stats_finish_timing(STATS_INT_TOTAL_TIME);
+  signal_handler_exited();
 }
 
 
@@ -293,7 +313,7 @@ void platform_init() {
   /* Set up signal handling */
   sigemptyset(&smask);
   struct sigaction sa = {
-    .sa_handler = hosted_platform_timer,
+    .sa_sigaction = hosted_platform_timer,
     .sa_mask = smask,
   };
   sigaction(SIGVTALRM, &sa, NULL);

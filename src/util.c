@@ -9,12 +9,12 @@ unsigned int rpm_from_time_diff(timeval_t t1, degrees_t deg) {
 }
 
 timeval_t time_from_rpm_diff(unsigned int rpm, degrees_t deg) {
-  float ticks_per_degree = (TICKRATE / 6) / (float)rpm;
+  float ticks_per_degree = (TICKRATE / 6.0) / (float)rpm;
   return ticks_per_degree * deg;
 }
 
 timeval_t time_from_us(unsigned int us) {
-  timeval_t ticks = us * (TICKRATE / 1000000);
+  timeval_t ticks = us * (TICKRATE / 1000000.0);
   return ticks;
 }
 
@@ -41,14 +41,14 @@ timeval_t time_diff(timeval_t later, timeval_t earlier) {
   return later - earlier;
 }
 
-degrees_t clamp_angle(int ang, degrees_t max) {
+degrees_t clamp_angle(degrees_t ang, degrees_t max) {
   while (ang < 0) {
     ang += max;
   }
   while (ang >= max) {
     ang -= max;
   }
-  return (degrees_t) ang;
+  return ang;
 }
 
 #ifdef UNITTEST
