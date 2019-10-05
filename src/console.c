@@ -1228,6 +1228,7 @@ START_TEST(check_console_set_uint) {
 
 START_TEST(check_parse_keyval_pair) {
   char *buf = malloc(64);
+  char *orig = buf;
 
   strcpy(buf, "");
   char *k = NULL, *v = NULL;
@@ -1264,6 +1265,7 @@ START_TEST(check_parse_keyval_pair) {
   ck_assert_str_eq(k, "anotherkey");
   ck_assert_str_eq(v, "anotherval");
 
+  free(orig);
 } END_TEST
 
 START_TEST(check_console_set_table_element_oneaxis) {

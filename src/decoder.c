@@ -290,6 +290,16 @@ static void add_trigger_event(struct decoder_event **entries, timeval_t duration
   append_trigger_event(last, new);
 }
 
+static void free_trigger_list(struct decoder_event *entries) {
+  struct decoder_event *current = entries;
+  struct decoder_event *next;
+  while (current) {
+    next = current->next;
+    free(current);
+    current = next;
+  }
+}
+
 static void add_trigger_event_transition_rpm(struct decoder_event **entries, timeval_t duration, unsigned int primary, unsigned int secondary) {
   ck_assert(*entries);
 
@@ -373,6 +383,8 @@ START_TEST(check_tfi_decoder_startup_normal) {
 
   ck_assert_int_eq(config.decoder.last_trigger_angle, 90);
 
+  free_trigger_list(entries);
+
 } END_TEST
 
 START_TEST(check_tfi_decoder_syncloss_variation) {
@@ -391,6 +403,8 @@ START_TEST(check_tfi_decoder_syncloss_variation) {
   validate_decoder_sequence(entries);
 
   ck_assert_int_eq(config.decoder.current_triggers_rpm, 0);
+
+  free_trigger_list(entries);
 } END_TEST
 
 
@@ -418,6 +432,7 @@ START_TEST(check_tfi_decoder_syncloss_expire) {
   ck_assert(!config.decoder.valid);
   ck_assert_int_eq(0, config.decoder.current_triggers_rpm);
   ck_assert_int_eq(DECODER_EXPIRED, config.decoder.loss);
+  free_trigger_list(entries);
 } END_TEST
 
 /* Gets decoder up to sync, plus an additional trigger */
@@ -452,6 +467,7 @@ START_TEST(check_cam_nplusone_startup_normal) {
   ck_assert_int_eq(config.decoder.last_trigger_angle, 
       3 * config.decoder.degrees_per_trigger);
 
+  free_trigger_list(entries);
 } END_TEST
 
 START_TEST(check_cam_nplusone_startup_normal_then_early_sync) {
@@ -471,6 +487,7 @@ START_TEST(check_cam_nplusone_startup_normal_then_early_sync) {
 
   ck_assert(!config.decoder.valid);
 
+  free_trigger_list(entries);
 } END_TEST
 
 START_TEST(check_cam_nplusone_startup_normal_sustained) {
@@ -492,6 +509,7 @@ START_TEST(check_cam_nplusone_startup_normal_sustained) {
   ck_assert_int_eq(config.decoder.last_trigger_angle, 
       1 * config.decoder.degrees_per_trigger);
 
+  free_trigger_list(entries);
 } END_TEST
 
 START_TEST(check_bulk_decoder_updates) {
@@ -513,6 +531,8 @@ START_TEST(check_bulk_decoder_updates) {
   ck_assert(config.decoder.valid);
   ck_assert_int_eq(config.decoder.last_trigger_angle, 
       1 * config.decoder.degrees_per_trigger);
+  free_trigger_list(entries);
+  free(entry_list);
 } END_TEST
 
 START_TEST(check_cam_nplusone_startup_normal_no_second_trigger) {
@@ -530,6 +550,7 @@ START_TEST(check_cam_nplusone_startup_normal_no_second_trigger) {
 
   validate_decoder_sequence(entries);
   ck_assert(!config.decoder.valid);
+  free_trigger_list(entries);
 } END_TEST
 
 START_TEST(check_nplusone_decoder_syncloss_expire) {
@@ -555,6 +576,7 @@ START_TEST(check_nplusone_decoder_syncloss_expire) {
   ck_assert(!config.decoder.valid);
   ck_assert_int_eq(0, config.decoder.current_triggers_rpm);
   ck_assert_int_eq(DECODER_EXPIRED, config.decoder.loss);
+  free_trigger_list(entries);
 
 } END_TEST
 
