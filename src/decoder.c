@@ -190,25 +190,25 @@ void decoder_init(struct decoder *d) {
   d->needs_decoding_t0 = 0;
   d->needs_decoding_t1 = 0;
   switch (d->type) {
-  case FORD_TFI:
-    d->decode = tfi_pip_decoder;
-    d->required_triggers_rpm = 4;
-    d->degrees_per_trigger = 90;
-    d->rpm_window_size = 3;
-    d->num_triggers = 8;
-    d->t0_edge = FALLING_EDGE;
-    break;
-  case TOYOTA_24_1_CAS:
-    d->decode = cam_nplusone_decoder;
-    d->required_triggers_rpm = 8;
-    d->degrees_per_trigger = 30;
-    d->rpm_window_size = 8;
-    d->num_triggers = 24;
-    d->t0_edge = RISING_EDGE;
-    d->t1_edge = RISING_EDGE;
-    break;
-  default:
-    break;
+    case FORD_TFI:
+      d->decode = tfi_pip_decoder;
+      d->required_triggers_rpm = 4;
+      d->degrees_per_trigger = 90;
+      d->rpm_window_size = 3;
+      d->num_triggers = 8;
+      d->t0.edge = FALLING_EDGE;
+      break;
+    case TOYOTA_24_1_CAS:
+      d->decode = cam_nplusone_decoder;
+      d->required_triggers_rpm = 8;
+      d->degrees_per_trigger = 30;
+      d->rpm_window_size = 8;
+      d->num_triggers = 24;
+      d->t0.edge = RISING_EDGE;
+      d->t1.edge = RISING_EDGE;
+      break;
+    default:
+      break;
   }
   d->current_triggers_rpm = 0;
   d->valid = 0;
