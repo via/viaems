@@ -196,7 +196,6 @@ void decoder_init(struct decoder *d) {
       d->degrees_per_trigger = 90;
       d->rpm_window_size = 3;
       d->num_triggers = 8;
-      d->t0.edge = FALLING_EDGE;
       break;
     case TOYOTA_24_1_CAS:
       d->decode = cam_nplusone_decoder;
@@ -204,8 +203,6 @@ void decoder_init(struct decoder *d) {
       d->degrees_per_trigger = 30;
       d->rpm_window_size = 8;
       d->num_triggers = 24;
-      d->t0.edge = RISING_EDGE;
-      d->t1.edge = RISING_EDGE;
       break;
     default:
       break;

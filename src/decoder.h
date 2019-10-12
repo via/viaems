@@ -26,12 +26,6 @@ typedef enum {
   DECODER_EXPIRED,
 } decoder_loss_reason;
 
-typedef enum {
-  RISING_EDGE,
-  FALLING_EDGE,
-  BOTH_EDGES,
-} trigger_edge;
-
 struct decoder {
   /* Unsafe interrupt-written vars */
   timeval_t last_t0;
@@ -57,11 +51,6 @@ struct decoder {
   unsigned int num_triggers;
   degrees_t degrees_per_trigger;
   unsigned int rpm_window_size;
-
-  struct {
-    uint8_t pin;
-    trigger_edge edge;
-  } t0, t1;
 
   /* Debug */
   unsigned int t0_count;

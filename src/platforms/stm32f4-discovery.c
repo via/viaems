@@ -123,24 +123,22 @@ static void platform_setup_tim2() {
 
   timer_ic_set_input(TIM2, TIM_IC1, TIM_IC_IN_TI2);
   timer_ic_set_filter(TIM2, TIM_IC1, TIM_IC_CK_INT_N_2);
-  timer_ic_set_polarity(TIM2, TIM_IC1, TIM_IC_RISING);
+  timer_ic_set_polarity(TIM2, TIM_IC1, capture_edge_from_config(config.freq_inputs[0].edge));
   timer_ic_enable(TIM2, TIM_IC1);
 
   timer_ic_set_input(TIM2, TIM_IC2, TIM_IC_IN_TI2);
   timer_ic_set_filter(TIM2, TIM_IC2, TIM_IC_CK_INT_N_2);
-  timer_ic_set_polarity(
-    TIM2, TIM_IC2, capture_edge_from_config(config.decoder.t0_edge));
+  timer_ic_set_polarity(TIM2, TIM_IC2, capture_edge_from_config(config.freq_inputs[1].edge));
   timer_ic_enable(TIM2, TIM_IC2);
 
   timer_ic_set_input(TIM2, TIM_IC3, TIM_IC_IN_TI3);
   timer_ic_set_filter(TIM2, TIM_IC3, TIM_IC_CK_INT_N_2);
-  timer_ic_set_polarity(
-    TIM2, TIM_IC3, capture_edge_from_config(config.decoder.t1_edge));
+  timer_ic_set_polarity(TIM2, TIM_IC3, capture_edge_from_config(config.freq_inputs[2].edge));
   timer_ic_enable(TIM2, TIM_IC3);
 
   timer_ic_set_input(TIM2, TIM_IC4, TIM_IC_IN_TI4);
   timer_ic_set_filter(TIM2, TIM_IC4, TIM_IC_CK_INT_N_2);
-  timer_ic_set_polarity(TIM2, TIM_IC4, TIM_IC_RISING);
+  timer_ic_set_polarity(TIM2, TIM_IC4, capture_edge_from_config(config.freq_inputs[3].edge));
   timer_ic_enable(TIM2, TIM_IC4);
 
   timer_enable_counter(TIM2);
@@ -191,9 +189,21 @@ static void platform_init_eventtimer() {
 
 
   platform_setup_tim2();
-  /* Only enable interrupt for t0/t1 -- eventually make configurable */
-  timer_enable_irq(TIM2, TIM_DIER_CC2IE);
-  timer_enable_irq(TIM2, TIM_DIER_CC3IE);
+
+  /* Only enable interrupts for trigger/sync inputs */
+  if (config.freq_inputs[0].type != FREQ) {
+    timer_enable_irq(TIM2, TIM_DIER_CC1IE);
+  }
+  if (config.freq_inputs[1].type != FREQ) {
+    timer_enable_irq(TIM2, TIM_DIER_CC2IE);
+  }
+  if (config.freq_inputs[2].type != FREQ) {
+    timer_enable_irq(TIM2, TIM_DIER_CC3IE);
+  }
+  if (config.freq_inputs[3].type != FREQ) {
+    timer_enable_irq(TIM2, TIM_DIER_CC4IE);
+  }
+  
   nvic_enable_irq(NVIC_TIM2_IRQ);
   nvic_set_priority(NVIC_TIM2_IRQ, 32);
 
@@ -1148,6 +1158,10 @@ void set_gpio(int output, char value) {
     gpio_clear(GPIOE, (1 << output));
   }
 }
+
+  /* TODO fix:
+   *   We can use output compares on A0-A2, configured by timer interrupts on
+   *   TIM4 */
 
 extern unsigned _configdata_loadaddr, _sconfigdata, _econfigdata;
 void platform_load_config() {

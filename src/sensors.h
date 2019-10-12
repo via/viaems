@@ -70,6 +70,23 @@ struct sensor_input {
   sensor_fault fault;
 };
 
+typedef enum {
+  RISING_EDGE,
+  FALLING_EDGE,
+  BOTH_EDGES,
+} trigger_edge;
+
+typedef enum {
+  FREQ,  /* Only generate frequency information */
+  TRIGGER, /* Use as source of decoder position */
+  SYNC, /* Use for position sync */
+} freq_type;
+
+struct freq_input {
+  trigger_edge edge;
+  freq_type type;
+};
+
 void sensors_process(sensor_source source);
 uint32_t sensor_fault_status();
 
