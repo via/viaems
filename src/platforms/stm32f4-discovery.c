@@ -1162,7 +1162,11 @@ size_t console_read(void *buf, size_t max) {
 
 size_t console_write(const void *buf, size_t count) {
   size_t rem = count > 64 ? 64 : count;
+  /* https://github.com/libopencm3/libopencm3/issues/531
+   * We can't let the usb irq be called while writing */
+  nvic_disable_irq(NVIC_OTG_FS_IRQ);
   rem = usbd_ep_write_packet(usbd_dev, 0x82, buf, rem);
+  nvic_enable_irq(NVIC_OTG_FS_IRQ);
   return rem;
 }
 
