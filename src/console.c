@@ -802,6 +802,14 @@ static struct console_config_node console_config_nodes[] = {
 
   {.name="config.events", .get=console_get_events, .set=console_set_events},
 
+  /* Tasks */
+  {.name="config.tasks"},
+
+  /* Hardware config */
+  {.name="config.hardware"},
+  {.name="config.hardware.freq"},
+  {.name="config.hardware.pwm"},
+
   {.name="status"},
   {.name="status.current_time", .get=console_get_time},
 
