@@ -97,7 +97,7 @@ static void console_get_time(
 static void console_get_float(const struct console_config_node *self, 
     char *dest, char *remaining __attribute__((unused))) {
   float *v = self->val;
-  sprintf(dest, "%.2f", *v);
+  sprintf(dest, "%.2e", *v);
 }
 
 static void console_set_float(const struct console_config_node *self, char *remaining) {
