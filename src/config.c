@@ -212,7 +212,7 @@ struct config config __attribute__((section(".configdata"))) = {
         .c=0.00000018474199456928,
       }}},
     [SENSOR_EGO] = {.pin=3, .source=SENSOR_ADC, .method=METHOD_LINEAR,
-      .params={.range={.min=0.5, .max=1.5}}},
+      .params={.range={.min=0.68, .max=1.36}}},
     [SENSOR_MAP] = {.pin=4, .source=SENSOR_ADC, .method=METHOD_LINEAR,
       .params={.range={.min=12, .max=420}}, /* AEM 3.5 bar MAP sensor*/
       .fault_config={.min = 10, .max = 4050, .fault_value = 50.0}},
