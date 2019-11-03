@@ -651,7 +651,7 @@ static struct {
   struct logged_event events[32];
   int read;
   int write;
-} event_log = {.enabled = 1};
+} event_log;
 
 static struct logged_event platform_get_logged_event() {
   if (!event_log.enabled || (event_log.read == event_log.write)) {
