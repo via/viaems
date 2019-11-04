@@ -569,11 +569,11 @@ static enum usbd_request_return_codes cdcacm_control_request(usbd_device *usbd_d
 
 #define USB_RX_BUF_LEN 1024
 static char usb_rx_buf[USB_RX_BUF_LEN];
-static size_t usb_rx_len = 0;
+static volatile size_t usb_rx_len = 0;
 static void cdcacm_data_rx_cb(usbd_device *usbd_dev, uint8_t ep)
 {
   (void)ep;
-  usb_rx_len += usbd_ep_read_packet(usbd_dev, 0x01, usb_rx_buf, USB_RX_BUF_LEN - usb_rx_len);
+  usb_rx_len += usbd_ep_read_packet(usbd_dev, 0x01, usb_rx_buf + usb_rx_len, USB_RX_BUF_LEN - usb_rx_len);
 }
 
 static void cdcacm_set_config(usbd_device *usbd_dev, uint16_t wValue)
