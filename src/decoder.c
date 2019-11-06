@@ -602,7 +602,7 @@ START_TEST(check_update_rpm_single_point) {
 
   trigger_update_rpm(&d);
   ck_assert_int_eq(d.rpm, 0);
-  ck_assert_int_eq(d.state, DECODER_VARIATION);
+  ck_assert_int_eq(d.state, DECODER_NOSYNC);
 } END_TEST
 
 START_TEST(check_update_rpm_sufficient_points) {
