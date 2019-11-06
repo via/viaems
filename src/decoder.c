@@ -82,7 +82,7 @@ static void trigger_update_rpm(struct decoder *d) {
   /* TODO here is the place to handle a missing tooth */
 
   /* If we pass 150% of a inter-tooth delay, lose sync */
-  d->expiration = d->times[0] + diff * 1.5;
+  d->expiration = d->times[0] + (timeval_t)(diff * 1.5);
   set_expire_event(d->expiration);
 }
 
@@ -121,10 +121,12 @@ static void sync_update(struct decoder *d) {
   d->t1_count++;
   if (d->state == DECODER_RPM) {
     d->state = DECODER_SYNC;
+    d->loss = DECODER_NO_LOSS;
     d->last_trigger_angle = 0;
   } else if (d->state == DECODER_SYNC) {
     if (d->triggers_since_last_sync == d->num_triggers) {
       d->state = DECODER_SYNC;
+      d->loss = DECODER_NO_LOSS;
       d->last_trigger_angle = 0;
     } else {
       d->state = DECODER_NOSYNC;
@@ -150,6 +152,7 @@ void cam_nplusone_decoder(struct decoder *d) {
   if (d->state == DECODER_SYNC) {
     d->valid = 1;
     d->last_trigger_time = t0;
+    d->loss = DECODER_NO_LOSS;
   } else {
     if (oldstate == DECODER_SYNC) {
       /* We lost sync */
@@ -169,6 +172,7 @@ void tfi_pip_decoder(struct decoder *d) {
   trigger_update(d, t0);
   if (d->state == DECODER_RPM || d->state == DECODER_SYNC) {
     d->state = DECODER_SYNC;
+    d->loss = DECODER_NO_LOSS;
     d->valid = 1;
     d->last_trigger_time = t0;
     d->triggers_since_last_sync = 0; /* There is no sync */;
@@ -598,7 +602,7 @@ START_TEST(check_update_rpm_single_point) {
 
   trigger_update_rpm(&d);
   ck_assert_int_eq(d.rpm, 0);
-  ck_assert_int_eq(d.state, DECODER_VARIATION);
+  ck_assert_int_eq(d.state, DECODER_NOSYNC);
 } END_TEST
 
 START_TEST(check_update_rpm_sufficient_points) {

@@ -435,6 +435,9 @@ static void console_get_decoder_loss_reason(const struct console_config_node *se
   const char *result = "";
 
   switch (*s) {
+    case DECODER_NO_LOSS:
+      result = "none";
+      break;
     case DECODER_VARIATION:
       result = "variation";
       break;
