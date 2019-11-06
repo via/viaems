@@ -82,7 +82,7 @@ static void trigger_update_rpm(struct decoder *d) {
   /* TODO here is the place to handle a missing tooth */
 
   /* If we pass 150% of a inter-tooth delay, lose sync */
-  d->expiration = d->times[0] + diff * 1.5;
+  d->expiration = d->times[0] + (timeval_t)(diff * 1.5);
   set_expire_event(d->expiration);
 }
 
