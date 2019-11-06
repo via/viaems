@@ -121,10 +121,12 @@ static void sync_update(struct decoder *d) {
   d->t1_count++;
   if (d->state == DECODER_RPM) {
     d->state = DECODER_SYNC;
+    d->loss = DECODER_NO_LOSS;
     d->last_trigger_angle = 0;
   } else if (d->state == DECODER_SYNC) {
     if (d->triggers_since_last_sync == d->num_triggers) {
       d->state = DECODER_SYNC;
+      d->loss = DECODER_NO_LOSS;
       d->last_trigger_angle = 0;
     } else {
       d->state = DECODER_NOSYNC;
@@ -150,6 +152,7 @@ void cam_nplusone_decoder(struct decoder *d) {
   if (d->state == DECODER_SYNC) {
     d->valid = 1;
     d->last_trigger_time = t0;
+    d->loss = DECODER_NO_LOSS;
   } else {
     if (oldstate == DECODER_SYNC) {
       /* We lost sync */
@@ -169,6 +172,7 @@ void tfi_pip_decoder(struct decoder *d) {
   trigger_update(d, t0);
   if (d->state == DECODER_RPM || d->state == DECODER_SYNC) {
     d->state = DECODER_SYNC;
+    d->loss = DECODER_NO_LOSS;
     d->valid = 1;
     d->last_trigger_time = t0;
     d->triggers_since_last_sync = 0; /* There is no sync */;

@@ -19,6 +19,7 @@ typedef enum {
 } decoder_state;
 
 typedef enum {
+  DECODER_NO_LOSS,
   DECODER_VARIATION,
   DECODER_TRIGGERCOUNT_HIGH,
   DECODER_TRIGGERCOUNT_LOW,
