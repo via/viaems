@@ -97,7 +97,7 @@ static void console_get_time(
 static void console_get_float(const struct console_config_node *self, 
     char *dest, char *remaining __attribute__((unused))) {
   float *v = self->val;
-  sprintf(dest, "%.2e", *v);
+  sprintf(dest, "%.4f", *v);
 }
 
 static void console_set_float(const struct console_config_node *self, char *remaining) {
@@ -1214,7 +1214,7 @@ START_TEST(check_console_get_float) {
   v = 1.0f;
   char buf[32];
   console_get_float(&t, buf, NULL);
-  ck_assert_str_eq(buf, "1.00");
+  ck_assert_str_eq(buf, "1.0000");
 } END_TEST
 
 START_TEST(check_console_set_float) {
