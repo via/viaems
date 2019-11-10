@@ -1,18 +1,36 @@
 # ViaEMS
 An engine management system for gasoline spark ignition engines.
 
-The firmware is flexible to most engine configurations, supporting up to 16 high
-precision outputs suitable for ignition coil drivers or fuel injectors.
-Therefore it is suitable for an 8 cylinder engine with sequential fueling and
+The firmware is flexible to most engine configurations, and with 16
+outputs it is suitable for up to an 8 cylinder engine with sequential fueling and
 ignition.
 
-The current primary hardware platform is an ST Micro STM32F407VGT
-microcontroller.  There are a few non-production-ready hardware designs
-available under https://github.com/via/tfi-board, though I would recommend
-anyone attempting to use those designs contact me.  The STM32F4-DISCOVERY board
-*can* be used with this firmware, with appropriate extra hardware for vehicle
-interfacing.  See the hardware section for more detail.
+Features:
+- 16 high precision outputs usable for fuel or ignition, with 0.25 uS scheduling
+  accuracy
+- 24x24 floating point table lookups
+- Speed-density fueling with VE and lambda lookups
+- Supports 8 12-bit ADC inputs when using AD7888
+- Configurable acceleration enrichment
+- Configurable warm-up enrichment
+- Boost control by RPM
+- Frequency sensor inputs
+- PWM outputs
+- Fuelpump safety cutoff
+- Mostly runtime-configurable over USB interface
 
+1. [Decoding](#decoding)
+    1. [EEC-IV TFI][#eecivtfi)
+    2. [Toyota CAS][#toyota24+1cas]
+2. [Static Configuration](#staticconfiguration)
+    1. [Events](#event)
+    2. [Sensors](#sensors)
+    3. [Tables](#tables)
+3. [Runtime Configuration](#staticconfiguration)
+4. [Compiling](#compiling)
+5. [Programming](#compiling)
+6. [Simulation](#simulation)
+7. [Hardware](#hardware)
 
 ## Decoding
 Currently the only two decoders styles implemented are a generic N+1 cam/crank decoder,
@@ -36,7 +54,7 @@ This is the standard Mk3 Toyota Supra cam angle sensor.  It has 24 tooth on a
 primary wheel and 1 tooth on a secondary wheel, both gear driven by the exhaust
 cam.
 
-## Configuration
+## Static Configuration
 See the runtime configuration section for details on the runtime control
 interface.  Almost everything is configuable through that interface, but to
 use a different engine configuration (read: not my Supra), it is probably best
@@ -70,7 +88,7 @@ Member | Meaning
 `fueling.fuel_pump_pin` | GPIO port number that controls the fuel pump
 `ignition.dwell_ud` | Fixed (currently) time in uS to dwell ignition
 
-### Event Configuration
+### Events
 Event configuration is done with an array of schedulable events.  This entire
 array is rescheduled at each trigger decode, allowing any angles (0-719) to be
 used for events, as long as a trigger event occurs between any two fires of a
@@ -92,7 +110,7 @@ Member | Meaning
 `output_id` | OUT pin to use for this output
 `inverted` | Set to one if active-low
 
-### Sensor Configuration
+### Sensors
 Sensor inputs are controlled by the `sensors` config structure member, and is an
 array of configured inputs.  The indexes into the array for various sensors are
 hardcoded, use the provided enums to reference the sensors.  Each sensor entry
@@ -119,7 +137,7 @@ the raw value between min and max (with the raw value being 0 - 4096).
 The onboard ADC is not used. Instead an external ADC is connected
 to SPI2 (PB12-PB15).  Currently a TLC2543 or AD7888 ADC is supported.
 
-### Table Configuration
+### Tables
 Tables can be up to 24x24 float values that are bilinearly interpolated. Use
 `struct table` to define a table, with the following relevent fields:
 
@@ -195,6 +213,13 @@ Before trying to compile, make sure to bring in the libopencm3 submodule:
 git submodule update --init
 ```
 
+To run the unit tests:
+```
+cd src/
+make clean
+make check
+```
+
 To build an ELF binary for the stm32f4:
 
 ```
@@ -206,7 +231,7 @@ bmake
 ```
 `tfi` is the resultant executable that can be loaded.  
 
-## Programming
+# Programming
 You can use gdb to load, especially for development, but dfu is supported.  Connect the stm32f4 via
 USB and set it to dfu mode: For a factory chip, the factory bootloader can be
 brought up by holding BOOT1 high, or for any already-programmed ViaEMS chip, the
@@ -217,14 +242,8 @@ bmake program`
 ```
 that will load the binary.
 
-To run the unit tests:
-```
-cd src/
-make clean
-make check
-```
 
-## Hosted Simulation
+# Simulation
 The platform interface is also implemented for a Linux host machine.
 ```
 bmake PLATFORM=hosted
@@ -235,7 +254,13 @@ to verify some basic functionality.  Full integration testing using this
 simulation mode is planned.
 
 # Hardware
-Any supported platform has hardware-specific pin assignments.  
+The current primary hardware platform is an ST Micro STM32F407VGT
+microcontroller.  There are a few non-production-ready hardware designs
+available under https://github.com/via/tfi-board, though I would recommend
+anyone attempting to use those designs contact me.  The STM32F4-DISCOVERY board
+*can* be used with this firmware, with appropriate extra hardware for vehicle
+interfacing.
+
 
 ## STM32F4
 Note: These are subject to change with the next hardware design, which will be
