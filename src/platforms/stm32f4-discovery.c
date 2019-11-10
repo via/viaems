@@ -723,8 +723,8 @@ static const struct usb_config_descriptor usb_config = {
 };
 
 static const char * usb_strings[] = {
-  "https://github.com/via/tfi-computer/",
-  "tfi-computer console",
+  "https://github.com/via/viaems/",
+  "ViaEMS console",
   "0",
 };
 
