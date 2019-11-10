@@ -18,7 +18,7 @@
 #include "stats.h"
 
 /* A platform that runs on a hosted OS, preferably one that supports posix 
- * timers.  Sends console to stdout, and creates a control socket on tfi.sock.
+ * timers.  Sends console to stdout/stdin
  *
  * Outputs:
  * [TIME] OUTPUTS [PORT-D VALUE]

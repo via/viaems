@@ -35,7 +35,7 @@ CFLAGS+= -fsanitize=undefined -fsanitize=address
 LDFLAGS+= -lm
 .endif
 
-all: tfi
+all: viaems
 
 libssp.a:
 		${AR} rcs libssp.a
@@ -45,27 +45,26 @@ libssp_nonshared.a:
 
 OBJS+=decoder.o util.o scheduler.o console.o calculations.o config.o table.o sensors.o stats.o tasks.o
 
-tfi: ${OBJS} tfi.o platforms/${PLATFORM}.o
-	${CC} ${CFLAGS} -o tfi tfi.o ${OBJS} ${PLATFORM}.o ${LDFLAGS}
+viaems: ${OBJS} viaems.o platforms/${PLATFORM}.o
+	${CC} ${CFLAGS} -o viaems viaems.o ${OBJS} ${PLATFORM}.o ${LDFLAGS}
 
-tfi.dfu: tfi
-	${OBJCOPY} -O binary tfi tfi.dfu
+viaems.dfu: viaems
+	${OBJCOPY} -O binary viaems viaems.dfu
 
-program: tfi.dfu
-	dfu-util -D tfi.dfu -a 0 -s 0x8000000:leave
+program: viaems.dfu
+	dfu-util -D viaems.dfu -a 0 -s 0x8000000:leave
 
-check: tfi
-	./tfi
+check: viaems
+	./viaems
 
 coverage: check
-	./tfi
+	./viaems
 	gcovr -r .
 
 
 clean:
 	-rm *.o *.a
-	-rm tfi
-	-rm tfi.dfu
+	-rm viaems
+	-rm viaems.dfu
 	-rm *.hex
 	-rm *.gcov *.gcno *.gcda *.gmon
-	-rm tfi.sock
