@@ -9,6 +9,7 @@
 #include "console.h"
 #include "sensors.h"
 #include "calculations.h"
+#include "tasks.h"
 
 #define MAX_EVENTS 24
 
@@ -37,6 +38,7 @@ struct config {
   /* Fuel information */
   struct fueling_config fueling;
   struct ignition_config ignition;
+  struct boost_control_config boost_control;
 
   /* Cutoffs */
   unsigned int rpm_stop;
@@ -56,6 +58,7 @@ extern struct table injector_dead_time;
 extern struct table enrich_vs_temp_and_map;
 extern struct table tipin_vs_tpsrate_and_tps;
 extern struct table tipin_duration_vs_rpm;
+extern struct table boost_control_pwm;
 
 int config_valid();
 

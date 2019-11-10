@@ -1,6 +1,14 @@
 #ifndef TASKS_H
 #define TASKS_H
 
+
+struct boost_control_config {
+  struct table *pwm_duty_vs_rpm;
+  float threshhold_kpa;
+  int pin;
+  float overboost;
+};
+
 void handle_fuel_pump();
 void handle_boost_control();
 void handle_idle_control();
