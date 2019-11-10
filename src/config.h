@@ -27,7 +27,6 @@ struct config {
   struct table *timing;
   struct table *iat_timing_adjust;
   struct table *clt_timing_adjust;
-  struct table *clt_pw_adjust;
   struct table *ve;
   struct table *commanded_lambda;
   struct table *injector_pw_compensation;

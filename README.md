@@ -82,6 +82,7 @@ Member | Meaning
 `ve` | Points to table for volumetric efficiency lookups
 `commanded_lambda` | Points to table containing target lambda
 `injector_pw_compensation` | Points to table containing Voltage vs dead time
+`engine_temp_enrich` | Points to table containing CLT/MAP vs enrichment percentage
 `tipin_enrich_amount` | Points to table containing Tipin enrich quantities
 `tipin_enrich_duration` | Points to table containing Tipin enrich durations
 `rpm_stop` | Stop event scheduling above this RPM (rev limiter)
@@ -194,6 +195,7 @@ Node | Meaning
 
 
 A few example status nodes:
+
 Node | Meaning
 --- | ---
 `status.current_time` | Current cpu time in ticks (4 MHz for STM42F4 target)
@@ -269,8 +271,8 @@ git submodule update --init
 To run the unit tests:
 ```
 cd src/
-make clean
-make check
+bmake clean
+bmake check
 ```
 
 To build an ELF binary for the stm32f4:
