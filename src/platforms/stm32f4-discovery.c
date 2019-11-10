@@ -1137,7 +1137,9 @@ void platform_save_config() {
   conf_bytes = ((char*)&_econfigdata - (char*)&_sconfigdata);
   n_sectors = (conf_bytes + 16385) / 16386;
 
-  flash_erase_sector(n_sectors, 2);
+  for (int sector = 1; sector < 1 + n_sectors; sector++) {
+    flash_erase_sector(sector, 2);
+  }
   for (dest = &_configdata_loadaddr, src = &_sconfigdata;
       src < &_econfigdata;
       src++, dest++) {
