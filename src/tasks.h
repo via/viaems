@@ -6,6 +6,7 @@ struct boost_control_config {
   struct table *pwm_duty_vs_rpm;
   float threshhold_kpa;
   int pin;
+  float overboost;
 };
 
 void handle_fuel_pump();

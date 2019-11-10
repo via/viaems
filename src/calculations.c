@@ -23,7 +23,7 @@ static int rpm_limit() {
 }
 
 int boost_cut() {
-  return (config.sensors[SENSOR_MAP].processed_value > 200.0);
+  return (config.sensors[SENSOR_MAP].processed_value > config.boost_control.overboost);
 }
 
 int ignition_cut() {

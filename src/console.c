@@ -806,6 +806,12 @@ static struct console_config_node console_config_nodes[] = {
 
   /* Tasks */
   {.name="config.tasks"},
+  {.name="config.tasks.boost_control.overboost", .val=&config.boost_control.overboost,
+   .get=console_get_float, .set=console_set_float},
+  {.name="config.tasks.boost_control.pin", .val=&config.boost_control.pin,
+   .get=console_get_uint, .set=console_set_uint},
+  {.name="config.tasks.boost_control.threshold", .val=&config.boost_control.threshhold_kpa,
+   .get=console_get_float, .set=console_set_float},
 
   /* Hardware config */
   {.name="config.hardware"},
