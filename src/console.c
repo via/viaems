@@ -745,6 +745,8 @@ static struct console_config_node console_config_nodes[] = {
    .get=console_get_table, .set=console_set_table},
   {.name="config.tables.tipin_enrich_duration", .val=&tipin_duration_vs_rpm,
    .get=console_get_table, .set=console_set_table},
+  {.name="config.tables.boost_control", .val=&boost_control_pwm,
+   .get=console_get_table, .set=console_set_table},
 
   /* Decoding */
   {.name="config.decoder"},

@@ -175,7 +175,7 @@ struct table boost_control_pwm __attribute__((section(".configdata"))) = {
     },
   },
   .data = {
-    .one = {0.55, 0.55, 0.55, 0.55, 0.60, 0.60},
+    .one = {0.43, 0.43, 0.43, 0.43, 0.43, 0.43},
   },
 };
 
