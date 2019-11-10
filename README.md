@@ -137,7 +137,7 @@ Member | Meaning
 `lag` | Lag filtering value. 0 means no filtering, 100 will effectively never change.
 
 For method `SENSOR_LINEAR`, the processed value is linear interpolated based on
-the raw value between min and max (with the raw value being 0 - 4096 for 12-bit
+the raw value between min and max (with the raw value being 0 - 4095 for 12-bit
 ADCs).
 
 The onboard ADC is not used. Instead an external ADC is connected
