@@ -2,34 +2,29 @@
 #include "limits.h"
 #include "platform.h"
 
-unsigned int
-rpm_from_time_diff(timeval_t t1, degrees_t deg) {
+unsigned int rpm_from_time_diff(timeval_t t1, degrees_t deg) {
   float ticks_per_degree = t1 / deg;
   unsigned int rpm = (TICKRATE / 6) / ticks_per_degree;
   return rpm;
 }
 
-timeval_t
-time_from_rpm_diff(unsigned int rpm, degrees_t deg) {
+timeval_t time_from_rpm_diff(unsigned int rpm, degrees_t deg) {
   float ticks_per_degree = (TICKRATE / 6.0) / (float)rpm;
   return ticks_per_degree * deg;
 }
 
-timeval_t
-time_from_us(unsigned int us) {
+timeval_t time_from_us(unsigned int us) {
   timeval_t ticks = us * (TICKRATE / 1000000.0);
   return ticks;
 }
 
 /* True if n is before x */
-int
-time_before(timeval_t n, timeval_t x) {
+int time_before(timeval_t n, timeval_t x) {
   signed int res = n - x;
   return (res < 0);
 }
 
-int
-time_in_range(timeval_t val, timeval_t t1, timeval_t t2) {
+int time_in_range(timeval_t val, timeval_t t1, timeval_t t2) {
   if (t2 >= t1) {
     /* No timer wrap */
     if ((val >= t1) && (val <= t2)) {
@@ -42,13 +37,11 @@ time_in_range(timeval_t val, timeval_t t1, timeval_t t2) {
   }
   return 0;
 }
-timeval_t
-time_diff(timeval_t later, timeval_t earlier) {
+timeval_t time_diff(timeval_t later, timeval_t earlier) {
   return later - earlier;
 }
 
-degrees_t
-clamp_angle(degrees_t ang, degrees_t max) {
+degrees_t clamp_angle(degrees_t ang, degrees_t max) {
   while (ang < 0) {
     ang += max;
   }
@@ -146,8 +139,7 @@ START_TEST(check_clamp_angle) {
 }
 END_TEST
 
-TCase*
-setup_util_tests() {
+TCase* setup_util_tests() {
   TCase* util_tests = tcase_create("util");
   tcase_add_test(util_tests, check_rpm_from_time_diff);
   tcase_add_test(util_tests, check_time_from_rpm_diff);

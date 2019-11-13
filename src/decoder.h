@@ -84,16 +84,12 @@ struct decoder_event {
 #endif
 };
 
-void
-decoder_init(struct decoder*);
-void
-decoder_update_scheduling(struct decoder_event*, unsigned int count);
-void
-enable_test_trigger(trigger_type t, unsigned int rpm);
+void decoder_init(struct decoder*);
+void decoder_update_scheduling(struct decoder_event*, unsigned int count);
+void enable_test_trigger(trigger_type t, unsigned int rpm);
 
 #ifdef UNITTEST
 #include <check.h>
-TCase*
-setup_decoder_tests();
+TCase* setup_decoder_tests();
 #endif
 #endif

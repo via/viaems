@@ -48,68 +48,56 @@ size_t cur_slot = 0;
 size_t cur_buffer = 0;
 sigset_t smask;
 
-void
-platform_enable_event_logging() {
+void platform_enable_event_logging() {
   event_logging_enabled = 1;
 }
 
-void
-platform_disable_event_logging() {
+void platform_disable_event_logging() {
   event_logging_enabled = 0;
 }
 
-void
-platform_reset_into_bootloader() {}
+void platform_reset_into_bootloader() {}
 
 uint16_t cur_outputs = 0;
 
-timeval_t
-current_time() {
+timeval_t current_time() {
   return curtime;
 }
 
-timeval_t
-cycle_count() {
+timeval_t cycle_count() {
 
   struct timespec tp;
   clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &tp);
   return (timeval_t)(tp.tv_sec * 1000000000 + tp.tv_nsec);
 }
 
-void
-set_event_timer(timeval_t t) {
+void set_event_timer(timeval_t t) {
   eventtimer_time = t;
   eventtimer_enable = 1;
 }
 
-timeval_t
-get_event_timer() {
+timeval_t get_event_timer() {
   return eventtimer_time;
 }
 
-void
-clear_event_timer() {
+void clear_event_timer() {
   eventtimer_enable = 0;
 }
 
-void
-disable_event_timer() {
+void disable_event_timer() {
   eventtimer_enable = 0;
 }
 
 static ucontext_t* sig_context = NULL;
-static void
-signal_handler_entered(struct ucontext_t* context) {
+static void signal_handler_entered(struct ucontext_t* context) {
   sig_context = context;
 }
-static void
-signal_handler_exited() {
+static void signal_handler_exited() {
   sig_context = NULL;
 }
 
 static int interrupts_disabled = 0;
-int
-disable_interrupts() {
+int disable_interrupts() {
   int old = interrupts_disabled;
   if (sig_context) {
     sigaddset(&sig_context->uc_sigmask, SIGVTALRM);
@@ -124,8 +112,7 @@ disable_interrupts() {
   return !old;
 }
 
-void
-enable_interrupts() {
+void enable_interrupts() {
   interrupts_disabled = 0;
   stats_finish_timing(STATS_INT_DISABLE_TIME);
   if (sig_context) {
@@ -138,13 +125,11 @@ enable_interrupts() {
   }
 }
 
-int
-interrupts_enabled() {
+int interrupts_enabled() {
   return !interrupts_disabled;
 }
 
-void
-set_output(int output, char value) {
+void set_output(int output, char value) {
   if (value) {
     cur_outputs |= (1 << output);
   } else {
@@ -152,8 +137,7 @@ set_output(int output, char value) {
   }
 }
 
-void
-set_gpio(int output, char value) {
+void set_gpio(int output, char value) {
   static uint16_t gpios = 0;
   uint16_t old_gpios = gpios;
 
@@ -172,15 +156,12 @@ set_gpio(int output, char value) {
   }
 }
 
-void
-set_pwm(int output, float value) {}
+void set_pwm(int output, float value) {}
 
-void
-adc_gather() {}
+void adc_gather() {}
 
 timeval_t last_tx = 0;
-size_t
-console_write(const void* buf, size_t len) {
+size_t console_write(const void* buf, size_t len) {
   if (curtime - last_tx < 200) {
     return 0;
   }
@@ -196,8 +177,7 @@ console_write(const void* buf, size_t len) {
 
 char rx_buffer[128];
 int rx_amt = 0;
-size_t
-console_read(void* buf, size_t len) {
+size_t console_read(void* buf, size_t len) {
   if (rx_amt == 0) {
     return 0;
   }
@@ -208,37 +188,30 @@ console_read(void* buf, size_t len) {
   return amt;
 }
 
-void
-platform_load_config() {}
+void platform_load_config() {}
 
-void
-platform_save_config() {}
+void platform_save_config() {}
 
-timeval_t
-init_output_thread(uint32_t* buf0, uint32_t* buf1, uint32_t len) {
+timeval_t init_output_thread(uint32_t* buf0, uint32_t* buf1, uint32_t len) {
   output_slots[0] = (struct slot*)buf0;
   output_slots[1] = (struct slot*)buf1;
   max_slots = len;
   return 0;
 }
 
-int
-current_output_buffer() {
+int current_output_buffer() {
   return cur_buffer;
 }
 
-int
-current_output_slot() {
+int current_output_slot() {
   return cur_slot;
 }
 
-void
-enable_test_trigger(trigger_type t, unsigned int rpm) {
+void enable_test_trigger(trigger_type t, unsigned int rpm) {
   test_trigger_rpm = rpm;
 }
 
-static void
-hosted_platform_timer(int sig, siginfo_t* info, void* ucontext) {
+static void hosted_platform_timer(int sig, siginfo_t* info, void* ucontext) {
   /* - Increase "time"
    * - Trigger appropriate interrupts
    *     timer event
@@ -328,8 +301,7 @@ hosted_platform_timer(int sig, siginfo_t* info, void* ucontext) {
   signal_handler_exited();
 }
 
-void
-platform_init() {
+void platform_init() {
 
   /* Set up signal handling */
   sigemptyset(&smask);

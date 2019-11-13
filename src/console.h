@@ -24,17 +24,14 @@ struct logged_event {
   uint16_t value;
 };
 
-void
-console_init();
-void
-console_process();
+void console_init();
+void console_process();
 
 void console_record_event(struct logged_event);
 
 #ifdef UNITTEST
 #include <check.h>
-TCase*
-setup_console_tests();
+TCase* setup_console_tests();
 #endif
 
 #endif

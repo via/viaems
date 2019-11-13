@@ -1,7 +1,6 @@
 #include "table.h"
 
-float
-interpolate_table_oneaxis(struct table* t, float val) {
+float interpolate_table_oneaxis(struct table* t, float val) {
   if (t->num_axis != 1) {
     while (1)
       ;
@@ -27,8 +26,7 @@ interpolate_table_oneaxis(struct table* t, float val) {
   return 0;
 }
 
-float
-interpolate_table_twoaxis(struct table* t, float x, float y) {
+float interpolate_table_twoaxis(struct table* t, float x, float y) {
   float x1 = 0, x2 = 0, y1 = 0, y2 = 0;
   int x1_ind = 0, y1_ind = 0;
   float xy1, xy2, xy;
@@ -74,8 +72,7 @@ interpolate_table_twoaxis(struct table* t, float x, float y) {
   return xy;
 }
 
-static int
-table_valid_axis(struct table_axis* a) {
+static int table_valid_axis(struct table_axis* a) {
   if (a->num > MAX_AXIS_SIZE) {
     return 0;
   }
@@ -87,8 +84,7 @@ table_valid_axis(struct table_axis* a) {
   return 1;
 }
 
-int
-table_valid(struct table* t) {
+int table_valid(struct table* t) {
 
   if ((t->num_axis != 1) && (t->num_axis != 2)) {
     return 0;
@@ -165,8 +161,7 @@ START_TEST(check_table_twoaxis_clamp) {
 }
 END_TEST
 
-TCase*
-setup_table_tests() {
+TCase* setup_table_tests() {
   TCase* table_tests = tcase_create("tables");
   tcase_add_test(table_tests, check_table_oneaxis_interpolate);
   tcase_add_test(table_tests, check_table_oneaxis_clamp);

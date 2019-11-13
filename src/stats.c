@@ -71,8 +71,7 @@ struct stats_entry stats_entries[] = {
 
 static timeval_t ticks_per_sec = 1000000;
 
-void
-stats_init(timeval_t ticks) {
+void stats_init(timeval_t ticks) {
   ticks_per_sec = ticks;
 
   for (int i = 0; i < STATS_LAST; ++i) {
@@ -88,8 +87,7 @@ stats_init(timeval_t ticks) {
   }
 }
 
-static void
-stats_update(stats_field_t type, timeval_t val) {
+static void stats_update(stats_field_t type, timeval_t val) {
 
   if (val < stats_entries[type].min) {
     stats_entries[type].min = val;
@@ -110,13 +108,11 @@ stats_update(stats_field_t type, timeval_t val) {
   stats_entries[type].avg = total / 4;
 }
 
-void
-stats_start_timing(stats_field_t type) {
+void stats_start_timing(stats_field_t type) {
   stats_entries[type]._window = cycle_count();
 }
 
-void
-stats_finish_timing(stats_field_t type) {
+void stats_finish_timing(stats_field_t type) {
 
   timeval_t time;
   time = cycle_count();
@@ -125,8 +121,7 @@ stats_finish_timing(stats_field_t type) {
   stats_update(type, time / (ticks_per_sec / 1000000));
 }
 
-void
-stats_increment_counter(stats_field_t type) {
+void stats_increment_counter(stats_field_t type) {
 
   if (cycle_count() - stats_entries[type]._window > ticks_per_sec) {
     /* We've reached the window edge, calculate and reset */

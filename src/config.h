@@ -60,7 +60,6 @@ extern struct table tipin_vs_tpsrate_and_tps;
 extern struct table tipin_duration_vs_rpm;
 extern struct table boost_control_pwm;
 
-int
-config_valid();
+int config_valid();
 
 #endif

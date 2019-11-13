@@ -74,8 +74,7 @@
  *
  */
 
-static void
-platform_init_freqsensor() {
+static void platform_init_freqsensor() {
   timer_set_mode(TIM1, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
   timer_set_period(TIM1, 0xFFFFFFFF);
   timer_disable_preload(TIM1);
@@ -118,8 +117,7 @@ platform_init_freqsensor() {
   nvic_set_priority(NVIC_TIM1_CC_IRQ, 64);
 }
 
-void
-tim1_cc_isr() {
+void tim1_cc_isr() {
   static struct {
     uint16_t value;
     uint32_t time;
@@ -178,8 +176,7 @@ tim1_cc_isr() {
   stats_finish_timing(STATS_INT_TOTAL_TIME);
 }
 
-static int
-capture_edge_from_config(trigger_edge e) {
+static int capture_edge_from_config(trigger_edge e) {
   switch (e) {
     case RISING_EDGE:
       return TIM_IC_RISING;
@@ -191,8 +188,7 @@ capture_edge_from_config(trigger_edge e) {
   return RISING_EDGE;
 }
 
-static void
-platform_init_eventtimer() {
+static void platform_init_eventtimer() {
   /* Set up TIM2 as 32bit clock that is slaved off TIM8*/
 
   timer_set_mode(TIM2, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
@@ -268,8 +264,7 @@ static uint32_t output_buffer_len;
  * buffer between buf0 and buf0.
  * Returns the time that buf0 starts at
  */
-timeval_t
-init_output_thread(uint32_t* buf0, uint32_t* buf1, uint32_t len) {
+timeval_t init_output_thread(uint32_t* buf0, uint32_t* buf1, uint32_t len) {
   timeval_t start;
 
   output_buffer_len = len;
@@ -302,8 +297,7 @@ init_output_thread(uint32_t* buf0, uint32_t* buf1, uint32_t len) {
 }
 
 /* Returns 0 if buf0 is active */
-int
-current_output_buffer() {
+int current_output_buffer() {
   return dma_get_target(DMA2, DMA_STREAM1);
 }
 
@@ -311,13 +305,11 @@ current_output_buffer() {
  * Note that the slot returned is the one queued to output next, but is already
  * in the FIFO so is considered 'done'
  */
-int
-current_output_slot() {
+int current_output_slot() {
   return output_buffer_len - DMA2_S1NDTR;
 }
 
-static void
-platform_init_pwm() {
+static void platform_init_pwm() {
 
   gpio_mode_setup(GPIOC, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO6);
   gpio_mode_setup(GPIOC, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO7);
@@ -374,8 +366,7 @@ platform_init_pwm() {
   timer_enable_counter(TIM3);
 }
 
-void
-set_pwm(int output, float value) {
+void set_pwm(int output, float value) {
   int ival = value * 65535;
   switch (output) {
     case 1:
@@ -389,8 +380,7 @@ set_pwm(int output, float value) {
   }
 }
 
-static void
-platform_init_scheduled_outputs() {
+static void platform_init_scheduled_outputs() {
   gpio_clear(GPIOD, 0xFFFF);
   unsigned int i;
   for (i = 0; i < config.num_events; ++i) {
@@ -405,8 +395,7 @@ platform_init_scheduled_outputs() {
   gpio_set_output_options(GPIOE, GPIO_OTYPE_PP, GPIO_OSPEED_100MHZ, 0xFF);
 }
 
-void
-platform_enable_event_logging() {
+void platform_enable_event_logging() {
 
   nvic_enable_irq(NVIC_EXTI0_IRQ);
   nvic_enable_irq(NVIC_EXTI1_IRQ);
@@ -421,8 +410,7 @@ platform_enable_event_logging() {
   exti_enable_request(0xFFFF);
 }
 
-void
-platform_disable_event_logging() {
+void platform_disable_event_logging() {
   nvic_disable_irq(NVIC_EXTI0_IRQ);
   nvic_disable_irq(NVIC_EXTI1_IRQ);
   nvic_disable_irq(NVIC_EXTI2_IRQ);
@@ -432,8 +420,7 @@ platform_disable_event_logging() {
   nvic_disable_irq(NVIC_EXTI15_10_IRQ);
 }
 
-static void
-show_scheduled_outputs() {
+static void show_scheduled_outputs() {
   console_record_event((struct logged_event){
     .type = EVENT_OUTPUT,
     .time = current_time(),
@@ -442,28 +429,22 @@ show_scheduled_outputs() {
   exti_reset_request(0xFFFF);
 }
 
-void
-exti0_isr() {
+void exti0_isr() {
   show_scheduled_outputs();
 }
-void
-exti1_isr() {
+void exti1_isr() {
   show_scheduled_outputs();
 }
-void
-exti2_isr() {
+void exti2_isr() {
   show_scheduled_outputs();
 }
-void
-exti3_isr() {
+void exti3_isr() {
   show_scheduled_outputs();
 }
-void
-exti9_5_isr() {
+void exti9_5_isr() {
   show_scheduled_outputs();
 }
-void
-exti15_10_isr() {
+void exti15_10_isr() {
   show_scheduled_outputs();
 }
 
@@ -493,8 +474,7 @@ exti15_10_isr() {
 #endif
 static volatile uint16_t spi_rx_raw_adc[SPI_WRITE_COUNT] = { 0 };
 
-static void
-platform_init_spi_adc() {
+static void platform_init_spi_adc() {
   /* Configure SPI output */
   gpio_mode_setup(
     GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO13 | GPIO14 | GPIO15);
@@ -554,13 +534,12 @@ static uint8_t usbd_control_buffer[128];
 static usbd_device* usbd_dev;
 
 /* Most of the following is copied from libopencm3-examples */
-static enum usbd_request_return_codes
-cdcacm_control_request(usbd_device* usbd_dev,
-                       struct usb_setup_data* req,
-                       uint8_t** buf,
-                       uint16_t* len,
-                       void (**complete)(usbd_device* usbd_dev,
-                                         struct usb_setup_data* req)) {
+static enum usbd_request_return_codes cdcacm_control_request(
+  usbd_device* usbd_dev,
+  struct usb_setup_data* req,
+  uint8_t** buf,
+  uint16_t* len,
+  void (**complete)(usbd_device* usbd_dev, struct usb_setup_data* req)) {
   (void)complete;
   (void)buf;
   (void)usbd_dev;
@@ -587,15 +566,13 @@ cdcacm_control_request(usbd_device* usbd_dev,
 #define USB_RX_BUF_LEN 1024
 static char usb_rx_buf[USB_RX_BUF_LEN];
 static volatile size_t usb_rx_len = 0;
-static void
-cdcacm_data_rx_cb(usbd_device* usbd_dev, uint8_t ep) {
+static void cdcacm_data_rx_cb(usbd_device* usbd_dev, uint8_t ep) {
   (void)ep;
   usb_rx_len += usbd_ep_read_packet(
     usbd_dev, 0x01, usb_rx_buf + usb_rx_len, USB_RX_BUF_LEN - usb_rx_len);
 }
 
-static void
-cdcacm_set_config(usbd_device* usbd_dev, uint16_t wValue) {
+static void cdcacm_set_config(usbd_device* usbd_dev, uint16_t wValue) {
   (void)wValue;
 
   usbd_ep_setup(usbd_dev, 0x01, USB_ENDPOINT_ATTR_BULK, 64, cdcacm_data_rx_cb);
@@ -747,8 +724,7 @@ static const char* usb_strings[] = {
   "0",
 };
 
-void
-otg_fs_isr() {
+void otg_fs_isr() {
   stats_increment_counter(STATS_INT_RATE);
   stats_increment_counter(STATS_USB_INTERRUPT_RATE);
   stats_start_timing(STATS_USB_INTERRUPT_TIME);
@@ -758,8 +734,7 @@ otg_fs_isr() {
   stats_finish_timing(STATS_INT_TOTAL_TIME);
 }
 
-void
-platform_init_usb() {
+void platform_init_usb() {
 
   gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO9 | GPIO11 | GPIO12);
   gpio_set_af(GPIOA, GPIO_AF10, GPIO9 | GPIO11 | GPIO12);
@@ -776,8 +751,7 @@ platform_init_usb() {
   nvic_enable_irq(NVIC_OTG_FS_IRQ);
 }
 
-void
-platform_init() {
+void platform_init() {
 
   /* 168 Mhz clock */
   rcc_clock_setup_pll(&rcc_hse_8mhz_3v3[RCC_CLOCK_3V3_168MHZ]);
@@ -831,8 +805,7 @@ platform_init() {
   stats_init(168000000);
 }
 
-void
-platform_reset_into_bootloader() {
+void platform_reset_into_bootloader() {
   handle_emergency_shutdown();
 
   rcc_periph_reset_pulse(RST_OTGFS);
@@ -892,14 +865,12 @@ platform_reset_into_bootloader() {
     ;
 }
 
-uint32_t
-cycle_count() {
+uint32_t cycle_count() {
   return dwt_read_cycle_counter();
 }
 
 static volatile int adc_gather_in_progress = 0;
-void
-adc_gather() {
+void adc_gather() {
 #ifdef SPI_TLC2543
   static uint16_t spi_tx_list[] = {
     0x0C00, 0x1C00, 0x2C00, 0x3C00, 0x4C00, 0x5C00, 0x6C00,
@@ -944,8 +915,7 @@ adc_gather() {
   TIM6_DIER |= TIM_DIER_UDE; /* Enable update dma */
 }
 
-void
-dma1_stream3_isr(void) {
+void dma1_stream3_isr(void) {
   if (!dma_get_interrupt_flag(DMA1, DMA_STREAM3, DMA_TCIF)) {
     return;
   }
@@ -988,8 +958,7 @@ dma1_stream3_isr(void) {
  * graceful overflow (at the expensive of non-critical routines not running,
  * e.g. console).
  */
-void
-tim2_isr() {
+void tim2_isr() {
   stats_increment_counter(STATS_INT_RATE);
   stats_increment_counter(STATS_INT_EVENTTIMER_RATE);
   stats_start_timing(STATS_INT_TOTAL_TIME);
@@ -1029,8 +998,7 @@ tim2_isr() {
   stats_finish_timing(STATS_INT_TOTAL_TIME);
 }
 
-void
-dma2_stream1_isr(void) {
+void dma2_stream1_isr(void) {
   stats_increment_counter(STATS_INT_RATE);
   stats_increment_counter(STATS_INT_BUFFERSWAP_RATE);
   stats_start_timing(STATS_INT_TOTAL_TIME);
@@ -1043,60 +1011,50 @@ dma2_stream1_isr(void) {
   stats_finish_timing(STATS_INT_TOTAL_TIME);
 }
 
-void
-enable_interrupts() {
+void enable_interrupts() {
   stats_finish_timing(STATS_INT_DISABLE_TIME);
   cm_enable_interrupts();
 }
 
 /* Returns current enabled status prior to call */
-int
-disable_interrupts() {
+int disable_interrupts() {
   int ret = interrupts_enabled();
   cm_disable_interrupts();
   stats_start_timing(STATS_INT_DISABLE_TIME);
   return ret;
 }
 
-int
-interrupts_enabled() {
+int interrupts_enabled() {
   return !cm_is_masked_interrupts();
 }
 
-void
-set_event_timer(timeval_t t) {
+void set_event_timer(timeval_t t) {
   timer_set_oc_value(TIM2, TIM_OC1, t);
   timer_enable_irq(TIM2, TIM_DIER_CC1IE);
 }
 
-timeval_t
-get_event_timer() {
+timeval_t get_event_timer() {
   return TIM2_CCR1;
 }
 
-void
-clear_event_timer() {
+void clear_event_timer() {
   timer_clear_flag(TIM2, TIM_SR_CC1IF);
 }
 
-void
-disable_event_timer() {
+void disable_event_timer() {
   timer_disable_irq(TIM2, TIM_DIER_CC1IE);
   timer_clear_flag(TIM2, TIM_SR_CC1IF);
 }
 
-timeval_t
-current_time() {
+timeval_t current_time() {
   return timer_get_counter(TIM2);
 }
 
-int
-get_output(int output) {
+int get_output(int output) {
   return gpio_get(GPIOD, (1 << output)) != 0;
 }
 
-void
-set_output(int output, char value) {
+void set_output(int output, char value) {
   if (value) {
     gpio_set(GPIOD, (1 << output));
   } else {
@@ -1104,13 +1062,11 @@ set_output(int output, char value) {
   }
 }
 
-int
-get_gpio(int output) {
+int get_gpio(int output) {
   return gpio_get(GPIOE, (1 << output)) != 0;
 }
 
-void
-set_gpio(int output, char value) {
+void set_gpio(int output, char value) {
   if (value) {
     gpio_set(GPIOE, (1 << output));
   } else {
@@ -1118,8 +1074,7 @@ set_gpio(int output, char value) {
   }
 }
 
-void
-enable_test_trigger(trigger_type trig, unsigned int rpm) {
+void enable_test_trigger(trigger_type trig, unsigned int rpm) {
   if (trig != FORD_TFI) {
     return;
   }
@@ -1149,8 +1104,7 @@ enable_test_trigger(trigger_type trig, unsigned int rpm) {
 }
 
 extern unsigned _configdata_loadaddr, _sconfigdata, _econfigdata;
-void
-platform_load_config() {
+void platform_load_config() {
   volatile unsigned *src, *dest;
   for (src = &_configdata_loadaddr, dest = &_sconfigdata; dest < &_econfigdata;
        src++, dest++) {
@@ -1158,8 +1112,7 @@ platform_load_config() {
   }
 }
 
-void
-platform_save_config() {
+void platform_save_config() {
   volatile unsigned *src, *dest;
   int n_sectors, conf_bytes;
   flash_unlock();
@@ -1180,8 +1133,7 @@ platform_save_config() {
   flash_lock();
 }
 
-size_t
-console_read(void* buf, size_t max) {
+size_t console_read(void* buf, size_t max) {
   disable_interrupts();
   stats_start_timing(STATS_CONSOLE_READ_TIME);
   size_t amt = usb_rx_len > max ? max : usb_rx_len;
@@ -1193,8 +1145,7 @@ console_read(void* buf, size_t max) {
   return amt;
 }
 
-size_t
-console_write(const void* buf, size_t count) {
+size_t console_write(const void* buf, size_t count) {
   size_t rem = count > 64 ? 64 : count;
   /* https://github.com/libopencm3/libopencm3/issues/531
    * We can't let the usb irq be called while writing */
@@ -1205,8 +1156,7 @@ console_write(const void* buf, size_t count) {
 }
 
 /* This should only ever be used in an emergency */
-ssize_t
-_write(int fd, const void* buf, size_t count) {
+ssize_t _write(int fd, const void* buf, size_t count) {
   (void)fd;
 
   while (count > 0) {
@@ -1220,8 +1170,7 @@ _write(int fd, const void* buf, size_t count) {
   return count;
 }
 
-void
-_exit(int status) {
+void _exit(int status) {
   (void)status;
 
   handle_emergency_shutdown();
@@ -1240,12 +1189,10 @@ __stack_chk_fail(void) {
     ;
 }
 
-void
-platform_freeze_timers() {
+void platform_freeze_timers() {
   timer_disable_counter(TIM8);
 }
 
-void
-platform_unfreeze_timers() {
+void platform_unfreeze_timers() {
   timer_enable_counter(TIM8);
 }

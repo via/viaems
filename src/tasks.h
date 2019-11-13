@@ -8,19 +8,14 @@ struct boost_control_config {
   float overboost;
 };
 
-void
-handle_fuel_pump();
-void
-handle_boost_control();
-void
-handle_idle_control();
-void
-handle_emergency_shutdown();
+void handle_fuel_pump();
+void handle_boost_control();
+void handle_idle_control();
+void handle_emergency_shutdown();
 
 #ifdef UNITTEST
 #include <check.h>
-TCase*
-setup_tasks_tests();
+TCase* setup_tasks_tests();
 #endif
 
 #endif

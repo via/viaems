@@ -5,8 +5,7 @@
 #include "stats.h"
 struct calculated_values calculated_values;
 
-static int
-fuel_overduty() {
+static int fuel_overduty() {
   /* Maximum pulse width */
   timeval_t max_pw = time_from_rpm_diff(config.decoder.rpm, 720) /
                      config.fueling.injections_per_cycle;
@@ -14,8 +13,7 @@ fuel_overduty() {
   return time_from_us(calculated_values.fueling_us) >= max_pw;
 }
 
-static int
-rpm_limit() {
+static int rpm_limit() {
   if (config.decoder.rpm >= config.rpm_stop) {
     calculated_values.rpm_limit_cut = 1;
   }
@@ -25,24 +23,20 @@ rpm_limit() {
   return calculated_values.rpm_limit_cut;
 }
 
-int
-boost_cut() {
+int boost_cut() {
   return (config.sensors[SENSOR_MAP].processed_value >
           config.boost_control.overboost);
 }
 
-int
-ignition_cut() {
+int ignition_cut() {
   return rpm_limit() || fuel_overduty() || boost_cut();
 }
 
-int
-fuel_cut() {
+int fuel_cut() {
   return ignition_cut();
 }
 
-void
-calculate_ignition() {
+void calculate_ignition() {
   calculated_values.timing_advance =
     interpolate_table_twoaxis(config.timing,
                               config.decoder.rpm,
@@ -58,23 +52,20 @@ calculate_ignition() {
   }
 }
 
-static float
-air_density(float iat_celsius, float atmos_kpa) {
+static float air_density(float iat_celsius, float atmos_kpa) {
   const float kelvin_offset = 273.15;
   float temp_factor = kelvin_offset / (iat_celsius + kelvin_offset);
   return (atmos_kpa / 100) * config.fueling.density_of_air_stp * temp_factor;
 }
 
-static float
-fuel_density(float fuel_celsius) {
+static float fuel_density(float fuel_celsius) {
   const float beta = 950.0; /* Gasoline 10^-6/K */
   float delta_temp = fuel_celsius - 15.0;
   return config.fueling.density_of_fuel - (delta_temp * beta / 1000000.0);
 }
 
 /* Returns mass of air injested into a cylinder */
-static float
-calculate_airmass(float ve, float map, float aap, float iat) {
+static float calculate_airmass(float ve, float map, float aap, float iat) {
 
   float injested_air_volume_per_cycle =
     (ve / 100.0) * (map / aap) * config.fueling.cylinder_cc;
@@ -87,8 +78,7 @@ calculate_airmass(float ve, float map, float aap, float iat) {
 
 /* Given an airmass and a fuel temperature, returns stoich amount of fuel volume
  */
-static float
-calculate_fuel_volume(float airmass, float frt) {
+static float calculate_fuel_volume(float airmass, float frt) {
   float fuel_mass = airmass / config.fueling.fuel_stoich_ratio;
   float fuel_volume = fuel_mass / fuel_density(frt);
 
@@ -96,8 +86,7 @@ calculate_fuel_volume(float airmass, float frt) {
 }
 
 /* Returns mm^3 of fuel per cycle to add */
-static float
-calculate_tipin_enrichment(float tps, float tpsrate, int rpm) {
+static float calculate_tipin_enrichment(float tps, float tpsrate, int rpm) {
   static struct {
     timeval_t time;
     timeval_t length;
@@ -131,8 +120,7 @@ calculate_tipin_enrichment(float tps, float tpsrate, int rpm) {
   return current.amount;
 }
 
-void
-calculate_fueling() {
+void calculate_fueling() {
   stats_start_timing(STATS_FUELCALC_TIME);
 
   float ve;
@@ -374,8 +362,7 @@ START_TEST(check_calculate_tipin_overriding_event) {
 }
 END_TEST
 
-TCase*
-setup_calculations_tests() {
+TCase* setup_calculations_tests() {
   TCase* tc = tcase_create("calculations");
   tcase_add_test(tc, check_air_density);
   tcase_add_test(tc, check_fuel_density);

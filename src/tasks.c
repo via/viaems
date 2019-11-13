@@ -4,8 +4,7 @@
 #include "platform.h"
 #include "util.h"
 
-void
-handle_fuel_pump() {
+void handle_fuel_pump() {
   static timeval_t last_valid = 0;
 
   /* If engine is turning, keep pump on */
@@ -26,8 +25,7 @@ handle_fuel_pump() {
   }
 }
 
-void
-handle_boost_control() {
+void handle_boost_control() {
   float duty;
   if ((config.sensors[SENSOR_MAP].processed_value <
        config.boost_control.threshhold_kpa)) {
@@ -43,11 +41,9 @@ handle_boost_control() {
   set_pwm(config.boost_control.pin, duty);
 }
 
-void
-handle_idle_control() {}
+void handle_idle_control() {}
 
-void
-handle_emergency_shutdown() {
+void handle_emergency_shutdown() {
 
   /* Fuel pump off */
   set_gpio(config.fueling.fuel_pump_pin, 0);
@@ -115,8 +111,7 @@ START_TEST(check_tasks_handle_fuel_pump) {
 }
 END_TEST
 
-TCase*
-setup_tasks_tests() {
+TCase* setup_tasks_tests() {
   TCase* tasks_tests = tcase_create("tasks");
   tcase_add_test(tasks_tests, check_tasks_handle_fuel_pump);
   return tasks_tests;
