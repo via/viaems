@@ -1,6 +1,8 @@
 #ifndef _CONSOLE_H
 #define _CONSOLE_H
 
+#include "platform.h"
+
 #define CONSOLE_BUFFER_SIZE 2048
 
 struct console {
