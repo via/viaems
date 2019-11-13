@@ -62,7 +62,7 @@ coverage: check
 	gcovr -r .
 
 format:
-	clang-format -i *.c platforms/*.c
+	clang-format -i *.c *.h platforms/*.c
 
 
 clean:

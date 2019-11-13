@@ -17,8 +17,7 @@
 #include <string.h>
 #include <strings.h>
 
-struct console_config_node
-{
+struct console_config_node {
   const char* name;
   void (*get)(const struct console_config_node* self,
               char* dest,
@@ -42,8 +41,7 @@ console_search_node(const struct console_config_node* nodes, const char* var) {
   return NULL;
 }
 
-static struct console_feed_config
-{
+static struct console_feed_config {
   size_t n_nodes;
   const struct console_config_node* nodes[64];
 } console_feed_config = {
@@ -698,8 +696,7 @@ console_set_events(const struct console_config_node* self
   }
 }
 
-static struct
-{
+static struct {
   int enabled;
   struct logged_event events[32];
   int read;
@@ -1186,10 +1183,8 @@ console_feed_line(char* dest) {
   strcat(dest, "\r\n");
 }
 
-struct
-{
-  struct
-  {
+struct {
+  struct {
     int in_progress;
     size_t max;
     const char* src;

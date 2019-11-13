@@ -39,8 +39,7 @@ int event_logging_enabled = 1;
 uint32_t test_trigger_rpm = 0;
 timeval_t test_trigger_last = 0;
 
-struct slot
-{
+struct slot {
   uint16_t on_mask;
   uint16_t off_mask;
 } __attribute__((packed)) * output_slots[2];

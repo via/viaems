@@ -4,7 +4,6 @@
 #include "platform.h"
 //#include "queue.h"
 
-
 typedef enum {
   DISABLED_EVENT,
   FUEL_EVENT,
@@ -22,7 +21,7 @@ struct sched_entry {
 
   volatile unsigned char fired;
   volatile unsigned char scheduled; /* current time is valid */
-  struct output_buffer *buffer;
+  struct output_buffer* buffer;
 };
 
 /* Meaning of scheduled/fired:
@@ -34,8 +33,8 @@ struct sched_entry {
  */
 
 struct timed_callback {
-  void (*callback)(void *);
-  void *data;
+  void (*callback)(void*);
+  void* data;
   timeval_t time;
   int scheduled;
 };
@@ -51,25 +50,34 @@ struct output_event {
   struct timed_callback callback;
 };
 
+void
+schedule_event(struct output_event* ev);
+void
+deschedule_event(struct output_event*);
 
-void schedule_event(struct output_event *ev);
-void deschedule_event(struct output_event *);
+int
+schedule_callback(struct timed_callback* tcb, timeval_t time);
 
-int schedule_callback(struct timed_callback *tcb, timeval_t time);
+void
+scheduler_callback_timer_execute();
+void
+initialize_scheduler();
+void
+scheduler_buffer_swap();
 
-void scheduler_callback_timer_execute();
-void initialize_scheduler();
-void scheduler_buffer_swap();
-
-int event_is_active(struct output_event *);
-int event_has_fired(struct output_event *);
-void invalidate_scheduled_events(struct output_event *, int);
+int
+event_is_active(struct output_event*);
+int
+event_has_fired(struct output_event*);
+void
+invalidate_scheduled_events(struct output_event*, int);
 
 #ifdef UNITTEST
 #include <check.h>
-void check_add_buffer_tests(TCase *);
-TCase *setup_scheduler_tests();
+void
+check_add_buffer_tests(TCase*);
+TCase*
+setup_scheduler_tests();
 #endif
 
-#endif 
-
+#endif

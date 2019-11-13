@@ -52,7 +52,7 @@ struct sensor_input {
       float min;
       float max;
     } range;
-    struct table *table;
+    struct table* table;
     float fixed_value;
     struct thermistor_config therm;
   } params;
@@ -70,13 +70,15 @@ struct sensor_input {
   sensor_fault fault;
 };
 
-void sensors_process(sensor_source source);
-uint32_t sensor_fault_status();
+void
+sensors_process(sensor_source source);
+uint32_t
+sensor_fault_status();
 
 #ifdef UNITTEST
 #include <check.h>
-TCase *setup_sensor_tests();
+TCase*
+setup_sensor_tests();
 #endif
 
 #endif
-

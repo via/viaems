@@ -1,15 +1,15 @@
 #ifndef _CONFIG_H
 #define _CONFIG_H
 
-#include "platform.h"
-#include "decoder.h"
-#include "util.h"
-#include "scheduler.h"
-#include "table.h"
-#include "console.h"
-#include "sensors.h"
 #include "calculations.h"
+#include "console.h"
+#include "decoder.h"
+#include "platform.h"
+#include "scheduler.h"
+#include "sensors.h"
+#include "table.h"
 #include "tasks.h"
+#include "util.h"
 
 #define MAX_EVENTS 24
 
@@ -25,15 +25,15 @@ struct config {
   struct sensor_input sensors[NUM_SENSORS];
 
   /* Tables */
-  struct table *timing;
-  struct table *iat_timing_adjust;
-  struct table *clt_timing_adjust;
-  struct table *ve;
-  struct table *commanded_lambda;
-  struct table *injector_pw_compensation;
-  struct table *engine_temp_enrich;
-  struct table *tipin_enrich_amount;
-  struct table *tipin_enrich_duration;
+  struct table* timing;
+  struct table* iat_timing_adjust;
+  struct table* clt_timing_adjust;
+  struct table* ve;
+  struct table* commanded_lambda;
+  struct table* injector_pw_compensation;
+  struct table* engine_temp_enrich;
+  struct table* tipin_enrich_amount;
+  struct table* tipin_enrich_duration;
 
   /* Fuel information */
   struct fueling_config fueling;
@@ -60,6 +60,7 @@ extern struct table tipin_vs_tpsrate_and_tps;
 extern struct table tipin_duration_vs_rpm;
 extern struct table boost_control_pwm;
 
-int config_valid();
+int
+config_valid();
 
 #endif

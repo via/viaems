@@ -4,13 +4,13 @@
 struct fueling_config {
   float injector_cc_per_minute;
   float cylinder_cc;
-  float fuel_stoich_ratio; 
+  float fuel_stoich_ratio;
   unsigned int injections_per_cycle; /* fuel quantity per shot divisor */
   unsigned int fuel_pump_pin;
 
   /* Constants */
   float density_of_air_stp; /* g/cc at 0C 100 kpa */
-  float density_of_fuel; /* At 15 C */
+  float density_of_fuel;    /* At 15 C */
 
   /* Intermediate values for debugging below */
 };
@@ -46,14 +46,19 @@ struct calculated_values {
 
 extern struct calculated_values calculated_values;
 
-void calculate_ignition();
-void calculate_fueling();
-int ignition_cut();
-int fuel_cut();
+void
+calculate_ignition();
+void
+calculate_fueling();
+int
+ignition_cut();
+int
+fuel_cut();
 
 #ifdef UNITTEST
 #include <check.h>
-TCase *setup_calculations_tests();
+TCase*
+setup_calculations_tests();
 #endif
 
 #endif

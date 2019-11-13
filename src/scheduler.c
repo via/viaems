@@ -10,11 +10,9 @@
 #include <strings.h>
 
 #define OUTPUT_BUFFER_LEN (512)
-static struct output_buffer
-{
+static struct output_buffer {
   timeval_t start;
-  struct output_slot
-  {
+  struct output_slot {
     uint16_t on_mask;  /* On little endian arch, most-significant */
     uint16_t off_mask; /* are last in struct */
   } __attribute__((packed)) slots[OUTPUT_BUFFER_LEN];

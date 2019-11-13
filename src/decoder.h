@@ -5,7 +5,7 @@
 #define MAX_TRIGGERS 36
 
 struct decoder;
-typedef void (*decoder_func)(struct decoder *);
+typedef void (*decoder_func)(struct decoder*);
 
 typedef enum {
   FORD_TFI,
@@ -80,17 +80,20 @@ struct decoder_event {
   decoder_state state;
   int valid;
   decoder_loss_reason reason;
-  struct decoder_event *next;
+  struct decoder_event* next;
 #endif
-}; 
+};
 
-void decoder_init(struct decoder *);
-void decoder_update_scheduling(struct decoder_event *, unsigned int count);
-void enable_test_trigger(trigger_type t, unsigned int rpm);
+void
+decoder_init(struct decoder*);
+void
+decoder_update_scheduling(struct decoder_event*, unsigned int count);
+void
+enable_test_trigger(trigger_type t, unsigned int rpm);
 
 #ifdef UNITTEST
 #include <check.h>
-TCase *setup_decoder_tests();
+TCase*
+setup_decoder_tests();
 #endif
 #endif
-

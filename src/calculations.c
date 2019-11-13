@@ -98,8 +98,7 @@ calculate_fuel_volume(float airmass, float frt) {
 /* Returns mm^3 of fuel per cycle to add */
 static float
 calculate_tipin_enrichment(float tps, float tpsrate, int rpm) {
-  static struct
-  {
+  static struct {
     timeval_t time;
     timeval_t length;
     float amount;

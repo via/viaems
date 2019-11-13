@@ -120,8 +120,7 @@ platform_init_freqsensor() {
 
 void
 tim1_cc_isr() {
-  static struct
-  {
+  static struct {
     uint16_t value;
     uint32_t time;
   } prev[4] = { 0 };
@@ -654,8 +653,7 @@ static const struct usb_endpoint_descriptor data_endp[] = {
   }
 };
 
-static const struct
-{
+static const struct {
   struct usb_cdc_header_descriptor header;
   struct usb_cdc_call_management_descriptor call_mgmt;
   struct usb_cdc_acm_descriptor acm;
