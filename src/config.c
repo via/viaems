@@ -88,7 +88,6 @@ struct table ve_vs_rpm_and_map __attribute__((section(".configdata"))) = {
   },
 };
 
-
 struct table lambda_vs_rpm_and_map __attribute__((section(".configdata"))) = {
   .title = "lambda", .num_axis = 2,
   .axis = { { 
@@ -155,7 +154,6 @@ struct table timing_vs_rpm_and_map __attribute__((section(".configdata"))) = {
     },
   },
 };
-
 
 struct table injector_dead_time __attribute__((section(".configdata"))) = {
   .title = "dead_time", .num_axis = 1,
@@ -276,7 +274,8 @@ int config_valid() {
     return 0;
   }
 
-  if (config.injector_pw_compensation && !table_valid(config.injector_pw_compensation)) {
+  if (config.injector_pw_compensation &&
+      !table_valid(config.injector_pw_compensation)) {
     return 0;
   }
 
@@ -288,7 +287,8 @@ int config_valid() {
     return 0;
   }
 
-  if (config.tipin_enrich_duration && !table_valid(config.tipin_enrich_duration)) {
+  if (config.tipin_enrich_duration &&
+      !table_valid(config.tipin_enrich_duration)) {
     return 0;
   }
 

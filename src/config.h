@@ -1,15 +1,15 @@
 #ifndef _CONFIG_H
 #define _CONFIG_H
 
-#include "platform.h"
-#include "decoder.h"
-#include "util.h"
-#include "scheduler.h"
-#include "table.h"
-#include "console.h"
-#include "sensors.h"
 #include "calculations.h"
+#include "console.h"
+#include "decoder.h"
+#include "platform.h"
+#include "scheduler.h"
+#include "sensors.h"
+#include "table.h"
 #include "tasks.h"
+#include "util.h"
 
 #define MAX_EVENTS 24
 

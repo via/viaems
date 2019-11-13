@@ -3,21 +3,21 @@
 #include <sys/types.h>
 #include <sys/un.h>
 
+#include <fcntl.h>
+#include <poll.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <signal.h>
-#include <poll.h>
 #include <time.h>
+#include <unistd.h>
 
-#include "platform.h"
-#include "scheduler.h"
 #include "config.h"
 #include "console.h"
+#include "platform.h"
+#include "scheduler.h"
 #include "stats.h"
 
-/* A platform that runs on a hosted OS, preferably one that supports posix 
+/* A platform that runs on a hosted OS, preferably one that supports posix
  * timers.  Sends console to stdout/stdin
  *
  * Outputs:
@@ -42,7 +42,7 @@ timeval_t test_trigger_last = 0;
 struct slot {
   uint16_t on_mask;
   uint16_t off_mask;
-} __attribute__((packed)) *output_slots[2];
+} __attribute__((packed)) * output_slots[2];
 size_t max_slots;
 size_t cur_slot = 0;
 size_t cur_buffer = 0;
@@ -56,8 +56,7 @@ void platform_disable_event_logging() {
   event_logging_enabled = 0;
 }
 
-void platform_reset_into_bootloader() {
-}
+void platform_reset_into_bootloader() {}
 
 uint16_t cur_outputs = 0;
 
@@ -70,13 +69,11 @@ timeval_t cycle_count() {
   struct timespec tp;
   clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &tp);
   return (timeval_t)(tp.tv_sec * 1000000000 + tp.tv_nsec);
-
 }
 
 void set_event_timer(timeval_t t) {
   eventtimer_time = t;
   eventtimer_enable = 1;
-
 }
 
 timeval_t get_event_timer() {
@@ -89,7 +86,7 @@ void clear_event_timer() {
 
 void disable_event_timer() {
   eventtimer_enable = 0;
-} 
+}
 
 static ucontext_t *sig_context = NULL;
 static void signal_handler_entered(struct ucontext_t *context) {
@@ -152,18 +149,16 @@ void set_gpio(int output, char value) {
 
   if (old_gpios != gpios) {
     console_record_event((struct logged_event){
-        .time = current_time(),
-        .value = gpios,
-        .type = EVENT_GPIO,
-        });
+      .time = current_time(),
+      .value = gpios,
+      .type = EVENT_GPIO,
+    });
   }
 }
 
-void set_pwm(int output, float value) {
-}
+void set_pwm(int output, float value) {}
 
-void adc_gather() {
-}
+void adc_gather() {}
 
 timeval_t last_tx = 0;
 size_t console_write(const void *buf, size_t len) {
@@ -171,7 +166,8 @@ size_t console_write(const void *buf, size_t len) {
     return 0;
   }
   ssize_t written = -1;
-  while ((written = write(STDOUT_FILENO, buf, len)) < 0);
+  while ((written = write(STDOUT_FILENO, buf, len)) < 0)
+    ;
   if (written > 0) {
     last_tx = curtime;
     return written;
@@ -186,17 +182,15 @@ size_t console_read(void *buf, size_t len) {
     return 0;
   }
 
-  size_t amt = len < rx_amt ? len: rx_amt;
+  size_t amt = len < rx_amt ? len : rx_amt;
   memcpy(buf, rx_buffer, amt);
   rx_amt -= amt;
   return amt;
 }
 
-void platform_load_config() {
-}
+void platform_load_config() {}
 
-void platform_save_config() {
-}
+void platform_save_config() {}
 
 timeval_t init_output_thread(uint32_t *buf0, uint32_t *buf1, uint32_t len) {
   output_slots[0] = (struct slot *)buf0;
@@ -239,7 +233,7 @@ static void hosted_platform_timer(int sig, siginfo_t *info, void *ucontext) {
 
   int failing = 0; // (current_time() % 1000000) > 500000;
   if (current_time() % 1000 == 0) {
-    //test_trigger_rpm += 1;
+    // test_trigger_rpm += 1;
     if (test_trigger_rpm > 9000) {
       test_trigger_rpm = 800;
     }
@@ -249,14 +243,14 @@ static void hosted_platform_timer(int sig, siginfo_t *info, void *ucontext) {
     static uint32_t trigger_count = 0;
     if (curtime >= test_trigger_last + time_between) {
       test_trigger_last = curtime;
-      struct decoder_event ev = {.t0 = 1, .time = curtime};
+      struct decoder_event ev = { .t0 = 1, .time = curtime };
       decoder_update_scheduling(&ev, 1);
       trigger_count++;
 
       if ((config.decoder.type == TOYOTA_24_1_CAS) &&
           (trigger_count >= config.decoder.num_triggers)) {
         trigger_count = 0;
-        struct decoder_event ev = {.t1 = 1, .time = curtime};
+        struct decoder_event ev = { .t1 = 1, .time = curtime };
         decoder_update_scheduling(&ev, 1);
       }
     }
@@ -278,16 +272,16 @@ static void hosted_platform_timer(int sig, siginfo_t *info, void *ucontext) {
 
   if (cur_outputs != old_outputs) {
     console_record_event((struct logged_event){
-        .time = curtime,
-        .value = cur_outputs,
-        .type = EVENT_OUTPUT,
-        });
+      .time = curtime,
+      .value = cur_outputs,
+      .type = EVENT_OUTPUT,
+    });
     old_outputs = cur_outputs;
   }
 
   /* poll for command input */
   struct pollfd pfds[] = {
-    {.fd = STDIN_FILENO, .events = POLLIN},
+    { .fd = STDIN_FILENO, .events = POLLIN },
   };
   if (!rx_amt && poll(pfds, 1, 0)) {
     ssize_t r = read(STDIN_FILENO, rx_buffer, 127);
@@ -306,7 +300,6 @@ static void hosted_platform_timer(int sig, siginfo_t *info, void *ucontext) {
   stats_finish_timing(STATS_INT_TOTAL_TIME);
   signal_handler_exited();
 }
-
 
 void platform_init() {
 
@@ -342,14 +335,16 @@ void platform_init() {
 #else
   /* Use interval timer */
   struct itimerval t = {
-    .it_interval = (struct timeval) {
-      .tv_sec = 0,
-      .tv_usec = 1,
-    },
-    .it_value = (struct timeval) {
-      .tv_sec = 0,
-      .tv_usec = 1,
-    },
+    .it_interval =
+      (struct timeval){
+        .tv_sec = 0,
+        .tv_usec = 1,
+      },
+    .it_value =
+      (struct timeval){
+        .tv_sec = 0,
+        .tv_usec = 1,
+      },
   };
   setitimer(ITIMER_VIRTUAL, &t, NULL);
 #endif
@@ -357,5 +352,4 @@ void platform_init() {
 
   /* Set stdin nonblock */
   fcntl(STDIN_FILENO, F_SETFL, fcntl(STDIN_FILENO, F_GETFL, 0) | O_NONBLOCK);
-
 }

@@ -79,4 +79,3 @@ TCase *setup_sensor_tests();
 #endif
 
 #endif
-

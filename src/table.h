@@ -8,15 +8,14 @@ struct table_axis {
   unsigned char num; /* Max of 24 */
   float values[MAX_AXIS_SIZE];
 };
-  
 
 struct table {
   char title[32];
   unsigned int num_axis;
   struct table_axis axis[2];
   union {
-    float one [MAX_AXIS_SIZE];
-    float two [MAX_AXIS_SIZE][MAX_AXIS_SIZE];
+    float one[MAX_AXIS_SIZE];
+    float two[MAX_AXIS_SIZE][MAX_AXIS_SIZE];
   } data;
 };
 
@@ -31,4 +30,3 @@ TCase *setup_table_tests();
 #endif
 
 #endif
-

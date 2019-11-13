@@ -4,7 +4,6 @@
 #include "platform.h"
 //#include "queue.h"
 
-
 typedef enum {
   DISABLED_EVENT,
   FUEL_EVENT,
@@ -51,7 +50,6 @@ struct output_event {
   struct timed_callback callback;
 };
 
-
 void schedule_event(struct output_event *ev);
 void deschedule_event(struct output_event *);
 
@@ -71,5 +69,4 @@ void check_add_buffer_tests(TCase *);
 TCase *setup_scheduler_tests();
 #endif
 
-#endif 
-
+#endif

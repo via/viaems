@@ -1,7 +1,7 @@
 #ifndef _PLATFORM_H
 #define _PLATFORM_H
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #ifndef NULL
 #define NULL 0
@@ -60,4 +60,3 @@ void set_current_time(timeval_t);
 #endif
 
 #endif
-

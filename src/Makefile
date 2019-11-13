@@ -61,6 +61,9 @@ coverage: check
 	./viaems
 	gcovr -r .
 
+format:
+	clang-format -i *.c *.h platforms/*.c
+
 
 clean:
 	-rm *.o *.a

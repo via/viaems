@@ -1,7 +1,6 @@
 #ifndef TASKS_H
 #define TASKS_H
 
-
 struct boost_control_config {
   struct table *pwm_duty_vs_rpm;
   float threshhold_kpa;
@@ -20,4 +19,3 @@ TCase *setup_tasks_tests();
 #endif
 
 #endif
-

@@ -1,14 +1,14 @@
 #include <math.h>
 
-#include "sensors.h"
 #include "config.h"
 #include "platform.h"
+#include "sensors.h"
 #include "stats.h"
 
 static float sensor_convert_linear(struct sensor_input *in, float raw) {
   float partial = raw / 4096.0f;
-  return in->params.range.min + partial * 
-    (in->params.range.max - in->params.range.min);
+  return in->params.range.min +
+         partial * (in->params.range.max - in->params.range.min);
 }
 
 /* Returns 0 - 4095 for 0 Hz - 2 kHz */
@@ -17,7 +17,7 @@ static float sensor_convert_freq(float raw) {
   if (!raw) {
     return 0.0; /* Prevent div by zero */
   }
-  return 40.96f * 1.0 / ((raw * SENSOR_FREQ_DIVIDER )/ tickrate);
+  return 40.96f * 1.0 / ((raw * SENSOR_FREQ_DIVIDER) / tickrate);
 }
 
 float sensor_convert_thermistor(struct thermistor_config *tc, float raw) {
@@ -27,13 +27,11 @@ float sensor_convert_thermistor(struct thermistor_config *tc, float raw) {
   stats_finish_timing(STATS_SENSOR_THERM_TIME);
 
   return t - 273.15f;
-
 }
 
 static void sensor_convert(struct sensor_input *in) {
   /* Handle conn and range fault conditions */
-  if ((in->fault == FAULT_NONE) &&
-      (in->fault_config.max != 0)) {
+  if ((in->fault == FAULT_NONE) && (in->fault_config.max != 0)) {
     if ((in->fault_config.min > in->raw_value) ||
         (in->fault_config.max < in->raw_value)) {
       in->fault = FAULT_RANGE;
@@ -46,49 +44,47 @@ static void sensor_convert(struct sensor_input *in) {
 
   float raw;
   switch (in->source) {
-    case SENSOR_ADC:
-      raw = in->raw_value;
-      break;
-    case SENSOR_FREQ:
-      raw = sensor_convert_freq(in->raw_value);
-      break;
-    case SENSOR_CONST:
-      in->processed_value = in->params.fixed_value;
-      return;
-    default:
-      raw = 0.0;
-      break;
+  case SENSOR_ADC:
+    raw = in->raw_value;
+    break;
+  case SENSOR_FREQ:
+    raw = sensor_convert_freq(in->raw_value);
+    break;
+  case SENSOR_CONST:
+    in->processed_value = in->params.fixed_value;
+    return;
+  default:
+    raw = 0.0;
+    break;
   }
 
   float old_value = in->processed_value;
   switch (in->method) {
-    case METHOD_LINEAR:
-      in->processed_value = sensor_convert_linear(in, raw);
-      break;
-    case METHOD_TABLE:
-      in->processed_value = interpolate_table_oneaxis(in->params.table, raw);
-      break;
-    case METHOD_THERM:
-      in->processed_value = sensor_convert_thermistor(&in->params.therm, raw);
-      break;
+  case METHOD_LINEAR:
+    in->processed_value = sensor_convert_linear(in, raw);
+    break;
+  case METHOD_TABLE:
+    in->processed_value = interpolate_table_oneaxis(in->params.table, raw);
+    break;
+  case METHOD_THERM:
+    in->processed_value = sensor_convert_thermistor(&in->params.therm, raw);
+    break;
   }
 
-
   /* Do lag filtering */
-  in->processed_value = ((old_value * in->lag) +
-                        (in->processed_value * (100.0 - in->lag))) / 100.0;
+  in->processed_value =
+    ((old_value * in->lag) + (in->processed_value * (100.0 - in->lag))) / 100.0;
 
   /* Process derivative */
   timeval_t process_time = current_time();
   if (process_time != in->process_time) {
-    in->derivative = TICKRATE * (in->processed_value - old_value) / (process_time - in->process_time);
+    in->derivative = TICKRATE * (in->processed_value - old_value) /
+                     (process_time - in->process_time);
   }
   in->process_time = process_time;
-
 }
-  
-void
-sensors_process(sensor_source source) {
+
+void sensors_process(sensor_source source) {
   for (int i = 0; i < NUM_SENSORS; ++i) {
     if (config.sensors[i].source != source) {
       continue;
@@ -124,8 +120,8 @@ START_TEST(check_sensor_convert_linear) {
 
   si.raw_value = 2048.0;
   ck_assert(sensor_convert_linear(&si, si.raw_value) == 0.0);
-
-} END_TEST
+}
+END_TEST
 
 START_TEST(check_sensor_convert_freq) {
   ck_assert_float_eq_tol(sensor_convert_freq(100.0), 400, .1);
@@ -133,8 +129,8 @@ START_TEST(check_sensor_convert_freq) {
   ck_assert_float_eq_tol(sensor_convert_freq(1000.0), 40, .1);
 
   ck_assert_float_eq_tol(sensor_convert_freq(0.0), 0.0, 0.01);
-
-} END_TEST
+}
+END_TEST
 
 START_TEST(check_sensor_convert_therm) {
   // test parameters for my CHT sensor
@@ -148,8 +144,8 @@ START_TEST(check_sensor_convert_therm) {
   ck_assert_float_eq_tol(sensor_convert_thermistor(&tc, 2048), 20.31, 0.2);
 
   ck_assert_float_eq_tol(sensor_convert_thermistor(&tc, 4092), -97.43, 0.2);
-
-} END_TEST
+}
+END_TEST
 
 TCase *setup_sensor_tests() {
   TCase *sensor_tests = tcase_create("sensors");

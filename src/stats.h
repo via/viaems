@@ -39,7 +39,6 @@ typedef enum {
   STATS_LAST,
 } stats_field_t;
 
-
 void stats_init(timeval_t ticks_per_us);
 
 void stats_increment_counter(stats_field_t type);
@@ -49,4 +48,3 @@ void stats_finish_timing(stats_field_t type);
 extern struct stats_entry stats_entries[];
 
 #endif
-

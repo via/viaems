@@ -1,5 +1,5 @@
-#include <stdio.h>
 #include <assert.h>
+#include <stdio.h>
 
 #include "platform.h"
 #include "stats.h"
@@ -102,8 +102,9 @@ static void stats_update(stats_field_t type, timeval_t val) {
   stats_entries[type]._prev[1] = stats_entries[type]._prev[0];
   stats_entries[type]._prev[0] = val;
 
-  timeval_t total = stats_entries[type]._prev[3] + stats_entries[type]._prev[2] +
-    stats_entries[type]._prev[1] + stats_entries[type]._prev[0];
+  timeval_t total = stats_entries[type]._prev[3] +
+                    stats_entries[type]._prev[2] +
+                    stats_entries[type]._prev[1] + stats_entries[type]._prev[0];
   stats_entries[type].avg = total / 4;
 }
 
