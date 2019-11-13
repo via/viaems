@@ -749,6 +749,20 @@ static void console_set_test_trigger(const struct console_config_node *self,
   enable_test_trigger(config.decoder.type, rpm);
 }
 
+#ifndef GIT_DESCRIBE
+#define GIT_DESCRIBE "unknown"
+static const char *git_describe = GIT_DESCRIBE;
+#endif
+
+static void console_get_version(const struct console_config_node *self,
+                                char *dest,
+                                char *remaining) {
+  (void)self;
+  (void)remaining;
+
+  strcpy(dest, GIT_DESCRIBE);
+}
+
 static struct console_config_node console_config_nodes[] = {
   /* Config hierarchy */
   { .name = "config" },
@@ -1027,6 +1041,7 @@ static struct console_config_node console_config_nodes[] = {
   { .name = "flash", .set = console_save_to_flash },
   { .name = "stats", .get = console_get_stats },
   { .name = "bootloader", .get = console_bootloader },
+  { .name = "version", .get = console_get_version },
 
   /* Host commands */
   { .name = "sim" },
