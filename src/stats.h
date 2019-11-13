@@ -2,7 +2,7 @@
 #define STATS_H
 
 struct stats_entry {
-  const char* name;
+  const char *name;
   timeval_t min;
   timeval_t avg;
   timeval_t max;

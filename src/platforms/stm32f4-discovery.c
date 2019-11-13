@@ -135,7 +135,7 @@ void tim1_cc_isr() {
       continue;
     }
     volatile uint32_t timer_flag;
-    volatile uint32_t* timer_ccr;
+    volatile uint32_t *timer_ccr;
     uint32_t pin = config.sensors[i].pin;
     switch (pin) {
       case 1:
@@ -239,8 +239,8 @@ static void platform_init_eventtimer() {
   nvic_set_priority(NVIC_TIM2_IRQ, 32);
 
   /* Set debug unit to stop the timer on halt */
-  *((volatile uint32_t*)0xE0042008) |= 19; /*TIM2, TIM5, and TIM6 */
-  *((volatile uint32_t*)0xE004200C) |= 2;  /* TIM8 stop */
+  *((volatile uint32_t *)0xE0042008) |= 19; /*TIM2, TIM5, and TIM6 */
+  *((volatile uint32_t *)0xE004200C) |= 2;  /* TIM8 stop */
 
   timer_set_mode(TIM8, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
   timer_set_period(TIM8, 41); /* 0.25 uS */
@@ -264,7 +264,7 @@ static uint32_t output_buffer_len;
  * buffer between buf0 and buf0.
  * Returns the time that buf0 starts at
  */
-timeval_t init_output_thread(uint32_t* buf0, uint32_t* buf1, uint32_t len) {
+timeval_t init_output_thread(uint32_t *buf0, uint32_t *buf1, uint32_t len) {
   timeval_t start;
 
   output_buffer_len = len;
@@ -531,15 +531,15 @@ static void platform_init_spi_adc() {
 }
 
 static uint8_t usbd_control_buffer[128];
-static usbd_device* usbd_dev;
+static usbd_device *usbd_dev;
 
 /* Most of the following is copied from libopencm3-examples */
 static enum usbd_request_return_codes cdcacm_control_request(
-  usbd_device* usbd_dev,
-  struct usb_setup_data* req,
-  uint8_t** buf,
-  uint16_t* len,
-  void (**complete)(usbd_device* usbd_dev, struct usb_setup_data* req)) {
+  usbd_device *usbd_dev,
+  struct usb_setup_data *req,
+  uint8_t **buf,
+  uint16_t *len,
+  void (**complete)(usbd_device *usbd_dev, struct usb_setup_data *req)) {
   (void)complete;
   (void)buf;
   (void)usbd_dev;
@@ -566,13 +566,13 @@ static enum usbd_request_return_codes cdcacm_control_request(
 #define USB_RX_BUF_LEN 1024
 static char usb_rx_buf[USB_RX_BUF_LEN];
 static volatile size_t usb_rx_len = 0;
-static void cdcacm_data_rx_cb(usbd_device* usbd_dev, uint8_t ep) {
+static void cdcacm_data_rx_cb(usbd_device *usbd_dev, uint8_t ep) {
   (void)ep;
   usb_rx_len += usbd_ep_read_packet(
     usbd_dev, 0x01, usb_rx_buf + usb_rx_len, USB_RX_BUF_LEN - usb_rx_len);
 }
 
-static void cdcacm_set_config(usbd_device* usbd_dev, uint16_t wValue) {
+static void cdcacm_set_config(usbd_device *usbd_dev, uint16_t wValue) {
   (void)wValue;
 
   usbd_ep_setup(usbd_dev, 0x01, USB_ENDPOINT_ATTR_BULK, 64, cdcacm_data_rx_cb);
@@ -718,7 +718,7 @@ static const struct usb_config_descriptor usb_config = {
   .interface = ifaces,
 };
 
-static const char* usb_strings[] = {
+static const char *usb_strings[] = {
   "https://github.com/via/viaems/",
   "ViaEMS console",
   "0",
@@ -859,7 +859,7 @@ void platform_reset_into_bootloader() {
   /* 168 Mhz clock */
   rcc_clock_setup_pll(&rcc_hsi_configs[RCC_CLOCK_3V3_168MHZ]);
 
-  __asm__ volatile("msr msp, %0" ::"g"(*(volatile uint32_t*)0x20001000));
+  __asm__ volatile("msr msp, %0" ::"g"(*(volatile uint32_t *)0x20001000));
   (*(void (**)())(0x1fff0004))();
   while (1)
     ;
@@ -1119,7 +1119,7 @@ void platform_save_config() {
 
   /* configrom is sectors 1 through 3, each 16k,
    * compute how many we need to erase */
-  conf_bytes = ((char*)&_econfigdata - (char*)&_sconfigdata);
+  conf_bytes = ((char *)&_econfigdata - (char *)&_sconfigdata);
   n_sectors = (conf_bytes + 16385) / 16386;
 
   for (int sector = 1; sector < 1 + n_sectors; sector++) {
@@ -1133,7 +1133,7 @@ void platform_save_config() {
   flash_lock();
 }
 
-size_t console_read(void* buf, size_t max) {
+size_t console_read(void *buf, size_t max) {
   disable_interrupts();
   stats_start_timing(STATS_CONSOLE_READ_TIME);
   size_t amt = usb_rx_len > max ? max : usb_rx_len;
@@ -1145,7 +1145,7 @@ size_t console_read(void* buf, size_t max) {
   return amt;
 }
 
-size_t console_write(const void* buf, size_t count) {
+size_t console_write(const void *buf, size_t count) {
   size_t rem = count > 64 ? 64 : count;
   /* https://github.com/libopencm3/libopencm3/issues/531
    * We can't let the usb irq be called while writing */
@@ -1156,7 +1156,7 @@ size_t console_write(const void* buf, size_t count) {
 }
 
 /* This should only ever be used in an emergency */
-ssize_t _write(int fd, const void* buf, size_t count) {
+ssize_t _write(int fd, const void *buf, size_t count) {
   (void)fd;
 
   while (count > 0) {

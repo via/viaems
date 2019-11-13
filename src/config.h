@@ -25,15 +25,15 @@ struct config {
   struct sensor_input sensors[NUM_SENSORS];
 
   /* Tables */
-  struct table* timing;
-  struct table* iat_timing_adjust;
-  struct table* clt_timing_adjust;
-  struct table* ve;
-  struct table* commanded_lambda;
-  struct table* injector_pw_compensation;
-  struct table* engine_temp_enrich;
-  struct table* tipin_enrich_amount;
-  struct table* tipin_enrich_duration;
+  struct table *timing;
+  struct table *iat_timing_adjust;
+  struct table *clt_timing_adjust;
+  struct table *ve;
+  struct table *commanded_lambda;
+  struct table *injector_pw_compensation;
+  struct table *engine_temp_enrich;
+  struct table *tipin_enrich_amount;
+  struct table *tipin_enrich_duration;
 
   /* Fuel information */
   struct fueling_config fueling;

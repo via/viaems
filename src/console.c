@@ -18,22 +18,22 @@
 #include <strings.h>
 
 struct console_config_node {
-  const char* name;
-  void (*get)(const struct console_config_node* self,
-              char* dest,
-              char* remaining);
-  void (*set)(const struct console_config_node* self, char* remaining);
-  void* val;
+  const char *name;
+  void (*get)(const struct console_config_node *self,
+              char *dest,
+              char *remaining);
+  void (*set)(const struct console_config_node *self, char *remaining);
+  void *val;
 };
 
-static const struct console_config_node* console_search_node(
-  const struct console_config_node* nodes,
-  const char* var) {
+static const struct console_config_node *console_search_node(
+  const struct console_config_node *nodes,
+  const char *var) {
 
   if (!var) {
     return NULL;
   }
-  const struct console_config_node* n;
+  const struct console_config_node *n;
   for (n = nodes; n->name; n++) {
     if (!strcmp(n->name, var)) {
       return n;
@@ -44,23 +44,23 @@ static const struct console_config_node* console_search_node(
 
 static struct console_feed_config {
   size_t n_nodes;
-  const struct console_config_node* nodes[64];
+  const struct console_config_node *nodes[64];
 } console_feed_config = {
   .n_nodes = 0,
   .nodes = { 0 },
 };
 
 static struct console_config_node console_config_nodes[];
-static void console_set_feed(const struct console_config_node* self,
-                             char* remaining) {
+static void console_set_feed(const struct console_config_node *self,
+                             char *remaining) {
   assert(self);
   assert(self->val);
 
   unsigned int cur_entry = 0;
-  struct console_feed_config* c = self->val;
-  const char* cur_var = strtok(remaining, ",");
+  struct console_feed_config *c = self->val;
+  const char *cur_var = strtok(remaining, ",");
   while (cur_var) {
-    const struct console_config_node* n =
+    const struct console_config_node *n =
       console_search_node(console_config_nodes, cur_var);
     if (n) {
       c->nodes[cur_entry] = n;
@@ -71,13 +71,13 @@ static void console_set_feed(const struct console_config_node* self,
   c->n_nodes = cur_entry;
 }
 
-static void console_get_feed(const struct console_config_node* self,
-                             char* dest,
-                             char* remaining __attribute__((unused))) {
+static void console_get_feed(const struct console_config_node *self,
+                             char *dest,
+                             char *remaining __attribute__((unused))) {
   assert(self);
   assert(self->val);
 
-  struct console_feed_config* c = self->val;
+  struct console_feed_config *c = self->val;
   unsigned int i;
   if (!c->n_nodes) {
     strcat(dest, "");
@@ -90,55 +90,55 @@ static void console_get_feed(const struct console_config_node* self,
   strcat(dest, c->nodes[i]->name);
 }
 
-static void console_get_time(const struct console_config_node* self
+static void console_get_time(const struct console_config_node *self
                              __attribute__((unused)),
-                             char* dest,
-                             char* remaining __attribute__((unused))) {
+                             char *dest,
+                             char *remaining __attribute__((unused))) {
   sprintf(dest, "%u", (unsigned int)current_time());
 }
 
-static void console_get_float(const struct console_config_node* self,
-                              char* dest,
-                              char* remaining __attribute__((unused))) {
-  float* v = self->val;
+static void console_get_float(const struct console_config_node *self,
+                              char *dest,
+                              char *remaining __attribute__((unused))) {
+  float *v = self->val;
   sprintf(dest, "%.4f", *v);
 }
 
-static void console_set_float(const struct console_config_node* self,
-                              char* remaining) {
-  float* v = self->val;
+static void console_set_float(const struct console_config_node *self,
+                              char *remaining) {
+  float *v = self->val;
   *v = atof(remaining);
 }
 
-static void console_get_uint(const struct console_config_node* self,
-                             char* dest,
-                             char* remaining __attribute__((unused))) {
-  unsigned int* v = self->val;
+static void console_get_uint(const struct console_config_node *self,
+                             char *dest,
+                             char *remaining __attribute__((unused))) {
+  unsigned int *v = self->val;
   sprintf(dest, "%u", *v);
 }
 
-static void console_set_uint(const struct console_config_node* self,
-                             char* remaining) {
-  unsigned int* v = self->val;
+static void console_set_uint(const struct console_config_node *self,
+                             char *remaining) {
+  unsigned int *v = self->val;
   *v = (unsigned int)atoi(remaining);
 }
 
-static void console_get_fuel_cut(const struct console_config_node* self
+static void console_get_fuel_cut(const struct console_config_node *self
                                  __attribute__((unused)),
-                                 char* dest,
-                                 char* remaining __attribute__((unused))) {
+                                 char *dest,
+                                 char *remaining __attribute__((unused))) {
   sprintf(dest, "%u", fuel_cut());
 }
 
-static void console_get_ignition_cut(const struct console_config_node* self
+static void console_get_ignition_cut(const struct console_config_node *self
                                      __attribute__((unused)),
-                                     char* dest,
-                                     char* remaining __attribute__((unused))) {
+                                     char *dest,
+                                     char *remaining __attribute__((unused))) {
   sprintf(dest, "%u", ignition_cut());
 }
 
-static int parse_keyval_pair(char** key, char** val, char** str) {
-  char* saveptr;
+static int parse_keyval_pair(char **key, char **val, char **str) {
+  char *saveptr;
   *key = strtok_r(*str, "=", &saveptr);
   if (!*key) {
     return 0;
@@ -151,7 +151,7 @@ static int parse_keyval_pair(char** key, char** val, char** str) {
   return 1;
 }
 
-static int console_set_table_element(struct table* t, const char* k, float v) {
+static int console_set_table_element(struct table *t, const char *k, float v) {
   unsigned int row, col;
   int n_parsed = sscanf(k, "[%d][%d]", &row, &col);
   if ((t->num_axis == 1) && (n_parsed == 1) && (row < t->axis[0].num)) {
@@ -165,9 +165,9 @@ static int console_set_table_element(struct table* t, const char* k, float v) {
   return 0;
 }
 
-static int console_get_table_element(const struct table* t,
-                                     const char* k,
-                                     float* v) {
+static int console_get_table_element(const struct table *t,
+                                     const char *k,
+                                     float *v) {
   int row, col;
   int n_parsed = sscanf(k, "[%d][%d]", &row, &col);
   if ((t->num_axis == 1) && (n_parsed == 1) && (row < t->axis[0].num)) {
@@ -181,14 +181,14 @@ static int console_get_table_element(const struct table* t,
   return 0;
 }
 
-static void console_set_table_axis_labels(struct table_axis* t, char* list) {
+static void console_set_table_axis_labels(struct table_axis *t, char *list) {
   unsigned int cur = 0;
   if ((list[0] != '[') || (list[strlen(list) - 1] != ']')) {
     return;
   }
 
-  char* saveptr;
-  char* curlabel = list;
+  char *saveptr;
+  char *curlabel = list;
   curlabel = strtok_r(list, "[,]", &saveptr);
   while (curlabel) {
     if ((cur >= t->num) || (cur >= MAX_AXIS_SIZE)) {
@@ -200,13 +200,13 @@ static void console_set_table_axis_labels(struct table_axis* t, char* list) {
   }
 }
 
-static void console_set_table(const struct console_config_node* self,
-                              char* remaining) {
+static void console_set_table(const struct console_config_node *self,
+                              char *remaining) {
   assert(self);
   assert(self->val);
   assert(remaining);
 
-  struct table* t = self->val;
+  struct table *t = self->val;
 
   char *k, *v;
   while (parse_keyval_pair(&k, &v, &remaining)) {
@@ -231,8 +231,8 @@ static void console_set_table(const struct console_config_node* self,
     }
   }
 }
-static void console_get_table_axis_labels(const struct table_axis* t,
-                                          char* dest) {
+static void console_get_table_axis_labels(const struct table_axis *t,
+                                          char *dest) {
   char buf[32];
   strcat(dest, "[");
   for (int i = 0; i < t->num; ++i) {
@@ -245,9 +245,9 @@ static void console_get_table_axis_labels(const struct table_axis* t,
   strcat(dest, "]");
 }
 
-static void console_get_table(const struct console_config_node* self,
-                              char* dest,
-                              char* remaining) {
+static void console_get_table(const struct console_config_node *self,
+                              char *dest,
+                              char *remaining) {
   assert(self);
 
   if (!self->val) {
@@ -255,11 +255,11 @@ static void console_get_table(const struct console_config_node* self,
     return;
   }
 
-  const struct table* t = self->val;
+  const struct table *t = self->val;
   if (remaining && (remaining[0] == '[')) {
     float val;
-    char* saveptr;
-    char* element = strtok_r(remaining, " ", &saveptr);
+    char *saveptr;
+    char *element = strtok_r(remaining, " ", &saveptr);
     do {
       if (console_get_table_element(t, element, &val)) {
         dest += sprintf(dest, "%s%.2f", (element == remaining) ? "" : " ", val);
@@ -286,28 +286,28 @@ static void console_get_table(const struct console_config_node* self,
   }
 }
 
-static void console_save_to_flash(const struct console_config_node* self
+static void console_save_to_flash(const struct console_config_node *self
                                   __attribute__((unused)),
-                                  char* rem __attribute__((unused))) {
+                                  char *rem __attribute__((unused))) {
   platform_save_config();
 }
 
-static void console_bootloader(const struct console_config_node* self
+static void console_bootloader(const struct console_config_node *self
                                __attribute__((unused)),
-                               char* dest __attribute__((unused)),
-                               char* rem __attribute__((unused))) {
+                               char *dest __attribute__((unused)),
+                               char *rem __attribute__((unused))) {
   platform_reset_into_bootloader();
 }
 
-static void console_get_sensor(const struct console_config_node* self,
-                               char* dest,
-                               char* remaining __attribute__((unused))) {
+static void console_get_sensor(const struct console_config_node *self,
+                               char *dest,
+                               char *remaining __attribute__((unused))) {
   assert(self);
   assert(self->val);
 
-  const struct sensor_input* s = self->val;
+  const struct sensor_input *s = self->val;
 
-  const char* source = "";
+  const char *source = "";
   switch (s->source) {
     case SENSOR_NONE:
       source = "disabled";
@@ -329,7 +329,7 @@ static void console_get_sensor(const struct console_config_node* self,
       break;
   }
 
-  const char* method = "";
+  const char *method = "";
   switch (s->method) {
     case METHOD_LINEAR:
       method = "linear";
@@ -368,7 +368,7 @@ static void console_get_sensor(const struct console_config_node* self,
           s->lag);
 }
 
-static sensor_source console_sensor_source_from_str(const char* str) {
+static sensor_source console_sensor_source_from_str(const char *str) {
   if (!strcmp("disabled", str)) {
     return SENSOR_NONE;
   } else if (!strcmp("adc", str)) {
@@ -385,7 +385,7 @@ static sensor_source console_sensor_source_from_str(const char* str) {
   return SENSOR_NONE;
 }
 
-static sensor_method console_sensor_method_from_str(const char* str) {
+static sensor_method console_sensor_method_from_str(const char *str) {
   if (!strcmp("linear", str)) {
     return METHOD_LINEAR;
   } else if (!strcmp("table", str)) {
@@ -396,13 +396,13 @@ static sensor_method console_sensor_method_from_str(const char* str) {
   return METHOD_TABLE;
 }
 
-static void console_set_sensor(const struct console_config_node* self,
-                               char* remaining) {
+static void console_set_sensor(const struct console_config_node *self,
+                               char *remaining) {
   assert(self);
   assert(self->val);
   assert(remaining);
 
-  struct sensor_input* s = self->val;
+  struct sensor_input *s = self->val;
 
   char *k, *v;
   while (parse_keyval_pair(&k, &v, &remaining)) {
@@ -438,11 +438,11 @@ static void console_set_sensor(const struct console_config_node* self,
   }
 }
 
-static void console_get_sensor_fault(const struct console_config_node* self,
-                                     char* dest,
-                                     char* remaining __attribute__((unused))) {
-  const struct sensor_input* t = self->val;
-  const char* result;
+static void console_get_sensor_fault(const struct console_config_node *self,
+                                     char *dest,
+                                     char *remaining __attribute__((unused))) {
+  const struct sensor_input *t = self->val;
+  const char *result;
 
   switch (t->fault) {
     case FAULT_RANGE:
@@ -459,14 +459,14 @@ static void console_get_sensor_fault(const struct console_config_node* self,
 }
 
 static void console_get_decoder_loss_reason(
-  const struct console_config_node* self,
-  char* dest,
-  char* remaining __attribute__((unused))) {
+  const struct console_config_node *self,
+  char *dest,
+  char *remaining __attribute__((unused))) {
   assert(self);
   assert(self->val);
 
-  const decoder_loss_reason* s = self->val;
-  const char* result = "";
+  const decoder_loss_reason *s = self->val;
+  const char *result = "";
 
   switch (*s) {
     case DECODER_NO_LOSS:
@@ -488,14 +488,14 @@ static void console_get_decoder_loss_reason(
   strcat(dest, result);
 }
 
-static void console_get_decoder_state(const struct console_config_node* self,
-                                      char* dest,
-                                      char* remaining __attribute__((unused))) {
+static void console_get_decoder_state(const struct console_config_node *self,
+                                      char *dest,
+                                      char *remaining __attribute__((unused))) {
   assert(self);
   assert(self->val);
 
-  const decoder_state* s = self->val;
-  const char* result = "";
+  const decoder_state *s = self->val;
+  const char *result = "";
 
   switch (*s) {
     case DECODER_NOSYNC:
@@ -511,14 +511,14 @@ static void console_get_decoder_state(const struct console_config_node* self,
   strcat(dest, result);
 }
 
-static void console_get_trigger(const struct console_config_node* self,
-                                char* dest,
-                                char* remaining __attribute__((unused))) {
+static void console_get_trigger(const struct console_config_node *self,
+                                char *dest,
+                                char *remaining __attribute__((unused))) {
   assert(self);
   assert(self->val);
 
-  const trigger_type* t = self->val;
-  const char* result = "";
+  const trigger_type *t = self->val;
+  const char *result = "";
 
   switch (*t) {
     case FORD_TFI:
@@ -531,12 +531,12 @@ static void console_get_trigger(const struct console_config_node* self,
   strcat(dest, result);
 }
 
-static void console_set_trigger(const struct console_config_node* self,
-                                char* remaining __attribute__((unused))) {
+static void console_set_trigger(const struct console_config_node *self,
+                                char *remaining __attribute__((unused))) {
   assert(self);
   assert(self->val);
 
-  trigger_type* t = self->val;
+  trigger_type *t = self->val;
   if (!strcmp("tfi", remaining)) {
     *t = FORD_TFI;
   } else if (!strcmp("cam24+1", remaining)) {
@@ -544,14 +544,14 @@ static void console_set_trigger(const struct console_config_node* self,
   }
 }
 
-static void console_get_dwell_type(const struct console_config_node* self,
-                                   char* dest,
-                                   char* remaining __attribute__((unused))) {
+static void console_get_dwell_type(const struct console_config_node *self,
+                                   char *dest,
+                                   char *remaining __attribute__((unused))) {
   assert(self);
   assert(self->val);
 
-  const dwell_type* t = self->val;
-  const char* result = "";
+  const dwell_type *t = self->val;
+  const char *result = "";
 
   switch (*t) {
     case DWELL_FIXED_DUTY:
@@ -564,12 +564,12 @@ static void console_get_dwell_type(const struct console_config_node* self,
   strcat(dest, result);
 }
 
-static void console_set_dwell_type(const struct console_config_node* self,
-                                   char* remaining __attribute__((unused))) {
+static void console_set_dwell_type(const struct console_config_node *self,
+                                   char *remaining __attribute__((unused))) {
   assert(self);
   assert(self->val);
 
-  dwell_type* t = self->val;
+  dwell_type *t = self->val;
   if (!strcmp("fixed-duty", remaining)) {
     *t = DWELL_FIXED_DUTY;
   } else if (!strcmp("fixed-time", remaining)) {
@@ -577,12 +577,12 @@ static void console_set_dwell_type(const struct console_config_node* self,
   }
 }
 
-static void console_get_stats(const struct console_config_node* self
+static void console_get_stats(const struct console_config_node *self
                               __attribute((unused)),
-                              char* dest,
-                              char* remaining __attribute__((unused))) {
+                              char *dest,
+                              char *remaining __attribute__((unused))) {
 
-  const struct stats_entry* e;
+  const struct stats_entry *e;
   for (e = &stats_entries[0]; e != &stats_entries[STATS_LAST]; ++e) {
     dest += sprintf(dest,
                     "  %s min/avg/max (uS) = %u/%u/%u\r\n",
@@ -593,10 +593,10 @@ static void console_get_stats(const struct console_config_node* self
   }
 }
 
-static void console_get_events(const struct console_config_node* self
+static void console_get_events(const struct console_config_node *self
                                __attribute__((unused)),
-                               char* dest,
-                               char* remaining) {
+                               char *dest,
+                               char *remaining) {
 
   if (!remaining || !strcmp("", remaining)) {
     sprintf(dest, "num_events=%d", config.num_events);
@@ -604,8 +604,8 @@ static void console_get_events(const struct console_config_node* self
   }
   unsigned int ev_n = atoi(strtok(remaining, " "));
   if (ev_n < config.num_events) {
-    const struct output_event* ev = &config.events[ev_n];
-    const char* ev_type = "";
+    const struct output_event *ev = &config.events[ev_n];
+    const char *ev_type = "";
     switch (ev->type) {
       case FUEL_EVENT:
         ev_type = "fuel";
@@ -631,12 +631,12 @@ static void console_get_events(const struct console_config_node* self
   }
 }
 
-static void console_set_events(const struct console_config_node* self
+static void console_set_events(const struct console_config_node *self
                                __attribute__((unused)),
-                               char* remaining) {
+                               char *remaining) {
 
   char *k, *v;
-  char* saveptr;
+  char *saveptr;
 
   if (!remaining) {
     return;
@@ -652,7 +652,7 @@ static void console_set_events(const struct console_config_node* self
   if (ev_n >= config.num_events) {
     return;
   }
-  struct output_event* ev = &config.events[ev_n];
+  struct output_event *ev = &config.events[ev_n];
 
   remaining = saveptr;
   while (parse_keyval_pair(&k, &v, &remaining)) {
@@ -708,22 +708,22 @@ void console_record_event(struct logged_event ev) {
 }
 
 static struct timed_callback trig_cb = { 0 };
-static void console_fire_trigger_callback(void* _a) {
+static void console_fire_trigger_callback(void *_a) {
   (void)_a;
 
   decoder_update_scheduling(0, trig_cb.time);
 }
 
-static void console_set_trigger_callback(const struct console_config_node* self,
-                                         char* remaining) {
+static void console_set_trigger_callback(const struct console_config_node *self,
+                                         char *remaining) {
   (void)self;
   timeval_t stoptime = atoi(remaining);
   trig_cb.callback = console_fire_trigger_callback;
   schedule_callback(&trig_cb, stoptime);
 }
 
-static void console_set_event_logging(const struct console_config_node* self,
-                                      char* remaining) {
+static void console_set_event_logging(const struct console_config_node *self,
+                                      char *remaining) {
   (void)self;
 
   if (!strncmp(remaining, "on", 2)) {
@@ -735,14 +735,14 @@ static void console_set_event_logging(const struct console_config_node* self,
   }
 }
 
-static void console_set_freeze(const struct console_config_node* self,
-                               char* remaining) {
+static void console_set_freeze(const struct console_config_node *self,
+                               char *remaining) {
   (void)self;
   (void)remaining;
 }
 
-static void console_set_test_trigger(const struct console_config_node* self,
-                                     char* remaining) {
+static void console_set_test_trigger(const struct console_config_node *self,
+                                     char *remaining) {
   (void)self;
 
   uint32_t rpm = atoi(remaining);
@@ -1038,11 +1038,11 @@ static struct console_config_node console_config_nodes[] = {
 };
 
 /* Lists all immediate prefixes in node list nodes */
-static void console_list_prefix(const struct console_config_node* nodes,
-                                char* dest,
-                                const char* prefix) {
+static void console_list_prefix(const struct console_config_node *nodes,
+                                char *dest,
+                                const char *prefix) {
 
-  const struct console_config_node* node;
+  const struct console_config_node *node;
   for (node = nodes; node->name; node++) {
     /* If prefix doesn't match */
     if (prefix && strlen(prefix) &&
@@ -1054,17 +1054,17 @@ static void console_list_prefix(const struct console_config_node* nodes,
   }
 }
 
-int console_parse_request(char* dest, char* line) {
-  char* action = strtok(line, " ");
-  char* var = strtok(NULL, " ");
-  char* rem = strtok(NULL, "\0");
+int console_parse_request(char *dest, char *line) {
+  char *action = strtok(line, " ");
+  char *var = strtok(NULL, " ");
+  char *rem = strtok(NULL, "\0");
 
   if (!action) {
     strcat(dest, "invalid action");
     return 0;
   }
 
-  const struct console_config_node* node =
+  const struct console_config_node *node =
     console_search_node(console_config_nodes, var);
   if (!strcmp("list", action)) {
     console_list_prefix(console_config_nodes, dest, var);
@@ -1097,7 +1097,7 @@ int console_parse_request(char* dest, char* line) {
 }
 
 void console_init() {
-  const char* console_feed_defaults[] = {
+  const char *console_feed_defaults[] = {
     "status.current_time",
     "status.decoder.state",
     "status.decoder.rpm",
@@ -1133,13 +1133,13 @@ void console_init() {
   console_feed_config.n_nodes = count;
 }
 
-static void console_feed_line(char* dest) {
+static void console_feed_line(char *dest) {
 
   unsigned int i;
   char temp[64];
   char empty[1] = "";
   for (i = 0; i < console_feed_config.n_nodes; i++) {
-    const struct console_config_node* node = console_feed_config.nodes[i];
+    const struct console_config_node *node = console_feed_config.nodes[i];
     strcpy(temp, "");
     if (!node->get) {
       continue;
@@ -1157,15 +1157,15 @@ struct {
   struct {
     int in_progress;
     size_t max;
-    const char* src;
-    char* ptr;
+    const char *src;
+    char *ptr;
   } rx, tx;
 } console_state = {
   .tx = { .src = config.console.txbuffer, .in_progress = 0 },
   .rx = { .src = config.console.rxbuffer, .in_progress = 0 },
 };
 
-int console_read_full(char* buf, size_t max) {
+int console_read_full(char *buf, size_t max) {
   if (console_state.rx.in_progress) {
     size_t r = console_state.rx.max - 1 -
                (size_t)(console_state.rx.ptr - console_state.rx.src);
@@ -1197,7 +1197,7 @@ int console_read_full(char* buf, size_t max) {
   return 0;
 }
 
-int console_write_full(char* buf, size_t max) {
+int console_write_full(char *buf, size_t max) {
   if (console_state.tx.in_progress) {
     size_t r = console_state.tx.max -
                (size_t)(console_state.tx.ptr - console_state.tx.src);
@@ -1220,9 +1220,9 @@ int console_write_full(char* buf, size_t max) {
 }
 
 static void console_process_rx() {
-  char* out = config.console.txbuffer;
-  char* in = strtok(config.console.rxbuffer, "\r\n");
-  char* response = out + 2; /* Allow for status character */
+  char *out = config.console.txbuffer;
+  char *in = strtok(config.console.rxbuffer, "\r\n");
+  char *response = out + 2; /* Allow for status character */
   strcpy(response, "");
 
   if (!in) {
@@ -1413,8 +1413,8 @@ START_TEST(check_console_set_uint) {
 END_TEST
 
 START_TEST(check_parse_keyval_pair) {
-  char* buf = malloc(64);
-  char* orig = buf;
+  char *buf = malloc(64);
+  char *orig = buf;
 
   strcpy(buf, "");
   char *k = NULL, *v = NULL;
@@ -1804,8 +1804,8 @@ START_TEST(check_console_set_events) {
 }
 END_TEST
 
-TCase* setup_console_tests() {
-  TCase* console_tests = tcase_create("console");
+TCase *setup_console_tests() {
+  TCase *console_tests = tcase_create("console");
   tcase_add_test(console_tests, check_console_search_node);
   tcase_add_test(console_tests, check_console_list_prefix);
   tcase_add_test(console_tests, check_console_get_time);

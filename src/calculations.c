@@ -362,8 +362,8 @@ START_TEST(check_calculate_tipin_overriding_event) {
 }
 END_TEST
 
-TCase* setup_calculations_tests() {
-  TCase* tc = tcase_create("calculations");
+TCase *setup_calculations_tests() {
+  TCase *tc = tcase_create("calculations");
   tcase_add_test(tc, check_air_density);
   tcase_add_test(tc, check_fuel_density);
   tcase_add_test(tc, check_calculate_airmass);

@@ -13,7 +13,7 @@ degrees_t clamp_angle(degrees_t, degrees_t);
 
 #ifdef UNITTEST
 #include <check.h>
-TCase* setup_util_tests();
+TCase *setup_util_tests();
 #endif
 
 #endif

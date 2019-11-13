@@ -88,8 +88,8 @@ void disable_event_timer() {
   eventtimer_enable = 0;
 }
 
-static ucontext_t* sig_context = NULL;
-static void signal_handler_entered(struct ucontext_t* context) {
+static ucontext_t *sig_context = NULL;
+static void signal_handler_entered(struct ucontext_t *context) {
   sig_context = context;
 }
 static void signal_handler_exited() {
@@ -161,7 +161,7 @@ void set_pwm(int output, float value) {}
 void adc_gather() {}
 
 timeval_t last_tx = 0;
-size_t console_write(const void* buf, size_t len) {
+size_t console_write(const void *buf, size_t len) {
   if (curtime - last_tx < 200) {
     return 0;
   }
@@ -177,7 +177,7 @@ size_t console_write(const void* buf, size_t len) {
 
 char rx_buffer[128];
 int rx_amt = 0;
-size_t console_read(void* buf, size_t len) {
+size_t console_read(void *buf, size_t len) {
   if (rx_amt == 0) {
     return 0;
   }
@@ -192,9 +192,9 @@ void platform_load_config() {}
 
 void platform_save_config() {}
 
-timeval_t init_output_thread(uint32_t* buf0, uint32_t* buf1, uint32_t len) {
-  output_slots[0] = (struct slot*)buf0;
-  output_slots[1] = (struct slot*)buf1;
+timeval_t init_output_thread(uint32_t *buf0, uint32_t *buf1, uint32_t len) {
+  output_slots[0] = (struct slot *)buf0;
+  output_slots[1] = (struct slot *)buf1;
   max_slots = len;
   return 0;
 }
@@ -211,7 +211,7 @@ void enable_test_trigger(trigger_type t, unsigned int rpm) {
   test_trigger_rpm = rpm;
 }
 
-static void hosted_platform_timer(int sig, siginfo_t* info, void* ucontext) {
+static void hosted_platform_timer(int sig, siginfo_t *info, void *ucontext) {
   /* - Increase "time"
    * - Trigger appropriate interrupts
    *     timer event

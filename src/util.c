@@ -139,8 +139,8 @@ START_TEST(check_clamp_angle) {
 }
 END_TEST
 
-TCase* setup_util_tests() {
-  TCase* util_tests = tcase_create("util");
+TCase *setup_util_tests() {
+  TCase *util_tests = tcase_create("util");
   tcase_add_test(util_tests, check_rpm_from_time_diff);
   tcase_add_test(util_tests, check_time_from_rpm_diff);
   tcase_add_test(util_tests, check_time_in_range);

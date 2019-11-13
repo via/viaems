@@ -111,8 +111,8 @@ START_TEST(check_tasks_handle_fuel_pump) {
 }
 END_TEST
 
-TCase* setup_tasks_tests() {
-  TCase* tasks_tests = tcase_create("tasks");
+TCase *setup_tasks_tests() {
+  TCase *tasks_tests = tcase_create("tasks");
   tcase_add_test(tasks_tests, check_tasks_handle_fuel_pump);
   return tasks_tests;
 }

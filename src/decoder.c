@@ -27,7 +27,7 @@ static void set_expire_event(timeval_t t) {
   schedule_callback(&expire_event, t);
 }
 
-static void push_time(struct decoder* d, timeval_t t) {
+static void push_time(struct decoder *d, timeval_t t) {
   for (int i = MAX_TRIGGERS - 1; i > 0; --i) {
     d->times[i] = d->times[i - 1];
   }
@@ -48,7 +48,7 @@ static unsigned int current_rpm_window_size(unsigned int current_triggers,
 }
 
 /* Update rpm information and validate */
-static void trigger_update_rpm(struct decoder* d) {
+static void trigger_update_rpm(struct decoder *d) {
   timeval_t diff = d->times[0] - d->times[1];
   unsigned int slicerpm = rpm_from_time_diff(diff, d->degrees_per_trigger);
   unsigned int rpm_window_size =
@@ -86,7 +86,7 @@ static void trigger_update_rpm(struct decoder* d) {
   set_expire_event(d->expiration);
 }
 
-static void trigger_update(struct decoder* d, timeval_t t) {
+static void trigger_update(struct decoder *d, timeval_t t) {
   /* Bookkeeping */
   push_time(d, t);
   d->t0_count++;
@@ -115,7 +115,7 @@ static void trigger_update(struct decoder* d, timeval_t t) {
   }
 }
 
-static void sync_update(struct decoder* d) {
+static void sync_update(struct decoder *d) {
   d->t1_count++;
   if (d->state == DECODER_RPM) {
     d->state = DECODER_SYNC;
@@ -134,7 +134,7 @@ static void sync_update(struct decoder* d) {
   d->triggers_since_last_sync = 0;
 }
 
-void cam_nplusone_decoder(struct decoder* d) {
+void cam_nplusone_decoder(struct decoder *d) {
   timeval_t t0 = d->last_t0;
   decoder_state oldstate = d->state;
 
@@ -159,7 +159,7 @@ void cam_nplusone_decoder(struct decoder* d) {
   }
 }
 
-void tfi_pip_decoder(struct decoder* d) {
+void tfi_pip_decoder(struct decoder *d) {
   stats_start_timing(STATS_DECODE_TIME);
   timeval_t t0;
   decoder_state oldstate = d->state;
@@ -184,7 +184,7 @@ void tfi_pip_decoder(struct decoder* d) {
   stats_finish_timing(STATS_DECODE_TIME);
 }
 
-void decoder_init(struct decoder* d) {
+void decoder_init(struct decoder *d) {
   d->last_t0 = 0;
   d->last_t1 = 0;
   d->needs_decoding_t0 = 0;
@@ -223,11 +223,11 @@ void decoder_init(struct decoder* d) {
 }
 
 /* When decoder has new information, reschedule everything */
-void decoder_update_scheduling(struct decoder_event* events,
+void decoder_update_scheduling(struct decoder_event *events,
                                unsigned int count) {
   stats_start_timing(STATS_SCHEDULE_LATENCY);
 
-  for (struct decoder_event* ev = events; count > 0; count--, ev++) {
+  for (struct decoder_event *ev = events; count > 0; count--, ev++) {
     assert(!(ev->t0 && ev->t1));
     if (ev->t0) {
       config.decoder.last_t0 = ev->time;
@@ -263,21 +263,21 @@ void decoder_update_scheduling(struct decoder_event* events,
 
 #include <check.h>
 
-static struct decoder_event* find_last_trigger_event(
-  struct decoder_event** entries) {
-  struct decoder_event* entry;
+static struct decoder_event *find_last_trigger_event(
+  struct decoder_event **entries) {
+  struct decoder_event *entry;
   for (entry = *entries; entry->next; entry = entry->next)
     ;
   return entry;
 }
 
-static void append_trigger_event(struct decoder_event* last,
+static void append_trigger_event(struct decoder_event *last,
                                  struct decoder_event new) {
   last->next = malloc(sizeof(struct decoder_event));
   *(last->next) = new;
 }
 
-static void add_trigger_event(struct decoder_event** entries,
+static void add_trigger_event(struct decoder_event **entries,
                               timeval_t duration,
                               unsigned int primary,
                               unsigned int secondary) {
@@ -293,7 +293,7 @@ static void add_trigger_event(struct decoder_event** entries,
     return;
   }
 
-  struct decoder_event* last = find_last_trigger_event(entries);
+  struct decoder_event *last = find_last_trigger_event(entries);
   struct decoder_event new = (struct decoder_event){
     .t0 = primary,
     .t1 = secondary,
@@ -305,9 +305,9 @@ static void add_trigger_event(struct decoder_event** entries,
   append_trigger_event(last, new);
 }
 
-static void free_trigger_list(struct decoder_event* entries) {
-  struct decoder_event* current = entries;
-  struct decoder_event* next;
+static void free_trigger_list(struct decoder_event *entries) {
+  struct decoder_event *current = entries;
+  struct decoder_event *next;
   while (current) {
     next = current->next;
     free(current);
@@ -315,13 +315,13 @@ static void free_trigger_list(struct decoder_event* entries) {
   }
 }
 
-static void add_trigger_event_transition_rpm(struct decoder_event** entries,
+static void add_trigger_event_transition_rpm(struct decoder_event **entries,
                                              timeval_t duration,
                                              unsigned int primary,
                                              unsigned int secondary) {
   ck_assert(*entries);
 
-  struct decoder_event* last = find_last_trigger_event(entries);
+  struct decoder_event *last = find_last_trigger_event(entries);
   struct decoder_event new = (struct decoder_event){
     .t0 = primary,
     .t1 = secondary,
@@ -333,13 +333,13 @@ static void add_trigger_event_transition_rpm(struct decoder_event** entries,
   append_trigger_event(last, new);
 }
 
-static void add_trigger_event_transition_sync(struct decoder_event** entries,
+static void add_trigger_event_transition_sync(struct decoder_event **entries,
                                               timeval_t duration,
                                               unsigned int primary,
                                               unsigned int secondary) {
   ck_assert(*entries);
 
-  struct decoder_event* last = find_last_trigger_event(entries);
+  struct decoder_event *last = find_last_trigger_event(entries);
   struct decoder_event new = (struct decoder_event){
     .t0 = primary,
     .t1 = secondary,
@@ -351,14 +351,14 @@ static void add_trigger_event_transition_sync(struct decoder_event** entries,
   append_trigger_event(last, new);
 }
 
-static void add_trigger_event_transition_loss(struct decoder_event** entries,
+static void add_trigger_event_transition_loss(struct decoder_event **entries,
                                               timeval_t duration,
                                               unsigned int primary,
                                               unsigned int secondary,
                                               decoder_loss_reason reason) {
   ck_assert(*entries);
 
-  struct decoder_event* last = find_last_trigger_event(entries);
+  struct decoder_event *last = find_last_trigger_event(entries);
   struct decoder_event new = (struct decoder_event){
     .t0 = primary,
     .t1 = secondary,
@@ -370,7 +370,7 @@ static void add_trigger_event_transition_loss(struct decoder_event** entries,
   append_trigger_event(last, new);
 }
 
-static void validate_decoder_sequence(struct decoder_event* ev) {
+static void validate_decoder_sequence(struct decoder_event *ev) {
   for (; ev; ev = ev->next) {
     if (ev->t0) {
       config.decoder.last_t0 = ev->time;
@@ -407,7 +407,7 @@ static void prepare_decoder(trigger_type type) {
 }
 
 START_TEST(check_tfi_decoder_startup_normal) {
-  struct decoder_event* entries = NULL;
+  struct decoder_event *entries = NULL;
   prepare_decoder(FORD_TFI);
 
   /* Triggers to get RPM */
@@ -426,7 +426,7 @@ START_TEST(check_tfi_decoder_startup_normal) {
 END_TEST
 
 START_TEST(check_tfi_decoder_syncloss_variation) {
-  struct decoder_event* entries = NULL;
+  struct decoder_event *entries = NULL;
   prepare_decoder(FORD_TFI);
 
   /* Triggers to get RPM */
@@ -447,7 +447,7 @@ START_TEST(check_tfi_decoder_syncloss_variation) {
 END_TEST
 
 START_TEST(check_tfi_decoder_syncloss_expire) {
-  struct decoder_event* entries = NULL;
+  struct decoder_event *entries = NULL;
   prepare_decoder(FORD_TFI);
 
   /* Triggers to get RPM */
@@ -476,7 +476,7 @@ END_TEST
 
 /* Gets decoder up to sync, plus an additional trigger */
 static void cam_nplusone_normal_startup_to_sync(
-  struct decoder_event** entries) {
+  struct decoder_event **entries) {
   /* Triggers to get RPM */
   for (int i = 0; i < config.decoder.required_triggers_rpm - 1; ++i) {
     add_trigger_event(entries, 25000, 1, 0);
@@ -493,7 +493,7 @@ static void cam_nplusone_normal_startup_to_sync(
 }
 
 START_TEST(check_cam_nplusone_startup_normal) {
-  struct decoder_event* entries = NULL;
+  struct decoder_event *entries = NULL;
   prepare_decoder(TOYOTA_24_1_CAS);
 
   cam_nplusone_normal_startup_to_sync(&entries);
@@ -512,7 +512,7 @@ START_TEST(check_cam_nplusone_startup_normal) {
 END_TEST
 
 START_TEST(check_cam_nplusone_startup_normal_then_early_sync) {
-  struct decoder_event* entries = NULL;
+  struct decoder_event *entries = NULL;
   prepare_decoder(TOYOTA_24_1_CAS);
 
   cam_nplusone_normal_startup_to_sync(&entries);
@@ -534,7 +534,7 @@ START_TEST(check_cam_nplusone_startup_normal_then_early_sync) {
 END_TEST
 
 START_TEST(check_cam_nplusone_startup_normal_sustained) {
-  struct decoder_event* entries = NULL;
+  struct decoder_event *entries = NULL;
   prepare_decoder(TOYOTA_24_1_CAS);
 
   cam_nplusone_normal_startup_to_sync(&entries);
@@ -557,14 +557,14 @@ START_TEST(check_cam_nplusone_startup_normal_sustained) {
 END_TEST
 
 START_TEST(check_bulk_decoder_updates) {
-  struct decoder_event* entries = NULL;
+  struct decoder_event *entries = NULL;
   prepare_decoder(TOYOTA_24_1_CAS);
 
   cam_nplusone_normal_startup_to_sync(&entries);
 
   /* Turn entries linked list into array usable by interface */
-  struct decoder_event* entry_list = malloc(sizeof(struct decoder_event));
-  struct decoder_event* ev;
+  struct decoder_event *entry_list = malloc(sizeof(struct decoder_event));
+  struct decoder_event *ev;
   int len;
   for (len = 0, ev = entries; ev != NULL; ++len, ev = ev->next) {
     entry_list[len] = *ev;
@@ -581,7 +581,7 @@ START_TEST(check_bulk_decoder_updates) {
 END_TEST
 
 START_TEST(check_cam_nplusone_startup_normal_no_second_trigger) {
-  struct decoder_event* entries = NULL;
+  struct decoder_event *entries = NULL;
   prepare_decoder(TOYOTA_24_1_CAS);
 
   cam_nplusone_normal_startup_to_sync(&entries);
@@ -601,7 +601,7 @@ START_TEST(check_cam_nplusone_startup_normal_no_second_trigger) {
 END_TEST
 
 START_TEST(check_nplusone_decoder_syncloss_expire) {
-  struct decoder_event* entries = NULL;
+  struct decoder_event *entries = NULL;
   prepare_decoder(TOYOTA_24_1_CAS);
 
   cam_nplusone_normal_startup_to_sync(&entries);
@@ -695,8 +695,8 @@ START_TEST(check_update_rpm_window_smaller) {
 }
 END_TEST
 
-TCase* setup_decoder_tests() {
-  TCase* decoder_tests = tcase_create("decoder");
+TCase *setup_decoder_tests() {
+  TCase *decoder_tests = tcase_create("decoder");
   tcase_add_test(decoder_tests, check_tfi_decoder_startup_normal);
   tcase_add_test(decoder_tests, check_tfi_decoder_syncloss_variation);
   tcase_add_test(decoder_tests, check_tfi_decoder_syncloss_expire);

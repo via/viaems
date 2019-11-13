@@ -38,13 +38,13 @@ int get_gpio(int output);
 void set_pwm(int output, float value);
 void adc_gather();
 
-size_t console_read(void* buf, size_t max);
-size_t console_write(const void* buf, size_t count);
+size_t console_read(void *buf, size_t max);
+size_t console_write(const void *buf, size_t count);
 
 void platform_load_config();
 void platform_save_config();
 
-timeval_t init_output_thread(uint32_t* buf0, uint32_t* buf1, uint32_t len);
+timeval_t init_output_thread(uint32_t *buf0, uint32_t *buf1, uint32_t len);
 int current_output_buffer();
 int current_output_slot();
 

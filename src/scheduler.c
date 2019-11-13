@@ -19,10 +19,10 @@ static struct output_buffer {
 } output_buffers[2];
 
 #define MAX_CALLBACKS 32
-struct timed_callback* callbacks[MAX_CALLBACKS] = { 0 };
+struct timed_callback *callbacks[MAX_CALLBACKS] = { 0 };
 static int n_callbacks = 0;
 
-static int sched_entry_has_fired(struct sched_entry* en) {
+static int sched_entry_has_fired(struct sched_entry *en) {
   int ret = 0;
   int ints_on = disable_interrupts();
   if (en && en->buffer) {
@@ -39,18 +39,18 @@ static int sched_entry_has_fired(struct sched_entry* en) {
   return ret;
 }
 
-int event_is_active(struct output_event* ev) {
+int event_is_active(struct output_event *ev) {
   return (sched_entry_has_fired(&ev->start) &&
           !sched_entry_has_fired(&ev->stop));
 }
 
-int event_has_fired(struct output_event* ev) {
+int event_has_fired(struct output_event *ev) {
   return (sched_entry_has_fired(&ev->start) &&
           sched_entry_has_fired(&ev->stop));
 }
 
-static struct output_buffer* buffer_for_time(timeval_t time) {
-  struct output_buffer* buf = NULL;
+static struct output_buffer *buffer_for_time(timeval_t time) {
+  struct output_buffer *buf = NULL;
   if (time_in_range(time,
                     output_buffers[0].start,
                     output_buffers[0].start + OUTPUT_BUFFER_LEN - 1)) {
@@ -63,7 +63,7 @@ static struct output_buffer* buffer_for_time(timeval_t time) {
   return buf;
 }
 
-static int fired_if_failed(struct sched_entry* en, int success) {
+static int fired_if_failed(struct sched_entry *en, int success) {
   en->fired = !success;
   return success;
 }
@@ -75,7 +75,7 @@ static int fired_if_failed(struct sched_entry* en, int success) {
  * time.
  *
  * Does no bookkeeping but can set fired flag */
-static int sched_entry_disable(const struct sched_entry* en, timeval_t time) {
+static int sched_entry_disable(const struct sched_entry *en, timeval_t time) {
 
   assert(!interrupts_enabled());
   /* before either buffer starts */
@@ -83,7 +83,7 @@ static int sched_entry_disable(const struct sched_entry* en, timeval_t time) {
     return 0;
   }
 
-  struct output_buffer* buf = buffer_for_time(time);
+  struct output_buffer *buf = buffer_for_time(time);
 
   /* In the future, bail out successfully */
   if (!buf) {
@@ -93,7 +93,7 @@ static int sched_entry_disable(const struct sched_entry* en, timeval_t time) {
   int slot = time - buf->start;
   assert((slot >= 0) && (slot < 512));
 
-  uint16_t* addr =
+  uint16_t *addr =
     en->val ? &buf->slots[slot].on_mask : &buf->slots[slot].off_mask;
   uint16_t value = *addr & ~(1 << en->pin);
 
@@ -118,7 +118,7 @@ static int sched_entry_disable(const struct sched_entry* en, timeval_t time) {
  * Return of 0 means the event did not fire.
  *
  * Does no bookkeeping of sched_entry */
-static int sched_entry_enable(const struct sched_entry* en, timeval_t time) {
+static int sched_entry_enable(const struct sched_entry *en, timeval_t time) {
 
   assert(!interrupts_enabled());
   /* before either buffer starts */
@@ -126,7 +126,7 @@ static int sched_entry_enable(const struct sched_entry* en, timeval_t time) {
     return 0;
   }
 
-  struct output_buffer* buf = buffer_for_time(time);
+  struct output_buffer *buf = buffer_for_time(time);
 
   /* In the future, bail out successfully */
   if (!buf) {
@@ -136,7 +136,7 @@ static int sched_entry_enable(const struct sched_entry* en, timeval_t time) {
   int slot = time - buf->start;
   assert((slot >= 0) && (slot < 512));
 
-  uint16_t* addr =
+  uint16_t *addr =
     en->val ? &buf->slots[slot].on_mask : &buf->slots[slot].off_mask;
   uint16_t value = *addr | (1 << en->pin);
 
@@ -155,18 +155,18 @@ static int sched_entry_enable(const struct sched_entry* en, timeval_t time) {
   return 1;
 }
 
-static void sched_entry_update(struct sched_entry* en, timeval_t time) {
+static void sched_entry_update(struct sched_entry *en, timeval_t time) {
   en->buffer = buffer_for_time(time);
   en->scheduled = 1;
   en->time = time;
 }
 
-static void sched_entry_off(struct sched_entry* en) {
+static void sched_entry_off(struct sched_entry *en) {
   en->scheduled = 0;
   en->buffer = NULL;
 }
 
-void deschedule_event(struct output_event* ev) {
+void deschedule_event(struct output_event *ev) {
   int ints_en = disable_interrupts();
 
   if (ev->start.fired) {
@@ -187,7 +187,7 @@ void deschedule_event(struct output_event* ev) {
   }
 }
 
-void invalidate_scheduled_events(struct output_event* evs, int n) {
+void invalidate_scheduled_events(struct output_event *evs, int n) {
   for (int i = 0; i < n; ++i) {
     if (!evs[i].start.scheduled) {
       continue;
@@ -203,7 +203,7 @@ void invalidate_scheduled_events(struct output_event* evs, int n) {
   }
 }
 
-static void reschedule_end(struct sched_entry* s,
+static void reschedule_end(struct sched_entry *s,
                            timeval_t old,
                            timeval_t new) {
   if (new == old)
@@ -225,7 +225,7 @@ static void reschedule_end(struct sched_entry* s,
 /* Schedules an output event in a hazard-free manner, assuming
  * that the start and stop times occur at least after curtime
  */
-void schedule_output_event_safely(struct output_event* ev,
+void schedule_output_event_safely(struct output_event *ev,
                                   timeval_t newstart,
                                   timeval_t newstop,
                                   int preserve_duration) {
@@ -299,8 +299,8 @@ void schedule_output_event_safely(struct output_event* ev,
   stats_finish_timing(STATS_SCHED_SINGLE_TIME);
 }
 
-static int schedule_ignition_event(struct output_event* ev,
-                                   struct decoder* d,
+static int schedule_ignition_event(struct output_event *ev,
+                                   struct decoder *d,
                                    degrees_t advance,
                                    unsigned int usecs_dwell) {
 
@@ -351,8 +351,8 @@ static int schedule_ignition_event(struct output_event* ev,
   return 1;
 }
 
-static int schedule_fuel_event(struct output_event* ev,
-                               struct decoder* d,
+static int schedule_fuel_event(struct output_event *ev,
+                               struct decoder *d,
                                unsigned int usecs_pw) {
 
   timeval_t stop_time;
@@ -387,7 +387,7 @@ static int schedule_fuel_event(struct output_event* ev,
 
   /* Schedule a callback to reschedule this immediately after it fires */
   if (ev->stop.scheduled) {
-    ev->callback.callback = (void (*)(void*))schedule_event;
+    ev->callback.callback = (void (*)(void *))schedule_event;
     ev->callback.data = ev;
     schedule_callback(&ev->callback, ev->stop.time);
   }
@@ -395,7 +395,7 @@ static int schedule_fuel_event(struct output_event* ev,
   return 1;
 }
 
-static int schedule_adc_event(struct output_event* ev, struct decoder* d) {
+static int schedule_adc_event(struct output_event *ev, struct decoder *d) {
   int firing_angle;
   timeval_t collect_time;
 
@@ -416,7 +416,7 @@ static int schedule_adc_event(struct output_event* ev, struct decoder* d) {
   return 1;
 }
 
-void schedule_event(struct output_event* ev) {
+void schedule_event(struct output_event *ev) {
   switch (ev->type) {
     case IGNITION_EVENT:
       if (ignition_cut() || !config.decoder.valid) {
@@ -445,7 +445,7 @@ void schedule_event(struct output_event* ev) {
   }
 }
 
-static void callback_remove(struct timed_callback* tcb) {
+static void callback_remove(struct timed_callback *tcb) {
   int i;
   int tcb_pos;
   for (i = 0; i < n_callbacks; ++i) {
@@ -465,7 +465,7 @@ static void callback_remove(struct timed_callback* tcb) {
   tcb->scheduled = 0;
 }
 
-static void callback_insert(struct timed_callback* tcb) {
+static void callback_insert(struct timed_callback *tcb) {
 
   int i;
   int tcb_pos;
@@ -485,7 +485,7 @@ static void callback_insert(struct timed_callback* tcb) {
   tcb->scheduled = 1;
 }
 
-int schedule_callback(struct timed_callback* tcb, timeval_t time) {
+int schedule_callback(struct timed_callback *tcb, timeval_t time) {
 
   int ints_on = disable_interrupts();
   if (tcb->scheduled) {
@@ -513,7 +513,7 @@ int schedule_callback(struct timed_callback* tcb, timeval_t time) {
 void scheduler_callback_timer_execute() {
   while (n_callbacks && time_before(callbacks[0]->time, current_time())) {
     clear_event_timer();
-    struct timed_callback* cb = callbacks[0];
+    struct timed_callback *cb = callbacks[0];
     callback_remove(cb);
     if (cb->callback) {
       cb->callback(cb->data);
@@ -528,10 +528,10 @@ void scheduler_callback_timer_execute() {
 
 void scheduler_buffer_swap() {
   int newbuf = (current_output_buffer() + 1) % 2;
-  struct output_buffer* obuf = &output_buffers[newbuf];
+  struct output_buffer *obuf = &output_buffers[newbuf];
 
   disable_interrupts();
-  struct output_event* oev;
+  struct output_event *oev;
   int i;
   for (i = 0; i < MAX_EVENTS; ++i) {
     oev = &config.events[i];
@@ -572,8 +572,8 @@ void initialize_scheduler() {
   memset(&output_buffers, 0, sizeof(output_buffers));
 
   output_buffers[0].start =
-    init_output_thread((uint32_t*)output_buffers[0].slots,
-                       (uint32_t*)output_buffers[1].slots,
+    init_output_thread((uint32_t *)output_buffers[0].slots,
+                       (uint32_t *)output_buffers[1].slots,
                        OUTPUT_BUFFER_LEN);
   output_buffers[1].start = output_buffers[0].start + OUTPUT_BUFFER_LEN;
 
@@ -584,7 +584,7 @@ void initialize_scheduler() {
 #include <check.h>
 #include <stdio.h>
 
-static struct output_event* oev = &config.events[0];
+static struct output_event *oev = &config.events[0];
 
 static void check_scheduler_setup() {
   decoder_init(&config.decoder);
@@ -1070,8 +1070,8 @@ START_TEST(check_callback_execute) {
 
   int count = 0;
 
-  void _increase_count(void* _c) {
-    int* c = (int*)_c;
+  void _increase_count(void *_c) {
+    int *c = (int *)_c;
     (*c)++;
   }
 
@@ -1110,8 +1110,8 @@ START_TEST(check_callback_execute) {
 }
 END_TEST
 
-TCase* setup_scheduler_tests() {
-  TCase* tc = tcase_create("scheduler");
+TCase *setup_scheduler_tests() {
+  TCase *tc = tcase_create("scheduler");
   tcase_add_checked_fixture(tc, check_scheduler_setup, NULL);
   tcase_add_test(tc, check_schedule_ignition);
   tcase_add_test(tc, check_schedule_ignition_reschedule_completely_later);

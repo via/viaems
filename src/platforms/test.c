@@ -99,13 +99,13 @@ int get_gpio(int output) {
   return gpio_states[output];
 }
 
-void adc_gather(void* _adc) {}
+void adc_gather(void *_adc) {}
 
 int current_output_buffer() {
   return current_buffer;
 }
 
-timeval_t init_output_thread(uint32_t* b0, uint32_t* b1, uint32_t len) {
+timeval_t init_output_thread(uint32_t *b0, uint32_t *b1, uint32_t len) {
   return 0;
 }
 
@@ -115,16 +115,16 @@ void platform_save_config() {}
 
 void platform_load_config() {}
 
-size_t console_read(void* ptr, size_t max) {
+size_t console_read(void *ptr, size_t max) {
   return 0;
 }
 
-size_t console_write(const void* ptr, size_t max) {
+size_t console_write(const void *ptr, size_t max) {
   return 0;
 }
 
 void platform_init() {
-  Suite* viaems_suite = suite_create("ViaEMS");
+  Suite *viaems_suite = suite_create("ViaEMS");
 
   suite_add_tcase(viaems_suite, setup_util_tests());
   suite_add_tcase(viaems_suite, setup_table_tests());
@@ -134,7 +134,7 @@ void platform_init() {
   suite_add_tcase(viaems_suite, setup_calculations_tests());
   suite_add_tcase(viaems_suite, setup_console_tests());
   suite_add_tcase(viaems_suite, setup_tasks_tests());
-  SRunner* sr = srunner_create(viaems_suite);
+  SRunner *sr = srunner_create(viaems_suite);
   srunner_run_all(sr, CK_VERBOSE);
   exit(srunner_ntests_failed(sr));
 }

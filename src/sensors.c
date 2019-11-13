@@ -5,7 +5,7 @@
 #include "sensors.h"
 #include "stats.h"
 
-static float sensor_convert_linear(struct sensor_input* in, float raw) {
+static float sensor_convert_linear(struct sensor_input *in, float raw) {
   float partial = raw / 4096.0f;
   return in->params.range.min +
          partial * (in->params.range.max - in->params.range.min);
@@ -20,7 +20,7 @@ static float sensor_convert_freq(float raw) {
   return 40.96f * 1.0 / ((raw * SENSOR_FREQ_DIVIDER) / tickrate);
 }
 
-float sensor_convert_thermistor(struct thermistor_config* tc, float raw) {
+float sensor_convert_thermistor(struct thermistor_config *tc, float raw) {
   stats_start_timing(STATS_SENSOR_THERM_TIME);
   float r = tc->bias / ((4096.0f / raw) - 1);
   float t = 1 / (tc->a + tc->b * logf(r) + tc->c * powf(logf(r), 3));
@@ -29,7 +29,7 @@ float sensor_convert_thermistor(struct thermistor_config* tc, float raw) {
   return t - 273.15f;
 }
 
-static void sensor_convert(struct sensor_input* in) {
+static void sensor_convert(struct sensor_input *in) {
   /* Handle conn and range fault conditions */
   if ((in->fault == FAULT_NONE) && (in->fault_config.max != 0)) {
     if ((in->fault_config.min > in->raw_value) ||
@@ -147,8 +147,8 @@ START_TEST(check_sensor_convert_therm) {
 }
 END_TEST
 
-TCase* setup_sensor_tests() {
-  TCase* sensor_tests = tcase_create("sensors");
+TCase *setup_sensor_tests() {
+  TCase *sensor_tests = tcase_create("sensors");
   tcase_add_test(sensor_tests, check_sensor_convert_linear);
   tcase_add_test(sensor_tests, check_sensor_convert_freq);
   tcase_add_test(sensor_tests, check_sensor_convert_therm);

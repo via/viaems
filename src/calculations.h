@@ -53,7 +53,7 @@ int fuel_cut();
 
 #ifdef UNITTEST
 #include <check.h>
-TCase* setup_calculations_tests();
+TCase *setup_calculations_tests();
 #endif
 
 #endif
