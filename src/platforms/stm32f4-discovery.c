@@ -1,30 +1,29 @@
 
-#include <libopencm3/stm32/rcc.h>
-#include <libopencm3/stm32/gpio.h>
-#include <libopencm3/stm32/timer.h>
-#include <libopencm3/stm32/exti.h>
-#include <libopencm3/stm32/dma.h>
-#include <libopencm3/stm32/adc.h>
-#include <libopencm3/stm32/flash.h>
-#include <libopencm3/stm32/syscfg.h>
-#include <libopencm3/stm32/spi.h>
-#include <libopencm3/cm3/nvic.h>
-#include <libopencm3/cm3/scb.h>
 #include <libopencm3/cm3/cortex.h>
 #include <libopencm3/cm3/dwt.h>
-#include <libopencm3/usb/usbd.h>
-#include <libopencm3/usb/cdc.h>
+#include <libopencm3/cm3/nvic.h>
 #include <libopencm3/cm3/scb.h>
+#include <libopencm3/stm32/adc.h>
+#include <libopencm3/stm32/dma.h>
+#include <libopencm3/stm32/exti.h>
+#include <libopencm3/stm32/flash.h>
+#include <libopencm3/stm32/gpio.h>
+#include <libopencm3/stm32/rcc.h>
+#include <libopencm3/stm32/spi.h>
+#include <libopencm3/stm32/syscfg.h>
+#include <libopencm3/stm32/timer.h>
+#include <libopencm3/usb/cdc.h>
+#include <libopencm3/usb/usbd.h>
 
+#include "config.h"
 #include "decoder.h"
+#include "limits.h"
 #include "platform.h"
 #include "scheduler.h"
-#include "limits.h"
 #include "sensors.h"
-#include "util.h"
-#include "config.h"
-#include "tasks.h"
 #include "stats.h"
+#include "tasks.h"
+#include "util.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -75,8 +74,8 @@
  *
  */
 
-
-static void platform_init_freqsensor() {
+static void
+platform_init_freqsensor() {
   timer_set_mode(TIM1, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
   timer_set_period(TIM1, 0xFFFFFFFF);
   timer_disable_preload(TIM1);
@@ -108,28 +107,28 @@ static void platform_init_freqsensor() {
   timer_ic_set_polarity(TIM1, TIM_IC4, TIM_IC_RISING);
   timer_ic_enable(TIM1, TIM_IC4);
 
-  timer_set_prescaler(TIM1, 2*SENSOR_FREQ_DIVIDER); /* Prescale set to map up to 20kHz */
+  timer_set_prescaler(
+    TIM1, 2 * SENSOR_FREQ_DIVIDER); /* Prescale set to map up to 20kHz */
 
   timer_enable_counter(TIM1);
-  timer_enable_irq(TIM1, TIM_DIER_CC1IE | 
-                         TIM_DIER_CC2IE |
-                         TIM_DIER_CC3IE | 
-                         TIM_DIER_CC4IE);
+  timer_enable_irq(
+    TIM1, TIM_DIER_CC1IE | TIM_DIER_CC2IE | TIM_DIER_CC3IE | TIM_DIER_CC4IE);
 
   nvic_enable_irq(NVIC_TIM1_CC_IRQ);
   nvic_set_priority(NVIC_TIM1_CC_IRQ, 64);
 }
 
-void tim1_cc_isr() {
-  static struct {
+void
+tim1_cc_isr() {
+  static struct
+  {
     uint16_t value;
     uint32_t time;
-  } prev[4] = {0};
+  } prev[4] = { 0 };
 
   stats_increment_counter(STATS_INT_RATE);
   stats_increment_counter(STATS_INT_PWM_RATE);
   stats_start_timing(STATS_INT_TOTAL_TIME);
-
 
   /* TODO: Doesn't detect connection fault if the interrupt doesn't get called,
    * e.g. only if another freq input is still working will it detect another
@@ -139,7 +138,7 @@ void tim1_cc_isr() {
       continue;
     }
     volatile uint32_t timer_flag;
-    volatile uint32_t *timer_ccr;
+    volatile uint32_t* timer_ccr;
     uint32_t pin = config.sensors[i].pin;
     switch (pin) {
       case 1:
@@ -180,7 +179,8 @@ void tim1_cc_isr() {
   stats_finish_timing(STATS_INT_TOTAL_TIME);
 }
 
-static int capture_edge_from_config(trigger_edge e) {
+static int
+capture_edge_from_config(trigger_edge e) {
   switch (e) {
     case RISING_EDGE:
       return TIM_IC_RISING;
@@ -192,9 +192,9 @@ static int capture_edge_from_config(trigger_edge e) {
   return RISING_EDGE;
 }
 
-static void platform_init_eventtimer() {
+static void
+platform_init_eventtimer() {
   /* Set up TIM2 as 32bit clock that is slaved off TIM8*/
-
 
   timer_set_mode(TIM2, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
   timer_slave_set_mode(TIM2, TIM_SMCR_SMS_ECM1);
@@ -217,14 +217,16 @@ static void platform_init_eventtimer() {
   gpio_set_af(GPIOB, GPIO_AF1, GPIO3);
   timer_ic_set_input(TIM2, TIM_IC2, TIM_IC_IN_TI2);
   timer_ic_set_filter(TIM2, TIM_IC2, TIM_IC_CK_INT_N_2);
-  timer_ic_set_polarity(TIM2, TIM_IC2, capture_edge_from_config(config.decoder.t0_edge));
+  timer_ic_set_polarity(
+    TIM2, TIM_IC2, capture_edge_from_config(config.decoder.t0_edge));
   timer_ic_enable(TIM2, TIM_IC2);
 
   gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_PULLDOWN, GPIO10);
   gpio_set_af(GPIOB, GPIO_AF1, GPIO10);
   timer_ic_set_input(TIM2, TIM_IC3, TIM_IC_IN_TI3);
   timer_ic_set_filter(TIM2, TIM_IC3, TIM_IC_CK_INT_N_2);
-  timer_ic_set_polarity(TIM2, TIM_IC3, capture_edge_from_config(config.decoder.t1_edge));
+  timer_ic_set_polarity(
+    TIM2, TIM_IC3, capture_edge_from_config(config.decoder.t1_edge));
   timer_ic_enable(TIM2, TIM_IC3);
 
   gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_PULLDOWN, GPIO11);
@@ -242,8 +244,8 @@ static void platform_init_eventtimer() {
   nvic_set_priority(NVIC_TIM2_IRQ, 32);
 
   /* Set debug unit to stop the timer on halt */
-  *((volatile uint32_t *)0xE0042008) |= 19; /*TIM2, TIM5, and TIM6 */
-  *((volatile uint32_t *)0xE004200C) |= 2; /* TIM8 stop */
+  *((volatile uint32_t*)0xE0042008) |= 19; /*TIM2, TIM5, and TIM6 */
+  *((volatile uint32_t*)0xE004200C) |= 2;  /* TIM8 stop */
 
   timer_set_mode(TIM8, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
   timer_set_period(TIM8, 41); /* 0.25 uS */
@@ -262,13 +264,13 @@ static void platform_init_eventtimer() {
   TIM8_DIER |= TIM_DIER_UDE; /* Enable update dma */
 }
 
-
 static uint32_t output_buffer_len;
 /* Give two buffers of len size, dma will start reading from buf0 and double
  * buffer between buf0 and buf0.
  * Returns the time that buf0 starts at
  */
-timeval_t init_output_thread(uint32_t *buf0, uint32_t *buf1, uint32_t len) {
+timeval_t
+init_output_thread(uint32_t* buf0, uint32_t* buf1, uint32_t len) {
   timeval_t start;
 
   output_buffer_len = len;
@@ -281,7 +283,7 @@ timeval_t init_output_thread(uint32_t *buf0, uint32_t *buf1, uint32_t len) {
   dma_enable_memory_increment_mode(DMA2, DMA_STREAM1);
   dma_set_transfer_mode(DMA2, DMA_STREAM1, DMA_SxCR_DIR_MEM_TO_PERIPHERAL);
   dma_enable_circular_mode(DMA2, DMA_STREAM1);
-  dma_set_peripheral_address(DMA2, DMA_STREAM1, (uint32_t) &GPIOD_BSRR);
+  dma_set_peripheral_address(DMA2, DMA_STREAM1, (uint32_t)&GPIOD_BSRR);
   dma_set_memory_address(DMA2, DMA_STREAM1, (uint32_t)buf0);
   dma_set_memory_address_1(DMA2, DMA_STREAM1, (uint32_t)buf1);
   dma_set_number_of_data(DMA2, DMA_STREAM1, len);
@@ -301,7 +303,8 @@ timeval_t init_output_thread(uint32_t *buf0, uint32_t *buf1, uint32_t len) {
 }
 
 /* Returns 0 if buf0 is active */
-int current_output_buffer() {
+int
+current_output_buffer() {
   return dma_get_target(DMA2, DMA_STREAM1);
 }
 
@@ -309,11 +312,13 @@ int current_output_buffer() {
  * Note that the slot returned is the one queued to output next, but is already
  * in the FIFO so is considered 'done'
  */
-int current_output_slot() {
+int
+current_output_slot() {
   return output_buffer_len - DMA2_S1NDTR;
 }
 
-static void platform_init_pwm() {
+static void
+platform_init_pwm() {
 
   gpio_mode_setup(GPIOC, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO6);
   gpio_mode_setup(GPIOC, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO7);
@@ -332,7 +337,7 @@ static void platform_init_pwm() {
   timer_enable_preload(TIM3);
   timer_continuous_mode(TIM3);
   /* Setup output compare registers */
-  timer_ic_set_input(TIM3,  TIM_IC1, TIM_IC_OUT);
+  timer_ic_set_input(TIM3, TIM_IC1, TIM_IC_OUT);
   timer_disable_oc_clear(TIM3, TIM_OC1);
   timer_enable_oc_preload(TIM3, TIM_OC1);
   timer_set_oc_slow_mode(TIM3, TIM_OC1);
@@ -341,7 +346,7 @@ static void platform_init_pwm() {
   timer_set_oc_polarity_high(TIM3, TIM_OC1);
   timer_enable_oc_output(TIM3, TIM_OC1);
 
-  timer_ic_set_input(TIM3,  TIM_IC2, TIM_IC_OUT);
+  timer_ic_set_input(TIM3, TIM_IC2, TIM_IC_OUT);
   timer_disable_oc_clear(TIM3, TIM_OC2);
   timer_enable_oc_preload(TIM3, TIM_OC2);
   timer_set_oc_slow_mode(TIM3, TIM_OC2);
@@ -350,7 +355,7 @@ static void platform_init_pwm() {
   timer_set_oc_polarity_high(TIM3, TIM_OC2);
   timer_enable_oc_output(TIM3, TIM_OC2);
 
-  timer_ic_set_input(TIM3,  TIM_IC3, TIM_IC_OUT);
+  timer_ic_set_input(TIM3, TIM_IC3, TIM_IC_OUT);
   timer_disable_oc_clear(TIM3, TIM_OC3);
   timer_enable_oc_preload(TIM3, TIM_OC3);
   timer_set_oc_slow_mode(TIM3, TIM_OC3);
@@ -359,7 +364,7 @@ static void platform_init_pwm() {
   timer_set_oc_polarity_high(TIM3, TIM_OC3);
   timer_enable_oc_output(TIM3, TIM_OC3);
 
-  timer_ic_set_input(TIM3,  TIM_IC4, TIM_IC_OUT);
+  timer_ic_set_input(TIM3, TIM_IC4, TIM_IC_OUT);
   timer_disable_oc_clear(TIM3, TIM_OC4);
   timer_enable_oc_preload(TIM3, TIM_OC4);
   timer_set_oc_slow_mode(TIM3, TIM_OC4);
@@ -368,10 +373,10 @@ static void platform_init_pwm() {
   timer_set_oc_polarity_high(TIM3, TIM_OC4);
   timer_enable_oc_output(TIM3, TIM_OC4);
   timer_enable_counter(TIM3);
-
 }
 
-void set_pwm(int output, float value) {
+void
+set_pwm(int output, float value) {
   int ival = value * 65535;
   switch (output) {
     case 1:
@@ -385,7 +390,8 @@ void set_pwm(int output, float value) {
   }
 }
 
-static void platform_init_scheduled_outputs() {
+static void
+platform_init_scheduled_outputs() {
   gpio_clear(GPIOD, 0xFFFF);
   unsigned int i;
   for (i = 0; i < config.num_events; ++i) {
@@ -394,13 +400,14 @@ static void platform_init_scheduled_outputs() {
     }
   }
   gpio_mode_setup(GPIOD, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, 0xFFFF & ~GPIO5);
-  gpio_set_output_options(GPIOD, GPIO_OTYPE_PP, GPIO_OSPEED_100MHZ, 0xFFFF & ~GPIO5);
+  gpio_set_output_options(
+    GPIOD, GPIO_OTYPE_PP, GPIO_OSPEED_100MHZ, 0xFFFF & ~GPIO5);
   gpio_mode_setup(GPIOE, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, 0xFF);
   gpio_set_output_options(GPIOE, GPIO_OTYPE_PP, GPIO_OSPEED_100MHZ, 0xFF);
-
 }
 
-void platform_enable_event_logging() {
+void
+platform_enable_event_logging() {
 
   nvic_enable_irq(NVIC_EXTI0_IRQ);
   nvic_enable_irq(NVIC_EXTI1_IRQ);
@@ -415,7 +422,8 @@ void platform_enable_event_logging() {
   exti_enable_request(0xFFFF);
 }
 
-void platform_disable_event_logging() {
+void
+platform_disable_event_logging() {
   nvic_disable_irq(NVIC_EXTI0_IRQ);
   nvic_disable_irq(NVIC_EXTI1_IRQ);
   nvic_disable_irq(NVIC_EXTI2_IRQ);
@@ -425,35 +433,40 @@ void platform_disable_event_logging() {
   nvic_disable_irq(NVIC_EXTI15_10_IRQ);
 }
 
-
-static void show_scheduled_outputs() {
+static void
+show_scheduled_outputs() {
   console_record_event((struct logged_event){
-      .type = EVENT_OUTPUT,
-      .time = current_time(),
-      .value = gpio_port_read(GPIOD),
-      });
+    .type = EVENT_OUTPUT,
+    .time = current_time(),
+    .value = gpio_port_read(GPIOD),
+  });
   exti_reset_request(0xFFFF);
 }
 
-void exti0_isr() {
+void
+exti0_isr() {
   show_scheduled_outputs();
 }
-void exti1_isr() {
+void
+exti1_isr() {
   show_scheduled_outputs();
 }
-void exti2_isr() {
+void
+exti2_isr() {
   show_scheduled_outputs();
 }
-void exti3_isr() {
+void
+exti3_isr() {
   show_scheduled_outputs();
 }
-void exti9_5_isr() {
+void
+exti9_5_isr() {
   show_scheduled_outputs();
 }
-void exti15_10_isr() {
+void
+exti15_10_isr() {
   show_scheduled_outputs();
 }
-
 
 /* We use TIM6 to control the sample rate.  It is set up to trigger a DMA event
  * on counter update to TX on SPI2.  When the full 16 bits is transmitted and
@@ -479,11 +492,13 @@ void exti15_10_isr() {
 #else
 #define SPI_WRITE_COUNT 9
 #endif
-static volatile uint16_t spi_rx_raw_adc[SPI_WRITE_COUNT] = {0};
+static volatile uint16_t spi_rx_raw_adc[SPI_WRITE_COUNT] = { 0 };
 
-static void platform_init_spi_adc() {
+static void
+platform_init_spi_adc() {
   /* Configure SPI output */
-  gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO13 | GPIO14 | GPIO15);
+  gpio_mode_setup(
+    GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO13 | GPIO14 | GPIO15);
   gpio_set_af(GPIOB, GPIO_AF5, GPIO13 | GPIO14 | GPIO15);
   gpio_mode_setup(GPIOB, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO12);
   gpio_set_output_options(GPIOB, GPIO_OTYPE_PP, GPIO_OSPEED_100MHZ, GPIO12);
@@ -492,9 +507,12 @@ static void platform_init_spi_adc() {
   spi_reset(SPI2);
   spi_enable_software_slave_management(SPI2);
   spi_set_nss_high(SPI2);
-  spi_init_master(SPI2, SPI_CR1_BAUDRATE_FPCLK_DIV_32,  SPI_CR1_CPOL_CLK_TO_0_WHEN_IDLE,
-                SPI_CR1_CPHA_CLK_TRANSITION_1, SPI_CR1_DFF_16BIT,
-                SPI_CR1_MSBFIRST);
+  spi_init_master(SPI2,
+                  SPI_CR1_BAUDRATE_FPCLK_DIV_32,
+                  SPI_CR1_CPOL_CLK_TO_0_WHEN_IDLE,
+                  SPI_CR1_CPHA_CLK_TRANSITION_1,
+                  SPI_CR1_DFF_16BIT,
+                  SPI_CR1_MSBFIRST);
 
   spi_enable_rx_dma(SPI2);
   spi_enable(SPI2);
@@ -507,7 +525,7 @@ static void platform_init_spi_adc() {
   dma_set_peripheral_size(DMA1, DMA_STREAM3, DMA_SxCR_PSIZE_16BIT);
   dma_enable_memory_increment_mode(DMA1, DMA_STREAM3);
   dma_set_transfer_mode(DMA1, DMA_STREAM3, DMA_SxCR_DIR_PERIPHERAL_TO_MEM);
-  dma_set_peripheral_address(DMA1, DMA_STREAM3, (uint32_t) &SPI2_DR);
+  dma_set_peripheral_address(DMA1, DMA_STREAM3, (uint32_t)&SPI2_DR);
   dma_enable_circular_mode(DMA1, DMA_STREAM3);
   dma_set_memory_address(DMA1, DMA_STREAM3, (uint32_t)spi_rx_raw_adc);
   dma_set_number_of_data(DMA1, DMA_STREAM3, SPI_WRITE_COUNT);
@@ -518,7 +536,6 @@ static void platform_init_spi_adc() {
 
   nvic_enable_irq(NVIC_DMA1_STREAM3_IRQ);
   nvic_set_priority(NVIC_DMA1_STREAM3_IRQ, 16);
-
 
   /* Configure TIM6 to drive DMA for SPI */
   timer_set_mode(TIM6, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
@@ -531,67 +548,66 @@ static void platform_init_spi_adc() {
   timer_disable_oc_output(TIM6, TIM_OC3);
   timer_disable_oc_output(TIM6, TIM_OC4);
 
-  timer_set_prescaler(TIM6, 0); 
-
+  timer_set_prescaler(TIM6, 0);
 }
 
 static uint8_t usbd_control_buffer[128];
-static usbd_device *usbd_dev;
+static usbd_device* usbd_dev;
 
 /* Most of the following is copied from libopencm3-examples */
-static enum usbd_request_return_codes cdcacm_control_request(usbd_device *usbd_dev,
-  struct usb_setup_data *req, uint8_t **buf, uint16_t *len,
-  void (**complete)(usbd_device *usbd_dev, struct usb_setup_data *req))
-{
+static enum usbd_request_return_codes
+cdcacm_control_request(usbd_device* usbd_dev,
+                       struct usb_setup_data* req,
+                       uint8_t** buf,
+                       uint16_t* len,
+                       void (**complete)(usbd_device* usbd_dev,
+                                         struct usb_setup_data* req)) {
   (void)complete;
   (void)buf;
   (void)usbd_dev;
 
   switch (req->bRequest) {
-  case USB_CDC_REQ_SET_CONTROL_LINE_STATE: {
-    /*
-     * This Linux cdc_acm driver requires this to be implemented
-     * even though it's optional in the CDC spec, and we don't
-     * advertise it in the ACM functional descriptor.
-     */
-    return USBD_REQ_HANDLED;
+    case USB_CDC_REQ_SET_CONTROL_LINE_STATE: {
+      /*
+       * This Linux cdc_acm driver requires this to be implemented
+       * even though it's optional in the CDC spec, and we don't
+       * advertise it in the ACM functional descriptor.
+       */
+      return USBD_REQ_HANDLED;
     }
-  case USB_CDC_REQ_SET_LINE_CODING:
-    if (*len < sizeof(struct usb_cdc_line_coding)) {
-      return USBD_REQ_NOTSUPP;
-    }
+    case USB_CDC_REQ_SET_LINE_CODING:
+      if (*len < sizeof(struct usb_cdc_line_coding)) {
+        return USBD_REQ_NOTSUPP;
+      }
 
-    return USBD_REQ_HANDLED;
+      return USBD_REQ_HANDLED;
   }
   return USBD_REQ_NOTSUPP;
 }
 
-
 #define USB_RX_BUF_LEN 1024
 static char usb_rx_buf[USB_RX_BUF_LEN];
 static volatile size_t usb_rx_len = 0;
-static void cdcacm_data_rx_cb(usbd_device *usbd_dev, uint8_t ep)
-{
+static void
+cdcacm_data_rx_cb(usbd_device* usbd_dev, uint8_t ep) {
   (void)ep;
-  usb_rx_len += usbd_ep_read_packet(usbd_dev, 0x01, usb_rx_buf + usb_rx_len, USB_RX_BUF_LEN - usb_rx_len);
+  usb_rx_len += usbd_ep_read_packet(
+    usbd_dev, 0x01, usb_rx_buf + usb_rx_len, USB_RX_BUF_LEN - usb_rx_len);
 }
 
-static void cdcacm_set_config(usbd_device *usbd_dev, uint16_t wValue)
-{
+static void
+cdcacm_set_config(usbd_device* usbd_dev, uint16_t wValue) {
   (void)wValue;
 
-  usbd_ep_setup(usbd_dev, 0x01, USB_ENDPOINT_ATTR_BULK, 64,
-      cdcacm_data_rx_cb);
+  usbd_ep_setup(usbd_dev, 0x01, USB_ENDPOINT_ATTR_BULK, 64, cdcacm_data_rx_cb);
   usbd_ep_setup(usbd_dev, 0x82, USB_ENDPOINT_ATTR_BULK, 64, NULL);
   usbd_ep_setup(usbd_dev, 0x83, USB_ENDPOINT_ATTR_INTERRUPT, 16, NULL);
 
-  usbd_register_control_callback(
-        usbd_dev,
-        USB_REQ_TYPE_CLASS | USB_REQ_TYPE_INTERFACE,
-        USB_REQ_TYPE_TYPE | USB_REQ_TYPE_RECIPIENT,
-        cdcacm_control_request);
+  usbd_register_control_callback(usbd_dev,
+                                 USB_REQ_TYPE_CLASS | USB_REQ_TYPE_INTERFACE,
+                                 USB_REQ_TYPE_TYPE | USB_REQ_TYPE_RECIPIENT,
+                                 cdcacm_control_request);
 }
-
 
 static const struct usb_device_descriptor dev = {
   .bLength = USB_DT_DEVICE_SIZE,
@@ -610,7 +626,7 @@ static const struct usb_device_descriptor dev = {
   .bNumConfigurations = 1,
 };
 
-static const struct usb_endpoint_descriptor comm_endp[] = {{
+static const struct usb_endpoint_descriptor comm_endp[] = { {
   .bLength = USB_DT_ENDPOINT_SIZE,
   .bDescriptorType = USB_DT_ENDPOINT,
   .bEndpointAddress = 0x83,
@@ -619,23 +635,27 @@ static const struct usb_endpoint_descriptor comm_endp[] = {{
   .bInterval = 255,
 } };
 
-static const struct usb_endpoint_descriptor data_endp[] = {{
-  .bLength = USB_DT_ENDPOINT_SIZE,
-  .bDescriptorType = USB_DT_ENDPOINT,
-  .bEndpointAddress = 0x01,
-  .bmAttributes = USB_ENDPOINT_ATTR_BULK,
-  .wMaxPacketSize = 64,
-  .bInterval = 1,
-}, {
-  .bLength = USB_DT_ENDPOINT_SIZE,
-  .bDescriptorType = USB_DT_ENDPOINT,
-  .bEndpointAddress = 0x82,
-  .bmAttributes = USB_ENDPOINT_ATTR_BULK,
-  .wMaxPacketSize = 64,
-  .bInterval = 1,
-} };
+static const struct usb_endpoint_descriptor data_endp[] = {
+  {
+    .bLength = USB_DT_ENDPOINT_SIZE,
+    .bDescriptorType = USB_DT_ENDPOINT,
+    .bEndpointAddress = 0x01,
+    .bmAttributes = USB_ENDPOINT_ATTR_BULK,
+    .wMaxPacketSize = 64,
+    .bInterval = 1,
+  },
+  {
+    .bLength = USB_DT_ENDPOINT_SIZE,
+    .bDescriptorType = USB_DT_ENDPOINT,
+    .bEndpointAddress = 0x82,
+    .bmAttributes = USB_ENDPOINT_ATTR_BULK,
+    .wMaxPacketSize = 64,
+    .bInterval = 1,
+  }
+};
 
-static const struct {
+static const struct
+{
   struct usb_cdc_header_descriptor header;
   struct usb_cdc_call_management_descriptor call_mgmt;
   struct usb_cdc_acm_descriptor acm;
@@ -670,24 +690,24 @@ static const struct {
    }
 };
 
-static const struct usb_interface_descriptor comm_iface[] = {{
-  .bLength = USB_DT_INTERFACE_SIZE,
-  .bDescriptorType = USB_DT_INTERFACE,
-  .bInterfaceNumber = 0,
-  .bAlternateSetting = 0,
-  .bNumEndpoints = 1,
-  .bInterfaceClass = USB_CLASS_CDC,
-  .bInterfaceSubClass = USB_CDC_SUBCLASS_ACM,
-  .bInterfaceProtocol = USB_CDC_PROTOCOL_AT,
-  .iInterface = 0,
+static const struct usb_interface_descriptor comm_iface[] = {
+  { .bLength = USB_DT_INTERFACE_SIZE,
+    .bDescriptorType = USB_DT_INTERFACE,
+    .bInterfaceNumber = 0,
+    .bAlternateSetting = 0,
+    .bNumEndpoints = 1,
+    .bInterfaceClass = USB_CLASS_CDC,
+    .bInterfaceSubClass = USB_CDC_SUBCLASS_ACM,
+    .bInterfaceProtocol = USB_CDC_PROTOCOL_AT,
+    .iInterface = 0,
 
-  .endpoint = comm_endp,
+    .endpoint = comm_endp,
 
-  .extra = &cdcacm_functional_descriptors,
-  .extralen = sizeof(cdcacm_functional_descriptors)
-} };
+    .extra = &cdcacm_functional_descriptors,
+    .extralen = sizeof(cdcacm_functional_descriptors) }
+};
 
-static const struct usb_interface_descriptor data_iface[] = {{
+static const struct usb_interface_descriptor data_iface[] = { {
   .bLength = USB_DT_INTERFACE_SIZE,
   .bDescriptorType = USB_DT_INTERFACE,
   .bInterfaceNumber = 1,
@@ -701,13 +721,14 @@ static const struct usb_interface_descriptor data_iface[] = {{
   .endpoint = data_endp,
 } };
 
-static const struct usb_interface ifaces[] = {{
-  .num_altsetting = 1,
-  .altsetting = comm_iface,
-}, {
-  .num_altsetting = 1,
-  .altsetting = data_iface,
-} };
+static const struct usb_interface ifaces[] = { {
+                                                 .num_altsetting = 1,
+                                                 .altsetting = comm_iface,
+                                               },
+                                               {
+                                                 .num_altsetting = 1,
+                                                 .altsetting = data_iface,
+                                               } };
 
 static const struct usb_config_descriptor usb_config = {
   .bLength = USB_DT_CONFIGURATION_SIZE,
@@ -722,13 +743,14 @@ static const struct usb_config_descriptor usb_config = {
   .interface = ifaces,
 };
 
-static const char * usb_strings[] = {
+static const char* usb_strings[] = {
   "https://github.com/via/viaems/",
   "ViaEMS console",
   "0",
 };
 
-void otg_fs_isr() {
+void
+otg_fs_isr() {
   stats_increment_counter(STATS_INT_RATE);
   stats_increment_counter(STATS_USB_INTERRUPT_RATE);
   stats_start_timing(STATS_USB_INTERRUPT_TIME);
@@ -738,21 +760,26 @@ void otg_fs_isr() {
   stats_finish_timing(STATS_INT_TOTAL_TIME);
 }
 
-void platform_init_usb() {
+void
+platform_init_usb() {
 
-  gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE,
-      GPIO9 | GPIO11 | GPIO12);
+  gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO9 | GPIO11 | GPIO12);
   gpio_set_af(GPIOA, GPIO_AF10, GPIO9 | GPIO11 | GPIO12);
 
-  usbd_dev = usbd_init(&otgfs_usb_driver, &dev, &usb_config,
-      usb_strings, 3,
-      usbd_control_buffer, sizeof(usbd_control_buffer));
+  usbd_dev = usbd_init(&otgfs_usb_driver,
+                       &dev,
+                       &usb_config,
+                       usb_strings,
+                       3,
+                       usbd_control_buffer,
+                       sizeof(usbd_control_buffer));
 
   usbd_register_set_config_callback(usbd_dev, cdcacm_set_config);
   nvic_enable_irq(NVIC_OTG_FS_IRQ);
 }
 
-void platform_init() {
+void
+platform_init() {
 
   /* 168 Mhz clock */
   rcc_clock_setup_pll(&rcc_hse_8mhz_3v3[RCC_CLOCK_3V3_168MHZ]);
@@ -787,22 +814,27 @@ void platform_init() {
 
   for (int i = 0; i < NUM_SENSORS; ++i) {
     if ((config.sensors[i].source == SENSOR_FREQ) &&
-        (config.sensors[i].pin >= 1) &&
-        (config.sensors[i].pin <= 4)) {
+        (config.sensors[i].pin >= 1) && (config.sensors[i].pin <= 4)) {
       /* Pin 1-4 maps to GPIO8-11 */
-      gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_PULLDOWN, GPIO8 << (config.sensors[i].pin - 1));
+      gpio_mode_setup(GPIOA,
+                      GPIO_MODE_AF,
+                      GPIO_PUPD_PULLDOWN,
+                      GPIO8 << (config.sensors[i].pin - 1));
       gpio_set_af(GPIOA, GPIO_AF1, GPIO8 << (config.sensors[i].pin - 1));
     }
     if (config.sensors[i].source == SENSOR_DIGITAL) {
-      gpio_mode_setup(GPIOE, GPIO_MODE_INPUT, GPIO_PUPD_PULLDOWN, 
-          (1 << config.sensors[i].pin));
+      gpio_mode_setup(GPIOE,
+                      GPIO_MODE_INPUT,
+                      GPIO_PUPD_PULLDOWN,
+                      (1 << config.sensors[i].pin));
     }
   }
   dwt_enable_cycle_counter();
   stats_init(168000000);
 }
 
-void platform_reset_into_bootloader() {
+void
+platform_reset_into_bootloader() {
   handle_emergency_shutdown();
 
   rcc_periph_reset_pulse(RST_OTGFS);
@@ -834,7 +866,7 @@ void platform_reset_into_bootloader() {
 
   rcc_periph_reset_pulse(RST_TIM1);
   rcc_periph_clock_disable(RCC_TIM1);
-  
+
   rcc_periph_reset_pulse(RST_TIM2);
   rcc_periph_clock_disable(RCC_TIM2);
 
@@ -843,7 +875,7 @@ void platform_reset_into_bootloader() {
 
   rcc_periph_reset_pulse(RST_TIM6);
   rcc_periph_clock_disable(RCC_TIM6);
-  
+
   rcc_periph_reset_pulse(RST_TIM8);
   rcc_periph_clock_disable(RCC_TIM8);
 
@@ -856,47 +888,31 @@ void platform_reset_into_bootloader() {
   /* 168 Mhz clock */
   rcc_clock_setup_pll(&rcc_hsi_configs[RCC_CLOCK_3V3_168MHZ]);
 
-  __asm__ volatile("msr msp, %0"::"g" (*(volatile uint32_t *)0x20001000));
+  __asm__ volatile("msr msp, %0" ::"g"(*(volatile uint32_t*)0x20001000));
   (*(void (**)())(0x1fff0004))();
-  while (1);
+  while (1)
+    ;
 }
 
-
-uint32_t cycle_count() {
+uint32_t
+cycle_count() {
   return dwt_read_cycle_counter();
 }
 
 static volatile int adc_gather_in_progress = 0;
-void adc_gather() {
+void
+adc_gather() {
 #ifdef SPI_TLC2543
-  static uint16_t spi_tx_list[] =
-    {0x0C00,
-     0x1C00,
-     0x2C00,
-     0x3C00,
-     0x4C00,
-     0x5C00,
-     0x6C00,
-     0x7C00,
-     0x8C00,
-     0x9C00,
-     0xAC00,
-     0xBC00, /* Check value (Vref+ + Vref-) / 2 */
-     0xBC00, /* Duplicated to actually get previous read */
-    };
+  static uint16_t spi_tx_list[] = {
+    0x0C00, 0x1C00, 0x2C00, 0x3C00, 0x4C00, 0x5C00, 0x6C00,
+    0x7C00, 0x8C00, 0x9C00, 0xAC00, 0xBC00, /* Check value (Vref+ + Vref-) / 2
+                                             */
+    0xBC00, /* Duplicated to actually get previous read */
+  };
 #else
-  static uint16_t spi_tx_list[] =
-  {
-    0x0400,
-    0x0C00,
-    0x1400,
-    0x1C00,
-    0x2400,
-    0x2C00,
-    0x3400,
-    0x3C00,
-    0x3C00,
-    };
+  static uint16_t spi_tx_list[] = {
+    0x0400, 0x0C00, 0x1400, 0x1C00, 0x2400, 0x2C00, 0x3400, 0x3C00, 0x3C00,
+  };
 #endif
 
   if (adc_gather_in_progress) {
@@ -915,9 +931,10 @@ void adc_gather() {
   dma_set_peripheral_size(DMA1, DMA_STREAM1, DMA_SxCR_PSIZE_16BIT);
   dma_enable_memory_increment_mode(DMA1, DMA_STREAM1);
   dma_set_transfer_mode(DMA1, DMA_STREAM1, DMA_SxCR_DIR_MEM_TO_PERIPHERAL);
-  dma_set_peripheral_address(DMA1, DMA_STREAM1, (uint32_t) &SPI2_DR);
+  dma_set_peripheral_address(DMA1, DMA_STREAM1, (uint32_t)&SPI2_DR);
   dma_set_memory_address(DMA1, DMA_STREAM1, (uint32_t)spi_tx_list);
-  dma_set_number_of_data(DMA1, DMA_STREAM1, sizeof(spi_tx_list) / sizeof(spi_tx_list[0]));
+  dma_set_number_of_data(
+    DMA1, DMA_STREAM1, sizeof(spi_tx_list) / sizeof(spi_tx_list[0]));
   dma_channel_select(DMA1, DMA_STREAM1, DMA_SxCR_CHSEL_7);
   dma_enable_direct_mode(DMA1, DMA_STREAM1);
   dma_enable_stream(DMA1, DMA_STREAM1);
@@ -929,7 +946,8 @@ void adc_gather() {
   TIM6_DIER |= TIM_DIER_UDE; /* Enable update dma */
 }
 
-void dma1_stream3_isr(void) {
+void
+dma1_stream3_isr(void) {
   if (!dma_get_interrupt_flag(DMA1, DMA_STREAM3, DMA_TCIF)) {
     return;
   }
@@ -958,7 +976,7 @@ void dma1_stream3_isr(void) {
       config.sensors[i].raw_value = adc_value;
     }
   }
-  
+
   sensors_process(SENSOR_ADC);
   adc_gather_in_progress = 0;
 }
@@ -972,7 +990,8 @@ void dma1_stream3_isr(void) {
  * graceful overflow (at the expensive of non-critical routines not running,
  * e.g. console).
  */
-void tim2_isr() {
+void
+tim2_isr() {
   stats_increment_counter(STATS_INT_RATE);
   stats_increment_counter(STATS_INT_EVENTTIMER_RATE);
   stats_start_timing(STATS_INT_TOTAL_TIME);
@@ -982,26 +1001,26 @@ void tim2_isr() {
     timer_clear_flag(TIM2, TIM_SR_CC3IF);
     if (time_in_range(TIM2_CCR2, TIM2_CCR3, current_time())) {
       struct decoder_event ev[] = {
-        {.t1 = 1, .time = TIM2_CCR3},
-        {.t0 = 1, .time = TIM2_CCR2},
+        { .t1 = 1, .time = TIM2_CCR3 },
+        { .t0 = 1, .time = TIM2_CCR2 },
       };
       decoder_update_scheduling(ev, 2);
     } else {
       struct decoder_event ev[] = {
-        {.t0 = 1, .time = TIM2_CCR2},
-        {.t1 = 1, .time = TIM2_CCR3},
+        { .t0 = 1, .time = TIM2_CCR2 },
+        { .t1 = 1, .time = TIM2_CCR3 },
       };
       decoder_update_scheduling(ev, 2);
     }
   } else {
     if (timer_get_flag(TIM2, TIM_SR_CC2IF)) {
       timer_clear_flag(TIM2, TIM_SR_CC2IF);
-      struct decoder_event ev = {.t0 = 1, .time = TIM2_CCR2};
+      struct decoder_event ev = { .t0 = 1, .time = TIM2_CCR2 };
       decoder_update_scheduling(&ev, 1);
     }
     if (timer_get_flag(TIM2, TIM_SR_CC3IF)) {
       timer_clear_flag(TIM2, TIM_SR_CC3IF);
-      struct decoder_event ev = {.t1 = 1, .time = TIM2_CCR3};
+      struct decoder_event ev = { .t1 = 1, .time = TIM2_CCR3 };
       decoder_update_scheduling(&ev, 1);
     }
   }
@@ -1012,7 +1031,8 @@ void tim2_isr() {
   stats_finish_timing(STATS_INT_TOTAL_TIME);
 }
 
-void dma2_stream1_isr(void) {
+void
+dma2_stream1_isr(void) {
   stats_increment_counter(STATS_INT_RATE);
   stats_increment_counter(STATS_INT_BUFFERSWAP_RATE);
   stats_start_timing(STATS_INT_TOTAL_TIME);
@@ -1025,50 +1045,60 @@ void dma2_stream1_isr(void) {
   stats_finish_timing(STATS_INT_TOTAL_TIME);
 }
 
-void enable_interrupts() {
+void
+enable_interrupts() {
   stats_finish_timing(STATS_INT_DISABLE_TIME);
   cm_enable_interrupts();
 }
 
 /* Returns current enabled status prior to call */
-int disable_interrupts() {
+int
+disable_interrupts() {
   int ret = interrupts_enabled();
   cm_disable_interrupts();
   stats_start_timing(STATS_INT_DISABLE_TIME);
   return ret;
 }
 
-int interrupts_enabled() {
+int
+interrupts_enabled() {
   return !cm_is_masked_interrupts();
 }
 
-void set_event_timer(timeval_t t) {
+void
+set_event_timer(timeval_t t) {
   timer_set_oc_value(TIM2, TIM_OC1, t);
   timer_enable_irq(TIM2, TIM_DIER_CC1IE);
 }
 
-timeval_t get_event_timer() {
+timeval_t
+get_event_timer() {
   return TIM2_CCR1;
 }
 
-void clear_event_timer() {
+void
+clear_event_timer() {
   timer_clear_flag(TIM2, TIM_SR_CC1IF);
 }
 
-void disable_event_timer() {
+void
+disable_event_timer() {
   timer_disable_irq(TIM2, TIM_DIER_CC1IE);
   timer_clear_flag(TIM2, TIM_SR_CC1IF);
 }
 
-timeval_t current_time() {
+timeval_t
+current_time() {
   return timer_get_counter(TIM2);
 }
 
-int get_output(int output) {
+int
+get_output(int output) {
   return gpio_get(GPIOD, (1 << output)) != 0;
 }
 
-void set_output(int output, char value) {
+void
+set_output(int output, char value) {
   if (value) {
     gpio_set(GPIOD, (1 << output));
   } else {
@@ -1076,11 +1106,13 @@ void set_output(int output, char value) {
   }
 }
 
-int get_gpio(int output) {
+int
+get_gpio(int output) {
   return gpio_get(GPIOE, (1 << output)) != 0;
 }
 
-void set_gpio(int output, char value) {
+void
+set_gpio(int output, char value) {
   if (value) {
     gpio_set(GPIOE, (1 << output));
   } else {
@@ -1088,7 +1120,8 @@ void set_gpio(int output, char value) {
   }
 }
 
-void enable_test_trigger(trigger_type trig, unsigned int rpm) {
+void
+enable_test_trigger(trigger_type trig, unsigned int rpm) {
   if (trig != FORD_TFI) {
     return;
   }
@@ -1106,7 +1139,7 @@ void enable_test_trigger(trigger_type trig, unsigned int rpm) {
   timer_disable_preload(TIM5);
   timer_continuous_mode(TIM5);
   /* Setup output compare registers */
-  timer_ic_set_input(TIM5,  TIM_IC1, TIM_IC_OUT);
+  timer_ic_set_input(TIM5, TIM_IC1, TIM_IC_OUT);
   timer_disable_oc_clear(TIM5, TIM_OC1);
   timer_disable_oc_preload(TIM5, TIM_OC1);
   timer_set_oc_slow_mode(TIM5, TIM_OC1);
@@ -1118,16 +1151,17 @@ void enable_test_trigger(trigger_type trig, unsigned int rpm) {
 }
 
 extern unsigned _configdata_loadaddr, _sconfigdata, _econfigdata;
-void platform_load_config() {
+void
+platform_load_config() {
   volatile unsigned *src, *dest;
-  for (src = &_configdata_loadaddr, dest = &_sconfigdata;
-      dest < &_econfigdata;
-      src++, dest++) {
+  for (src = &_configdata_loadaddr, dest = &_sconfigdata; dest < &_econfigdata;
+       src++, dest++) {
     *dest = *src;
   }
 }
 
-void platform_save_config() {
+void
+platform_save_config() {
   volatile unsigned *src, *dest;
   int n_sectors, conf_bytes;
   flash_unlock();
@@ -1140,16 +1174,16 @@ void platform_save_config() {
   for (int sector = 1; sector < 1 + n_sectors; sector++) {
     flash_erase_sector(sector, 2);
   }
-  for (dest = &_configdata_loadaddr, src = &_sconfigdata;
-      src < &_econfigdata;
-      src++, dest++) {
+  for (dest = &_configdata_loadaddr, src = &_sconfigdata; src < &_econfigdata;
+       src++, dest++) {
     flash_program_word((uint32_t)dest, *src);
   }
 
   flash_lock();
 }
 
-size_t console_read(void *buf, size_t max) {
+size_t
+console_read(void* buf, size_t max) {
   disable_interrupts();
   stats_start_timing(STATS_CONSOLE_READ_TIME);
   size_t amt = usb_rx_len > max ? max : usb_rx_len;
@@ -1159,10 +1193,10 @@ size_t console_read(void *buf, size_t max) {
   stats_finish_timing(STATS_CONSOLE_READ_TIME);
   enable_interrupts();
   return amt;
-  
 }
 
-size_t console_write(const void *buf, size_t count) {
+size_t
+console_write(const void* buf, size_t count) {
   size_t rem = count > 64 ? 64 : count;
   /* https://github.com/libopencm3/libopencm3/issues/531
    * We can't let the usb irq be called while writing */
@@ -1173,7 +1207,8 @@ size_t console_write(const void *buf, size_t count) {
 }
 
 /* This should only ever be used in an emergency */
-ssize_t _write(int fd, const void *buf, size_t count) {
+ssize_t
+_write(int fd, const void* buf, size_t count) {
   (void)fd;
 
   while (count > 0) {
@@ -1187,27 +1222,32 @@ ssize_t _write(int fd, const void *buf, size_t count) {
   return count;
 }
 
-void _exit(int status) {
+void
+_exit(int status) {
   (void)status;
-  
+
   handle_emergency_shutdown();
-  while (1);
+  while (1)
+    ;
 }
 
 /* TODO: implement graceful shutdown of outputs on fault */
 #define STACK_CHK_GUARD 0xe2dee396
-uintptr_t  __attribute__((externally_visible)) __stack_chk_guard = STACK_CHK_GUARD;
+uintptr_t __attribute__((externally_visible)) __stack_chk_guard =
+  STACK_CHK_GUARD;
 
-__attribute__((noreturn)) __attribute__((externally_visible))
-void __stack_chk_fail(void) {
-  while(1);
+__attribute__((noreturn)) __attribute__((externally_visible)) void
+__stack_chk_fail(void) {
+  while (1)
+    ;
 }
 
-void platform_freeze_timers() {
+void
+platform_freeze_timers() {
   timer_disable_counter(TIM8);
 }
 
-void platform_unfreeze_timers() {
+void
+platform_unfreeze_timers() {
   timer_enable_counter(TIM8);
 }
-

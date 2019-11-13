@@ -1,18 +1,18 @@
-#include <stdio.h>
-#include <assert.h>
-#include "platform.h"
-#include "util.h"
-#include "decoder.h"
-#include "scheduler.h"
-#include "config.h"
-#include "table.h"
-#include "sensors.h"
 #include "calculations.h"
+#include "config.h"
+#include "decoder.h"
+#include "platform.h"
+#include "scheduler.h"
+#include "sensors.h"
 #include "stats.h"
+#include "table.h"
 #include "tasks.h"
+#include "util.h"
+#include <assert.h>
+#include <stdio.h>
 
-
-int main() {
+int
+main() {
   platform_load_config();
   decoder_init(&config.decoder);
   console_init();
@@ -24,7 +24,7 @@ int main() {
   enable_test_trigger(FORD_TFI, 2000);
 
   sensors_process(SENSOR_CONST);
-  while (1) {                   
+  while (1) {
     stats_increment_counter(STATS_MAINLOOP_RATE);
 
     console_process();
@@ -37,4 +37,3 @@ int main() {
 
   return 0;
 }
-

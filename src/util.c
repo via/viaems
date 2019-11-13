@@ -1,30 +1,35 @@
 #include "util.h"
-#include "platform.h"
 #include "limits.h"
+#include "platform.h"
 
-unsigned int rpm_from_time_diff(timeval_t t1, degrees_t deg) {
+unsigned int
+rpm_from_time_diff(timeval_t t1, degrees_t deg) {
   float ticks_per_degree = t1 / deg;
-  unsigned int rpm  = (TICKRATE / 6) / ticks_per_degree;
+  unsigned int rpm = (TICKRATE / 6) / ticks_per_degree;
   return rpm;
 }
 
-timeval_t time_from_rpm_diff(unsigned int rpm, degrees_t deg) {
+timeval_t
+time_from_rpm_diff(unsigned int rpm, degrees_t deg) {
   float ticks_per_degree = (TICKRATE / 6.0) / (float)rpm;
   return ticks_per_degree * deg;
 }
 
-timeval_t time_from_us(unsigned int us) {
+timeval_t
+time_from_us(unsigned int us) {
   timeval_t ticks = us * (TICKRATE / 1000000.0);
   return ticks;
 }
 
 /* True if n is before x */
-int time_before(timeval_t n, timeval_t x) {
+int
+time_before(timeval_t n, timeval_t x) {
   signed int res = n - x;
   return (res < 0);
 }
 
-int time_in_range(timeval_t val, timeval_t t1, timeval_t t2) {
+int
+time_in_range(timeval_t val, timeval_t t1, timeval_t t2) {
   if (t2 >= t1) {
     /* No timer wrap */
     if ((val >= t1) && (val <= t2)) {
@@ -37,11 +42,13 @@ int time_in_range(timeval_t val, timeval_t t1, timeval_t t2) {
   }
   return 0;
 }
-timeval_t time_diff(timeval_t later, timeval_t earlier) {
+timeval_t
+time_diff(timeval_t later, timeval_t earlier) {
   return later - earlier;
 }
 
-degrees_t clamp_angle(degrees_t ang, degrees_t max) {
+degrees_t
+clamp_angle(degrees_t ang, degrees_t max) {
   while (ang < 0) {
     ang += max;
   }
@@ -60,7 +67,8 @@ START_TEST(check_rpm_from_time_diff) {
 
   /* 90 degrees for 0.00125 s is 6000 rpm */
   ck_assert_float_eq_tol(rpm_from_time_diff(5000, 45), 6000, 50);
-} END_TEST
+}
+END_TEST
 
 START_TEST(check_time_from_rpm_diff) {
   /* 6000 RPMS, 180 degrees = 0.005 s */
@@ -68,12 +76,14 @@ START_TEST(check_time_from_rpm_diff) {
 
   /* 6000 RPMS, 90 is 0.00125 s */
   ck_assert_float_eq_tol(time_from_rpm_diff(6000, 45), 5000, 50);
-} END_TEST
+}
+END_TEST
 
 START_TEST(check_time_from_us) {
   ck_assert_int_eq(time_from_us(0), 0);
   ck_assert_int_eq(time_from_us(1000), 1000 * (TICKRATE / 1000000));
-} END_TEST
+}
+END_TEST
 
 START_TEST(check_time_in_range) {
   timeval_t t1, t2, val;
@@ -107,7 +117,8 @@ START_TEST(check_time_in_range) {
   val = 0x1000;
   t2 = 0x1000;
   ck_assert_int_eq(time_in_range(val, t1, t2), 1);
-} END_TEST
+}
+END_TEST
 
 START_TEST(check_time_diff) {
   timeval_t t1, t2;
@@ -123,7 +134,8 @@ START_TEST(check_time_diff) {
   t1 = 0xFFFFFF00;
   t2 = 0xFFFFFF00;
   ck_assert_int_eq(time_diff(t2, t1), 0);
-} END_TEST
+}
+END_TEST
 
 START_TEST(check_clamp_angle) {
   ck_assert_int_eq(clamp_angle(0, 720), 0);
@@ -131,11 +143,12 @@ START_TEST(check_clamp_angle) {
   ck_assert_int_eq(clamp_angle(-1080, 720), 360);
   ck_assert_int_eq(clamp_angle(720, 720), 0);
   ck_assert_int_eq(clamp_angle(1080, 720), 360);
-} END_TEST
+}
+END_TEST
 
-
-TCase *setup_util_tests() {
-  TCase *util_tests = tcase_create("util");
+TCase*
+setup_util_tests() {
+  TCase* util_tests = tcase_create("util");
   tcase_add_test(util_tests, check_rpm_from_time_diff);
   tcase_add_test(util_tests, check_time_from_rpm_diff);
   tcase_add_test(util_tests, check_time_in_range);
@@ -146,4 +159,3 @@ TCase *setup_util_tests() {
 }
 
 #endif
-
