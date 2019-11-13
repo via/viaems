@@ -138,24 +138,24 @@ void tim1_cc_isr() {
     volatile uint32_t *timer_ccr;
     uint32_t pin = config.sensors[i].pin;
     switch (pin) {
-      case 1:
-        timer_flag = TIM_SR_CC1IF;
-        timer_ccr = &TIM1_CCR1;
-        break;
-      case 2:
-        timer_flag = TIM_SR_CC2IF;
-        timer_ccr = &TIM1_CCR2;
-        break;
-      case 3:
-        timer_flag = TIM_SR_CC3IF;
-        timer_ccr = &TIM1_CCR3;
-        break;
-      case 4:
-        timer_flag = TIM_SR_CC4IF;
-        timer_ccr = &TIM1_CCR4;
-        break;
-      default:
-        continue;
+    case 1:
+      timer_flag = TIM_SR_CC1IF;
+      timer_ccr = &TIM1_CCR1;
+      break;
+    case 2:
+      timer_flag = TIM_SR_CC2IF;
+      timer_ccr = &TIM1_CCR2;
+      break;
+    case 3:
+      timer_flag = TIM_SR_CC3IF;
+      timer_ccr = &TIM1_CCR3;
+      break;
+    case 4:
+      timer_flag = TIM_SR_CC4IF;
+      timer_ccr = &TIM1_CCR4;
+      break;
+    default:
+      continue;
     }
 
     if (timer_get_flag(TIM1, timer_flag)) {
@@ -178,12 +178,12 @@ void tim1_cc_isr() {
 
 static int capture_edge_from_config(trigger_edge e) {
   switch (e) {
-    case RISING_EDGE:
-      return TIM_IC_RISING;
-    case FALLING_EDGE:
-      return TIM_IC_FALLING;
-    case BOTH_EDGES:
-      return TIM_IC_BOTH;
+  case RISING_EDGE:
+    return TIM_IC_RISING;
+  case FALLING_EDGE:
+    return TIM_IC_FALLING;
+  case BOTH_EDGES:
+    return TIM_IC_BOTH;
   }
   return RISING_EDGE;
 }
@@ -369,14 +369,14 @@ static void platform_init_pwm() {
 void set_pwm(int output, float value) {
   int ival = value * 65535;
   switch (output) {
-    case 1:
-      return timer_set_oc_value(TIM3, TIM_OC1, ival);
-    case 2:
-      return timer_set_oc_value(TIM3, TIM_OC2, ival);
-    case 3:
-      return timer_set_oc_value(TIM3, TIM_OC3, ival);
-    case 4:
-      return timer_set_oc_value(TIM3, TIM_OC4, ival);
+  case 1:
+    return timer_set_oc_value(TIM3, TIM_OC1, ival);
+  case 2:
+    return timer_set_oc_value(TIM3, TIM_OC2, ival);
+  case 3:
+    return timer_set_oc_value(TIM3, TIM_OC3, ival);
+  case 4:
+    return timer_set_oc_value(TIM3, TIM_OC4, ival);
   }
 }
 
@@ -545,20 +545,20 @@ static enum usbd_request_return_codes cdcacm_control_request(
   (void)usbd_dev;
 
   switch (req->bRequest) {
-    case USB_CDC_REQ_SET_CONTROL_LINE_STATE: {
-      /*
-       * This Linux cdc_acm driver requires this to be implemented
-       * even though it's optional in the CDC spec, and we don't
-       * advertise it in the ACM functional descriptor.
-       */
-      return USBD_REQ_HANDLED;
+  case USB_CDC_REQ_SET_CONTROL_LINE_STATE: {
+    /*
+     * This Linux cdc_acm driver requires this to be implemented
+     * even though it's optional in the CDC spec, and we don't
+     * advertise it in the ACM functional descriptor.
+     */
+    return USBD_REQ_HANDLED;
+  }
+  case USB_CDC_REQ_SET_LINE_CODING:
+    if (*len < sizeof(struct usb_cdc_line_coding)) {
+      return USBD_REQ_NOTSUPP;
     }
-    case USB_CDC_REQ_SET_LINE_CODING:
-      if (*len < sizeof(struct usb_cdc_line_coding)) {
-        return USBD_REQ_NOTSUPP;
-      }
 
-      return USBD_REQ_HANDLED;
+    return USBD_REQ_HANDLED;
   }
   return USBD_REQ_NOTSUPP;
 }

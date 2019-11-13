@@ -309,37 +309,37 @@ static void console_get_sensor(const struct console_config_node *self,
 
   const char *source = "";
   switch (s->source) {
-    case SENSOR_NONE:
-      source = "disabled";
-      break;
-    case SENSOR_ADC:
-      source = "adc";
-      break;
-    case SENSOR_FREQ:
-      source = "freq";
-      break;
-    case SENSOR_DIGITAL:
-      source = "digital";
-      break;
-    case SENSOR_PWM:
-      source = "pwm";
-      break;
-    case SENSOR_CONST:
-      source = "const";
-      break;
+  case SENSOR_NONE:
+    source = "disabled";
+    break;
+  case SENSOR_ADC:
+    source = "adc";
+    break;
+  case SENSOR_FREQ:
+    source = "freq";
+    break;
+  case SENSOR_DIGITAL:
+    source = "digital";
+    break;
+  case SENSOR_PWM:
+    source = "pwm";
+    break;
+  case SENSOR_CONST:
+    source = "const";
+    break;
   }
 
   const char *method = "";
   switch (s->method) {
-    case METHOD_LINEAR:
-      method = "linear";
-      break;
-    case METHOD_TABLE:
-      method = "table";
-      break;
-    case METHOD_THERM:
-      method = "therm";
-      break;
+  case METHOD_LINEAR:
+    method = "linear";
+    break;
+  case METHOD_TABLE:
+    method = "table";
+    break;
+  case METHOD_THERM:
+    method = "therm";
+    break;
   }
 
   dest += sprintf(dest, "source=%s method=%s pin=%d ", source, method, s->pin);
@@ -445,15 +445,15 @@ static void console_get_sensor_fault(const struct console_config_node *self,
   const char *result;
 
   switch (t->fault) {
-    case FAULT_RANGE:
-      result = "range";
-      break;
-    case FAULT_CONN:
-      result = "connection";
-      break;
-    default:
-      result = "-";
-      break;
+  case FAULT_RANGE:
+    result = "range";
+    break;
+  case FAULT_CONN:
+    result = "connection";
+    break;
+  default:
+    result = "-";
+    break;
   }
   strcat(dest, result);
 }
@@ -469,21 +469,21 @@ static void console_get_decoder_loss_reason(
   const char *result = "";
 
   switch (*s) {
-    case DECODER_NO_LOSS:
-      result = "none";
-      break;
-    case DECODER_VARIATION:
-      result = "variation";
-      break;
-    case DECODER_TRIGGERCOUNT_HIGH:
-      result = "triggers+";
-      break;
-    case DECODER_TRIGGERCOUNT_LOW:
-      result = "triggers-";
-      break;
-    case DECODER_EXPIRED:
-      result = "expired";
-      break;
+  case DECODER_NO_LOSS:
+    result = "none";
+    break;
+  case DECODER_VARIATION:
+    result = "variation";
+    break;
+  case DECODER_TRIGGERCOUNT_HIGH:
+    result = "triggers+";
+    break;
+  case DECODER_TRIGGERCOUNT_LOW:
+    result = "triggers-";
+    break;
+  case DECODER_EXPIRED:
+    result = "expired";
+    break;
   }
   strcat(dest, result);
 }
@@ -498,15 +498,15 @@ static void console_get_decoder_state(const struct console_config_node *self,
   const char *result = "";
 
   switch (*s) {
-    case DECODER_NOSYNC:
-      result = "none";
-      break;
-    case DECODER_RPM:
-      result = "rpm";
-      break;
-    case DECODER_SYNC:
-      result = "full";
-      break;
+  case DECODER_NOSYNC:
+    result = "none";
+    break;
+  case DECODER_RPM:
+    result = "rpm";
+    break;
+  case DECODER_SYNC:
+    result = "full";
+    break;
   }
   strcat(dest, result);
 }
@@ -521,12 +521,12 @@ static void console_get_trigger(const struct console_config_node *self,
   const char *result = "";
 
   switch (*t) {
-    case FORD_TFI:
-      result = "tfi";
-      break;
-    case TOYOTA_24_1_CAS:
-      result = "cam24+1";
-      break;
+  case FORD_TFI:
+    result = "tfi";
+    break;
+  case TOYOTA_24_1_CAS:
+    result = "cam24+1";
+    break;
   }
   strcat(dest, result);
 }
@@ -554,12 +554,12 @@ static void console_get_dwell_type(const struct console_config_node *self,
   const char *result = "";
 
   switch (*t) {
-    case DWELL_FIXED_DUTY:
-      result = "fixed-duty";
-      break;
-    case DWELL_FIXED_TIME:
-      result = "fixed-time";
-      break;
+  case DWELL_FIXED_DUTY:
+    result = "fixed-duty";
+    break;
+  case DWELL_FIXED_TIME:
+    result = "fixed-time";
+    break;
   }
   strcat(dest, result);
 }
@@ -607,18 +607,18 @@ static void console_get_events(const struct console_config_node *self
     const struct output_event *ev = &config.events[ev_n];
     const char *ev_type = "";
     switch (ev->type) {
-      case FUEL_EVENT:
-        ev_type = "fuel";
-        break;
-      case IGNITION_EVENT:
-        ev_type = "ignition";
-        break;
-      case ADC_EVENT:
-        ev_type = "adc";
-        break;
-      default:
-        ev_type = "disabled";
-        break;
+    case FUEL_EVENT:
+      ev_type = "fuel";
+      break;
+    case IGNITION_EVENT:
+      ev_type = "ignition";
+      break;
+    case ADC_EVENT:
+      ev_type = "adc";
+      break;
+    default:
+      ev_type = "disabled";
+      break;
     }
     sprintf(dest,
             "type=%s angle=%.0f output=%d inverted=%d",
@@ -1240,36 +1240,36 @@ static void console_process_rx() {
 static void console_output_events() {
   struct logged_event ev = platform_get_logged_event();
   switch (ev.type) {
-    case EVENT_OUTPUT:
-      sprintf(config.console.txbuffer,
-              "# OUTPUTS %lu %2x\r\n",
-              (unsigned long)ev.time,
-              ev.value);
-      console_write_full(config.console.txbuffer,
-                         strlen(config.console.txbuffer));
-      break;
-    case EVENT_GPIO:
-      sprintf(config.console.txbuffer,
-              "# GPIO %lu %2x\r\n",
-              (unsigned long)ev.time,
-              ev.value);
-      console_write_full(config.console.txbuffer,
-                         strlen(config.console.txbuffer));
-      break;
-    case EVENT_TRIGGER0:
-      sprintf(
-        config.console.txbuffer, "# TRIGGER0 %lu\r\n", (unsigned long)ev.time);
-      console_write_full(config.console.txbuffer,
-                         strlen(config.console.txbuffer));
-      break;
-    case EVENT_TRIGGER1:
-      sprintf(
-        config.console.txbuffer, "# TRIGGER1 %lu\r\n", (unsigned long)ev.time);
-      console_write_full(config.console.txbuffer,
-                         strlen(config.console.txbuffer));
-      break;
-    default:
-      break;
+  case EVENT_OUTPUT:
+    sprintf(config.console.txbuffer,
+            "# OUTPUTS %lu %2x\r\n",
+            (unsigned long)ev.time,
+            ev.value);
+    console_write_full(config.console.txbuffer,
+                       strlen(config.console.txbuffer));
+    break;
+  case EVENT_GPIO:
+    sprintf(config.console.txbuffer,
+            "# GPIO %lu %2x\r\n",
+            (unsigned long)ev.time,
+            ev.value);
+    console_write_full(config.console.txbuffer,
+                       strlen(config.console.txbuffer));
+    break;
+  case EVENT_TRIGGER0:
+    sprintf(
+      config.console.txbuffer, "# TRIGGER0 %lu\r\n", (unsigned long)ev.time);
+    console_write_full(config.console.txbuffer,
+                       strlen(config.console.txbuffer));
+    break;
+  case EVENT_TRIGGER1:
+    sprintf(
+      config.console.txbuffer, "# TRIGGER1 %lu\r\n", (unsigned long)ev.time);
+    console_write_full(config.console.txbuffer,
+                       strlen(config.console.txbuffer));
+    break;
+  default:
+    break;
   }
 }
 

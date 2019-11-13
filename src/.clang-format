@@ -68,7 +68,7 @@ IncludeCategories:
   - Regex:           '.*'
     Priority:        1
 IncludeIsMainRegex: '(Test)?$'
-IndentCaseLabels: true
+IndentCaseLabels: false
 IndentPPDirectives: None
 IndentWidth:     2
 IndentWrappedFunctionNames: false

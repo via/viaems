@@ -42,13 +42,13 @@ void calculate_ignition() {
                               config.decoder.rpm,
                               config.sensors[SENSOR_MAP].processed_value);
   switch (config.ignition.dwell) {
-    case DWELL_FIXED_DUTY:
-      calculated_values.dwell_us =
-        time_from_rpm_diff(config.decoder.rpm, 45) / (TICKRATE / 1000000);
-      break;
-    case DWELL_FIXED_TIME:
-      calculated_values.dwell_us = config.ignition.dwell_us;
-      break;
+  case DWELL_FIXED_DUTY:
+    calculated_values.dwell_us =
+      time_from_rpm_diff(config.decoder.rpm, 45) / (TICKRATE / 1000000);
+    break;
+  case DWELL_FIXED_TIME:
+    calculated_values.dwell_us = config.ignition.dwell_us;
+    break;
   }
 }
 

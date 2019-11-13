@@ -44,31 +44,31 @@ static void sensor_convert(struct sensor_input *in) {
 
   float raw;
   switch (in->source) {
-    case SENSOR_ADC:
-      raw = in->raw_value;
-      break;
-    case SENSOR_FREQ:
-      raw = sensor_convert_freq(in->raw_value);
-      break;
-    case SENSOR_CONST:
-      in->processed_value = in->params.fixed_value;
-      return;
-    default:
-      raw = 0.0;
-      break;
+  case SENSOR_ADC:
+    raw = in->raw_value;
+    break;
+  case SENSOR_FREQ:
+    raw = sensor_convert_freq(in->raw_value);
+    break;
+  case SENSOR_CONST:
+    in->processed_value = in->params.fixed_value;
+    return;
+  default:
+    raw = 0.0;
+    break;
   }
 
   float old_value = in->processed_value;
   switch (in->method) {
-    case METHOD_LINEAR:
-      in->processed_value = sensor_convert_linear(in, raw);
-      break;
-    case METHOD_TABLE:
-      in->processed_value = interpolate_table_oneaxis(in->params.table, raw);
-      break;
-    case METHOD_THERM:
-      in->processed_value = sensor_convert_thermistor(&in->params.therm, raw);
-      break;
+  case METHOD_LINEAR:
+    in->processed_value = sensor_convert_linear(in, raw);
+    break;
+  case METHOD_TABLE:
+    in->processed_value = interpolate_table_oneaxis(in->params.table, raw);
+    break;
+  case METHOD_THERM:
+    in->processed_value = sensor_convert_thermistor(&in->params.therm, raw);
+    break;
   }
 
   /* Do lag filtering */
