@@ -88,6 +88,7 @@ void stats_init(timeval_t ticks) {
 }
 
 static void stats_update(stats_field_t type, timeval_t val) {
+  return;
 
   if (val < stats_entries[type].min) {
     stats_entries[type].min = val;
@@ -109,10 +110,12 @@ static void stats_update(stats_field_t type, timeval_t val) {
 }
 
 void stats_start_timing(stats_field_t type) {
+  return;
   stats_entries[type]._window = cycle_count();
 }
 
 void stats_finish_timing(stats_field_t type) {
+  return;
 
   timeval_t time;
   time = cycle_count();
@@ -122,6 +125,7 @@ void stats_finish_timing(stats_field_t type) {
 }
 
 void stats_increment_counter(stats_field_t type) {
+  return;
 
   if (cycle_count() - stats_entries[type]._window > ticks_per_sec) {
     /* We've reached the window edge, calculate and reset */

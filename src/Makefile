@@ -23,8 +23,8 @@ LDFLAGS+= -T platforms/stm32f4-discovery.ld -nostartfiles
 
 .elif ${PLATFORM} == "hosted"
 CC=gcc
-CFLAGS+= -I. -std=c99 -Wall -O0 -ggdb -lm -lrt -DSUPPORTS_POSIX_TIMERS
-CFLAGS+= -D TICKRATE=1000000 -D_POSIX_C_SOURCE=199309L -D_GNU_SOURCE
+CFLAGS+= -I. -std=c99 -Wall -O3 -ggdb -lm -lrt -DSUPPORTS_POSIX_TIMERS
+CFLAGS+= -D TICKRATE=4000000 -D_POSIX_C_SOURCE=199309L -D_GNU_SOURCE
 CFLAGS+= -fsanitize=undefined -fsanitize=address -DGIT_DESCRIBE=\"${GITDESC}\"
 
 .elif ${PLATFORM} == "test"

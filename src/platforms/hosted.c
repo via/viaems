@@ -31,13 +31,20 @@
  * RUN [TIME]
  */
 
-_Atomic static timeval_t curtime;
+_Atomic static timeval_t curtime = (459000000 - 200000);
 
-_Atomic static timeval_t eventtimer_time;
+_Atomic static timeval_t eventtimer_time = 0;
 _Atomic static uint32_t eventtimer_enable = 0;
 int event_logging_enabled = 1;
 uint32_t test_trigger_rpm = 0;
 timeval_t test_trigger_last = 0;
+
+struct {
+  timeval_t time;
+  uint8_t trigger;
+} replays[65535];
+size_t cur_replay = 0;
+size_t max_replays = 0;
 
 struct slot {
   uint16_t on_mask;
@@ -231,30 +238,32 @@ static void hosted_platform_timer(int sig, siginfo_t *info, void *ucontext) {
     return;
   }
 
-  int failing = 0; // (current_time() % 1000000) > 500000;
-  if (current_time() % 1000 == 0) {
-    // test_trigger_rpm += 1;
-    if (test_trigger_rpm > 9000) {
-      test_trigger_rpm = 800;
-    }
-  }
-  if (test_trigger_rpm && !failing) {
-    timeval_t time_between = time_from_rpm_diff(test_trigger_rpm, 30);
-    static uint32_t trigger_count = 0;
-    if (curtime >= test_trigger_last + time_between) {
-      test_trigger_last = curtime;
-      struct decoder_event ev = { .t0 = 1, .time = curtime };
+  if (max_replays != cur_replay) {
+    if (curtime >= replays[cur_replay].time) {
+      int trigger = replays[cur_replay].trigger;
+      struct decoder_event ev = { .t0 = (trigger == 0), .t1 = (trigger == 1), .time = replays[cur_replay].time };
       decoder_update_scheduling(&ev, 1);
-      trigger_count++;
-
-      if ((config.decoder.type == TOYOTA_24_1_CAS) &&
-          (trigger_count >= config.decoder.num_triggers)) {
-        trigger_count = 0;
-        struct decoder_event ev = { .t1 = 1, .time = curtime };
-        decoder_update_scheduling(&ev, 1);
-      }
+      cur_replay++;
     }
   }
+
+//  if (test_trigger_rpm && !failing) {
+//    timeval_t time_between = time_from_rpm_diff(test_trigger_rpm, 30);
+//    static uint32_t trigger_count = 0;
+//    if (curtime >= test_trigger_last + time_between) {
+//      test_trigger_last = curtime;
+//      struct decoder_event ev = { .t0 = 1, .time = curtime };
+//      decoder_update_scheduling(&ev, 1);
+//      trigger_count++;
+//
+//      if ((config.decoder.type == TOYOTA_24_1_CAS) &&
+//          (trigger_count >= config.decoder.num_triggers)) {
+//        trigger_count = 0;
+//        struct decoder_event ev = { .t1 = 1, .time = curtime };
+//        decoder_update_scheduling(&ev, 1);
+//      }
+//    }
+//  }
 
   static uint16_t old_outputs = 0;
   curtime++;
@@ -290,7 +299,7 @@ static void hosted_platform_timer(int sig, siginfo_t *info, void *ucontext) {
     }
   }
 
-  if (eventtimer_enable && (eventtimer_time + 1 == curtime)) {
+  if (eventtimer_enable && (eventtimer_time == curtime)) {
     scheduler_callback_timer_execute();
   }
 
@@ -301,8 +310,24 @@ static void hosted_platform_timer(int sig, siginfo_t *info, void *ucontext) {
   signal_handler_exited();
 }
 
+void load_replays() {
+  FILE *r = fopen("replays", "r");
+  char trigger[32];
+  unsigned int time;
+
+  while (fscanf(r, "# %s %u\n", trigger, &time) != EOF) {
+    replays[max_replays].time = (timeval_t)time;
+    replays[max_replays].trigger = strcmp(trigger, "TRIGGER0") == 0 ? 0 : 1;
+    max_replays++;
+  }
+  printf("Loaded %d replays\n", max_replays);
+
+  fclose(r);
+}
+
 void platform_init() {
 
+  load_replays();
   /* Set up signal handling */
   sigemptyset(&smask);
   struct sigaction sa = {
@@ -324,11 +349,11 @@ void platform_init() {
   struct itimerspec interval = {
     .it_interval = {
       .tv_sec = 0,
-      .tv_nsec = 10000,
+      .tv_nsec = 4000,
     },
     .it_value = {
       .tv_sec = 0,
-      .tv_nsec = 10000,
+      .tv_nsec = 4000,
     },
   };
   timer_settime(timer, 0, &interval, NULL);

@@ -22,6 +22,7 @@ int main() {
 
   enable_test_trigger(FORD_TFI, 2000);
 
+  platform_enable_event_logging();
   sensors_process(SENSOR_CONST);
   while (1) {
     stats_increment_counter(STATS_MAINLOOP_RATE);

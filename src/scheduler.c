@@ -336,7 +336,7 @@ static int schedule_ignition_event(struct output_event *ev,
    * forward once it is scheduled */
   if (ev->stop.scheduled && time_before(ev->stop.time, stop_time) &&
       ((time_diff(stop_time, ev->stop.time) >
-        time_from_rpm_diff(d->rpm, 360)))) {
+        time_from_rpm_diff(d->rpm, 90)))) {
     return 0;
   }
 
