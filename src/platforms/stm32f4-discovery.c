@@ -405,9 +405,9 @@ void platform_enable_event_logging() {
   nvic_enable_irq(NVIC_EXTI9_5_IRQ);
   nvic_enable_irq(NVIC_EXTI15_10_IRQ);
 
-  exti_select_source(0xFFFF, GPIOD);
-  exti_set_trigger(0xFFFF, EXTI_TRIGGER_BOTH);
-  exti_enable_request(0xFFFF);
+  exti_select_source(0xFF, GPIOD);
+  exti_set_trigger(0xFF, EXTI_TRIGGER_BOTH);
+  exti_enable_request(0xFF);
 }
 
 void platform_disable_event_logging() {
@@ -421,12 +421,18 @@ void platform_disable_event_logging() {
 }
 
 static void show_scheduled_outputs() {
+  uint32_t flag_changes = exti_get_flag_status(0xFF);
+  if (flag_changes == 0) {
+    while(1);
+  }
   console_record_event((struct logged_event){
     .type = EVENT_OUTPUT,
     .time = current_time(),
     .value = gpio_port_read(GPIOD),
   });
-  exti_reset_request(0xFFFF);
+  exti_reset_request(flag_changes);
+  __asm__("dsb");
+  __asm__("isb");
 }
 
 void exti0_isr() {
