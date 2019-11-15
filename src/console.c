@@ -681,7 +681,7 @@ static struct {
   struct logged_event events[32];
   int read;
   int write;
-} event_log = { .enabled = 1 };
+} event_log;
 
 static struct logged_event platform_get_logged_event() {
   if (!event_log.enabled || (event_log.read == event_log.write)) {
@@ -1252,7 +1252,7 @@ static void console_process_rx() {
   console_write_full(out, strlen(out));
 }
 
-static void console_output_events() {
+static int console_output_events() {
   strcpy(config.console.txbuffer, "");
   int num_ev = 0;
   struct logged_event ev = platform_get_logged_event();
@@ -1293,6 +1293,7 @@ static void console_output_events() {
     console_write_full(config.console.txbuffer,
                        strlen(config.console.txbuffer));
   }
+  return num_ev;
 }
 
 void console_process() {
@@ -1318,8 +1319,7 @@ void console_process() {
   }
 
   config.console.txbuffer[0] = '\0';
-  console_output_events();
-  if (console_feed_config.n_nodes) {
+  if (!console_output_events() && console_feed_config.n_nodes) {
     console_feed_line(config.console.txbuffer);
     console_write_full(config.console.txbuffer,
                        strlen(config.console.txbuffer));
