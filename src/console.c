@@ -1252,40 +1252,48 @@ static void console_process_rx() {
   console_write_full(out, strlen(out));
 }
 
-static void console_output_events() {
+static int console_output_events() {
+  strcpy(config.console.txbuffer, "");
+  int num_ev = 0;
   struct logged_event ev = platform_get_logged_event();
-  switch (ev.type) {
-  case EVENT_OUTPUT:
-    sprintf(config.console.txbuffer,
-            "# OUTPUTS %lu %2x\r\n",
-            (unsigned long)ev.time,
-            ev.value);
-    console_write_full(config.console.txbuffer,
-                       strlen(config.console.txbuffer));
-    break;
-  case EVENT_GPIO:
-    sprintf(config.console.txbuffer,
-            "# GPIO %lu %2x\r\n",
-            (unsigned long)ev.time,
-            ev.value);
-    console_write_full(config.console.txbuffer,
-                       strlen(config.console.txbuffer));
-    break;
-  case EVENT_TRIGGER0:
-    sprintf(
-      config.console.txbuffer, "# TRIGGER0 %lu\r\n", (unsigned long)ev.time);
-    console_write_full(config.console.txbuffer,
-                       strlen(config.console.txbuffer));
-    break;
-  case EVENT_TRIGGER1:
-    sprintf(
-      config.console.txbuffer, "# TRIGGER1 %lu\r\n", (unsigned long)ev.time);
-    console_write_full(config.console.txbuffer,
-                       strlen(config.console.txbuffer));
-    break;
-  default:
-    break;
+  while ((ev.type != EVENT_NONE) && (num_ev != 16)) {
+    num_ev++;
+
+    char tempbuf[32];
+    switch (ev.type) {
+    case EVENT_OUTPUT:
+      sprintf(tempbuf,
+              "# OUTPUTS %lu %2x\r\n",
+              (unsigned long)ev.time,
+              ev.value);
+      break;
+    case EVENT_GPIO:
+      sprintf(tempbuf,
+              "# GPIO %lu %2x\r\n",
+              (unsigned long)ev.time,
+              ev.value);
+      break;
+    case EVENT_TRIGGER0:
+      sprintf(
+        tempbuf, "# TRIGGER0 %lu\r\n", (unsigned long)ev.time);
+      break;
+    case EVENT_TRIGGER1:
+      sprintf(
+        tempbuf, "# TRIGGER1 %lu\r\n", (unsigned long)ev.time);
+      break;
+    default:
+      break;
+    }
+    strcat(config.console.txbuffer, tempbuf);
+
+    ev = platform_get_logged_event();
   }
+
+  if (num_ev != 0) { 
+    console_write_full(config.console.txbuffer,
+                       strlen(config.console.txbuffer));
+  }
+  return num_ev;
 }
 
 void console_process() {
@@ -1311,8 +1319,7 @@ void console_process() {
   }
 
   config.console.txbuffer[0] = '\0';
-  console_output_events();
-  if (console_feed_config.n_nodes) {
+  if (!console_output_events() && console_feed_config.n_nodes) {
     console_feed_line(config.console.txbuffer);
     console_write_full(config.console.txbuffer,
                        strlen(config.console.txbuffer));
