@@ -681,7 +681,7 @@ static struct {
   struct logged_event events[32];
   int read;
   int write;
-} event_log;
+} event_log = { .enabled = 1 };
 
 static struct logged_event platform_get_logged_event() {
   if (!event_log.enabled || (event_log.read == event_log.write)) {
@@ -1253,38 +1253,45 @@ static void console_process_rx() {
 }
 
 static void console_output_events() {
+  strcpy(config.console.txbuffer, "");
+  int num_ev = 0;
   struct logged_event ev = platform_get_logged_event();
-  switch (ev.type) {
-  case EVENT_OUTPUT:
-    sprintf(config.console.txbuffer,
-            "# OUTPUTS %lu %2x\r\n",
-            (unsigned long)ev.time,
-            ev.value);
+  while ((ev.type != EVENT_NONE) && (num_ev != 16)) {
+    num_ev++;
+
+    char tempbuf[32];
+    switch (ev.type) {
+    case EVENT_OUTPUT:
+      sprintf(tempbuf,
+              "# OUTPUTS %lu %2x\r\n",
+              (unsigned long)ev.time,
+              ev.value);
+      break;
+    case EVENT_GPIO:
+      sprintf(tempbuf,
+              "# GPIO %lu %2x\r\n",
+              (unsigned long)ev.time,
+              ev.value);
+      break;
+    case EVENT_TRIGGER0:
+      sprintf(
+        tempbuf, "# TRIGGER0 %lu\r\n", (unsigned long)ev.time);
+      break;
+    case EVENT_TRIGGER1:
+      sprintf(
+        tempbuf, "# TRIGGER1 %lu\r\n", (unsigned long)ev.time);
+      break;
+    default:
+      break;
+    }
+    strcat(config.console.txbuffer, tempbuf);
+
+    ev = platform_get_logged_event();
+  }
+
+  if (num_ev != 0) { 
     console_write_full(config.console.txbuffer,
                        strlen(config.console.txbuffer));
-    break;
-  case EVENT_GPIO:
-    sprintf(config.console.txbuffer,
-            "# GPIO %lu %2x\r\n",
-            (unsigned long)ev.time,
-            ev.value);
-    console_write_full(config.console.txbuffer,
-                       strlen(config.console.txbuffer));
-    break;
-  case EVENT_TRIGGER0:
-    sprintf(
-      config.console.txbuffer, "# TRIGGER0 %lu\r\n", (unsigned long)ev.time);
-    console_write_full(config.console.txbuffer,
-                       strlen(config.console.txbuffer));
-    break;
-  case EVENT_TRIGGER1:
-    sprintf(
-      config.console.txbuffer, "# TRIGGER1 %lu\r\n", (unsigned long)ev.time);
-    console_write_full(config.console.txbuffer,
-                       strlen(config.console.txbuffer));
-    break;
-  default:
-    break;
   }
 }
 
