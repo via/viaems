@@ -422,9 +422,6 @@ void platform_disable_event_logging() {
 
 static void show_scheduled_outputs() {
   uint32_t flag_changes = exti_get_flag_status(0xFF);
-  if (flag_changes == 0) {
-    while(1);
-  }
   console_record_event((struct logged_event){
     .type = EVENT_OUTPUT,
     .time = current_time(),
@@ -445,6 +442,9 @@ void exti2_isr() {
   show_scheduled_outputs();
 }
 void exti3_isr() {
+  show_scheduled_outputs();
+}
+void exti4_isr() {
   show_scheduled_outputs();
 }
 void exti9_5_isr() {
