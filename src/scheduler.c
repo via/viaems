@@ -332,11 +332,11 @@ static int schedule_ignition_event(struct output_event *ev,
     ev->stop.scheduled = 0;
   }
 
-  /* Don't let the stop time move more than 90*
+  /* Don't let the stop time move more than 180*
    * forward once it is scheduled */
   if (ev->stop.scheduled && time_before(ev->stop.time, stop_time) &&
       ((time_diff(stop_time, ev->stop.time) >
-        time_from_rpm_diff(d->rpm, 360)))) {
+        time_from_rpm_diff(d->rpm, 180)))) {
     return 0;
   }
 
@@ -381,6 +381,16 @@ static int schedule_fuel_event(struct output_event *ev,
     ev->stop.fired = 0;
     ev->start.scheduled = 0;
     ev->stop.scheduled = 0;
+  }
+
+  /* Don't let the stop time move more than 180*
+   * forward once it is scheduled
+   * TODO evaluate if this is necessary for fueling */
+
+  if (ev->stop.scheduled && time_before(ev->stop.time, stop_time) &&
+      ((time_diff(stop_time, ev->stop.time) >
+        time_from_rpm_diff(d->rpm, 180)))) {
+    return 0;
   }
 
   schedule_output_event_safely(ev, start_time, stop_time, 1);
