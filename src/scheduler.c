@@ -144,7 +144,7 @@ static int sched_entry_enable(const struct sched_entry *en, timeval_t time) {
   *addr = value;
   timeval_t after_time = current_time();
 
-  if (time_in_range(time - 1, before_time, after_time + 1)) {
+  if (time_in_range(time, before_time, after_time + 1)) {
     set_output(en->pin, en->val);
   }
 
