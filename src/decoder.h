@@ -86,7 +86,6 @@ struct decoder_event {
 
 void decoder_init(struct decoder *);
 void decoder_update_scheduling(struct decoder_event *, unsigned int count);
-void enable_test_trigger(trigger_type t, unsigned int rpm);
 
 #ifdef UNITTEST
 #include <check.h>

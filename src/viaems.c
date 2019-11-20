@@ -20,8 +20,6 @@ int main() {
 
   assert(config_valid());
 
-  enable_test_trigger(FORD_TFI, 2000);
-
   sensors_process(SENSOR_CONST);
   while (1) {
     stats_increment_counter(STATS_MAINLOOP_RATE);

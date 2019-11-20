@@ -774,6 +774,7 @@ void platform_init() {
   rcc_periph_clock_enable(RCC_TIM1);
   rcc_periph_clock_enable(RCC_TIM2);
   rcc_periph_clock_enable(RCC_TIM3);
+  rcc_periph_clock_enable(RCC_TIM5);
   rcc_periph_clock_enable(RCC_TIM6);
   rcc_periph_clock_enable(RCC_TIM8);
   rcc_periph_clock_enable(RCC_SPI2);
@@ -785,6 +786,7 @@ void platform_init() {
   scb_set_priority_grouping(SCB_AIRCR_PRIGROUP_GROUP16_NOSUB);
   platform_init_scheduled_outputs();
   platform_init_eventtimer();
+  enable_test_trigger(2000);
   platform_init_spi_adc();
   platform_init_pwm();
   platform_init_freqsensor();
@@ -1080,32 +1082,99 @@ void set_gpio(int output, char value) {
   }
 }
 
-void enable_test_trigger(trigger_type trig, unsigned int rpm) {
-  if (trig != FORD_TFI) {
+
+static struct {
+  uint8_t enabled;
+  uint8_t current_tooth;
+  uint8_t max_teeth;
+  degrees_t teeth_degrees;
+  timeval_t last_trigger;
+  int rpm;
+  int last_edge_rising; /* Indicates upcoming edge should be falling */
+} test_trigger_config;
+
+void tim5_isr() {
+  if (timer_get_flag(TIM5, TIM_SR_CC1IF)) {
+    timer_clear_flag(TIM5, TIM_SR_CC1IF);
+  }
+  if (test_trigger_config.last_edge_rising) {
+    test_trigger_config.last_trigger = TIM5_CCR1;
+    timeval_t next_event = TIM5_CCR1 + time_from_us(500);
+    timer_set_oc_value(TIM5, TIM_OC1, next_event);
+    test_trigger_config.last_edge_rising = 0;
+  } else {
+    timeval_t next_event = TIM5_CCR1 + time_from_rpm_diff(test_trigger_config.rpm, 
+        test_trigger_config.teeth_degrees) - time_from_us(500);
+    timer_set_oc_value(TIM5, TIM_OC1, next_event);
+    test_trigger_config.last_edge_rising = 1;
+  }
+
+  if (test_trigger_config.last_edge_rising) {
+    test_trigger_config.current_tooth = (test_trigger_config.current_tooth + 1) % test_trigger_config.max_teeth;
+
+    if ((test_trigger_config.current_tooth == test_trigger_config.max_teeth - 1) ||
+        (test_trigger_config.current_tooth == 0)) {
+      /* Put sync high, we'll clear it soon */
+      timer_set_oc_value(TIM5, TIM_OC2, current_time() + time_from_us(500));
+      timer_enable_oc_output(TIM5, TIM_OC2);
+    }
+   }
+
+}
+
+void enable_test_trigger(unsigned int rpm) {
+
+  /* Only change the rpm if we're already on */
+  test_trigger_config.rpm = rpm;
+  if (test_trigger_config.enabled) {
     return;
   }
 
-  timeval_t t = time_from_rpm_diff(rpm, 45);
+  test_trigger_config.enabled = 1;
+  test_trigger_config.max_teeth = config.decoder.type == FORD_TFI ? 8 : 24;
+  test_trigger_config.teeth_degrees = config.decoder.type == FORD_TFI ? 90 : 30;
+  test_trigger_config.last_edge_rising = 1;
 
-  /* Set up TIM5 as 32bit clock */
-  rcc_periph_clock_enable(RCC_TIM5);
-  gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO0);
-  gpio_set_af(GPIOA, GPIO_AF2, GPIO0);
-  timer_disable_oc_output(TIM5, TIM_OC1);
   timer_set_mode(TIM5, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
-  timer_set_period(TIM5, (unsigned int)t);
-  timer_set_prescaler(TIM5, 20); /* Primary clock is still 168 Mhz */
+  timer_slave_set_mode(TIM5, TIM_SMCR_SMS_ECM1);
+  timer_slave_set_trigger(TIM5, TIM_SMCR_TS_ITR3); /* TIM5 slaved off TIM8 */
+  timer_set_period(TIM5, 0xFFFFFFFF);
+  timer_set_prescaler(TIM5, 0);
   timer_disable_preload(TIM5);
   timer_continuous_mode(TIM5);
+
+  /* Setup output compare registers */
+  timer_disable_oc_output(TIM5, TIM_OC1);
+  timer_disable_oc_output(TIM5, TIM_OC2);
+  timer_disable_oc_output(TIM5, TIM_OC3);
+  timer_disable_oc_output(TIM5, TIM_OC4);
+
+  /* Set up gpios */
+  gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO0);
+  gpio_set_af(GPIOA, GPIO_AF2, GPIO0);
+  gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO1);
+  gpio_set_af(GPIOA, GPIO_AF2, GPIO1);
+
   /* Setup output compare registers */
   timer_ic_set_input(TIM5, TIM_IC1, TIM_IC_OUT);
   timer_disable_oc_clear(TIM5, TIM_OC1);
   timer_disable_oc_preload(TIM5, TIM_OC1);
   timer_set_oc_slow_mode(TIM5, TIM_OC1);
   timer_set_oc_mode(TIM5, TIM_OC1, TIM_OCM_TOGGLE);
-  timer_set_oc_value(TIM5, TIM_OC1, t);
+  timer_set_oc_value(TIM5, TIM_OC1, current_time() + time_from_us(1000000));
   timer_set_oc_polarity_high(TIM5, TIM_OC1);
   timer_enable_oc_output(TIM5, TIM_OC1);
+
+  timer_ic_set_input(TIM5, TIM_IC2, TIM_IC_OUT);
+  timer_disable_oc_clear(TIM5, TIM_OC2);
+  timer_disable_oc_preload(TIM5, TIM_OC2);
+  timer_set_oc_slow_mode(TIM5, TIM_OC2);
+  timer_set_oc_mode(TIM5, TIM_OC2, TIM_OCM_TOGGLE);
+  timer_set_oc_polarity_high(TIM5, TIM_OC2);
+
+  timer_enable_irq(TIM5, TIM_DIER_CC1IE);
+  nvic_enable_irq(NVIC_TIM5_IRQ);
+  nvic_set_priority(NVIC_TIM5_IRQ, 0);
   timer_enable_counter(TIM5);
 }
 
