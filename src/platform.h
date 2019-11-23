@@ -52,7 +52,7 @@ void platform_enable_event_logging();
 void platform_disable_event_logging();
 void platform_reset_into_bootloader();
 
-void enable_test_trigger(unsigned int rpm);
+void set_test_trigger_rpm(unsigned int rpm);
 
 #ifdef UNITTEST
 #include <check.h>
