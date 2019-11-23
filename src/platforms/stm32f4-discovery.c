@@ -757,6 +757,105 @@ void platform_init_usb() {
   nvic_enable_irq(NVIC_OTG_FS_IRQ);
 }
 
+static struct {
+  uint8_t enabled;
+  uint8_t current_tooth;
+  uint8_t max_teeth;
+  degrees_t teeth_degrees;
+  timeval_t last_trigger;
+  int rpm;
+  int last_edge_active; /* Indicates upcoming edge should be falling */
+} test_trigger_config;
+
+void tim5_isr() {
+  if (timer_get_flag(TIM5, TIM_SR_CC1IF)) {
+    timer_clear_flag(TIM5, TIM_SR_CC1IF);
+  }
+  if (test_trigger_config.last_edge_active) {
+    test_trigger_config.last_trigger = TIM5_CCR1;
+    timeval_t next_event = TIM5_CCR1 + time_from_us(200);
+    timer_set_oc_value(TIM5, TIM_OC1, next_event);
+    test_trigger_config.last_edge_active = 0;
+  } else {
+    timeval_t next_event =
+      TIM5_CCR1 +
+      time_from_rpm_diff(test_trigger_config.rpm,
+                         test_trigger_config.teeth_degrees) -
+      time_from_us(200);
+    timer_set_oc_value(TIM5, TIM_OC1, next_event);
+    test_trigger_config.last_edge_active = 1;
+  }
+
+  if (test_trigger_config.last_edge_active) {
+    test_trigger_config.current_tooth =
+      (test_trigger_config.current_tooth + 1) % test_trigger_config.max_teeth;
+
+    /* Toggle the sync line right before *and* right after */
+    if ((test_trigger_config.current_tooth ==
+         test_trigger_config.max_teeth - 1) ||
+        (test_trigger_config.current_tooth == 0)) {
+      timer_set_oc_value(TIM5, TIM_OC2, current_time() + time_from_us(200));
+      timer_enable_oc_output(TIM5, TIM_OC2);
+    }
+  }
+}
+
+void set_test_trigger_rpm(unsigned int rpm) {
+
+  test_trigger_config.rpm = rpm;
+  if (!test_trigger_config.enabled) {
+    timer_set_oc_value(TIM5, TIM_OC1, current_time() + time_from_us(1000000));
+    timer_enable_oc_output(TIM5, TIM_OC1);
+  }
+}
+
+void platform_init_test_trigger() {
+
+  test_trigger_config.max_teeth = config.decoder.type == FORD_TFI ? 8 : 24;
+  test_trigger_config.teeth_degrees = config.decoder.type == FORD_TFI ? 90 : 30;
+  test_trigger_config.last_edge_active = 1;
+
+  timer_set_mode(TIM5, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
+  timer_slave_set_mode(TIM5, TIM_SMCR_SMS_ECM1);
+  timer_slave_set_trigger(TIM5, TIM_SMCR_TS_ITR3); /* TIM5 slaved off TIM8 */
+  timer_set_period(TIM5, 0xFFFFFFFF);
+  timer_set_prescaler(TIM5, 0);
+  timer_disable_preload(TIM5);
+  timer_continuous_mode(TIM5);
+
+  /* Setup output compare registers */
+  timer_disable_oc_output(TIM5, TIM_OC1);
+  timer_disable_oc_output(TIM5, TIM_OC2);
+  timer_disable_oc_output(TIM5, TIM_OC3);
+  timer_disable_oc_output(TIM5, TIM_OC4);
+
+  /* Set up gpios */
+  gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO0);
+  gpio_set_af(GPIOA, GPIO_AF2, GPIO0);
+  gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO1);
+  gpio_set_af(GPIOA, GPIO_AF2, GPIO1);
+
+  /* Setup output compare registers */
+  timer_ic_set_input(TIM5, TIM_IC1, TIM_IC_OUT);
+  timer_disable_oc_clear(TIM5, TIM_OC1);
+  timer_disable_oc_preload(TIM5, TIM_OC1);
+  timer_set_oc_slow_mode(TIM5, TIM_OC1);
+  timer_set_oc_mode(TIM5, TIM_OC1, TIM_OCM_TOGGLE);
+  timer_set_oc_polarity_low(TIM5, TIM_OC1);
+
+  timer_ic_set_input(TIM5, TIM_IC2, TIM_IC_OUT);
+  timer_disable_oc_clear(TIM5, TIM_OC2);
+  timer_disable_oc_preload(TIM5, TIM_OC2);
+  timer_set_oc_slow_mode(TIM5, TIM_OC2);
+  timer_set_oc_mode(TIM5, TIM_OC2, TIM_OCM_TOGGLE);
+  timer_set_oc_polarity_high(TIM5, TIM_OC2);
+
+  timer_enable_irq(TIM5, TIM_DIER_CC1IE);
+  nvic_enable_irq(NVIC_TIM5_IRQ);
+  nvic_set_priority(NVIC_TIM5_IRQ, 0);
+  timer_enable_counter(TIM5);
+}
+
 void platform_init() {
 
   /* 168 Mhz clock */
@@ -1080,105 +1179,6 @@ void set_gpio(int output, char value) {
   } else {
     gpio_clear(GPIOE, (1 << output));
   }
-}
-
-static struct {
-  uint8_t enabled;
-  uint8_t current_tooth;
-  uint8_t max_teeth;
-  degrees_t teeth_degrees;
-  timeval_t last_trigger;
-  int rpm;
-  int last_edge_active; /* Indicates upcoming edge should be falling */
-} test_trigger_config;
-
-void tim5_isr() {
-  if (timer_get_flag(TIM5, TIM_SR_CC1IF)) {
-    timer_clear_flag(TIM5, TIM_SR_CC1IF);
-  }
-  if (test_trigger_config.last_edge_active) {
-    test_trigger_config.last_trigger = TIM5_CCR1;
-    timeval_t next_event = TIM5_CCR1 + time_from_us(200);
-    timer_set_oc_value(TIM5, TIM_OC1, next_event);
-    test_trigger_config.last_edge_active = 0;
-  } else {
-    timeval_t next_event =
-      TIM5_CCR1 +
-      time_from_rpm_diff(test_trigger_config.rpm,
-                         test_trigger_config.teeth_degrees) -
-      time_from_us(200);
-    timer_set_oc_value(TIM5, TIM_OC1, next_event);
-    test_trigger_config.last_edge_active = 1;
-  }
-
-  if (test_trigger_config.last_edge_active) {
-    test_trigger_config.current_tooth =
-      (test_trigger_config.current_tooth + 1) % test_trigger_config.max_teeth;
-
-    /* Toggle the sync line right before *and* right after */
-    if ((test_trigger_config.current_tooth ==
-         test_trigger_config.max_teeth - 1) ||
-        (test_trigger_config.current_tooth == 0)) {
-      timer_set_oc_value(TIM5, TIM_OC2, current_time() + time_from_us(200));
-      timer_enable_oc_output(TIM5, TIM_OC2);
-    }
-  }
-}
-
-void set_test_trigger_rpm(unsigned int rpm) {
-
-  test_trigger_config.rpm = rpm;
-  if (!test_trigger_config.enabled) {
-    timer_set_oc_value(TIM5, TIM_OC1, current_time() + time_from_us(1000000));
-    timer_enable_oc_output(TIM5, TIM_OC1);
-  }
-}
-
-void platform_init_test_trigger() {
-
-  test_trigger_config.max_teeth = config.decoder.type == FORD_TFI ? 8 : 24;
-  test_trigger_config.teeth_degrees = config.decoder.type == FORD_TFI ? 90 : 30;
-  test_trigger_config.last_edge_active = 1;
-
-  timer_set_mode(TIM5, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
-  timer_slave_set_mode(TIM5, TIM_SMCR_SMS_ECM1);
-  timer_slave_set_trigger(TIM5, TIM_SMCR_TS_ITR3); /* TIM5 slaved off TIM8 */
-  timer_set_period(TIM5, 0xFFFFFFFF);
-  timer_set_prescaler(TIM5, 0);
-  timer_disable_preload(TIM5);
-  timer_continuous_mode(TIM5);
-
-  /* Setup output compare registers */
-  timer_disable_oc_output(TIM5, TIM_OC1);
-  timer_disable_oc_output(TIM5, TIM_OC2);
-  timer_disable_oc_output(TIM5, TIM_OC3);
-  timer_disable_oc_output(TIM5, TIM_OC4);
-
-  /* Set up gpios */
-  gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO0);
-  gpio_set_af(GPIOA, GPIO_AF2, GPIO0);
-  gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO1);
-  gpio_set_af(GPIOA, GPIO_AF2, GPIO1);
-
-  /* Setup output compare registers */
-  timer_ic_set_input(TIM5, TIM_IC1, TIM_IC_OUT);
-  timer_disable_oc_clear(TIM5, TIM_OC1);
-  timer_disable_oc_preload(TIM5, TIM_OC1);
-  timer_set_oc_slow_mode(TIM5, TIM_OC1);
-  timer_set_oc_mode(TIM5, TIM_OC1, TIM_OCM_TOGGLE);
-  timer_set_oc_polarity_low(TIM5, TIM_OC1);
-
-  timer_ic_set_input(TIM5, TIM_IC2, TIM_IC_OUT);
-  timer_disable_oc_clear(TIM5, TIM_OC2);
-  timer_disable_oc_preload(TIM5, TIM_OC2);
-  timer_set_oc_slow_mode(TIM5, TIM_OC2);
-  timer_set_oc_mode(TIM5, TIM_OC2, TIM_OCM_TOGGLE);
-  timer_set_oc_polarity_high(TIM5, TIM_OC2);
-
-  timer_enable_irq(TIM5, TIM_DIER_CC1IE);
-  nvic_enable_irq(NVIC_TIM5_IRQ);
-  nvic_set_priority(NVIC_TIM5_IRQ, 0);
-  timer_enable_counter(TIM5);
 }
 
 extern unsigned _configdata_loadaddr, _sconfigdata, _econfigdata;

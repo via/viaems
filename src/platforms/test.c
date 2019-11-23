@@ -109,7 +109,7 @@ timeval_t init_output_thread(uint32_t *b0, uint32_t *b1, uint32_t len) {
   return 0;
 }
 
-void enable_test_trigger(trigger_type trig, unsigned int rpm) {}
+void set_test_trigger_rpm(unsigned int rpm) {}
 
 void platform_save_config() {}
 
