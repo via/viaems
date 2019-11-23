@@ -841,14 +841,28 @@ void platform_init_test_trigger() {
   timer_disable_oc_preload(TIM5, TIM_OC1);
   timer_set_oc_slow_mode(TIM5, TIM_OC1);
   timer_set_oc_mode(TIM5, TIM_OC1, TIM_OCM_TOGGLE);
-  timer_set_oc_polarity_low(TIM5, TIM_OC1);
+  switch (config.decoder.t0_edge) {
+  case RISING_EDGE:
+    timer_set_oc_polarity_low(TIM5, TIM_OC1);
+    break;
+  default:
+    timer_set_oc_polarity_high(TIM5, TIM_OC1);
+    break;
+  }
 
   timer_ic_set_input(TIM5, TIM_IC2, TIM_IC_OUT);
   timer_disable_oc_clear(TIM5, TIM_OC2);
   timer_disable_oc_preload(TIM5, TIM_OC2);
   timer_set_oc_slow_mode(TIM5, TIM_OC2);
   timer_set_oc_mode(TIM5, TIM_OC2, TIM_OCM_TOGGLE);
-  timer_set_oc_polarity_high(TIM5, TIM_OC2);
+  switch (config.decoder.t1_edge) {
+  case RISING_EDGE:
+    timer_set_oc_polarity_low(TIM5, TIM_OC2);
+    break;
+  default:
+    timer_set_oc_polarity_high(TIM5, TIM_OC2);
+    break;
+  }
 
   timer_enable_irq(TIM5, TIM_DIER_CC1IE);
   nvic_enable_irq(NVIC_TIM5_IRQ);
