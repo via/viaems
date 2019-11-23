@@ -1262,24 +1262,17 @@ static int console_output_events() {
     char tempbuf[32];
     switch (ev.type) {
     case EVENT_OUTPUT:
-      sprintf(tempbuf,
-              "# OUTPUTS %lu %2x\r\n",
-              (unsigned long)ev.time,
-              ev.value);
+      sprintf(
+        tempbuf, "# OUTPUTS %lu %2x\r\n", (unsigned long)ev.time, ev.value);
       break;
     case EVENT_GPIO:
-      sprintf(tempbuf,
-              "# GPIO %lu %2x\r\n",
-              (unsigned long)ev.time,
-              ev.value);
+      sprintf(tempbuf, "# GPIO %lu %2x\r\n", (unsigned long)ev.time, ev.value);
       break;
     case EVENT_TRIGGER0:
-      sprintf(
-        tempbuf, "# TRIGGER0 %lu\r\n", (unsigned long)ev.time);
+      sprintf(tempbuf, "# TRIGGER0 %lu\r\n", (unsigned long)ev.time);
       break;
     case EVENT_TRIGGER1:
-      sprintf(
-        tempbuf, "# TRIGGER1 %lu\r\n", (unsigned long)ev.time);
+      sprintf(tempbuf, "# TRIGGER1 %lu\r\n", (unsigned long)ev.time);
       break;
     default:
       break;
@@ -1289,7 +1282,7 @@ static int console_output_events() {
     ev = platform_get_logged_event();
   }
 
-  if (num_ev != 0) { 
+  if (num_ev != 0) {
     console_write_full(config.console.txbuffer,
                        strlen(config.console.txbuffer));
   }
