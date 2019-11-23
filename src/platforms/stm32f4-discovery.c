@@ -1082,7 +1082,6 @@ void set_gpio(int output, char value) {
   }
 }
 
-
 static struct {
   uint8_t enabled;
   uint8_t current_tooth;
@@ -1103,23 +1102,27 @@ void tim5_isr() {
     timer_set_oc_value(TIM5, TIM_OC1, next_event);
     test_trigger_config.last_edge_active = 0;
   } else {
-    timeval_t next_event = TIM5_CCR1 + time_from_rpm_diff(test_trigger_config.rpm, 
-        test_trigger_config.teeth_degrees) - time_from_us(200);
+    timeval_t next_event =
+      TIM5_CCR1 +
+      time_from_rpm_diff(test_trigger_config.rpm,
+                         test_trigger_config.teeth_degrees) -
+      time_from_us(200);
     timer_set_oc_value(TIM5, TIM_OC1, next_event);
     test_trigger_config.last_edge_active = 1;
   }
 
   if (test_trigger_config.last_edge_active) {
-    test_trigger_config.current_tooth = (test_trigger_config.current_tooth + 1) % test_trigger_config.max_teeth;
+    test_trigger_config.current_tooth =
+      (test_trigger_config.current_tooth + 1) % test_trigger_config.max_teeth;
 
     /* Toggle the sync line right before *and* right after */
-    if ((test_trigger_config.current_tooth == test_trigger_config.max_teeth - 1) ||
+    if ((test_trigger_config.current_tooth ==
+         test_trigger_config.max_teeth - 1) ||
         (test_trigger_config.current_tooth == 0)) {
       timer_set_oc_value(TIM5, TIM_OC2, current_time() + time_from_us(200));
       timer_enable_oc_output(TIM5, TIM_OC2);
     }
-   }
-
+  }
 }
 
 void set_test_trigger_rpm(unsigned int rpm) {
