@@ -760,8 +760,6 @@ void platform_init_usb() {
 static struct {
   uint8_t enabled;
   uint8_t current_tooth;
-  uint8_t max_teeth;
-  degrees_t teeth_degrees;
   timeval_t last_trigger;
   int rpm;
   int last_edge_active; /* Indicates upcoming edge should be falling */
@@ -780,7 +778,7 @@ void tim5_isr() {
     timeval_t next_event =
       TIM5_CCR1 +
       time_from_rpm_diff(test_trigger_config.rpm,
-                         test_trigger_config.teeth_degrees) -
+                         config.decoder.degrees_per_trigger) -
       time_from_us(200);
     timer_set_oc_value(TIM5, TIM_OC1, next_event);
     test_trigger_config.last_edge_active = 1;
@@ -788,11 +786,11 @@ void tim5_isr() {
 
   if (test_trigger_config.last_edge_active) {
     test_trigger_config.current_tooth =
-      (test_trigger_config.current_tooth + 1) % test_trigger_config.max_teeth;
+      (test_trigger_config.current_tooth + 1) % config.decoder.num_triggers;
 
     /* Toggle the sync line right before *and* right after */
     if ((test_trigger_config.current_tooth ==
-         test_trigger_config.max_teeth - 1) ||
+         config.decoder.num_triggers - 1) ||
         (test_trigger_config.current_tooth == 0)) {
       timer_set_oc_value(TIM5, TIM_OC2, current_time() + time_from_us(200));
       timer_enable_oc_output(TIM5, TIM_OC2);
@@ -811,8 +809,6 @@ void set_test_trigger_rpm(unsigned int rpm) {
 
 void platform_init_test_trigger() {
 
-  test_trigger_config.max_teeth = config.decoder.type == FORD_TFI ? 8 : 24;
-  test_trigger_config.teeth_degrees = config.decoder.type == FORD_TFI ? 90 : 30;
   test_trigger_config.last_edge_active = 1;
 
   timer_set_mode(TIM5, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
