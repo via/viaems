@@ -746,7 +746,7 @@ static void console_set_test_trigger(const struct console_config_node *self,
   (void)self;
 
   uint32_t rpm = atoi(remaining);
-  enable_test_trigger(config.decoder.type, rpm);
+  set_test_trigger_rpm(rpm);
 }
 
 #ifndef GIT_DESCRIBE

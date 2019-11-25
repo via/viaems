@@ -20,7 +20,7 @@ int main() {
 
   assert(config_valid());
 
-  enable_test_trigger(FORD_TFI, 2000);
+  set_test_trigger_rpm(2000);
 
   sensors_process(SENSOR_CONST);
   while (1) {

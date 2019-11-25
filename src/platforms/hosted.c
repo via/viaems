@@ -207,7 +207,7 @@ int current_output_slot() {
   return cur_slot;
 }
 
-void enable_test_trigger(trigger_type t, unsigned int rpm) {
+void set_test_trigger_rpm(unsigned int rpm) {
   test_trigger_rpm = rpm;
 }
 
