@@ -4,6 +4,15 @@
 #include "platform.h"
 #include "util.h"
 
+#include <math.h>
+
+void handle_test_trigger_change() {
+  float bleh = (current_time() % time_from_us(60000000)) / (float)time_from_us(60000000);
+  bleh = 1.0 - fabs(bleh * 2 - 1);
+  set_test_trigger_rpm(1000 + 5000 * bleh);
+}
+
+
 void handle_fuel_pump() {
   static timeval_t last_valid = 0;
 

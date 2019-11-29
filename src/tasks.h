@@ -8,6 +8,7 @@ struct boost_control_config {
   float overboost;
 };
 
+void handle_test_trigger_change();
 void handle_fuel_pump();
 void handle_boost_control();
 void handle_idle_control();

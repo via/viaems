@@ -802,6 +802,7 @@ void set_test_trigger_rpm(unsigned int rpm) {
 
   test_trigger_config.rpm = rpm;
   if (!test_trigger_config.enabled) {
+    test_trigger_config.enabled = 1;
     timer_set_oc_value(TIM5, TIM_OC1, current_time() + time_from_us(1000000));
     timer_enable_oc_output(TIM5, TIM_OC1);
   }

@@ -35,6 +35,8 @@ import sys
 # OUTPUTS 1275582  4
 """
 
+TICKRATE = 16000000
+
 config = {
         "pins": {
             "0": {"type": "ignition", "angles": [0.0, 360.0]},
@@ -55,7 +57,7 @@ def _wrap_angle(angle):
 
 
 class Decoder:
-    def __init__(self, TICKRATE=4000000.0, triggers=24.0, offset=50.0):
+    def __init__(self, triggers=24.0, offset=50.0):
         self.triggers = triggers
         self.offset = offset
         self.triggers_since_sync = 0
@@ -63,14 +65,13 @@ class Decoder:
         self.last_trigger_angle = 0.0
         self.rpm = 0.0
         self.synced = False
-        self.TICKRATE = TICKRATE
 
     def trigger(self, time):
         if time == 0:
             return
         self.triggers_since_sync += 1
         moved_angle = 720.0 / self.triggers
-        self.rpm = 60.0 / ((self.triggers / 2.0) * ((time - self.last_trigger_time) / self.TICKRATE))
+        self.rpm = 60.0 / ((self.triggers / 2.0) * ((time - self.last_trigger_time) / TICKRATE))
 
 
         self.last_trigger_time = time
@@ -89,7 +90,7 @@ class Decoder:
 
     def angle(self, time):
         passed = time - self.last_trigger_time
-        passed_degrees = self.rpm / 60.0 * 360.0 * (passed / self.TICKRATE)
+        passed_degrees = self.rpm / 60.0 * 360.0 * (passed / TICKRATE)
         return (-self.offset + self.last_trigger_angle + passed_degrees) % 720.0
 
 class Validator:
@@ -97,6 +98,9 @@ class Validator:
         self.rev = 0
         self.pins = pins
         self.events_for_last_rev = 0
+        self.last_pw = 0
+        self.last_dwell = 0
+        self.last_advance = 0
 
     def new_rev(self):
         self.rev += 1
@@ -110,8 +114,15 @@ class Validator:
             adv = possible_angle - angle
             if (adv < 60 and adv > -10) or ((adv + 720) % 720 < 60 and (adv + 720) % 720 > -10):
                 # This pin works out
+                advance = _wrap_angle(adv)
                 print("{}: ignition at angle {}, advance={} dwell={}".format(time,
-                        _wrap_angle(angle), _wrap_angle(adv), duration))
+                        _wrap_angle(angle), advance, duration))
+                if (abs(duration - self.last_dwell) > 0.3):
+                    print("Dwell changed rapidly")
+                if (abs(advance - self.last_advance) > 1):
+                    print("Advance changed rapidly")
+                self.last_dwell = duration
+                self.last_advance = advance
                 return True
         print("Bad angle? angle {}, duration {} pin {}".format(angle,
             duration, pin))
@@ -123,6 +134,9 @@ class Validator:
                 # This pin works out
                 print("{}: fueling at angle {}, advance={} pw={}".format(time,
                         _wrap_angle(angle), _wrap_angle(adv), duration))
+                if (abs(duration - self.last_pw) > 0.3):
+                    print("Fueling changed rapidly")
+                self.last_pw = duration
                 return True
         print("Bad angle? angle {}, duration {} pin {}".format(angle,
             duration, pin))
@@ -133,11 +147,11 @@ class Validator:
             self.rev, output, duration, angle))
         pin = self.pins[str(output)]
         if pin["type"] == "ignition":
-            success = self._validate_ignition(time, pin, duration / (4000000 / 1000), angle)
+            success = self._validate_ignition(time, pin, duration / (TICKRATE / 1000), angle)
             if success:
                 self.events_for_last_rev += 1
         elif pin["type"] == "fuel": 
-            success = self._validate_fueling(time, pin, duration / (4000000 / 1000), angle)
+            success = self._validate_fueling(time, pin, duration / (TICKRATE / 1000), angle)
             if success:
                 self.events_for_last_rev += 1
 

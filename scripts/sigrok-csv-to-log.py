@@ -9,7 +9,7 @@ for line in sys.stdin:
     changed = False
     if line.startswith(";") or line.startswith("nanoseconds"):
         continue
-    time = int(line.split(',')[0]) / 250
+    time = int(line.split(',')[0]) / (1000/16)
     outputs = [int(x) for x in line.split(',')[1:]]
 
     if cur_outputs[6] == 0 and outputs[6] == 1:
