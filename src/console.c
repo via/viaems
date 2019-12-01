@@ -1626,16 +1626,16 @@ START_TEST(check_console_set_table) {
   ck_assert_int_eq(t.num_axis, 2);
   ck_assert_int_eq(t.axis[0].num, 3);
   ck_assert_int_eq(t.axis[1].num, 3);
-  ck_assert_str_eq(t.axis[0].name, "row");
-  ck_assert_str_eq(t.axis[1].name, "col");
+  ck_assert_str_eq(t.axis[0].name, "col");
+  ck_assert_str_eq(t.axis[1].name, "row");
 
-  ck_assert_float_eq(t.axis[0].values[0], 1);
-  ck_assert_float_eq(t.axis[0].values[1], 2);
-  ck_assert_float_eq(t.axis[0].values[2], 3);
+  ck_assert_float_eq(t.axis[1].values[0], 1);
+  ck_assert_float_eq(t.axis[1].values[1], 2);
+  ck_assert_float_eq(t.axis[1].values[2], 3);
 
-  ck_assert_float_eq(t.axis[1].values[0], 5);
-  ck_assert_float_eq(t.axis[1].values[1], 6);
-  ck_assert_float_eq(t.axis[1].values[2], 7.2);
+  ck_assert_float_eq(t.axis[0].values[0], 5);
+  ck_assert_float_eq(t.axis[0].values[1], 6);
+  ck_assert_float_eq(t.axis[0].values[2], 7.2);
 
   ck_assert_float_eq(t.data.two[0][0], 5.0);
 
@@ -1657,11 +1657,11 @@ START_TEST(check_console_get_table) {
     .title = "test",
     .num_axis = 2,
     .axis[0] = {
-      .name = "rows", .num = 3,
+      .name = "cols", .num = 3,
       .values = {1, 2.0, 3},
     },
     .axis[1] = {
-      .name = "cols", .num = 3,
+      .name = "rows", .num = 3,
       .values = {5, 6, 7},
     },
     .data = {
@@ -1679,10 +1679,10 @@ START_TEST(check_console_get_table) {
   ck_assert_ptr_nonnull(strstr(buf, "naxis=2"));
   ck_assert_ptr_nonnull(strstr(buf, "rows=3"));
   ck_assert_ptr_nonnull(strstr(buf, "rowname=rows"));
-  ck_assert_ptr_nonnull(strstr(buf, "rowlabels=[1.0,2.0,3.0]"));
+  ck_assert_ptr_nonnull(strstr(buf, "rowlabels=[5.0,6.0,7.0]"));
   ck_assert_ptr_nonnull(strstr(buf, "cols=3"));
   ck_assert_ptr_nonnull(strstr(buf, "colname=cols"));
-  ck_assert_ptr_nonnull(strstr(buf, "collabels=[5.0,6.0,7.0]"));
+  ck_assert_ptr_nonnull(strstr(buf, "collabels=[1.0,2.0,3.0]"));
 
   char cmd2[] = "[1][1]";
   console_get_table(&n, buf, cmd2);
