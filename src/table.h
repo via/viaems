@@ -19,8 +19,8 @@ struct table {
   } data;
 };
 
-float interpolate_table_oneaxis(struct table *, float a);
-float interpolate_table_twoaxis(struct table *, float a1, float a2);
+float interpolate_table_oneaxis(struct table *, float column);
+float interpolate_table_twoaxis(struct table *, float row, float column);
 
 int table_valid(struct table *);
 
