@@ -226,19 +226,19 @@ get config.events 0
 
 ### Tables
 When a table node is read like a simple value, it will return metadata about the
-table.  If a `get` is given column indices (up to 16 at a time), it will return
+table.  If a `get` is given `[row][column]` indices (up to 16 at a time), it will return
 the table values at those points.  `set` can be given key/value pairs to set
 metadata or values:
 
 ```
 get config.tables.ve
-* name=ve naxis=2 rows=16 rowname=RPM cols=16 colname=MAP rowlabels=[250.0,500.0,900.0,1200.0,1600.0,2000.0,2400.0,3000.0,3600.0,4000.0,4400.0,5200.0,5800.0,6400.0,6800.0,7200.0] collabels=[20.0,30.0,40.0,50.0,60.0,70.0,80.0,90.0,100.0,120.0,140.0,160.0,180.0,200.0,220.0,240.0]
+* name=ve naxis=2 cols=16 colname=RPM rows=16 rowname=MAP collabels=[250.0,500.0,900.0,1200.0,1600.0,2000.0,2400.0,3000.0,3600.0,4000.0,4400.0,5200.0,5800.0,6400.0,6800.0,7200.0] rowlabels=[20.0,30.0,40.0,50.0,60.0,70.0,80.0,90.0,100.0,120.0,140.0,160.0,180.0,200.0,220.0,240.0]
 get config.tables.ve [0][0] [0][1]
 * 65.00 30.00
 set config.tables.ve name=myVE [0][0]=12.2
 * 
 get config.tables.ve
-* name=myVE naxis=2 rows=16 rowname=RPM cols=16 colname=MAP rowlabels=[250.0,500.0,900.0,1200.0,1600.0,2000.0,2400.0,3000.0,3600.0,4000.0,4400.0,5200.0,5800.0,6400.0,6800.0,7200.0] collabels=[20.0,30.0,40.0,50.0,60.0,70.0,80.0,90.0,100.0,120.0,140.0,160.0,180.0,200.0,220.0,240.0]
+* name=myVE naxis=2 cols=16 colname=RPM rows=16 rowname=MAP collabels=[250.0,500.0,900.0,1200.0,1600.0,2000.0,2400.0,3000.0,3600.0,4000.0,4400.0,5200.0,5800.0,6400.0,6800.0,7200.0] rowlabels=[20.0,30.0,40.0,50.0,60.0,70.0,80.0,90.0,100.0,120.0,140.0,160.0,180.0,200.0,220.0,240.0]
 get config.tables.ve [0][0]
 * 12.20
 ```

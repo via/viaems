@@ -157,8 +157,8 @@ static int console_set_table_element(struct table *t, const char *k, float v) {
   if ((t->num_axis == 1) && (n_parsed == 1) && (row < t->axis[0].num)) {
     t->data.one[row] = v;
     return 1;
-  } else if ((t->num_axis == 2) && (n_parsed == 2) && (row < t->axis[0].num) &&
-             (col < t->axis[1].num)) {
+  } else if ((t->num_axis == 2) && (n_parsed == 2) && (row < t->axis[1].num) &&
+             (col < t->axis[0].num)) {
     t->data.two[row][col] = v;
     return 1;
   }
@@ -173,8 +173,8 @@ static int console_get_table_element(const struct table *t,
   if ((t->num_axis == 1) && (n_parsed == 1) && (row < t->axis[0].num)) {
     *v = t->data.one[row];
     return 1;
-  } else if ((t->num_axis == 2) && (n_parsed == 2) && (row < t->axis[0].num) &&
-             (col < t->axis[1].num)) {
+  } else if ((t->num_axis == 2) && (n_parsed == 2) && (row < t->axis[1].num) &&
+             (col < t->axis[0].num)) {
     *v = t->data.two[row][col];
     return 1;
   }
@@ -214,17 +214,17 @@ static void console_set_table(const struct console_config_node *self,
       t->num_axis = atoi(v);
     } else if (!strcmp("name", k)) {
       strncpy(t->title, v, 31);
-    } else if (!strcmp("rows", k)) {
-      t->axis[0].num = atoi(v);
-    } else if (!strcmp("rowname", k)) {
-      strcpy(t->axis[0].name, v);
     } else if (!strcmp("cols", k)) {
-      t->axis[1].num = atoi(v);
+      t->axis[0].num = atoi(v);
     } else if (!strcmp("colname", k)) {
+      strcpy(t->axis[0].name, v);
+    } else if (!strcmp("rows", k)) {
+      t->axis[1].num = atoi(v);
+    } else if (!strcmp("rowname", k)) {
       strcpy(t->axis[1].name, v);
-    } else if (!strcmp("rowlabels", k)) {
-      console_set_table_axis_labels(&t->axis[0], v);
     } else if (!strcmp("collabels", k)) {
+      console_set_table_axis_labels(&t->axis[0], v);
+    } else if (!strcmp("rowlabels", k)) {
       console_set_table_axis_labels(&t->axis[1], v);
     } else if (k[0] == '[') {
       console_set_table_element(t, k, atof(v));
@@ -269,8 +269,8 @@ static void console_get_table(const struct console_config_node *self,
     } while ((element = strtok_r(NULL, " ", &saveptr)));
   } else {
     dest += sprintf(dest,
-                    "name=%s naxis=%d rows=%d rowname=%s "
-                    "cols=%d colname=%s ",
+                    "name=%s naxis=%d cols=%d colname=%s "
+                    "rows=%d rowname=%s ",
                     t->title,
                     t->num_axis,
                     t->axis[0].num,
@@ -278,10 +278,10 @@ static void console_get_table(const struct console_config_node *self,
                     t->axis[1].num,
                     t->axis[1].name);
 
-    strcat(dest, "rowlabels=");
+    strcat(dest, "collabels=");
     console_get_table_axis_labels(&t->axis[0], dest);
 
-    strcat(dest, " collabels=");
+    strcat(dest, " rowlabels=");
     console_get_table_axis_labels(&t->axis[1], dest);
   }
 }
@@ -1626,16 +1626,16 @@ START_TEST(check_console_set_table) {
   ck_assert_int_eq(t.num_axis, 2);
   ck_assert_int_eq(t.axis[0].num, 3);
   ck_assert_int_eq(t.axis[1].num, 3);
-  ck_assert_str_eq(t.axis[0].name, "row");
-  ck_assert_str_eq(t.axis[1].name, "col");
+  ck_assert_str_eq(t.axis[0].name, "col");
+  ck_assert_str_eq(t.axis[1].name, "row");
 
-  ck_assert_float_eq(t.axis[0].values[0], 1);
-  ck_assert_float_eq(t.axis[0].values[1], 2);
-  ck_assert_float_eq(t.axis[0].values[2], 3);
+  ck_assert_float_eq(t.axis[1].values[0], 1);
+  ck_assert_float_eq(t.axis[1].values[1], 2);
+  ck_assert_float_eq(t.axis[1].values[2], 3);
 
-  ck_assert_float_eq(t.axis[1].values[0], 5);
-  ck_assert_float_eq(t.axis[1].values[1], 6);
-  ck_assert_float_eq(t.axis[1].values[2], 7.2);
+  ck_assert_float_eq(t.axis[0].values[0], 5);
+  ck_assert_float_eq(t.axis[0].values[1], 6);
+  ck_assert_float_eq(t.axis[0].values[2], 7.2);
 
   ck_assert_float_eq(t.data.two[0][0], 5.0);
 
@@ -1657,11 +1657,11 @@ START_TEST(check_console_get_table) {
     .title = "test",
     .num_axis = 2,
     .axis[0] = {
-      .name = "rows", .num = 3,
+      .name = "cols", .num = 3,
       .values = {1, 2.0, 3},
     },
     .axis[1] = {
-      .name = "cols", .num = 3,
+      .name = "rows", .num = 3,
       .values = {5, 6, 7},
     },
     .data = {
@@ -1679,10 +1679,10 @@ START_TEST(check_console_get_table) {
   ck_assert_ptr_nonnull(strstr(buf, "naxis=2"));
   ck_assert_ptr_nonnull(strstr(buf, "rows=3"));
   ck_assert_ptr_nonnull(strstr(buf, "rowname=rows"));
-  ck_assert_ptr_nonnull(strstr(buf, "rowlabels=[1.0,2.0,3.0]"));
+  ck_assert_ptr_nonnull(strstr(buf, "rowlabels=[5.0,6.0,7.0]"));
   ck_assert_ptr_nonnull(strstr(buf, "cols=3"));
   ck_assert_ptr_nonnull(strstr(buf, "colname=cols"));
-  ck_assert_ptr_nonnull(strstr(buf, "collabels=[5.0,6.0,7.0]"));
+  ck_assert_ptr_nonnull(strstr(buf, "collabels=[1.0,2.0,3.0]"));
 
   char cmd2[] = "[1][1]";
   console_get_table(&n, buf, cmd2);
