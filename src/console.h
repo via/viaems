@@ -3,7 +3,7 @@
 
 #include "platform.h"
 
-#define CONSOLE_BUFFER_SIZE 2048
+#define CONSOLE_BUFFER_SIZE 3072
 
 struct console {
   /* Internal */

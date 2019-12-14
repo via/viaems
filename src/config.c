@@ -251,6 +251,11 @@ struct config config __attribute__((section(".configdata"))) = {
     .fuel_pump_pin = 0,
     .density_of_fuel = 0.755, /* g/cm^3 at 15C */
     .density_of_air_stp = 1.2754e-3, /* g/cm^3 */
+    .crank_enrich_config = {
+      .crank_rpm = 400,
+      .cutoff_temperature = 20.0,
+      .enrich_amt = 2.5,
+    },
   },
   .ignition = {
     .dwell = DWELL_FIXED_TIME,

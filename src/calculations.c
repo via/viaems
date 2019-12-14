@@ -164,6 +164,12 @@ void calculate_fueling() {
     ete = 1.0;
   }
 
+  /* Cranking enrichment config overrides ETE */
+  if ((config.decoder.rpm < config.fueling.crank_enrich_config.crank_rpm) &&
+      (clt < config.fueling.crank_enrich_config.cutoff_temperature)) {
+    ete = config.fueling.crank_enrich_config.enrich_amt;
+  }
+
   calculated_values.tipin =
     calculate_tipin_enrichment(tps, tpsrate, config.decoder.rpm);
 

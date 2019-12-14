@@ -855,6 +855,18 @@ static struct console_config_node console_config_nodes[] = {
     .val = &config.fueling.fuel_pump_pin,
     .get = console_get_uint,
     .set = console_set_uint },
+  { .name = "config.fueling.crank_enrich_rpm",
+    .val = &config.fueling.crank_enrich_config.crank_rpm,
+    .get = console_get_float,
+    .set = console_set_float },
+  { .name = "config.fueling.crank_enrich_temp",
+    .val = &config.fueling.crank_enrich_config.cutoff_temperature,
+    .get = console_get_float,
+    .set = console_set_float },
+  { .name = "config.fueling.crank_enrich_amt",
+    .val = &config.fueling.crank_enrich_config.enrich_amt,
+    .get = console_get_float,
+    .set = console_set_float },
 
   /* Ignition */
   { .name = "config.ignition" },
