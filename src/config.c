@@ -254,7 +254,7 @@ struct config config __attribute__((section(".configdata"))) = {
     .crank_enrich_config = {
       .crank_rpm = 400,
       .cutoff_temperature = 20.0,
-      .enrich_amt = 3.5,
+      .enrich_amt = 2.5,
     },
   },
   .ignition = {
