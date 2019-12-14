@@ -8,11 +8,15 @@ struct fueling_config {
   unsigned int injections_per_cycle; /* fuel quantity per shot divisor */
   unsigned int fuel_pump_pin;
 
+  struct {
+    float crank_rpm;
+    float cutoff_temperature;
+    float enrich_amt;
+  } crank_enrich_config;
+
   /* Constants */
   float density_of_air_stp; /* g/cc at 0C 100 kpa */
   float density_of_fuel;    /* At 15 C */
-
-  /* Intermediate values for debugging below */
 };
 
 typedef enum {
