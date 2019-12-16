@@ -43,6 +43,74 @@ void handle_boost_control() {
 
 void handle_idle_control() {}
 
+/* Checks for a variety of failure conditions, and produces a check engine
+ * output:
+ *
+ * Sensor input in fault - 3s constant steady light
+ * Decoder loss - 3s of 1/2s blink
+ * Lean in boost - 3s of 1/5s blink
+ */
+
+void handle_check_engine_light() {
+  static enum {
+    CEL_NONE,
+    CEL_CONSTANT,
+    CEL_SLOWBLINK,
+    CEL_FASTBLINK,
+  } cel_state = CEL_NONE, next_cel_state = CEL_NONE;
+
+  static timeval_t last_cel = 0;
+
+  /* Determine CEL conditions */
+  int sensor_in_fault = (sensor_fault_status() > 0);
+  int decode_loss = !config.decoder.valid && (config.decoder.rpm > 0);
+  int lean_in_boost =
+    (config.sensors[SENSOR_MAP].processed_value > config.cel.lean_boost_kpa) &&
+    (config.sensors[SENSOR_EGO].processed_value > config.cel.lean_boost_ego);
+
+  /* Translate CEL condition to CEL blink state */
+  if (lean_in_boost) {
+    next_cel_state = CEL_FASTBLINK;
+  } else if (decode_loss) {
+    next_cel_state = CEL_SLOWBLINK;
+  } else if (sensor_in_fault) {
+    next_cel_state = CEL_CONSTANT;
+  } else {
+    next_cel_state = CEL_NONE;
+  }
+
+  /* Handle 3s reset of CEL state */
+  if (time_diff(current_time(), last_cel) > time_from_us(3000000)) {
+    cel_state = CEL_NONE;
+  }
+
+  /* Are we transitioning to a higher state? If so reset blink timer */
+  if (next_cel_state > cel_state) {
+    cel_state = next_cel_state;
+    last_cel = current_time();
+  }
+
+  int pin_state;
+  switch (cel_state) {
+    case CEL_NONE:
+      pin_state = 0;
+      break;
+    case CEL_CONSTANT:
+      pin_state = 1;
+      break;
+    case CEL_SLOWBLINK:
+      pin_state = (current_time() - last_cel) / time_from_us(500000) % 2;
+      break;
+    case CEL_FASTBLINK:
+      pin_state = (current_time() - last_cel) / time_from_us(200000) % 2;
+      break;
+    default:
+      pin_state = 1;
+  }
+  set_gpio(config.cel.pin, pin_state);
+
+}
+
 void handle_emergency_shutdown() {
 
   /* Fuel pump off */

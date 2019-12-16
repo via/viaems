@@ -940,6 +940,18 @@ static struct console_config_node console_config_nodes[] = {
     .val = &config.boost_control.threshhold_kpa,
     .get = console_get_float,
     .set = console_set_float },
+  { .name = "config.tasks.cel.pin",
+    .val = &config.cel.pin,
+    .get = console_get_uint,
+    .set = console_set_uint },
+  { .name = "config.tasks.cel.lean_boost_kpa",
+    .val = &config.cel.lean_boost_kpa,
+    .get = console_get_float,
+    .set = console_set_float },
+  { .name = "config.tasks.cel.lean_boost_ego",
+    .val = &config.cel.lean_boost_ego,
+    .get = console_get_float,
+    .set = console_set_float },
 
   /* Hardware config */
   { .name = "config.hardware" },
