@@ -8,8 +8,16 @@ struct boost_control_config {
   float overboost;
 };
 
+struct cel_config {
+  int pin;
+
+  float lean_boost_kpa;
+  float lean_boost_ego;
+};
+
 void handle_fuel_pump();
 void handle_boost_control();
+void handle_check_engine_light();
 void handle_idle_control();
 void handle_emergency_shutdown();
 

@@ -30,6 +30,7 @@ int main() {
     handle_fuel_pump();
     handle_boost_control();
     handle_idle_control();
+    handle_check_engine_light();
 
     adc_gather();
   }

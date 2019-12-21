@@ -39,6 +39,7 @@ struct config {
   struct fueling_config fueling;
   struct ignition_config ignition;
   struct boost_control_config boost_control;
+  struct cel_config cel;
 
   /* Cutoffs */
   unsigned int rpm_stop;

@@ -18,6 +18,7 @@ Features:
 - PWM outputs
 - Fuelpump safety cutoff
 - Mostly runtime-configurable over USB interface
+- Check Engine / Malfunction Indicator control
 
 1. [Decoding](#decoding)
     1. [EEC-IV TFI](#eec-iv-tfi)
@@ -30,6 +31,7 @@ Features:
     1. [Events](#events-1)
     2. [Sensors](#sensors-1)
     3. [Tables](#tables-1)
+    4. [Tasks](#tasks)
 4. [Compiling](#compiling)
 5. [Programming](#programming)
 6. [Simulation](#simulation)
@@ -91,7 +93,7 @@ Member | Meaning
 `fueling.cylinder_cc` | Individual cylinder volume
 `fueling.injections_per_cycle` | Number of times an injector is fired per cycle.  1 for sequential, 2 for batched pairs, etc
 `fueling.fuel_pump_pin` | GPIO port number that controls the fuel pump
-`ignition.dwell_ud` | Fixed (currently) time in uS to dwell ignition
+`ignition.dwell_us` | Fixed (currently) time in uS to dwell ignition
 
 ### Events
 Event configuration is done with an array of schedulable events.  This entire
@@ -256,6 +258,19 @@ get config.sensors.iat
 * source=adc method=therm pin=2 therm-bias=2400.00 therm-a=1.461674e-03 therm-b=2.288757e-04 therm-c=1.644848e-07 fault-min=2 fault-max=4095 fault-val=10.00 lag=0.000000
 ```
 
+### Tasks
+Tasks are low priority tasks that execute during idle cycles.  These are useful
+for management of non-timing-critical outputs, such as boost control and fuel
+  pumps.
+
+Node | Meaning
+--- | ---
+`config.tasks.boost_control.overboost` | Fuel and ignition cuts are activated at this manifold pressure
+`config.tasks.boost_control.pin` | PWM output for boost control solenoid
+`config.tasks.boost_control.threshold` | Boost control will not activate until this pressure is reached, though the solenoid will be fully activated below level if at WOT
+`config.tasks.cel.pin` | GPIO output for Check-Engine light
+`config.tasks.cel.lean_boost_kpa` | CEL will trigger in a boosted lean condition if lean above this pressure
+`config.tasks.cel.lean_boost_ego` | CEL will trigger in a boosted lean condition if leaner than this EGO value
 
 # Compiling
 Requires:

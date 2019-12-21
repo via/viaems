@@ -268,6 +268,11 @@ struct config config __attribute__((section(".configdata"))) = {
     .pin = 1,
     .overboost = 200.0,
   },
+  .cel = {
+    .pin = 2,
+    .lean_boost_kpa = 140.0,
+    .lean_boost_ego = .91,
+  },
 };
 
 int config_valid() {
