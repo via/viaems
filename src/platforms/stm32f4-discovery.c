@@ -46,14 +46,14 @@
  *
  *  GPIO: B0-B11
  *  OUT: C0-C15
- *  CAN1: PD0, PD1
+ *  CAN2: PB5, PB6
  *  USB: PA9, PA11, PA12
+ *
+ *  Daughterboard SPI: SPI2 A4-A7
  *
  *  Custom PWM:
  *    TIM10 PB8
  *    TIM11 PB9
- *    TIM13 PA6
- *    TIM14 PA7
  *  Fixed PWM:
  *    TIM3 PB0
  *    TIM3 PB1
