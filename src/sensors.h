@@ -77,7 +77,7 @@ typedef enum {
 } trigger_edge;
 
 typedef enum {
-  FREQ,  /* Only generate frequency information */
+  FREQ,    /* Only generate frequency information */
   TRIGGER, /* Use as source of decoder position */
 } freq_type;
 

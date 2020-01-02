@@ -83,18 +83,20 @@ static cel_state_t determine_next_cel_state() {
   return next_cel_state;
 }
 
-static int determine_cel_pin_state(cel_state_t state, timeval_t cur_time, timeval_t cel_start_time) {
+static int determine_cel_pin_state(cel_state_t state,
+                                   timeval_t cur_time,
+                                   timeval_t cel_start_time) {
   switch (state) {
-    case CEL_NONE:
-      return 0;
-    case CEL_CONSTANT:
-      return 1;
-    case CEL_SLOWBLINK:
-      return (cur_time - cel_start_time) / time_from_us(500000) % 2;
-    case CEL_FASTBLINK:
-      return (cur_time - cel_start_time) / time_from_us(200000) % 2;
-    default:
-      return 1;
+  case CEL_NONE:
+    return 0;
+  case CEL_CONSTANT:
+    return 1;
+  case CEL_SLOWBLINK:
+    return (cur_time - cel_start_time) / time_from_us(500000) % 2;
+  case CEL_FASTBLINK:
+    return (cur_time - cel_start_time) / time_from_us(200000) % 2;
+  default:
+    return 1;
   }
 }
 
@@ -113,7 +115,8 @@ void handle_check_engine_light() {
     last_cel = current_time();
   }
 
-  set_gpio(config.cel.pin, determine_cel_pin_state(cel_state, current_time(), last_cel));
+  set_gpio(config.cel.pin,
+           determine_cel_pin_state(cel_state, current_time(), last_cel));
 }
 
 void handle_emergency_shutdown() {
@@ -209,8 +212,8 @@ START_TEST(check_tasks_next_cel_state) {
   config.sensors[SENSOR_MAP].processed_value = 180;
   config.sensors[SENSOR_EGO].processed_value = 1.1;
   ck_assert_int_eq(determine_next_cel_state(), CEL_FASTBLINK);
-
-} END_TEST
+}
+END_TEST
 
 START_TEST(check_tasks_cel_pin_state) {
 
@@ -221,18 +224,26 @@ START_TEST(check_tasks_cel_pin_state) {
   ck_assert_int_eq(determine_cel_pin_state(CEL_CONSTANT, 0, 0), 1);
 
   /* Slowblink should be on at .75 s, off at 1.25 s */
-  ck_assert_int_eq(determine_cel_pin_state(CEL_SLOWBLINK, 
-        time_from_us(10750000), time_from_us(10000000)), 1);
-  ck_assert_int_eq(determine_cel_pin_state(CEL_SLOWBLINK, 
-        time_from_us(11250000), time_from_us(10000000)), 0);
+  ck_assert_int_eq(determine_cel_pin_state(CEL_SLOWBLINK,
+                                           time_from_us(10750000),
+                                           time_from_us(10000000)),
+                   1);
+  ck_assert_int_eq(determine_cel_pin_state(CEL_SLOWBLINK,
+                                           time_from_us(11250000),
+                                           time_from_us(10000000)),
+                   0);
 
   /* Fastblink should be on at 1.1 s, off at 1.3 s */
-  ck_assert_int_eq(determine_cel_pin_state(CEL_FASTBLINK, 
-        time_from_us(11100000), time_from_us(10000000)), 1);
-  ck_assert_int_eq(determine_cel_pin_state(CEL_FASTBLINK, 
-        time_from_us(11300000), time_from_us(10000000)), 0);
-
-} END_TEST
+  ck_assert_int_eq(determine_cel_pin_state(CEL_FASTBLINK,
+                                           time_from_us(11100000),
+                                           time_from_us(10000000)),
+                   1);
+  ck_assert_int_eq(determine_cel_pin_state(CEL_FASTBLINK,
+                                           time_from_us(11300000),
+                                           time_from_us(10000000)),
+                   0);
+}
+END_TEST
 
 TCase *setup_tasks_tests() {
   TCase *tasks_tests = tcase_create("tasks");

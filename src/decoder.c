@@ -190,22 +190,22 @@ void decoder_init(struct decoder *d) {
   d->needs_decoding_t0 = 0;
   d->needs_decoding_t1 = 0;
   switch (d->type) {
-    case FORD_TFI:
-      d->decode = tfi_pip_decoder;
-      d->required_triggers_rpm = 4;
-      d->degrees_per_trigger = 90;
-      d->rpm_window_size = 3;
-      d->num_triggers = 8;
-      break;
-    case TOYOTA_24_1_CAS:
-      d->decode = cam_nplusone_decoder;
-      d->required_triggers_rpm = 8;
-      d->degrees_per_trigger = 30;
-      d->rpm_window_size = 8;
-      d->num_triggers = 24;
-      break;
-    default:
-      break;
+  case FORD_TFI:
+    d->decode = tfi_pip_decoder;
+    d->required_triggers_rpm = 4;
+    d->degrees_per_trigger = 90;
+    d->rpm_window_size = 3;
+    d->num_triggers = 8;
+    break;
+  case TOYOTA_24_1_CAS:
+    d->decode = cam_nplusone_decoder;
+    d->required_triggers_rpm = 8;
+    d->degrees_per_trigger = 30;
+    d->rpm_window_size = 8;
+    d->num_triggers = 24;
+    break;
+  default:
+    break;
   }
   d->current_triggers_rpm = 0;
   d->valid = 0;
@@ -231,8 +231,7 @@ void decoder_update_scheduling(struct decoder_event *events,
     if (ev->trigger == 0) {
       config.decoder.last_t0 = ev->time;
       config.decoder.needs_decoding_t0 = 1;
-    }
-    else if (ev->trigger == 1) {
+    } else if (ev->trigger == 1) {
       config.decoder.last_t1 = ev->time;
       config.decoder.needs_decoding_t1 = 1;
     }
@@ -276,12 +275,15 @@ static void append_trigger_event(struct decoder_event *last,
   *(last->next) = new;
 }
 
-static void add_trigger_event(struct decoder_event **entries, timeval_t duration, unsigned int trigger) {
+static void add_trigger_event(struct decoder_event **entries,
+                              timeval_t duration,
+                              unsigned int trigger) {
   if (!*entries) {
     *entries = malloc(sizeof(struct decoder_event));
     **entries = (struct decoder_event){
       .trigger = trigger,
-      .time = duration, .state = DECODER_NOSYNC,
+      .time = duration,
+      .state = DECODER_NOSYNC,
     };
     return;
   }
@@ -289,8 +291,10 @@ static void add_trigger_event(struct decoder_event **entries, timeval_t duration
   struct decoder_event *last = find_last_trigger_event(entries);
   struct decoder_event new = (struct decoder_event){
     .trigger = trigger,
-      .time = last->time + duration, .state = last->state,
-      .valid = last->valid, .reason = last->reason,
+    .time = last->time + duration,
+    .state = last->state,
+    .valid = last->valid,
+    .reason = last->reason,
   };
   append_trigger_event(last, new);
 }
@@ -305,38 +309,51 @@ static void free_trigger_list(struct decoder_event *entries) {
   }
 }
 
-static void add_trigger_event_transition_rpm(struct decoder_event **entries, timeval_t duration, unsigned int trigger) {
+static void add_trigger_event_transition_rpm(struct decoder_event **entries,
+                                             timeval_t duration,
+                                             unsigned int trigger) {
   ck_assert(*entries);
 
   struct decoder_event *last = find_last_trigger_event(entries);
   struct decoder_event new = (struct decoder_event){
     .trigger = trigger,
-      .time = last->time + duration, .state = DECODER_RPM,
-      .valid = last->valid, .reason = last->reason,
+    .time = last->time + duration,
+    .state = DECODER_RPM,
+    .valid = last->valid,
+    .reason = last->reason,
   };
   append_trigger_event(last, new);
 }
 
-static void add_trigger_event_transition_sync(struct decoder_event **entries, timeval_t duration, unsigned int trigger) {
+static void add_trigger_event_transition_sync(struct decoder_event **entries,
+                                              timeval_t duration,
+                                              unsigned int trigger) {
   ck_assert(*entries);
 
   struct decoder_event *last = find_last_trigger_event(entries);
   struct decoder_event new = (struct decoder_event){
     .trigger = trigger,
-      .time = last->time + duration, .state = DECODER_SYNC,
-      .valid = 1, .reason = 0,
+    .time = last->time + duration,
+    .state = DECODER_SYNC,
+    .valid = 1,
+    .reason = 0,
   };
   append_trigger_event(last, new);
 }
 
-static void add_trigger_event_transition_loss(struct decoder_event **entries, timeval_t duration, unsigned int trigger, decoder_loss_reason reason) {
+static void add_trigger_event_transition_loss(struct decoder_event **entries,
+                                              timeval_t duration,
+                                              unsigned int trigger,
+                                              decoder_loss_reason reason) {
   ck_assert(*entries);
 
   struct decoder_event *last = find_last_trigger_event(entries);
   struct decoder_event new = (struct decoder_event){
     .trigger = trigger,
-      .time = last->time + duration, .state = DECODER_NOSYNC,
-      .valid = 0, .reason = reason,
+    .time = last->time + duration,
+    .state = DECODER_NOSYNC,
+    .valid = 0,
+    .reason = reason,
   };
   append_trigger_event(last, new);
 }
@@ -560,7 +577,8 @@ START_TEST(check_cam_nplusone_startup_normal_no_second_trigger) {
     add_trigger_event(&entries, 25000, 0);
   }
   /* Another trigger, no sync when there should be one */
-  add_trigger_event_transition_loss(&entries, 25000, 0, DECODER_TRIGGERCOUNT_HIGH);
+  add_trigger_event_transition_loss(
+    &entries, 25000, 0, DECODER_TRIGGERCOUNT_HIGH);
 
   validate_decoder_sequence(entries);
   ck_assert(!config.decoder.valid);

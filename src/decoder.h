@@ -64,7 +64,6 @@ struct decoder {
   timeval_t times[MAX_TRIGGERS];
 };
 
-
 struct decoder_event {
   unsigned int trigger;
   timeval_t time;
