@@ -1040,8 +1040,6 @@ void dma1_stream3_isr(void) {
  * graceful overflow (at the expensive of non-critical routines not running,
  * e.g. console).
  */
-static timeval_t test_trigger_period = 0;
-
 static int freq_input_peek(struct decoder_event *ev, uint8_t pin) {
   assert(pin < 4);
   if ((config.freq_inputs[pin].type == TRIGGER) &&
@@ -1249,30 +1247,6 @@ void set_gpio(int output, char value) {
   } else {
     gpio_clear(GPIOE, (1 << output));
   }
-}
-
-/* TODO fix:
- *   We can use output compares on A0-A2, configured by timer interrupts on
- *   TIM4 */
-void enable_test_trigger(trigger_type trig __attribute__((unused)),
-                         unsigned int rpm) {
-  test_trigger_period = time_from_rpm_diff(rpm, 45);
-
-  gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO10);
-  gpio_set_af(GPIOB, GPIO_AF1, GPIO10);
-  gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO11);
-  gpio_set_af(GPIOB, GPIO_AF1, GPIO11);
-
-  /* Setup output compare registers */
-  timer_ic_set_input(TIM2, TIM_IC3, TIM_IC_OUT);
-  timer_disable_oc_clear(TIM2, TIM_OC3);
-  timer_disable_oc_preload(TIM2, TIM_OC3);
-  timer_set_oc_slow_mode(TIM2, TIM_OC3);
-  timer_set_oc_mode(TIM2, TIM_OC3, TIM_OCM_TOGGLE);
-  timer_set_oc_value(TIM2, TIM_OC3, current_time() + test_trigger_period);
-  timer_set_oc_polarity_high(TIM2, TIM_OC3);
-  timer_enable_oc_output(TIM2, TIM_OC3);
-  timer_enable_irq(TIM2, TIM_DIER_CC3IE);
 }
 
 extern unsigned _configdata_loadaddr, _sconfigdata, _econfigdata;
