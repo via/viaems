@@ -1105,6 +1105,7 @@ void set_test_trigger_rpm(unsigned int rpm) {
 
     timer_set_oc_value(TIM2, TIM_OC3, current_time() + time_from_us(1000000));
     timer_enable_oc_output(TIM2, TIM_OC3);
+    test_trigger_config.enabled = 1;
   }
 }
 
@@ -1120,7 +1121,13 @@ static void handle_test_trigger_edge() {
       time_from_us(200);
   }
 
+  /* Hackily handle overflows */
+  disable_interrupts();
+  if (time_before(next_event, current_time() + time_from_us(5))) {
+    next_event = current_time() + time_from_us(5);
+  }
   timer_set_oc_value(TIM2, TIM_OC3, next_event);
+  enable_interrupts();
   test_trigger_config.last_edge_active =
     !test_trigger_config.last_edge_active;
 
