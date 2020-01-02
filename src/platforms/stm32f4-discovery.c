@@ -1108,6 +1108,36 @@ void set_test_trigger_rpm(unsigned int rpm) {
   }
 }
 
+static void handle_test_trigger_edge() {
+  timeval_t next_event;
+  if (test_trigger_config.last_edge_active) {
+    test_trigger_config.last_trigger = TIM2_CCR3;
+    next_event = TIM2_CCR3 + time_from_us(200);
+  } else {
+    next_event = TIM2_CCR3 +
+      time_from_rpm_diff(test_trigger_config.rpm,
+          config.decoder.degrees_per_trigger) -
+      time_from_us(200);
+  }
+
+  timer_set_oc_value(TIM2, TIM_OC3, next_event);
+  test_trigger_config.last_edge_active =
+    !test_trigger_config.last_edge_active;
+
+  if (test_trigger_config.last_edge_active) {
+    test_trigger_config.current_tooth =
+      (test_trigger_config.current_tooth + 1) % config.decoder.num_triggers;
+
+    /* Toggle the sync line right before *and* right after */
+    if ((test_trigger_config.current_tooth ==
+          config.decoder.num_triggers - 1) ||
+        (test_trigger_config.current_tooth == 0)) {
+      timer_set_oc_value(TIM2, TIM_OC4, current_time() + time_from_us(200));
+      timer_enable_oc_output(TIM2, TIM_OC4);
+    }
+  }
+}
+
 /* This is now the lowest priority interrupt, with buffer swapping and sensor
  * reading interrupts being higher priority.  Keep scheduled callbacks quick to
  * keep scheduling delay low.  Currently nothing takes more than 15 uS
@@ -1126,43 +1156,14 @@ void tim2_isr() {
     timer_clear_flag(TIM2, TIM_SR_CC2IF);
   }
 
-  walk_trigger_buffers();
-
   /* Handle test trigger outputs */
   if (timer_get_flag(TIM2, TIM_SR_CC3IF)) {
     timer_clear_flag(TIM2, TIM_SR_CC3IF);
-
-    timeval_t next_event;
-    if (test_trigger_config.last_edge_active) {
-      test_trigger_config.last_trigger = TIM2_CCR3;
-      next_event = TIM2_CCR3 + time_from_us(200);
-    } else {
-      next_event = TIM2_CCR3 +
-                   time_from_rpm_diff(test_trigger_config.rpm,
-                                      config.decoder.degrees_per_trigger) -
-                   time_from_us(200);
-    }
-
-    timer_set_oc_value(TIM2, TIM_OC3, next_event);
-    if (time_before(next_event, current_time())) {
-      while(1);
-    }
-    test_trigger_config.last_edge_active =
-      !test_trigger_config.last_edge_active;
-
-    if (test_trigger_config.last_edge_active) {
-      test_trigger_config.current_tooth =
-        (test_trigger_config.current_tooth + 1) % config.decoder.num_triggers;
-
-      /* Toggle the sync line right before *and* right after */
-      if ((test_trigger_config.current_tooth ==
-           config.decoder.num_triggers - 1) ||
-          (test_trigger_config.current_tooth == 0)) {
-        timer_set_oc_value(TIM2, TIM_OC4, current_time() + time_from_us(200));
-        timer_enable_oc_output(TIM2, TIM_OC4);
-      }
-    }
+    handle_test_trigger_edge();
   }
+
+  walk_trigger_buffers();
+
 
   stats_finish_timing(STATS_INT_TOTAL_TIME);
 }
