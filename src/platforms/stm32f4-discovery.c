@@ -1031,15 +1031,6 @@ void dma1_stream3_isr(void) {
   sensors_process(SENSOR_FREQ);
 }
 
-/* This is now the lowest priority interrupt, with buffer swapping and sensor
- * reading interrupts being higher priority.  Keep scheduled callbacks quick to
- * keep scheduling delay low.  Currently nothing takes more than 15 uS
- * (rescheduling individual events).  All fueling calculations and scheduling is
- * now done in the ISR for trigger updates.  Overflows aren't currently handled,
- * but will be when we switch to DMA of trigger time readings, which will allow
- * graceful overflow (at the expensive of non-critical routines not running,
- * e.g. console).
- */
 static int freq_input_peek(struct decoder_event *ev, uint8_t pin) {
   assert(pin < 4);
   if ((config.freq_inputs[pin].type == TRIGGER) &&
@@ -1061,12 +1052,12 @@ static int fetch_next_trigger(struct decoder_event *result) {
 
   if (pin0_avail && pin1_avail) {
     if (time_in_range(pin1.time, pin0.time, current_time())) {
-      *result = pin1;
-      freq_input_increment_read(1);
-      return 1;
-    } else {
       *result = pin0;
       freq_input_increment_read(0);
+      return 1;
+    } else {
+      *result = pin1;
+      freq_input_increment_read(1);
       return 1;
     }
   } else if (pin0_avail) {
@@ -1088,6 +1079,7 @@ static void walk_trigger_buffers() {
   while (fetch_next_trigger(&events[n_events])) {
     n_events++;
     if (n_events > FREQ_INPUT_SAMPLES - 1) {
+      break;
       /* TODO when stats supports counters, increment here */
     }
   }
@@ -1107,15 +1099,21 @@ void set_test_trigger_rpm(unsigned int rpm) {
   if (!test_trigger_config.enabled) {
     /* Set up gpios */
     gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO10);
-    gpio_set_af(GPIOB, GPIO_AF2, GPIO10);
+    gpio_set_af(GPIOB, GPIO_AF1, GPIO10);
     gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO11);
-    gpio_set_af(GPIOB, GPIO_AF2, GPIO11);
+    gpio_set_af(GPIOB, GPIO_AF1, GPIO11);
 
     timer_set_oc_value(TIM2, TIM_OC3, current_time() + time_from_us(1000000));
     timer_enable_oc_output(TIM2, TIM_OC3);
   }
 }
 
+/* This is now the lowest priority interrupt, with buffer swapping and sensor
+ * reading interrupts being higher priority.  Keep scheduled callbacks quick to
+ * keep scheduling delay low.  Currently nothing takes more than 15 uS
+ * (rescheduling individual events).  All fueling calculations and scheduling is
+ * now done in the ISR for trigger updates.
+ */
 void tim2_isr() {
   stats_increment_counter(STATS_INT_RATE);
   stats_increment_counter(STATS_INT_EVENTTIMER_RATE);
@@ -1134,20 +1132,23 @@ void tim2_isr() {
   if (timer_get_flag(TIM2, TIM_SR_CC3IF)) {
     timer_clear_flag(TIM2, TIM_SR_CC3IF);
 
+    timeval_t next_event;
     if (test_trigger_config.last_edge_active) {
       test_trigger_config.last_trigger = TIM2_CCR3;
-      timeval_t next_event = TIM2_CCR3 + time_from_us(200);
-      timer_set_oc_value(TIM2, TIM_OC3, next_event);
-      test_trigger_config.last_edge_active = 0;
+      next_event = TIM2_CCR3 + time_from_us(200);
     } else {
-      timeval_t next_event =
-        TIM2_CCR3 +
-        time_from_rpm_diff(test_trigger_config.rpm,
-                           config.decoder.degrees_per_trigger) -
-        time_from_us(200);
-      timer_set_oc_value(TIM2, TIM_OC3, next_event);
-      test_trigger_config.last_edge_active = 1;
+      next_event = TIM2_CCR3 +
+                   time_from_rpm_diff(test_trigger_config.rpm,
+                                      config.decoder.degrees_per_trigger) -
+                   time_from_us(200);
     }
+
+    timer_set_oc_value(TIM2, TIM_OC3, next_event);
+    if (time_before(next_event, current_time())) {
+      while(1);
+    }
+    test_trigger_config.last_edge_active =
+      !test_trigger_config.last_edge_active;
 
     if (test_trigger_config.last_edge_active) {
       test_trigger_config.current_tooth =
