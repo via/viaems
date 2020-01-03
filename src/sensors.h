@@ -79,7 +79,6 @@ typedef enum {
 typedef enum {
   FREQ,  /* Only generate frequency information */
   TRIGGER, /* Use as source of decoder position */
-  SYNC, /* Use for position sync */
 } freq_type;
 
 struct freq_input {

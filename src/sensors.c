@@ -11,13 +11,11 @@ static float sensor_convert_linear(struct sensor_input *in, float raw) {
          partial * (in->params.range.max - in->params.range.min);
 }
 
-/* Returns 0 - 4095 for 0 Hz - 2 kHz */
 static float sensor_convert_freq(float raw) {
-  float tickrate = TICKRATE;
   if (!raw) {
     return 0.0; /* Prevent div by zero */
   }
-  return 40.96f * 1.0 / ((raw * SENSOR_FREQ_DIVIDER) / tickrate);
+  return (float)TICKRATE / raw;
 }
 
 float sensor_convert_thermistor(struct thermistor_config *tc, float raw) {
@@ -124,9 +122,9 @@ START_TEST(check_sensor_convert_linear) {
 END_TEST
 
 START_TEST(check_sensor_convert_freq) {
-  ck_assert_float_eq_tol(sensor_convert_freq(100.0), 400, .1);
+  ck_assert_float_eq_tol(sensor_convert_freq(100.0), 40000, .1);
 
-  ck_assert_float_eq_tol(sensor_convert_freq(1000.0), 40, .1);
+  ck_assert_float_eq_tol(sensor_convert_freq(1000.0), 4000, .1);
 
   ck_assert_float_eq_tol(sensor_convert_freq(0.0), 0.0, 0.01);
 }

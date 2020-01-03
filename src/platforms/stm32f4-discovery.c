@@ -38,24 +38,23 @@
  *  LD6 - Blue - PD15
  *
  *  Fixed pin mapping:
- *  Event timer TIM5 slaved off TIM8 (CC4 for primary timer, 1-3 for test trigger)
- *  Frequency/Trigger is TIM2 slaved off TIM8, uses DMA to capture times
- *  Trigger 0   PA0 (TIM2_CH1) Stream 5
+ *  Primary time base is TIM5, but both TIM2 and TIM5 are synchronized and
+ *  slaved off TIM8
+ *  Trigger 0 - PA0 (TIM2_CH1) Stream 5
  *  Trigger 1 - PA1 (TIM2_CH2) Stream 6
- *  Trigger 2 - PA2 (TIM2_CH3) Stream 1
- *  Trigger 3 - PA3 (TIM2_CH4) Stream 7
+ *  Trigger 2 - PA2 (TIM5_CH3) Stream 0
+ *  Trigger 3 - PA3 (TIM5_CH4) Stream 1
+ *
+ *  Test/Out Trigger 0 - PB10 (TIM2_CH3)
+ *  Test/Out Trigger 1 - PB11 (TIM2_CH4)
+ *
+ *  Event Timer (TIM5_CH1)
  *
  *  CAN2:
  *    PB5, PB6
  *
  *  USB:
  *    PA9, PA11, PA12
- *
- *  Freq:
- *    TIM10 PB8
- *    TIM11 PB9
- *    TIM13 PA6
- *    TIM14 PA7
  *
  *  TLC2543 or ADC7888 on SPI2 (PB12-15) CS, SCK, MISO, MOSI
  *    - Uses TIM7 dma1 stream 2 chan 1 to trigger DMA at about 50 khz for 10
@@ -87,6 +86,60 @@ static int capture_edge_from_config(trigger_edge e) {
   return RISING_EDGE;
 }
 
+#define FREQ_INPUT_SAMPLES 16
+
+static volatile struct {
+  uint32_t buffer[FREQ_INPUT_SAMPLES];
+  size_t read_pos;
+} freq_input_buffers[4];
+
+static size_t freq_input_position(uint8_t pin) {
+  switch (pin) {
+    case 0: return FREQ_INPUT_SAMPLES - DMA1_S5NDTR;
+    case 1: return FREQ_INPUT_SAMPLES - DMA1_S6NDTR;
+    case 2: return FREQ_INPUT_SAMPLES - DMA1_S0NDTR;
+    case 3: return FREQ_INPUT_SAMPLES - DMA1_S1NDTR;
+  }
+  return 0;
+}
+
+static void freq_input_increment_read(uint8_t pin) {
+  if (pin > 3) {
+    return;
+  }
+  freq_input_buffers[pin].read_pos = (freq_input_buffers[pin].read_pos + 1) % FREQ_INPUT_SAMPLES;
+}
+
+static void platform_enable_freq_dma(uint8_t pin) {
+  uint8_t stream;
+  uint32_t channel;
+  uint32_t from;
+  volatile uint32_t *dest = freq_input_buffers[pin].buffer;
+  switch (pin) {
+    case 0: stream = DMA_STREAM5; channel = DMA_SxCR_CHSEL_3; from = (uint32_t)&TIM2_CCR1; break;
+    case 1: stream = DMA_STREAM6; channel = DMA_SxCR_CHSEL_3; from = (uint32_t)&TIM2_CCR2; break;
+    case 2: stream = DMA_STREAM0; channel = DMA_SxCR_CHSEL_6; from = (uint32_t)&TIM5_CCR3; break;
+    case 3: stream = DMA_STREAM1; channel = DMA_SxCR_CHSEL_6; from = (uint32_t)&TIM5_CCR4; break;
+    default: return;
+  }
+  /* Configure DMA from IC to memory */
+  dma_stream_reset(DMA1, stream);
+  dma_set_priority(DMA1, stream, DMA_SxCR_PL_LOW);
+  dma_set_memory_size(DMA1, stream, DMA_SxCR_MSIZE_32BIT);
+  dma_set_peripheral_size(DMA1, stream, DMA_SxCR_PSIZE_32BIT);
+  dma_enable_memory_increment_mode(DMA1, stream);
+  dma_set_transfer_mode(DMA1, stream, DMA_SxCR_DIR_PERIPHERAL_TO_MEM);
+  dma_set_peripheral_address(DMA1, stream, from);
+  dma_enable_circular_mode(DMA1, stream);
+  dma_set_memory_address(DMA1, stream, (uint32_t)dest);
+  dma_set_number_of_data(DMA1, stream, FREQ_INPUT_SAMPLES);
+  dma_channel_select(DMA1, stream, channel);
+  dma_enable_direct_mode(DMA1, stream);
+
+  dma_enable_stream(DMA1, stream);
+
+}
+
 static void platform_setup_tim2() {
   /* Set up TIM2 as 32bit clock that is slaved off TIM8*/
 
@@ -105,41 +158,23 @@ static void platform_setup_tim2() {
 
   /* Setup input captures for CH1-4 Triggers */
   gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_PULLDOWN, GPIO0);
-  gpio_set_af(GPIOA, GPIO_AF1, GPIO15);
-#ifdef VIAEMS
-  /* If VIAEMS, trigger 1/2 is B3/B10 */
-  gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_PULLDOWN, GPIO3);
-  gpio_set_af(GPIOB, GPIO_AF1, GPIO3);
-  gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_PULLDOWN, GPIO10);
-  gpio_set_af(GPIOB, GPIO_AF1, GPIO10);
-#else
+  gpio_set_af(GPIOA, GPIO_AF1, GPIO0);
   gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_PULLDOWN, GPIO1);
   gpio_set_af(GPIOA, GPIO_AF1, GPIO1);
-  gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_PULLDOWN, GPIO2);
-  gpio_set_af(GPIOA, GPIO_AF1, GPIO2);
-#endif
-  gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_PULLDOWN, GPIO3);
-  gpio_set_af(GPIOA, GPIO_AF1, GPIO3);
 
-  timer_ic_set_input(TIM2, TIM_IC1, TIM_IC_IN_TI2);
+  timer_ic_set_input(TIM2, TIM_IC1, TIM_IC_IN_TI1);
   timer_ic_set_filter(TIM2, TIM_IC1, TIM_IC_CK_INT_N_2);
   timer_ic_set_polarity(TIM2, TIM_IC1, capture_edge_from_config(config.freq_inputs[0].edge));
   timer_ic_enable(TIM2, TIM_IC1);
+  TIM2_DIER |= TIM_DIER_CC1DE;
+  platform_enable_freq_dma(0);
 
   timer_ic_set_input(TIM2, TIM_IC2, TIM_IC_IN_TI2);
   timer_ic_set_filter(TIM2, TIM_IC2, TIM_IC_CK_INT_N_2);
   timer_ic_set_polarity(TIM2, TIM_IC2, capture_edge_from_config(config.freq_inputs[1].edge));
   timer_ic_enable(TIM2, TIM_IC2);
-
-  timer_ic_set_input(TIM2, TIM_IC3, TIM_IC_IN_TI3);
-  timer_ic_set_filter(TIM2, TIM_IC3, TIM_IC_CK_INT_N_2);
-  timer_ic_set_polarity(TIM2, TIM_IC3, capture_edge_from_config(config.freq_inputs[2].edge));
-  timer_ic_enable(TIM2, TIM_IC3);
-
-  timer_ic_set_input(TIM2, TIM_IC4, TIM_IC_IN_TI4);
-  timer_ic_set_filter(TIM2, TIM_IC4, TIM_IC_CK_INT_N_2);
-  timer_ic_set_polarity(TIM2, TIM_IC4, capture_edge_from_config(config.freq_inputs[3].edge));
-  timer_ic_enable(TIM2, TIM_IC4);
+  TIM2_DIER |= TIM_DIER_CC2DE;
+  platform_enable_freq_dma(1);
 
   timer_enable_counter(TIM2);
 }
@@ -158,10 +193,28 @@ static void platform_setup_tim5() {
   timer_disable_oc_output(TIM5, TIM_OC2);
   timer_disable_oc_output(TIM5, TIM_OC3);
   timer_disable_oc_output(TIM5, TIM_OC4);
-  timer_disable_oc_clear(TIM5, TIM_OC1);
-  timer_disable_oc_preload(TIM5, TIM_OC1);
   timer_set_oc_slow_mode(TIM5, TIM_OC1);
   timer_set_oc_mode(TIM5, TIM_OC1, TIM_OCM_FROZEN);
+
+  gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_PULLDOWN, GPIO2);
+  gpio_set_af(GPIOA, GPIO_AF2, GPIO2);
+
+  gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_PULLDOWN, GPIO3);
+  gpio_set_af(GPIOA, GPIO_AF2, GPIO3);
+
+  timer_ic_set_input(TIM5, TIM_IC3, TIM_IC_IN_TI3);
+  timer_ic_set_filter(TIM5, TIM_IC3, TIM_IC_CK_INT_N_2);
+  timer_ic_set_polarity(TIM5, TIM_IC3, capture_edge_from_config(config.freq_inputs[2].edge));
+  timer_ic_enable(TIM5, TIM_IC3);
+  TIM5_DIER |= TIM_DIER_CC3DE;
+  platform_enable_freq_dma(2);
+
+  timer_ic_set_input(TIM5, TIM_IC4, TIM_IC_IN_TI4);
+  timer_ic_set_filter(TIM5, TIM_IC4, TIM_IC_CK_INT_N_2);
+  timer_ic_set_polarity(TIM5, TIM_IC4, capture_edge_from_config(config.freq_inputs[3].edge));
+  timer_ic_enable(TIM5, TIM_IC4);
+  TIM5_DIER |= TIM_DIER_CC4DE;
+  platform_enable_freq_dma(3);
 
   timer_enable_counter(TIM5);
 }
@@ -191,17 +244,11 @@ static void platform_init_eventtimer() {
   platform_setup_tim2();
 
   /* Only enable interrupts for trigger/sync inputs */
-  if (config.freq_inputs[0].type != FREQ) {
+  if (config.freq_inputs[0].type == TRIGGER) {
     timer_enable_irq(TIM2, TIM_DIER_CC1IE);
   }
-  if (config.freq_inputs[1].type != FREQ) {
+  if (config.freq_inputs[1].type == TRIGGER) {
     timer_enable_irq(TIM2, TIM_DIER_CC2IE);
-  }
-  if (config.freq_inputs[2].type != FREQ) {
-    timer_enable_irq(TIM2, TIM_DIER_CC3IE);
-  }
-  if (config.freq_inputs[3].type != FREQ) {
-    timer_enable_irq(TIM2, TIM_DIER_CC4IE);
   }
   
   nvic_enable_irq(NVIC_TIM2_IRQ);
@@ -864,15 +911,6 @@ void platform_init() {
   platform_init_usb();
 
   for (int i = 0; i < NUM_SENSORS; ++i) {
-    if ((config.sensors[i].source == SENSOR_FREQ) &&
-        (config.sensors[i].pin >= 1) && (config.sensors[i].pin <= 4)) {
-      /* Pin 1-4 maps to GPIO8-11 */
-      gpio_mode_setup(GPIOA,
-                      GPIO_MODE_AF,
-                      GPIO_PUPD_PULLDOWN,
-                      GPIO8 << (config.sensors[i].pin - 1));
-      gpio_set_af(GPIOA, GPIO_AF1, GPIO8 << (config.sensors[i].pin - 1));
-    }
     if (config.sensors[i].source == SENSOR_DIGITAL) {
       gpio_mode_setup(GPIOE,
                       GPIO_MODE_INPUT,
@@ -951,6 +989,7 @@ uint32_t cycle_count() {
   return dwt_read_cycle_counter();
 }
 
+
 static volatile int adc_gather_in_progress = 0;
 void adc_gather() {
 #ifdef SPI_TLC2543
@@ -996,6 +1035,8 @@ void adc_gather() {
   TIM7_DIER |= TIM_DIER_UDE; /* Enable update dma */
 }
 
+/* Sensor sampling complete
+ * Also process frequency inputs */
 void dma1_stream3_isr(void) {
   if (!dma_get_interrupt_flag(DMA1, DMA_STREAM3, DMA_TCIF)) {
     return;
@@ -1023,11 +1064,27 @@ void dma1_stream3_isr(void) {
       adc_value >>= 4; /* 12 bit value is left justified */
 #endif
       config.sensors[i].raw_value = adc_value;
+    } else if (config.sensors[i].source == SENSOR_FREQ) {
+      uint8_t pin = config.sensors[i].pin;
+      if (pin > 3) {
+        continue;
+      }
+
+      /* TODO more intelligence, for now last sample time diff */
+      ssize_t before = freq_input_position(pin) - 2;
+      before = before < 0 ? FREQ_INPUT_SAMPLES + before : before;
+
+      ssize_t after = freq_input_position(pin) - 1;
+      after = after < 0 ? FREQ_INPUT_SAMPLES + after : after;
+      config.sensors[i].raw_value = freq_input_buffers[pin].buffer[after] - 
+        freq_input_buffers[pin].buffer[before];
     }
   }
 
   sensors_process(SENSOR_ADC);
   adc_gather_in_progress = 0;
+
+  sensors_process(SENSOR_FREQ);
 }
 
 /* This is now the lowest priority interrupt, with buffer swapping and sensor
@@ -1039,46 +1096,87 @@ void dma1_stream3_isr(void) {
  * graceful overflow (at the expensive of non-critical routines not running,
  * e.g. console).
  */
+static timeval_t test_trigger_period = 0;
+
+static int freq_input_peek(struct decoder_event *ev, uint8_t pin) {
+  assert(pin < 4);
+  if ((config.freq_inputs[pin].type == TRIGGER) &&
+      (freq_input_buffers[pin].read_pos != freq_input_position(pin))) {
+    *ev = (struct decoder_event){
+      .time = freq_input_buffers[pin].buffer[freq_input_buffers[pin].read_pos],
+      .trigger = pin,
+    };
+    return 1;
+  }
+  return 0;
+}
+
+static int fetch_next_trigger(struct decoder_event *result) {
+  struct decoder_event pin0, pin1;
+
+  int pin0_avail = freq_input_peek(&pin0, 0);
+  int pin1_avail = freq_input_peek(&pin1, 1);
+
+  if (pin0_avail && pin1_avail) {
+    if (time_in_range(pin1.time, pin0.time, current_time())) {
+      *result = pin1;
+      freq_input_increment_read(1);
+      return 1;
+    } else {
+      *result = pin0;
+      freq_input_increment_read(0);
+      return 1;
+    }
+  } else if (pin0_avail) {
+    *result = pin0;
+    freq_input_increment_read(0);
+    return 1;
+  } else if (pin1_avail) {
+    *result = pin1;
+    freq_input_increment_read(1);
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+static void walk_trigger_buffers() {
+  struct decoder_event events[32] = {0};
+  int n_events = 0;
+  while (fetch_next_trigger(&events[n_events])) {
+    n_events++;
+    if (n_events > FREQ_INPUT_SAMPLES - 1) {
+      /* TODO when stats supports counters, increment here */
+    }
+  }
+  decoder_update_scheduling(events, n_events);
+}
+
 void tim2_isr() {
   stats_increment_counter(STATS_INT_RATE);
   stats_increment_counter(STATS_INT_EVENTTIMER_RATE);
   stats_start_timing(STATS_INT_TOTAL_TIME);
-  if (timer_get_flag(TIM2, TIM_SR_CC2IF) &&
-      timer_get_flag(TIM2, TIM_SR_CC3IF)) {
+
+  if (timer_get_flag(TIM2, TIM_SR_CC1IF)) {
+    timer_clear_flag(TIM2, TIM_SR_CC1IF);
+  }
+  if (timer_get_flag(TIM2, TIM_SR_CC2IF)) {
     timer_clear_flag(TIM2, TIM_SR_CC2IF);
+  }
+
+  walk_trigger_buffers();
+
+  if (timer_get_flag(TIM2, TIM_SR_CC3IF)) {
     timer_clear_flag(TIM2, TIM_SR_CC3IF);
-    if (time_in_range(TIM2_CCR2, TIM2_CCR3, current_time())) {
-      struct decoder_event ev[] = {
-        { .t1 = 1, .time = TIM2_CCR3 },
-        { .t0 = 1, .time = TIM2_CCR2 },
-      };
-      decoder_update_scheduling(ev, 2);
-    } else {
-      struct decoder_event ev[] = {
-        { .t0 = 1, .time = TIM2_CCR2 },
-        { .t1 = 1, .time = TIM2_CCR3 },
-      };
-      decoder_update_scheduling(ev, 2);
-    }
-  } else {
-    if (timer_get_flag(TIM2, TIM_SR_CC2IF)) {
-      timer_clear_flag(TIM2, TIM_SR_CC2IF);
-      struct decoder_event ev = { .t0 = 1, .time = TIM2_CCR2 };
-      decoder_update_scheduling(&ev, 1);
-    }
-    if (timer_get_flag(TIM2, TIM_SR_CC3IF)) {
-      timer_clear_flag(TIM2, TIM_SR_CC3IF);
-      struct decoder_event ev = { .t1 = 1, .time = TIM2_CCR3 };
-      decoder_update_scheduling(&ev, 1);
-    }
+    timer_set_oc_value(TIM2, TIM_OC3, TIM2_CCR3 + test_trigger_period);
   }
   /* TODO properly handle pin configuration */
   stats_finish_timing(STATS_INT_TOTAL_TIME);
 }
 
 void tim5_isr() {
-  if (timer_get_flag(TIM5, TIM_SR_CC4IF)) {
-    timer_clear_flag(TIM5, TIM_SR_CC4IF);
+  if (timer_get_flag(TIM5, TIM_SR_CC1IF)) {
+    timer_clear_flag(TIM5, TIM_SR_CC1IF);
     scheduler_callback_timer_execute();
   }
 }
@@ -1114,21 +1212,21 @@ int interrupts_enabled() {
 }
 
 void set_event_timer(timeval_t t) {
-  timer_set_oc_value(TIM5, TIM_OC4, t);
-  timer_enable_irq(TIM5, TIM_DIER_CC4IE);
+  timer_set_oc_value(TIM5, TIM_OC1, t);
+  timer_enable_irq(TIM5, TIM_DIER_CC1IE);
 }
 
 timeval_t get_event_timer() {
-  return TIM5_CCR4;
+  return TIM5_CCR1;
 }
 
 void clear_event_timer() {
-  timer_clear_flag(TIM5, TIM_SR_CC4IF);
+  timer_clear_flag(TIM5, TIM_SR_CC1IF);
 }
 
 void disable_event_timer() {
-  timer_disable_irq(TIM5, TIM_DIER_CC4IE);
-  timer_clear_flag(TIM5, TIM_SR_CC4IF);
+  timer_disable_irq(TIM5, TIM_DIER_CC1IE);
+  timer_clear_flag(TIM5, TIM_SR_CC1IF);
 }
 
 timeval_t current_time() {
@@ -1162,6 +1260,25 @@ void set_gpio(int output, char value) {
   /* TODO fix:
    *   We can use output compares on A0-A2, configured by timer interrupts on
    *   TIM4 */
+void enable_test_trigger(trigger_type trig __attribute__((unused)), unsigned int rpm) {
+  test_trigger_period = time_from_rpm_diff(rpm, 45);
+
+  gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO10);
+  gpio_set_af(GPIOB, GPIO_AF1, GPIO10);
+  gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO11);
+  gpio_set_af(GPIOB, GPIO_AF1, GPIO11);
+
+  /* Setup output compare registers */
+  timer_ic_set_input(TIM2,  TIM_IC3, TIM_IC_OUT);
+  timer_disable_oc_clear(TIM2, TIM_OC3);
+  timer_disable_oc_preload(TIM2, TIM_OC3);
+  timer_set_oc_slow_mode(TIM2, TIM_OC3);
+  timer_set_oc_mode(TIM2, TIM_OC3, TIM_OCM_TOGGLE);
+  timer_set_oc_value(TIM2, TIM_OC3, current_time() + test_trigger_period);
+  timer_set_oc_polarity_high(TIM2, TIM_OC3);
+  timer_enable_oc_output(TIM2, TIM_OC3);
+  timer_enable_irq(TIM2, TIM_DIER_CC3IE);
+}
 
 extern unsigned _configdata_loadaddr, _sconfigdata, _econfigdata;
 void platform_load_config() {

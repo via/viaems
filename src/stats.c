@@ -8,12 +8,6 @@ struct stats_entry stats_entries[] = {
 	[STATS_INT_RATE] = {
 		.name = "interrupt_rate",
 	},
-	[STATS_INT_PWM_RATE] = {
-		.name = "pwm interrupt_rate",
-	},
-	[STATS_INT_USART_RATE] = {
-		.name = "usart interrupt_rate",
-	},
 	[STATS_INT_EVENTTIMER_RATE] = {
 		.name = "event timer interrupt_rate",
 	},

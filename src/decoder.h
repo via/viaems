@@ -64,9 +64,9 @@ struct decoder {
   timeval_t times[MAX_TRIGGERS];
 };
 
+
 struct decoder_event {
-  unsigned int t0 : 1;
-  unsigned int t1 : 1;
+  unsigned int trigger;
   timeval_t time;
 #ifdef UNITTEST
   decoder_state state;
