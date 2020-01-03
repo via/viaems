@@ -44,8 +44,21 @@
  *  Trigger 1 - PB10 (TIM2_CH3)
  *  Trigger 2 - PB11 (TIM2_CH4)
  *
- *  CAN2:
- *    PB5, PB6
+ *  GPIO: B0-B11
+ *  OUT: C0-C15
+ *  CAN1: PD0, PD1
+ *  USB: PA9, PA11, PA12
+ *
+ *  Custom PWM:
+ *    TIM10 PB8
+ *    TIM11 PB9
+ *    TIM13 PA6
+ *    TIM14 PA7
+ *  Fixed PWM:
+ *    TIM3 PB0
+ *    TIM3 PB1
+ *    TIM3 PB2
+ *    TIM3 PB3
  *
  *  USB:
  *    PA9, PA11, PA12
@@ -61,16 +74,6 @@
  *     inputs
  *    - RX uses SPI2 dma1 stream 3 chan 0
  *    - On end of RX dma, trigger interrupt
- *
- *  Configurable pin mapping:
- *  Scheduled Outputs:
- *   - 0-15 maps to port D, pins 0-15
- *  Freq sensor:
- *   - 1-4 maps to port A, pin 8-11 (TIM1 CH1-4)
- *  PWM Outputs
- *   - 0-PC6  1-PC7 2-PC8 3-PC9 TIM3 channel 1-4
- *  GPIO (Digital Sensor or Output)
- *   - 0-15 Maps to Port E
  *
  */
 
