@@ -42,8 +42,8 @@
  *  slaved off TIM8
  *  Trigger 0 - PA0 (TIM2_CH1) Stream 5
  *  Trigger 1 - PA1 (TIM2_CH2) Stream 6
- *  Trigger 2 - PA2 (TIM5_CH3) Stream 0
- *  Trigger 3 - PA3 (TIM5_CH4) Stream 1
+ *  Freq 2 - PA2 (TIM5_CH3) Stream 0
+ *  Freq 3 - PA3 (TIM5_CH4) Stream 1
  *
  *  Test/Out Trigger 0 - PB10 (TIM2_CH3)
  *  Test/Out Trigger 1 - PB11 (TIM2_CH4)
@@ -65,8 +65,6 @@
  *  Configurable pin mapping:
  *  Scheduled Outputs:
  *   - 0-15 maps to port D, pins 0-15
- *  Freq sensor:
- *   - 1-4 maps to port A, pin 8-11 (TIM1 CH1-4)
  *  PWM Outputs
  *   - 0-PC6  1-PC7 2-PC8 3-PC9 TIM3 channel 1-4
  *  GPIO (Digital Sensor or Output)
