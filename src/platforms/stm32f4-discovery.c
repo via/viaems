@@ -1116,9 +1116,9 @@ static void handle_test_trigger_edge() {
     next_event = TIM2_CCR3 + time_from_us(200);
   } else {
     next_event = TIM2_CCR3 +
-      time_from_rpm_diff(test_trigger_config.rpm,
-          config.decoder.degrees_per_trigger) -
-      time_from_us(200);
+                 time_from_rpm_diff(test_trigger_config.rpm,
+                                    config.decoder.degrees_per_trigger) -
+                 time_from_us(200);
   }
 
   /* Hackily handle overflows */
@@ -1128,8 +1128,7 @@ static void handle_test_trigger_edge() {
   }
   timer_set_oc_value(TIM2, TIM_OC3, next_event);
   enable_interrupts();
-  test_trigger_config.last_edge_active =
-    !test_trigger_config.last_edge_active;
+  test_trigger_config.last_edge_active = !test_trigger_config.last_edge_active;
 
   if (test_trigger_config.last_edge_active) {
     test_trigger_config.current_tooth =
@@ -1137,7 +1136,7 @@ static void handle_test_trigger_edge() {
 
     /* Toggle the sync line right before *and* right after */
     if ((test_trigger_config.current_tooth ==
-          config.decoder.num_triggers - 1) ||
+         config.decoder.num_triggers - 1) ||
         (test_trigger_config.current_tooth == 0)) {
       timer_set_oc_value(TIM2, TIM_OC4, current_time() + time_from_us(200));
       timer_enable_oc_output(TIM2, TIM_OC4);
@@ -1170,7 +1169,6 @@ void tim2_isr() {
   }
 
   walk_trigger_buffers();
-
 
   stats_finish_timing(STATS_INT_TOTAL_TIME);
 }
