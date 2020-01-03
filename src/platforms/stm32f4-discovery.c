@@ -179,6 +179,16 @@ void tim1_cc_isr() {
   stats_finish_timing(STATS_INT_TOTAL_TIME);
 }
 
+#if VIAEMS
+#define OUT_PORT GPIOC
+#define OUT_PORT_BSRR GPIOC_BSRR
+#define GPIO_PORT GPIOB
+#else
+#define OUT_PORT GPIOD
+#define OUT_PORT_BSRR GPIOD_BSRR
+#define GPIO_PORT GPIOE
+#endif
+
 static int capture_edge_from_config(trigger_edge e) {
   switch (e) {
   case RISING_EDGE:
@@ -280,7 +290,7 @@ timeval_t init_output_thread(uint32_t *buf0, uint32_t *buf1, uint32_t len) {
   dma_enable_memory_increment_mode(DMA2, DMA_STREAM1);
   dma_set_transfer_mode(DMA2, DMA_STREAM1, DMA_SxCR_DIR_MEM_TO_PERIPHERAL);
   dma_enable_circular_mode(DMA2, DMA_STREAM1);
-  dma_set_peripheral_address(DMA2, DMA_STREAM1, (uint32_t)&GPIOD_BSRR);
+  dma_set_peripheral_address(DMA2, DMA_STREAM1, (uint32_t) &OUT_PORT_BSRR);
   dma_set_memory_address(DMA2, DMA_STREAM1, (uint32_t)buf0);
   dma_set_memory_address_1(DMA2, DMA_STREAM1, (uint32_t)buf1);
   dma_set_number_of_data(DMA2, DMA_STREAM1, len);
@@ -384,18 +394,18 @@ void set_pwm(int output, float value) {
 }
 
 static void platform_init_scheduled_outputs() {
-  gpio_clear(GPIOD, 0xFFFF);
+  gpio_clear(OUT_PORT, 0xFFFF);
   unsigned int i;
   for (i = 0; i < config.num_events; ++i) {
     if (config.events[i].inverted && config.events[i].type) {
       set_output(config.events[i].pin, 1);
     }
   }
-  gpio_mode_setup(GPIOD, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, 0xFFFF & ~GPIO5);
-  gpio_set_output_options(
-    GPIOD, GPIO_OTYPE_PP, GPIO_OSPEED_100MHZ, 0xFFFF & ~GPIO5);
-  gpio_mode_setup(GPIOE, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, 0xFF);
-  gpio_set_output_options(GPIOE, GPIO_OTYPE_PP, GPIO_OSPEED_100MHZ, 0xFF);
+  gpio_mode_setup(OUT_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, 0xFFFF & ~GPIO5);
+  gpio_set_output_options(OUT_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_100MHZ, 0xFFFF & ~GPIO5);
+  gpio_mode_setup(GPIO_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, 0xFF);
+  gpio_set_output_options(GPIO_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_100MHZ, 0xFF);
+
 }
 
 void platform_enable_event_logging() {
@@ -408,10 +418,9 @@ void platform_enable_event_logging() {
   nvic_enable_irq(NVIC_EXTI9_5_IRQ);
   nvic_enable_irq(NVIC_EXTI15_10_IRQ);
 
-  exti_select_source(0xFF, GPIOD);
+  exti_select_source(0xFF, OUT_PORT);
   exti_set_trigger(0xFF, EXTI_TRIGGER_BOTH);
   exti_enable_request(0xFF);
-}
 
 void platform_disable_event_logging() {
   nvic_disable_irq(NVIC_EXTI0_IRQ);
@@ -428,7 +437,7 @@ static void show_scheduled_outputs() {
   console_record_event((struct logged_event){
     .type = EVENT_OUTPUT,
     .time = current_time(),
-    .value = gpio_port_read(GPIOD),
+    .value = gpio_port_read(OUT_PORT),
   });
   exti_reset_request(flag_changes);
   __asm__("dsb");
@@ -915,10 +924,8 @@ void platform_init() {
       gpio_set_af(GPIOA, GPIO_AF1, GPIO8 << (config.sensors[i].pin - 1));
     }
     if (config.sensors[i].source == SENSOR_DIGITAL) {
-      gpio_mode_setup(GPIOE,
-                      GPIO_MODE_INPUT,
-                      GPIO_PUPD_PULLDOWN,
-                      (1 << config.sensors[i].pin));
+      gpio_mode_setup(GPIO_PORT, GPIO_MODE_INPUT, GPIO_PUPD_PULLDOWN, 
+          (1 << config.sensors[i].pin));
     }
   }
   dwt_enable_cycle_counter();
