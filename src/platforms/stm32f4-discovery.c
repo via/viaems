@@ -1178,26 +1178,26 @@ timeval_t current_time() {
 }
 
 int get_output(int output) {
-  return gpio_get(GPIOD, (1 << output)) != 0;
+  return gpio_get(OUT_PORT, (1 << output)) != 0;
 }
 
 void set_output(int output, char value) {
   if (value) {
-    gpio_set(GPIOD, (1 << output));
+    gpio_set(OUT_PORT, (1 << output));
   } else {
-    gpio_clear(GPIOD, (1 << output));
+    gpio_clear(OUT_PORT, (1 << output));
   }
 }
 
 int get_gpio(int output) {
-  return gpio_get(GPIOE, (1 << output)) != 0;
+  return gpio_get(GPIO_PORT, (1 << output)) != 0;
 }
 
 void set_gpio(int output, char value) {
   if (value) {
-    gpio_set(GPIOE, (1 << output));
+    gpio_set(GPIO_PORT, (1 << output));
   } else {
-    gpio_clear(GPIOE, (1 << output));
+    gpio_clear(GPIO_PORT, (1 << output));
   }
 }
 
