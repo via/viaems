@@ -57,8 +57,11 @@ struct decoder {
   unsigned int num_triggers;
   degrees_t degrees_per_trigger;
   unsigned int rpm_window_size;
-  trigger_edge t0_edge;
-  trigger_edge t1_edge;
+
+  struct {
+    uint8_t pin;
+    trigger_edge edge;
+  } t0, t1;
 
   /* Debug */
   unsigned int t0_count;

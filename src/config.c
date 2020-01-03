@@ -199,6 +199,8 @@ struct config config __attribute__((section(".configdata"))) = {
     .offset = 50,
     .trigger_max_rpm_change = 0.55, /*Startup sucks with only 90* trigger */
     .trigger_min_rpm = 80,
+    .t0 = {.pin = 1},
+    .t1 = {.pin = 2},
   },
   .sensors = {
     [SENSOR_BRV] = {.pin=0, .source=SENSOR_ADC, .method=METHOD_LINEAR,

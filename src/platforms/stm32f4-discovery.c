@@ -38,11 +38,12 @@
  *  LD6 - Blue - PD15
  *
  *  Fixed pin mapping:
- *  Test trigger out - A0 (Uses TIM5)
- *  Event timer TIM2 slaved off TIM8
- *  Trigger 0 - PB3 (TIM2_CH2)
- *  Trigger 1 - PB10 (TIM2_CH3)
- *  Trigger 2 - PB11 (TIM2_CH4)
+ *  Event timer TIM5 slaved off TIM8 (CC4 for primary timer, 1-3 for test trigger)
+ *  Frequency/Trigger is TIM2 slaved off TIM8, uses DMA to capture times
+ *  Trigger 0   PA0 (TIM2_CH1) Stream 5
+ *  Trigger 1 - PA1 (TIM2_CH2) Stream 6
+ *  Trigger 2 - PA2 (TIM2_CH3) Stream 1
+ *  Trigger 3 - PA3 (TIM2_CH4) Stream 7
  *
  *  CAN2:
  *    PB5, PB6
@@ -57,8 +58,8 @@
  *    TIM14 PA7
  *
  *  TLC2543 or ADC7888 on SPI2 (PB12-15) CS, SCK, MISO, MOSI
- *    - Uses TIM6 dma1 stream 1 chan 7 to trigger DMA at about 50 khz for 10
- *     inputs
+ *    - Uses TIM7 dma1 stream 2 chan 1 to trigger DMA at about 50 khz for 10
+ *      inputs
  *    - RX uses SPI2 dma1 stream 3 chan 0
  *    - On end of RX dma, trigger interrupt
  *
@@ -188,6 +189,50 @@ static int capture_edge_from_config(trigger_edge e) {
   return RISING_EDGE;
 }
 
+static volatile uint32_t trigger_capture_times[4][128];
+
+static void platform_init_freq_input(int interrupt_enabled, uint8_t pin) {
+
+  tim_ic_id ic_id;
+  uint16_t gpio_pin;
+  uint16_t ic_ie;
+  switch (pin) {
+    case 0:
+      ic_id = TIM_IC1;
+      ic_ie = TIM_DIER_CC1IE;
+      gpio_pin = GPIO0;
+      break;
+    case 1:
+      ic_id = TIM_IC2;
+      ic_ie = TIM_DIER_CC2IE;
+      gpio_pin = GPIO1;
+      break;
+    case 2:
+      ic_id = TIM_IC3;
+      ic_ie = TIM_DIER_CC3IE;
+      gpio_pin = GPIO2;
+      break;
+    case 3:
+      ic_id = TIM_IC4;
+      ic_ie = TIM_DIER_CC4IE;
+      gpio_pin = GPIO3;
+      break;
+    default:
+      return;
+  }
+
+  gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_PULLDOWN, gpio_pin);
+  gpio_set_af(GPIOA, GPIO_AF1, gpio_pin);
+  timer_ic_set_input(TIM2, ic_id, TIM_IC_IN_TI2);
+  timer_ic_set_filter(TIM2, ic_id, TIM_IC_CK_INT_N_2);
+  timer_ic_set_polarity(TIM2, id_id, TIM_IC_RISING);
+  timer_ic_enable(TIM2, id_id);
+  
+  if (interrupt_enabled) {
+    timer_enable_irq(TIM2, ic_ie);
+  }
+}
+
 static void platform_init_eventtimer() {
   /* Set up TIM2 as 32bit clock that is slaved off TIM8*/
 
@@ -207,7 +252,14 @@ static void platform_init_eventtimer() {
   timer_disable_oc_preload(TIM2, TIM_OC1);
   timer_set_oc_slow_mode(TIM2, TIM_OC1);
   timer_set_oc_mode(TIM2, TIM_OC1, TIM_OCM_FROZEN);
-  /* Setup input captures for CH2-4 Triggers */
+  /* Setup input captures for CH1-4 Triggers */
+  gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_PULLDOWN, GPIO15);
+  gpio_set_af(GPIOA, GPIO_AF1, GPIO15);
+  timer_ic_set_input(TIM2, TIM_IC1, TIM_IC_IN_TI2);
+  timer_ic_set_filter(TIM2, TIM_IC1, TIM_IC_CK_INT_N_2);
+  timer_ic_set_polarity(TIM2, TIM_IC1, TIM_IC_RISING);
+  timer_ic_enable(TIM2, TIM_IC1);
+
   gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_PULLDOWN, GPIO3);
   gpio_set_af(GPIOB, GPIO_AF1, GPIO3);
   timer_ic_set_input(TIM2, TIM_IC2, TIM_IC_IN_TI2);
@@ -232,15 +284,16 @@ static void platform_init_eventtimer() {
   timer_ic_enable(TIM2, TIM_IC4);
 
   timer_enable_counter(TIM2);
+
+  /* Only enable interrupt for t0/t1 -- eventually make configurable */
   timer_enable_irq(TIM2, TIM_DIER_CC2IE);
   timer_enable_irq(TIM2, TIM_DIER_CC3IE);
-  timer_enable_irq(TIM2, TIM_DIER_CC4IE);
   nvic_enable_irq(NVIC_TIM2_IRQ);
   nvic_set_priority(NVIC_TIM2_IRQ, 32);
 
   /* Set debug unit to stop the timer on halt */
-  *((volatile uint32_t *)0xE0042008) |= 19; /*TIM2, TIM5, and TIM6 */
-  *((volatile uint32_t *)0xE004200C) |= 2;  /* TIM8 stop */
+  *((volatile uint32_t *)0xE0042008) |= 29; /*TIM2, TIM5, and TIM7 */
+  *((volatile uint32_t *)0xE004200C) |= 2; /* TIM8 stop */
 
   timer_set_mode(TIM8, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
   timer_set_period(TIM8, 41); /* 0.25 uS */
@@ -454,7 +507,8 @@ void exti15_10_isr() {
   show_scheduled_outputs();
 }
 
-/* We use TIM6 to control the sample rate.  It is set up to trigger a DMA event
+
+/* We use TIM7 to control the sample rate.  It is set up to trigger a DMA event
  * on counter update to TX on SPI2.  When the full 16 bits is transmitted and
  * the SPI RX buffer is filled, the RX DMA event will fill, and populate
  * spi_rx_raw_adc.
@@ -469,8 +523,8 @@ void exti15_10_isr() {
  *
  * Currently sample rate is about 50 khz, with a SPI bus frequency of 1.3ish MHz
  *
- * Each call to adc_gather reconfigures TX DMA, resets and starts TIM6, and
- * lowers CS Once all receives are complete, RX dma completes, notifies
+ * Each call to adc_gather reconfigures TX DMA, resets and starts TIM7, and
+ * lowers CS Once all 13 receives are complete, RX dma completes, notifies
  * completion, and raises CS.
  */
 #ifdef SPI_TLC2543
@@ -522,18 +576,21 @@ static void platform_init_spi_adc() {
   nvic_enable_irq(NVIC_DMA1_STREAM3_IRQ);
   nvic_set_priority(NVIC_DMA1_STREAM3_IRQ, 16);
 
-  /* Configure TIM6 to drive DMA for SPI */
-  timer_set_mode(TIM6, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
-  timer_set_period(TIM6, 1800); /* Approx 50 khz sampling rate */
-  timer_disable_preload(TIM6);
-  timer_continuous_mode(TIM6);
-  /* Setup output compare registers */
-  timer_disable_oc_output(TIM6, TIM_OC1);
-  timer_disable_oc_output(TIM6, TIM_OC2);
-  timer_disable_oc_output(TIM6, TIM_OC3);
-  timer_disable_oc_output(TIM6, TIM_OC4);
 
-  timer_set_prescaler(TIM6, 0);
+  /* Configure TIM7 to drive DMA for SPI */
+  timer_reset(TIM7);
+  timer_set_mode(TIM7, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
+  timer_set_period(TIM7, 1800); /* Approx 50 khz sampling rate */
+  timer_disable_preload(TIM7);
+  timer_continuous_mode(TIM7);
+  /* Setup output compare registers */
+  timer_disable_oc_output(TIM7, TIM_OC1);
+  timer_disable_oc_output(TIM7, TIM_OC2);
+  timer_disable_oc_output(TIM7, TIM_OC3);
+  timer_disable_oc_output(TIM7, TIM_OC4);
+
+  timer_set_prescaler(TIM7, 0); 
+
 }
 
 static uint8_t usbd_control_buffer[128];
@@ -884,7 +941,7 @@ void platform_init() {
   rcc_periph_clock_enable(RCC_TIM2);
   rcc_periph_clock_enable(RCC_TIM3);
   rcc_periph_clock_enable(RCC_TIM5);
-  rcc_periph_clock_enable(RCC_TIM6);
+  rcc_periph_clock_enable(RCC_TIM7);
   rcc_periph_clock_enable(RCC_TIM8);
   rcc_periph_clock_enable(RCC_SPI2);
   rcc_periph_clock_enable(RCC_OTGFS);
@@ -1006,30 +1063,29 @@ void adc_gather() {
   }
   adc_gather_in_progress = 1;
 
-  timer_set_counter(TIM6, 0);
+  timer_set_counter(TIM7, 0);
   /* CS low */
   gpio_clear(GPIOB, GPIO12);
 
   /* Set up DMA for SPI TX */
-  dma_stream_reset(DMA1, DMA_STREAM1);
-  dma_set_priority(DMA1, DMA_STREAM1, DMA_SxCR_PL_LOW);
-  dma_set_memory_size(DMA1, DMA_STREAM1, DMA_SxCR_MSIZE_16BIT);
-  dma_set_peripheral_size(DMA1, DMA_STREAM1, DMA_SxCR_PSIZE_16BIT);
-  dma_enable_memory_increment_mode(DMA1, DMA_STREAM1);
-  dma_set_transfer_mode(DMA1, DMA_STREAM1, DMA_SxCR_DIR_MEM_TO_PERIPHERAL);
-  dma_set_peripheral_address(DMA1, DMA_STREAM1, (uint32_t)&SPI2_DR);
-  dma_set_memory_address(DMA1, DMA_STREAM1, (uint32_t)spi_tx_list);
-  dma_set_number_of_data(
-    DMA1, DMA_STREAM1, sizeof(spi_tx_list) / sizeof(spi_tx_list[0]));
-  dma_channel_select(DMA1, DMA_STREAM1, DMA_SxCR_CHSEL_7);
-  dma_enable_direct_mode(DMA1, DMA_STREAM1);
-  dma_enable_stream(DMA1, DMA_STREAM1);
+  dma_stream_reset(DMA1, DMA_STREAM2);
+  dma_set_priority(DMA1, DMA_STREAM2, DMA_SxCR_PL_LOW);
+  dma_set_memory_size(DMA1, DMA_STREAM2, DMA_SxCR_MSIZE_16BIT);
+  dma_set_peripheral_size(DMA1, DMA_STREAM2, DMA_SxCR_PSIZE_16BIT);
+  dma_enable_memory_increment_mode(DMA1, DMA_STREAM2);
+  dma_set_transfer_mode(DMA1, DMA_STREAM2, DMA_SxCR_DIR_MEM_TO_PERIPHERAL);
+  dma_set_peripheral_address(DMA1, DMA_STREAM2, (uint32_t) &SPI2_DR);
+  dma_set_memory_address(DMA1, DMA_STREAM2, (uint32_t)spi_tx_list);
+  dma_set_number_of_data(DMA1, DMA_STREAM2, 13);
+  dma_channel_select(DMA1, DMA_STREAM2, DMA_SxCR_CHSEL_1);
+  dma_enable_direct_mode(DMA1, DMA_STREAM2);
+  dma_enable_stream(DMA1, DMA_STREAM2);
 
-  timer_enable_counter(TIM6);
-  timer_enable_update_event(TIM6);
-  timer_update_on_overflow(TIM6);
-  timer_set_dma_on_update_event(TIM6);
-  TIM6_DIER |= TIM_DIER_UDE; /* Enable update dma */
+  timer_enable_counter(TIM7);
+  timer_enable_update_event(TIM7);
+  timer_update_on_overflow(TIM7);
+  timer_set_dma_on_update_event(TIM7);
+  TIM7_DIER |= TIM_DIER_UDE; /* Enable update dma */
 }
 
 void dma1_stream3_isr(void) {
@@ -1040,7 +1096,7 @@ void dma1_stream3_isr(void) {
 
   /* CS high */
   gpio_set(GPIOB, GPIO12);
-  timer_disable_counter(TIM6);
+  timer_disable_counter(TIM7);
 
   int fault = 0;
 #ifdef SPI_TLC2543
