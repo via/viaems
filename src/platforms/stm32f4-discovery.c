@@ -787,36 +787,15 @@ void platform_init_usb() {
 
 void platform_init_test_trigger() {
 
-  /* Setup output compare registers */
-  timer_ic_set_input(TIM2, TIM_IC3, TIM_IC_OUT);
-  timer_disable_oc_clear(TIM2, TIM_OC3);
-  timer_disable_oc_preload(TIM2, TIM_OC3);
-  timer_set_oc_slow_mode(TIM2, TIM_OC3);
-  timer_set_oc_mode(TIM2, TIM_OC3, TIM_OCM_TOGGLE);
-  switch (config.freq_inputs[0].edge) {
-  case RISING_EDGE:
-    timer_set_oc_polarity_low(TIM2, TIM_OC3);
-    break;
-  default:
-    timer_set_oc_polarity_high(TIM2, TIM_OC3);
-    break;
-  }
+  /* Set up TIM6 to trigger interrupts at a later-determined interval */
+  timer_set_mode(TIM6, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
+  timer_set_period(TIM6, 1000);  /* 1 mS */
+  timer_set_prescaler(TIM6, 83); /* 1uS per tick */
+  timer_enable_preload(TIM6);
+  timer_continuous_mode(TIM6);
+  timer_enable_counter(TIM6);
 
-  timer_ic_set_input(TIM2, TIM_IC4, TIM_IC_OUT);
-  timer_disable_oc_clear(TIM2, TIM_OC4);
-  timer_disable_oc_preload(TIM2, TIM_OC4);
-  timer_set_oc_slow_mode(TIM2, TIM_OC4);
-  timer_set_oc_mode(TIM2, TIM_OC4, TIM_OCM_TOGGLE);
-  switch (config.freq_inputs[1].edge) {
-  case RISING_EDGE:
-    timer_set_oc_polarity_low(TIM2, TIM_OC4);
-    break;
-  default:
-    timer_set_oc_polarity_high(TIM2, TIM_OC4);
-    break;
-  }
-
-  timer_enable_irq(TIM2, TIM_DIER_CC3IE);
+  timer_enable_irq(TIM6, TIM_DIER_UIE);
 }
 
 void platform_init() {
@@ -1085,48 +1064,39 @@ static void walk_trigger_buffers() {
 }
 
 static struct {
-  uint8_t enabled;
   uint8_t current_tooth;
   timeval_t last_trigger;
   int rpm;
   int last_edge_active; /* Indicates upcoming edge should be falling */
-} test_trigger_config = { .last_edge_active = 1 };
+} test_trigger_config = {};
 
 void set_test_trigger_rpm(unsigned int rpm) {
   test_trigger_config.rpm = rpm;
-  if (!test_trigger_config.enabled) {
-    /* Set up gpios */
-    gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO10);
-    gpio_set_af(GPIOB, GPIO_AF1, GPIO10);
-    gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO11);
-    gpio_set_af(GPIOB, GPIO_AF1, GPIO11);
 
-    timer_set_oc_value(TIM2, TIM_OC3, current_time() + time_from_us(1000000));
-    timer_enable_oc_output(TIM2, TIM_OC3);
-    test_trigger_config.enabled = 1;
+  if (rpm) {
+    gpio_mode_setup(GPIOB, GPIO_MODE_OUTPUT, GPIO_PUPD_PULLDOWN, GPIO10);
+    gpio_mode_setup(GPIOB, GPIO_MODE_OUTPUT, GPIO_PUPD_PULLDOWN, GPIO11);
+
+    timeval_t period_us =
+      time_from_rpm_diff(test_trigger_config.rpm,
+                         config.decoder.degrees_per_trigger) /
+      time_from_us(1);
+
+    timer_set_period(TIM6, period_us / 2);
+
+    nvic_enable_irq(NVIC_TIM6_DAC_IRQ);
+    nvic_set_priority(NVIC_TIM6_DAC_IRQ,
+                      0); /* Always a fast interrupt, highest priority */
+  } else {
+    nvic_disable_irq(NVIC_TIM6_DAC_IRQ);
+    test_trigger_config.current_tooth = 0;
   }
 }
 
 static void handle_test_trigger_edge() {
-  timeval_t next_event;
-  if (test_trigger_config.last_edge_active) {
-    test_trigger_config.last_trigger = TIM2_CCR3;
-    next_event = TIM2_CCR3 + time_from_us(200);
-  } else {
-    next_event = TIM2_CCR3 +
-                 time_from_rpm_diff(test_trigger_config.rpm,
-                                    config.decoder.degrees_per_trigger) -
-                 time_from_us(200);
-  }
-
-  /* Hackily handle overflows */
-  disable_interrupts();
-  if (time_before(next_event, current_time() + time_from_us(5))) {
-    next_event = current_time() + time_from_us(5);
-  }
-  timer_set_oc_value(TIM2, TIM_OC3, next_event);
-  enable_interrupts();
   test_trigger_config.last_edge_active = !test_trigger_config.last_edge_active;
+
+  gpio_toggle(GPIOB, GPIO10);
 
   if (test_trigger_config.last_edge_active) {
     test_trigger_config.current_tooth =
@@ -1136,10 +1106,22 @@ static void handle_test_trigger_edge() {
     if ((test_trigger_config.current_tooth ==
          config.decoder.num_triggers - 1) ||
         (test_trigger_config.current_tooth == 0)) {
-      timer_set_oc_value(TIM2, TIM_OC4, current_time() + time_from_us(200));
-      timer_enable_oc_output(TIM2, TIM_OC4);
+      gpio_toggle(GPIOB, GPIO11);
     }
   }
+}
+
+void tim6_dac_isr() {
+  stats_increment_counter(STATS_INT_RATE);
+  stats_start_timing(STATS_INT_TESTTRIGGER_TIME);
+
+  if (timer_get_flag(TIM6, TIM_SR_UIF)) {
+    timer_clear_flag(TIM6, TIM_SR_UIF);
+  }
+
+  handle_test_trigger_edge();
+
+  stats_finish_timing(STATS_INT_TESTTRIGGER_TIME);
 }
 
 /* This is now the lowest priority interrupt, with buffer swapping and sensor
@@ -1158,12 +1140,6 @@ void tim2_isr() {
   }
   if (timer_get_flag(TIM2, TIM_SR_CC2IF)) {
     timer_clear_flag(TIM2, TIM_SR_CC2IF);
-  }
-
-  /* Handle test trigger outputs */
-  if (timer_get_flag(TIM2, TIM_SR_CC3IF)) {
-    timer_clear_flag(TIM2, TIM_SR_CC3IF);
-    handle_test_trigger_edge();
   }
 
   walk_trigger_buffers();

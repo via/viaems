@@ -26,6 +26,9 @@ struct stats_entry stats_entries[] = {
 	[STATS_INT_BUFFERSWAP_TIME] = {
 		.name = "output buffer reload time",
 	},
+	[STATS_INT_TESTTRIGGER_TIME] = {
+		.name = "total time spent handling test_trigger",
+	},
 	[STATS_SCHED_TOTAL_TIME] = {
 		.name = "total scheduling time after decode",
 	},
