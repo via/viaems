@@ -816,6 +816,7 @@ void platform_init() {
   rcc_periph_clock_enable(RCC_TIM2);
   rcc_periph_clock_enable(RCC_TIM3);
   rcc_periph_clock_enable(RCC_TIM5);
+  rcc_periph_clock_enable(RCC_TIM6);
   rcc_periph_clock_enable(RCC_TIM7);
   rcc_periph_clock_enable(RCC_TIM8);
   rcc_periph_clock_enable(RCC_SPI2);
@@ -889,6 +890,9 @@ void platform_reset_into_bootloader() {
   rcc_periph_reset_pulse(RST_TIM6);
   rcc_periph_clock_disable(RCC_TIM6);
 
+  rcc_periph_reset_pulse(RST_TIM7);
+  rcc_periph_clock_disable(RCC_TIM7);
+
   rcc_periph_reset_pulse(RST_TIM8);
   rcc_periph_clock_disable(RCC_TIM8);
 
@@ -944,7 +948,8 @@ void adc_gather() {
   dma_set_transfer_mode(DMA1, DMA_STREAM2, DMA_SxCR_DIR_MEM_TO_PERIPHERAL);
   dma_set_peripheral_address(DMA1, DMA_STREAM2, (uint32_t)&SPI2_DR);
   dma_set_memory_address(DMA1, DMA_STREAM2, (uint32_t)spi_tx_list);
-  dma_set_number_of_data(DMA1, DMA_STREAM2, 13);
+  dma_set_number_of_data(
+    DMA1, DMA_STREAM2, sizeof(spi_tx_list) / sizeof(spi_tx_list[0]));
   dma_channel_select(DMA1, DMA_STREAM2, DMA_SxCR_CHSEL_1);
   dma_enable_direct_mode(DMA1, DMA_STREAM2);
   dma_enable_stream(DMA1, DMA_STREAM2);
