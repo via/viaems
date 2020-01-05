@@ -334,14 +334,14 @@ interfacing.
 
 ## STM32F4
 Note: These are subject to change with the next hardware design, which will be
-moving to better support a 64 pin chip, superior frequency inputs (currently
-poorly supported), and more flexible PWM outputs.
+moving to better support a 64 pin chip and more flexible PWM outputs.
 
 System | Pins
 --- | ---
-Trigger 0 | `PB3`
-Trigger 1 | `PB10`
-Test Trigger | `PA0` (Emits square wave at fixed RPM)
+Trigger 0 | `PA0`
+Trigger 1 | `PA1`
+Frequency | `PA0`, `PA1`, `PA2`, `PA3`
+Test Trigger | `PB10`, `PB11`
 `CANL` | `PB5`
 `CANH` | `PB6`
 USB | `PA9`, `PA11`, and `PA12`
