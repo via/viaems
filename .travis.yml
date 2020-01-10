@@ -12,4 +12,4 @@ before_install:
   - "pushd check-0.12.0; ./configure --prefix=/usr; make; sudo make install; popd"
 
 script:
-  - cd src && bmake check
+  - cd src && bmake check && bmake lint

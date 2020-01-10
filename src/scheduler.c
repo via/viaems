@@ -23,9 +23,12 @@ struct timed_callback *callbacks[MAX_CALLBACKS] = { 0 };
 static int n_callbacks = 0;
 
 static int sched_entry_has_fired(struct sched_entry *en) {
+  assert(en);
+
   int ret = 0;
   int ints_on = disable_interrupts();
-  if (en && en->buffer) {
+
+  if (en->buffer) {
     if (time_in_range(en->time, en->buffer->start, current_time())) {
       ret = 1;
     }
