@@ -676,6 +676,81 @@ static void console_set_events(const struct console_config_node *self
   }
 }
 
+static void console_get_freq(const struct console_config_node *self
+                               __attribute__((unused)),
+                               char *dest,
+                               char *remaining) {
+
+  const int num_freqs = sizeof(config.freq_inputs) / sizeof(struct freq_input);
+  if (!remaining || !strcmp("", remaining)) {
+    sprintf(dest, "num_freq=%d", num_freqs);
+    return;
+  }
+
+  unsigned int freq_n = atoi(strtok(remaining, " "));
+  if (freq_n >= num_freqs) {
+    strcpy(dest, "Frequency input out of range");
+    return;
+  }
+  const char *edge, *type;
+  switch (config.freq_inputs[freq_n].edge) {
+    case RISING_EDGE:
+      edge = "rising"; break;
+    case FALLING_EDGE:
+      edge = "falling"; break;
+    case BOTH_EDGES:
+    default:
+      edge = "both"; break;
+  }
+
+  switch (config.freq_inputs[freq_n].type) {
+    case TRIGGER:
+      type = "trigger"; break;
+    case FREQ:
+      type = "freq"; break;
+  }
+
+  sprintf(dest, "edge=%s type=%s", edge, type);
+}
+
+static void console_set_freq(const struct console_config_node *self
+                               __attribute__((unused)),
+                               char *remaining) {
+
+  char *k, *v;
+  char *saveptr;
+  const int num_freqs = sizeof(config.freq_inputs) / sizeof(struct freq_input);
+
+  if (!remaining) {
+    return;
+  }
+
+  unsigned int freq_n = atoi(strtok_r(remaining, " ", &saveptr));
+  if (freq_n >= num_freqs) {
+    return;
+  }
+  struct freq_input *freq = &config.freq_inputs[freq_n];
+
+  remaining = saveptr;
+  while (parse_keyval_pair(&k, &v, &remaining)) {
+    if (!strcmp("type", k)) {
+      if (!strcmp("trigger", v)) {
+        freq->type = TRIGGER;
+      } else if (!strcmp("freq", v)) {
+        freq->type = FREQ;
+      }
+    } else if (!strcmp("edge", k)) {
+      if (!strcmp("rising", v)) {
+        freq->edge = RISING_EDGE;
+      } else if (!strcmp("falling", v)) {
+        freq->edge = FALLING_EDGE;
+      } else if (!strcmp("both", v)) {
+        freq->edge = BOTH_EDGES;
+      }
+    }
+  }
+}
+
 static struct {
   int enabled;
   struct logged_event events[32];
@@ -955,7 +1030,9 @@ static struct console_config_node console_config_nodes[] = {
 
   /* Hardware config */
   { .name = "config.hardware" },
-  { .name = "config.hardware.freq" },
+  { .name = "config.hardware.freq",
+     .get = console_get_freq,
+     .set = console_set_freq },
   { .name = "config.hardware.pwm" },
 
   { .name = "status" },
@@ -1843,6 +1920,69 @@ START_TEST(check_console_set_events) {
 }
 END_TEST
 
+START_TEST(check_console_get_freq) {
+
+  char cmd[16] = "";
+  char buf[128];
+
+  config.num_events = 4;
+  console_get_freq(NULL, buf, cmd);
+  ck_assert_str_eq(buf, "num_freq=4");
+
+  config.freq_inputs[0] = (struct freq_input){
+    .type = TRIGGER,
+    .edge = FALLING_EDGE,
+  };
+
+  strcpy(cmd, "0");
+  console_get_freq(NULL, buf, cmd);
+  ck_assert_ptr_nonnull(strstr(buf, "edge=falling"));
+  ck_assert_ptr_nonnull(strstr(buf, "type=trigger"));
+
+  config.freq_inputs[0] = (struct freq_input){
+    .type = FREQ,
+    .edge = RISING_EDGE,
+  };
+
+  strcpy(cmd, "0");
+  console_get_freq(NULL, buf, cmd);
+  ck_assert_ptr_nonnull(strstr(buf, "edge=rising"));
+  ck_assert_ptr_nonnull(strstr(buf, "type=freq"));
+
+  config.freq_inputs[0] = (struct freq_input){
+    .type = FREQ,
+    .edge = BOTH_EDGES,
+  };
+
+  strcpy(cmd, "0");
+  console_get_freq(NULL, buf, cmd);
+  ck_assert_ptr_nonnull(strstr(buf, "edge=both"));
+  ck_assert_ptr_nonnull(strstr(buf, "type=freq"));
+}
+END_TEST
+
+START_TEST(check_console_set_freq) {
+
+  char buf[] = "2 type=trigger edge=falling";
+
+  console_set_freq(NULL, buf);
+  ck_assert_int_eq(config.freq_inputs[2].type, TRIGGER);
+  ck_assert_int_eq(config.freq_inputs[2].edge, FALLING_EDGE);
+
+  char buf2[] = "1 type=freq edge=rising";
+
+  console_set_freq(NULL, buf2);
+  ck_assert_int_eq(config.freq_inputs[1].type, FREQ);
+  ck_assert_int_eq(config.freq_inputs[1].edge, RISING_EDGE);
+
+  char buf3[] = "1 type=freq edge=both";
+
+  console_set_freq(NULL, buf3);
+  ck_assert_int_eq(config.freq_inputs[1].type, FREQ);
+  ck_assert_int_eq(config.freq_inputs[1].edge, BOTH_EDGES);
+}
+END_TEST
+
 TCase *setup_console_tests() {
   TCase *console_tests = tcase_create("console");
   tcase_add_test(console_tests, check_console_search_node);
@@ -1864,6 +2004,8 @@ TCase *setup_console_tests() {
   tcase_add_test(console_tests, check_console_get_sensor);
   tcase_add_test(console_tests, check_console_set_events);
   tcase_add_test(console_tests, check_console_get_events);
+  tcase_add_test(console_tests, check_console_set_freq);
+  tcase_add_test(console_tests, check_console_get_freq);
   return console_tests;
 }
 
