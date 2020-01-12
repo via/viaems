@@ -677,9 +677,9 @@ static void console_set_events(const struct console_config_node *self
 }
 
 static void console_get_freq(const struct console_config_node *self
-                               __attribute__((unused)),
-                               char *dest,
-                               char *remaining) {
+                             __attribute__((unused)),
+                             char *dest,
+                             char *remaining) {
 
   const int num_freqs = sizeof(config.freq_inputs) / sizeof(struct freq_input);
   if (!remaining || !strcmp("", remaining)) {
@@ -694,28 +694,33 @@ static void console_get_freq(const struct console_config_node *self
   }
   const char *edge, *type;
   switch (config.freq_inputs[freq_n].edge) {
-    case RISING_EDGE:
-      edge = "rising"; break;
-    case FALLING_EDGE:
-      edge = "falling"; break;
-    case BOTH_EDGES:
-    default:
-      edge = "both"; break;
+  case RISING_EDGE:
+    edge = "rising";
+    break;
+  case FALLING_EDGE:
+    edge = "falling";
+    break;
+  case BOTH_EDGES:
+  default:
+    edge = "both";
+    break;
   }
 
   switch (config.freq_inputs[freq_n].type) {
-    case TRIGGER:
-      type = "trigger"; break;
-    case FREQ:
-      type = "freq"; break;
+  case TRIGGER:
+    type = "trigger";
+    break;
+  case FREQ:
+    type = "freq";
+    break;
   }
 
   sprintf(dest, "edge=%s type=%s", edge, type);
 }
 
 static void console_set_freq(const struct console_config_node *self
-                               __attribute__((unused)),
-                               char *remaining) {
+                             __attribute__((unused)),
+                             char *remaining) {
 
   char *k, *v;
   char *saveptr;
@@ -1031,8 +1036,8 @@ static struct console_config_node console_config_nodes[] = {
   /* Hardware config */
   { .name = "config.hardware" },
   { .name = "config.hardware.freq",
-     .get = console_get_freq,
-     .set = console_set_freq },
+    .get = console_get_freq,
+    .set = console_set_freq },
   { .name = "config.hardware.pwm" },
 
   { .name = "status" },
