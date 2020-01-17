@@ -687,7 +687,7 @@ static void console_get_freq(const struct console_config_node *self
     return;
   }
 
-  unsigned int freq_n = atoi(strtok(remaining, " "));
+  int freq_n = atoi(strtok(remaining, " "));
   if (freq_n >= num_freqs) {
     strcpy(dest, "Frequency input out of range");
     return;
@@ -711,6 +711,7 @@ static void console_get_freq(const struct console_config_node *self
     type = "trigger";
     break;
   case FREQ:
+  default:
     type = "freq";
     break;
   }
@@ -730,7 +731,7 @@ static void console_set_freq(const struct console_config_node *self
     return;
   }
 
-  unsigned int freq_n = atoi(strtok_r(remaining, " ", &saveptr));
+  int freq_n = atoi(strtok_r(remaining, " ", &saveptr));
   if (freq_n >= num_freqs) {
     return;
   }
