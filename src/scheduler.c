@@ -5,6 +5,7 @@
 #include "stats.h"
 #include "util.h"
 
+
 #include <assert.h>
 #include <string.h>
 #include <strings.h>
@@ -22,6 +23,9 @@ static struct output_buffer {
 struct timed_callback *callbacks[MAX_CALLBACKS] = { 0 };
 static int n_callbacks = 0;
 
+/* 
+ * For this check to be valid, output buffer swaps *must* have executed in time
+ */
 static int sched_entry_has_fired(struct sched_entry *en) {
   assert(en);
 
@@ -557,6 +561,7 @@ int schedule_callback(struct timed_callback *tcb, timeval_t time) {
 }
 
 void scheduler_callback_timer_execute() {
+  size_t n_runs = 0;
   while (n_callbacks && time_before(callbacks[0]->time, current_time())) {
     clear_event_timer();
     struct timed_callback *cb = callbacks[0];
@@ -569,6 +574,7 @@ void scheduler_callback_timer_execute() {
     } else {
       set_event_timer(callbacks[0]->time);
     }
+    n_runs += 1;
   }
 }
 

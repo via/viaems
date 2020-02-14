@@ -1,9 +1,13 @@
 #include <assert.h>
+#include <errno.h>
+#include <fcntl.h>           /* For O_* constants */
+#include <mqueue.h>
 #include <poll.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>        /* For mode constants */
 #include <time.h>
 #include <unistd.h>
 
@@ -20,6 +24,9 @@ _Atomic static uint32_t eventtimer_enable = 0;
 int event_logging_enabled = 1;
 uint32_t test_trigger_rpm = 0;
 timeval_t test_trigger_last = 0;
+_Atomic int platform_decode_time = 0;
+_Atomic int platform_needs_decode = 0;
+_Atomic int platform_needs_event_callback = 0;
 
 struct slot {
   uint16_t on_mask;
@@ -63,6 +70,7 @@ timeval_t get_event_timer() {
 
 void clear_event_timer() {
   eventtimer_enable = 0;
+  platform_needs_event_callback = 0;
 }
 
 void disable_event_timer() {
@@ -77,39 +85,22 @@ pthread_mutex_t interrupt_count_mutex = PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP;
 _Atomic int interrupt_disables = 0;
 
 void disable_interrupts() {
-  if (pthread_mutex_lock(&interrupt_count_mutex)) {
+  if (pthread_mutex_lock(&interrupt_mutex)) {
     abort();
   }
-
-  if (interrupts_enabled()) {
-    if (pthread_mutex_lock(&interrupt_mutex)) {
-      abort();
-    }
-  }
-
   interrupt_disables += 1;
-
-  pthread_mutex_unlock(&interrupt_count_mutex);
 }
 
 void enable_interrupts() {
-  if (pthread_mutex_lock(&interrupt_count_mutex)) {
-    abort();
-  }
-
   interrupt_disables -= 1;
 
   if (interrupt_disables < 0) {
     abort();
   }
 
-  if (interrupts_enabled()) {
-    if (pthread_mutex_unlock(&interrupt_mutex)) {
-      abort();
-    }
+  if (pthread_mutex_unlock(&interrupt_mutex)) {
+    abort();
   }
-
-  pthread_mutex_unlock(&interrupt_count_mutex);
 }
 
 int interrupts_enabled() {
@@ -312,53 +303,41 @@ void clock_nanosleep_busywait(struct timespec until) {
             (current.tv_nsec < until.tv_nsec)));
 }
 
-static void do_test_trigger() {
+
+struct interrupt {
+  enum {
+    TRIGGER0,
+    TRIGGER0_W_TIME,
+    TRIGGER1,
+    TRIGGER1_W_TIME,
+    EVENT,
+  } type;
+  timeval_t trigger_time;
+};
+
+static void do_test_trigger(mqd_t queue) {
   static int trigger = 0;
 
-  struct decoder_event ev = { .t0 = 1, .time = curtime };
-  decoder_update_scheduling(&ev, 1);
+  struct interrupt ev = { .type = TRIGGER0_W_TIME, .trigger_time = curtime};
+  if (mq_send(queue, (const char *)&ev, sizeof(ev), 0) < 0) {
+    perror("mq_send");
+    exit(3);
+  }
+
   trigger++;
   if (trigger == 24) {
-    struct decoder_event ev = { .t1 = 1, .time = curtime };
-    decoder_update_scheduling(&ev, 1);
+    struct interrupt ev = { .type = TRIGGER1_W_TIME, .trigger_time = curtime};
+    if (mq_send(queue, (const char *)&ev, sizeof(ev), 0) < 0) {
+      perror("mq_send");
+      exit(4);
+    }
     trigger = 0;
   }
 }
 
-_Atomic int platform_needs_buffer_swap = 0;
-_Atomic int platform_needs_event_callback = 0;
-_Atomic int platform_needs_decode = 0;
-pthread_cond_t interrupt_thread_cond = PTHREAD_COND_INITIALIZER;
+const char *interrupt_queue_path = "/viaems_interrupt_queue";
 
 void *platform_interrupt_thread(void *_unused) {
-
-  do {
-    if (pthread_mutex_lock(&interrupt_mutex)) {
-      abort();
-    }
-
-    pthread_cond_wait(&interrupt_thread_cond, &interrupt_mutex);
-    if (platform_needs_buffer_swap) {
-      scheduler_buffer_swap();
-      platform_needs_buffer_swap = 0;
-    }
-    if (platform_needs_event_callback) {
-      scheduler_callback_timer_execute();
-      platform_needs_event_callback = 0;
-    }
-    if (platform_needs_decode) {
-      do_test_trigger();
-      platform_needs_decode = 0;
-    }
-    pthread_mutex_unlock(&interrupt_mutex);
-  } while(1);
-
-
-}
-
-
-void *platform_input_thread(void *_unused) {
-
   struct sched_param sp = (struct sched_param){
     .sched_priority = 1,
   };
@@ -367,21 +346,53 @@ void *platform_input_thread(void *_unused) {
     perror("sched_setscheduler");
   }
 
-  struct timespec current;
-  struct timespec wait = {
-    .tv_sec = 0,
-    .tv_nsec = 1000000,
+  struct mq_attr mq_attrs = {
+    .mq_msgsize = sizeof(struct interrupt),
+    .mq_maxmsg = 8,
   };
 
-  clock_gettime(CLOCK_MONOTONIC, &current);
+  mqd_t q = mq_open(interrupt_queue_path, O_RDONLY | O_CREAT, S_IWUSR | S_IRUSR, &mq_attrs);
+  if (q == -1) {
+    perror("mq_open");
+    exit(1);
+  }
 
   do {
-    current = add_times(current, wait);
-    clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &current, NULL);
-    platform_needs_decode = 1;
-    pthread_cond_signal(&interrupt_thread_cond);
+    struct interrupt msg;
+
+    size_t rsize = mq_receive(q, (char *)&msg, sizeof(msg), 0);
+    if (rsize < 0) {
+      if (errno == EINTR) {
+        continue;
+      }
+      perror("mq_receive");
+      exit(1);
+    }
+
+
+    switch (msg.type) {
+      case TRIGGER0:
+        decoder_update_scheduling(&(struct decoder_event){.t0 = 1, .time = curtime}, 1);
+        break;
+      case TRIGGER0_W_TIME:
+        decoder_update_scheduling(&(struct decoder_event){.t0 = 1, .time = msg.trigger_time}, 1);
+        break;
+      case TRIGGER1:
+        decoder_update_scheduling(&(struct decoder_event){.t1 = 1, .time = curtime}, 1);
+        break;
+      case TRIGGER1_W_TIME:
+        decoder_update_scheduling(&(struct decoder_event){.t1 = 1, .time = msg.trigger_time}, 1);
+        break;
+      case EVENT:
+        scheduler_callback_timer_execute();
+        break;
+       
+    }
+
   } while(1);
+
 }
+
 
 static void do_output_slots() {
   if (!output_slots[0]) {
@@ -392,8 +403,7 @@ static void do_output_slots() {
   if (cur_slot == max_slots) {
     cur_buffer = (cur_buffer + 1) % 2;
     cur_slot = 0;
-    platform_needs_buffer_swap = 1;
-    pthread_cond_signal(&interrupt_thread_cond);
+    scheduler_buffer_swap();
   }
   
   uint16_t old_outputs = cur_outputs;
@@ -409,10 +419,6 @@ static void do_output_slots() {
     old_outputs = cur_outputs;
   }
 
-//  if (eventtimer_enable && (eventtimer_time == curtime)) {
-//    platform_needs_event_callback
-//    scheduler_callback_timer_execute();
-//  }
 
 }
 /* Thread that busywaits to increment the primary timebase.  This loop is also
@@ -427,6 +433,14 @@ void *platform_timebase_thread(void *_unused) {
   if (sched_setscheduler(0, SCHED_RR, &sp)) {
     perror("sched_setscheduler");
   }
+  struct mq_attr mq_attrs = {
+    .mq_msgsize = sizeof(struct interrupt),
+    .mq_maxmsg = 8,
+  };
+  mqd_t q = mq_open(interrupt_queue_path, O_WRONLY | O_CREAT, S_IWUSR | S_IRUSR, &mq_attrs);
+  if (q == -1) {
+    perror("mq_open");
+  }
 
   struct timespec current_time;
   struct timespec tick_increment = {
@@ -440,11 +454,25 @@ void *platform_timebase_thread(void *_unused) {
   do {
     struct timespec next_tick = add_times(current_time, tick_increment);
     clock_nanosleep_busywait(next_tick);
+//    nanosleep(&tick_increment, NULL);
     current_time = next_tick;
     curtime += 1;
 
 
     do_output_slots();
+
+    if ((curtime % 5000) == 0) {
+      do_test_trigger(q);
+    }
+    
+    if (eventtimer_enable && (eventtimer_time + 1 == curtime)) {
+      struct interrupt event = {.type = EVENT};
+      if (mq_send(q, (const char *)&event, sizeof(event), 0) < 0) {
+        perror("mq_send");
+        exit(2);
+      }
+    }
+
   
   } while(1);
 
@@ -455,9 +483,6 @@ void platform_init() {
 
   pthread_t timebase;
   pthread_create(&timebase, NULL, platform_timebase_thread, NULL);
-
-  pthread_t inputs;
-  pthread_create(&inputs, NULL, platform_input_thread, NULL);
 
   pthread_t interrupts;
   pthread_create(&interrupts, NULL, platform_interrupt_thread, NULL);
