@@ -778,9 +778,9 @@ static void console_set_freq(const struct console_config_node *self
 
 static struct {
   int enabled;
-  struct logged_event events[32];
-  int read;
-  int write;
+  struct logged_event events[128];
+  _Atomic int read;
+  _Atomic int write;
 } event_log = { .enabled = 1};
 
 static struct logged_event platform_get_logged_event() {

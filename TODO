@@ -8,3 +8,5 @@
 Safety checks:
  - Validate that buffer swap occurs before its too late
  - We recurse for callbacks, we need a limit
+ - More robust scheduler startup -- if first buffer start times are wrong,
+   everything is stupid amounts of hard to debug

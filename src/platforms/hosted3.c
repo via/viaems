@@ -17,6 +17,8 @@
 #include "scheduler.h"
 #include "stats.h"
 
+#include "hosted3.h"
+
 _Atomic static timeval_t curtime;
 
 _Atomic static timeval_t eventtimer_time;
@@ -31,7 +33,7 @@ _Atomic int platform_needs_event_callback = 0;
 struct slot {
   uint16_t on_mask;
   uint16_t off_mask;
-} __attribute__((packed)) *output_slots[2];
+} __attribute__((packed)) *output_slots[2] = {0};
 size_t max_slots;
 _Atomic size_t cur_slot = 0;
 _Atomic size_t cur_buffer = 0;
@@ -304,21 +306,10 @@ void clock_nanosleep_busywait(struct timespec until) {
 }
 
 
-struct interrupt {
-  enum {
-    TRIGGER0,
-    TRIGGER0_W_TIME,
-    TRIGGER1,
-    TRIGGER1_W_TIME,
-    EVENT,
-  } type;
-  timeval_t trigger_time;
-};
-
 static void do_test_trigger(mqd_t queue) {
   static int trigger = 0;
 
-  struct interrupt ev = { .type = TRIGGER0_W_TIME, .trigger_time = curtime};
+  struct event ev = { .type = TRIGGER0_W_TIME, .time = curtime};
   if (mq_send(queue, (const char *)&ev, sizeof(ev), 0) < 0) {
     perror("mq_send");
     exit(3);
@@ -326,7 +317,7 @@ static void do_test_trigger(mqd_t queue) {
 
   trigger++;
   if (trigger == 24) {
-    struct interrupt ev = { .type = TRIGGER1_W_TIME, .trigger_time = curtime};
+    struct event ev = { .type = TRIGGER1_W_TIME, .time = curtime};
     if (mq_send(queue, (const char *)&ev, sizeof(ev), 0) < 0) {
       perror("mq_send");
       exit(4);
@@ -336,6 +327,7 @@ static void do_test_trigger(mqd_t queue) {
 }
 
 const char *interrupt_queue_path = "/viaems_interrupt_queue";
+static mqd_t output_queue;
 
 void *platform_interrupt_thread(void *_unused) {
   struct sched_param sp = (struct sched_param){
@@ -347,7 +339,7 @@ void *platform_interrupt_thread(void *_unused) {
   }
 
   struct mq_attr mq_attrs = {
-    .mq_msgsize = sizeof(struct interrupt),
+    .mq_msgsize = sizeof(struct event),
     .mq_maxmsg = 8,
   };
 
@@ -358,7 +350,7 @@ void *platform_interrupt_thread(void *_unused) {
   }
 
   do {
-    struct interrupt msg;
+    struct event msg;
 
     size_t rsize = mq_receive(q, (char *)&msg, sizeof(msg), 0);
     if (rsize < 0) {
@@ -372,19 +364,25 @@ void *platform_interrupt_thread(void *_unused) {
 
     switch (msg.type) {
       case TRIGGER0:
+        mq_send(output_queue, (const char *)&msg, sizeof(msg), 0);
         decoder_update_scheduling(&(struct decoder_event){.t0 = 1, .time = curtime}, 1);
         break;
       case TRIGGER0_W_TIME:
-        decoder_update_scheduling(&(struct decoder_event){.t0 = 1, .time = msg.trigger_time}, 1);
+        mq_send(output_queue, (const char *)&msg, sizeof(msg), 0);
+        decoder_update_scheduling(&(struct decoder_event){.t0 = 1, .time = msg.time}, 1);
         break;
       case TRIGGER1:
+        mq_send(output_queue, (const char *)&msg, sizeof(msg), 0);
         decoder_update_scheduling(&(struct decoder_event){.t1 = 1, .time = curtime}, 1);
         break;
       case TRIGGER1_W_TIME:
-        decoder_update_scheduling(&(struct decoder_event){.t1 = 1, .time = msg.trigger_time}, 1);
+        mq_send(output_queue, (const char *)&msg, sizeof(msg), 0);
+        decoder_update_scheduling(&(struct decoder_event){.t1 = 1, .time = msg.time}, 1);
         break;
-      case EVENT:
+      case SCHEDULED_EVENT:
         scheduler_callback_timer_execute();
+        break;
+      default:
         break;
        
     }
@@ -395,6 +393,11 @@ void *platform_interrupt_thread(void *_unused) {
 
 
 static void do_output_slots() {
+  static uint16_t old_outputs = 0;
+  static uint16_t old_fifo_on_mask = 0;
+  static uint16_t old_fifo_off_mask = 0;
+
+
   if (!output_slots[0]) {
     return;
   }
@@ -405,12 +408,23 @@ static void do_output_slots() {
     cur_slot = 0;
     scheduler_buffer_swap();
   }
-  
-  uint16_t old_outputs = cur_outputs;
-  cur_outputs |= output_slots[cur_buffer][cur_slot].on_mask;
-  cur_outputs &= ~output_slots[cur_buffer][cur_slot].off_mask;
+
+  int read_slot = (cur_slot + 1) % max_slots;
+  int read_buffer = (read_slot == 0) ? !cur_buffer : cur_buffer;
+
+  cur_outputs |= old_fifo_on_mask;
+  cur_outputs &= ~old_fifo_off_mask;
+
+  old_fifo_on_mask = output_slots[read_buffer][read_slot].on_mask;
+  old_fifo_off_mask = output_slots[read_buffer][read_slot].off_mask;
   
   if (cur_outputs != old_outputs) {
+    const struct event msg = {
+      .type = OUTPUT_CHANGED,
+      .time = curtime,
+      .values = cur_outputs,
+    };
+    mq_send(output_queue, (const char *)&msg, sizeof(msg), 0);
     console_record_event((struct logged_event){
       .time = curtime,
       .value = cur_outputs,
@@ -434,7 +448,7 @@ void *platform_timebase_thread(void *_unused) {
     perror("sched_setscheduler");
   }
   struct mq_attr mq_attrs = {
-    .mq_msgsize = sizeof(struct interrupt),
+    .mq_msgsize = sizeof(struct event),
     .mq_maxmsg = 8,
   };
   mqd_t q = mq_open(interrupt_queue_path, O_WRONLY | O_CREAT, S_IWUSR | S_IRUSR, &mq_attrs);
@@ -456,6 +470,11 @@ void *platform_timebase_thread(void *_unused) {
     clock_nanosleep_busywait(next_tick);
 //    nanosleep(&tick_increment, NULL);
     current_time = next_tick;
+
+    if (!output_slots[0]) {
+      continue;
+    }
+
     curtime += 1;
 
 
@@ -466,7 +485,7 @@ void *platform_timebase_thread(void *_unused) {
     }
     
     if (eventtimer_enable && (eventtimer_time + 1 == curtime)) {
-      struct interrupt event = {.type = EVENT};
+      struct event event = {.type = SCHEDULED_EVENT};
       if (mq_send(q, (const char *)&event, sizeof(event), 0) < 0) {
         perror("mq_send");
         exit(2);
@@ -480,6 +499,15 @@ void *platform_timebase_thread(void *_unused) {
 
 void platform_init() {
 
+  const char *output_queue_path = "/viaems_output_queue";
+  struct mq_attr mq_attrs = {
+    .mq_msgsize = sizeof(struct event),
+    .mq_maxmsg = 512,
+  };
+  output_queue = mq_open(output_queue_path, O_WRONLY | O_CREAT | O_NONBLOCK, S_IWUSR | S_IRUSR | S_IROTH, &mq_attrs);
+  if (output_queue == -1) {
+    perror("mq_open");
+  }
 
   pthread_t timebase;
   pthread_create(&timebase, NULL, platform_timebase_thread, NULL);
