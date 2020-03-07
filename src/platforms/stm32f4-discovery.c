@@ -1000,7 +1000,8 @@ void dma1_stream3_isr(void) {
 
       /* TODO more intelligence, for now last sample time diff */
       ssize_t before_idx = freq_input_position(pin) - 2;
-      before_idx = before_idx < 0 ? FREQ_INPUT_SAMPLES + before_idx : before_idx;
+      before_idx =
+        before_idx < 0 ? FREQ_INPUT_SAMPLES + before_idx : before_idx;
 
       size_t after_idx = (before_idx + 1) % FREQ_INPUT_SAMPLES;
 
@@ -1008,7 +1009,7 @@ void dma1_stream3_isr(void) {
       timeval_t after_time = freq_input_buffers[pin].buffer[after_idx];
       if (time_before(before_time, after_time)) {
         config.sensors[i].raw_value = after_time - before_time;
-      } else { 
+      } else {
         config.sensors[i].fault = FAULT_CONN;
       }
     }
