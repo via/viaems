@@ -85,6 +85,7 @@ static int capture_edge_from_config(trigger_edge e) {
 }
 
 #define FREQ_INPUT_SAMPLES 16
+#define FREQ_INPUTS 4
 
 static volatile struct {
   uint32_t buffer[FREQ_INPUT_SAMPLES];
@@ -101,12 +102,13 @@ static size_t freq_input_position(uint8_t pin) {
     return FREQ_INPUT_SAMPLES - DMA1_S0NDTR;
   case 3:
     return FREQ_INPUT_SAMPLES - DMA1_S1NDTR;
+  default:
+    return 0;
   }
-  return 0;
 }
 
 static void freq_input_increment_read(uint8_t pin) {
-  if (pin > 3) {
+  if (pin > (FREQ_INPUTS - 1)) {
     return;
   }
   freq_input_buffers[pin].read_pos =
@@ -997,13 +999,18 @@ void dma1_stream3_isr(void) {
       }
 
       /* TODO more intelligence, for now last sample time diff */
-      ssize_t before = freq_input_position(pin) - 2;
-      before = before < 0 ? FREQ_INPUT_SAMPLES + before : before;
+      ssize_t before_idx = freq_input_position(pin) - 2;
+      before_idx = before_idx < 0 ? FREQ_INPUT_SAMPLES + before_idx : before_idx;
 
-      ssize_t after = freq_input_position(pin) - 1;
-      after = after < 0 ? FREQ_INPUT_SAMPLES + after : after;
-      config.sensors[i].raw_value = freq_input_buffers[pin].buffer[after] -
-                                    freq_input_buffers[pin].buffer[before];
+      size_t after_idx = (before_idx + 1) % FREQ_INPUT_SAMPLES;
+
+      timeval_t before_time = freq_input_buffers[pin].buffer[before_idx];
+      timeval_t after_time = freq_input_buffers[pin].buffer[after_idx];
+      if (time_before(before_time, after_time)) {
+        config.sensors[i].raw_value = after_time - before_time;
+      } else { 
+        config.sensors[i].fault = FAULT_CONN;
+      }
     }
   }
 
@@ -1014,7 +1021,7 @@ void dma1_stream3_isr(void) {
 }
 
 static int freq_input_peek(struct decoder_event *ev, uint8_t pin) {
-  assert(pin < 4);
+  assert(pin < FREQ_INPUTS);
   if ((config.freq_inputs[pin].type == TRIGGER) &&
       (freq_input_buffers[pin].read_pos != freq_input_position(pin))) {
     *ev = (struct decoder_event){
