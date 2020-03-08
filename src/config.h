@@ -47,9 +47,6 @@ struct config {
   /* Cutoffs */
   unsigned int rpm_stop;
   unsigned int rpm_start;
-
-  /* Console config */
-  struct console console;
 };
 
 extern struct config config;

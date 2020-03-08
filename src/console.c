@@ -17,6 +17,8 @@
 #include <string.h>
 #include <strings.h>
 
+static struct console console;
+
 struct console_config_node {
   const char *name;
   void (*get)(const struct console_config_node *self,
@@ -1283,8 +1285,8 @@ struct {
     char *ptr;
   } rx, tx;
 } console_state = {
-  .tx = { .src = config.console.txbuffer, .in_progress = 0 },
-  .rx = { .src = config.console.rxbuffer, .in_progress = 0 },
+  .tx = { .src = console.txbuffer, .in_progress = 0 },
+  .rx = { .src = console.rxbuffer, .in_progress = 0 },
 };
 
 int console_read_full(char *buf, size_t max) {
@@ -1342,14 +1344,14 @@ int console_write_full(char *buf, size_t max) {
 }
 
 static void console_process_rx() {
-  char *out = config.console.txbuffer;
-  char *in = strtok(config.console.rxbuffer, "\r\n");
+  char *out = console.txbuffer;
+  char *in = strtok(console.rxbuffer, "\r\n");
   char *response = out + 2; /* Allow for status character */
   strcpy(response, "");
 
   if (!in) {
     /* Allow just raw \n's in the case of hosted mode */
-    in = strtok(config.console.rxbuffer, "\n");
+    in = strtok(console.rxbuffer, "\n");
   }
   int success = console_parse_request(response, in);
   strcat(response, "\r\n");
@@ -1360,7 +1362,7 @@ static void console_process_rx() {
 }
 
 static int console_output_events() {
-  strcpy(config.console.txbuffer, "");
+  strcpy(console.txbuffer, "");
   int num_ev = 0;
   struct logged_event ev = platform_get_logged_event();
   while ((ev.type != EVENT_NONE) && (num_ev != 16)) {
@@ -1384,14 +1386,14 @@ static int console_output_events() {
     default:
       break;
     }
-    strcat(config.console.txbuffer, tempbuf);
+    strcat(console.txbuffer, tempbuf);
 
     ev = platform_get_logged_event();
   }
 
   if (num_ev != 0) {
-    console_write_full(config.console.txbuffer,
-                       strlen(config.console.txbuffer));
+    console_write_full(console.txbuffer,
+                       strlen(console.txbuffer));
   }
   return num_ev;
 }
@@ -1401,7 +1403,7 @@ void console_process() {
   static int pending_request = 0;
   stats_start_timing(STATS_CONSOLE_TIME);
   if (!pending_request &&
-      console_read_full(config.console.rxbuffer, CONSOLE_BUFFER_SIZE)) {
+      console_read_full(console.rxbuffer, CONSOLE_BUFFER_SIZE)) {
     pending_request = 1;
   }
 
@@ -1413,16 +1415,16 @@ void console_process() {
 
   /* We're still sending packets for a tx line, keep doing just that */
   if (console_state.tx.in_progress) {
-    console_write_full(config.console.txbuffer, 0);
+    console_write_full(console.txbuffer, 0);
     stats_finish_timing(STATS_CONSOLE_TIME);
     return;
   }
 
-  config.console.txbuffer[0] = '\0';
+  console.txbuffer[0] = '\0';
   if (!console_output_events() && console_feed_config.n_nodes) {
-    console_feed_line(config.console.txbuffer);
-    console_write_full(config.console.txbuffer,
-                       strlen(config.console.txbuffer));
+    console_feed_line(console.txbuffer);
+    console_write_full(console.txbuffer,
+                       strlen(console.txbuffer));
   }
 
   stats_finish_timing(STATS_CONSOLE_TIME);

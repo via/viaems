@@ -754,7 +754,7 @@ static const struct usb_config_descriptor usb_config = {
   .interface = ifaces,
 };
 
-static const char *usb_strings[] = {
+static const char *const usb_strings[] = {
   "https://github.com/via/viaems/",
   "ViaEMS console",
   "0",
@@ -920,14 +920,14 @@ uint32_t cycle_count() {
 static volatile int adc_gather_in_progress = 0;
 void adc_gather() {
 #ifdef SPI_TLC2543
-  static uint16_t spi_tx_list[] = {
+  static const uint16_t spi_tx_list[] = {
     0x0C00, 0x1C00, 0x2C00, 0x3C00, 0x4C00, 0x5C00, 0x6C00,
     0x7C00, 0x8C00, 0x9C00, 0xAC00, 0xBC00, /* Check value (Vref+ + Vref-) / 2
                                              */
     0xBC00, /* Duplicated to actually get previous read */
   };
 #else
-  static uint16_t spi_tx_list[] = {
+  static const uint16_t spi_tx_list[] = {
     0x0400, 0x0C00, 0x1400, 0x1C00, 0x2400, 0x2C00, 0x3400, 0x3C00, 0x3C00,
   };
 #endif
