@@ -12,7 +12,6 @@ AR=arm-none-eabi-ar
 OBJS=libssp.a libssp_nonshared.a
 OBJCOPY=arm-none-eabi-objcopy
 OPENCM3_DIR=../libopencm3
-CFLAGS=  -I. -std=c99 -Wall -O3 -Wextra -g
 CFLAGS=  -I. -std=c99 -Wall -O3 -Wextra -g -DGIT_DESCRIBE=\"${GITDESC}\"
 CFLAGS+= -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mthumb -mcpu=cortex-m4
 CFLAGS+= -D TICKRATE=4000000

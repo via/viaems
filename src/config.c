@@ -200,6 +200,12 @@ struct config config __attribute__((section(".configdata"))) = {
     .trigger_max_rpm_change = 0.55, /*Startup sucks with only 90* trigger */
     .trigger_min_rpm = 80,
   },
+  .freq_inputs = {
+    [0] = {.edge = RISING_EDGE, .type = TRIGGER},
+    [1] = {.edge = RISING_EDGE, .type = TRIGGER},
+    [2] = {.edge = RISING_EDGE, .type = FREQ},
+    [3] = {.edge = RISING_EDGE, .type = FREQ},
+  },
   .sensors = {
     [SENSOR_BRV] = {.pin=0, .source=SENSOR_ADC, .method=METHOD_LINEAR,
       .params={.range={.min=0, .max=24.5}}, .lag=80,

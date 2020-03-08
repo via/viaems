@@ -24,6 +24,9 @@ struct config {
   /* Analog inputs */
   struct sensor_input sensors[NUM_SENSORS];
 
+  /* Frequency inputs */
+  struct freq_input freq_inputs[4];
+
   /* Tables */
   struct table *timing;
   struct table *iat_timing_adjust;

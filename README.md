@@ -24,14 +24,16 @@ Features:
     1. [EEC-IV TFI](#eec-iv-tfi)
     2. [Toyota CAS](#toyota-241-cas)
 2. [Static Configuration](#static-configuration)
-    1. [Events](#events)
-    2. [Sensors](#sensors)
-    3. [Tables](#tables)
+    1. [Frequency and Trigger Inputs](#frequency-and-trigger-inputs)
+    2. [Events](#events)
+    3. [Sensors](#sensors)
+    4. [Tables](#tables)
 3. [Runtime Configuration](#runtime-configuration)
-    1. [Events](#events-1)
-    2. [Sensors](#sensors-1)
-    3. [Tables](#tables-1)
-    4. [Tasks](#tasks)
+    1. [Frequency and Trigger Inputs](#frequency-and-trigger-inputs-1)
+    2. [Events](#events-1)
+    3. [Sensors](#sensors-1)
+    4. [Tables](#tables-1)
+    5. [Tasks](#tasks)
 4. [Compiling](#compiling)
 5. [Programming](#programming)
 6. [Simulation](#simulation)
@@ -75,6 +77,7 @@ Member | Meaning
 --- | ---
 `num_events` | Number of configured events
 `events` | Array of configured event structures, see Event Configuration below
+`freq_inputs` | Array of configured frequency inputs
 `decoder.type` | Decoder type. Possible values in `decoder.h`
 `decoder.offset` | Degrees between 'decoder' top-dead-center and 'crank' top-dead-center. TFI units by default emit the falling-edge trigger 45 degrees before they would trigger spark in failsafe mode
 `decoder.trigger_max_rpm_change` | Percentage of rpm change between trigger events. 1.00 would mean the engine speed can double or halve between triggers without sync loss.
@@ -94,6 +97,15 @@ Member | Meaning
 `fueling.injections_per_cycle` | Number of times an injector is fired per cycle.  1 for sequential, 2 for batched pairs, etc
 `fueling.fuel_pump_pin` | GPIO port number that controls the fuel pump
 `ignition.dwell_us` | Fixed (currently) time in uS to dwell ignition
+
+### Frequency and Trigger inputs
+Certain inputs are used as frequency inputs which may also act as the decoder
+wheel trigger inputs. Each one has a selectable edge and type.
+
+Member | Meaning
+--- | ---
+`type` | Can either be `TRIGGER` or `FREQ`. Some platforms can only use certain pins as trigger inputs
+`edge` | Determines which edge is counted. `RISING_EDGE`, `FALLING_EDGE`, `BOTH_EDGES`
 
 ### Events
 Event configuration is done with an array of schedulable events.  This entire
@@ -210,6 +222,17 @@ Configuration nodes are divided into categories.  All values under
 `config.fueling`, `config.decoder`, and `config.ignition` are simple in that
 they take a single value to set or get, but the others are more complex data
 structures that are configured with multiple key/value pairs.
+
+### Frequency and Trigger inputs
+The `config.hardware.freq` node takes a frequency input number, type, and edge:
+```
+get config.hardware.freq
+* num_freq=4
+get config.hardware.freq 0
+* type=trigger edge=rising
+set config.hardware.freq 1 type=trigger edge=rising
+* 
+```
 
 ### Events
 The `config.events` config node, if used as a simple node, only sets the number
@@ -334,14 +357,14 @@ interfacing.
 
 ## STM32F4
 Note: These are subject to change with the next hardware design, which will be
-moving to better support a 64 pin chip, superior frequency inputs (currently
-poorly supported), and more flexible PWM outputs.
+moving to better support a 64 pin chip and more flexible PWM outputs.
 
 System | Pins
 --- | ---
-Trigger 0 | `PB3`
-Trigger 1 | `PB10`
-Test Trigger | `PA0` (Emits square wave at fixed RPM)
+Trigger 0 | `PA0`
+Trigger 1 | `PA1`
+Frequency | `PA0`, `PA1`, `PA2`, `PA3`
+Test Trigger | `PB10`, `PB11`
 `CANL` | `PB5`
 `CANH` | `PB6`
 USB | `PA9`, `PA11`, and `PA12`

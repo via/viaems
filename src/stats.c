@@ -8,12 +8,6 @@ struct stats_entry stats_entries[] = {
 	[STATS_INT_RATE] = {
 		.name = "interrupt_rate",
 	},
-	[STATS_INT_PWM_RATE] = {
-		.name = "pwm interrupt_rate",
-	},
-	[STATS_INT_USART_RATE] = {
-		.name = "usart interrupt_rate",
-	},
 	[STATS_INT_EVENTTIMER_RATE] = {
 		.name = "event timer interrupt_rate",
 	},
@@ -31,6 +25,9 @@ struct stats_entry stats_entries[] = {
 	},
 	[STATS_INT_BUFFERSWAP_TIME] = {
 		.name = "output buffer reload time",
+	},
+	[STATS_INT_TESTTRIGGER_TIME] = {
+		.name = "total time spent handling test_trigger",
 	},
 	[STATS_SCHED_TOTAL_TIME] = {
 		.name = "total scheduling time after decode",
