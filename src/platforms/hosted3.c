@@ -306,58 +306,47 @@ void clock_nanosleep_busywait(struct timespec until) {
 }
 
 
-static void do_test_trigger(mqd_t queue) {
+static void do_test_trigger(int interrupt_fd) {
   static int trigger = 0;
 
   struct event ev = { .type = TRIGGER0_W_TIME, .time = curtime};
-  if (mq_send(queue, (const char *)&ev, sizeof(ev), 0) < 0) {
-    perror("mq_send");
+  if (write(interrupt_fd, &ev, sizeof(ev)) < 0) {
+    perror("write");
     exit(3);
   }
 
   trigger++;
   if (trigger == 24) {
     struct event ev = { .type = TRIGGER1_W_TIME, .time = curtime};
-    if (mq_send(queue, (const char *)&ev, sizeof(ev), 0) < 0) {
-      perror("mq_send");
+    if (write(interrupt_fd, &ev, sizeof(ev)) < 0) {
+      perror("write");
       exit(4);
     }
     trigger = 0;
   }
 }
 
-const char *interrupt_queue_path = "/viaems_interrupt_queue";
 static mqd_t output_queue;
 
-void *platform_interrupt_thread(void *_unused) {
+void *platform_interrupt_thread(void *_interrupt_fd) {
+  int *interrupt_fd = (int *)_interrupt_fd;
+
   struct sched_param sp = (struct sched_param){
     .sched_priority = 1,
   };
-
   if (sched_setscheduler(0, SCHED_RR, &sp)) {
     perror("sched_setscheduler");
-  }
-
-  struct mq_attr mq_attrs = {
-    .mq_msgsize = sizeof(struct event),
-    .mq_maxmsg = 8,
-  };
-
-  mqd_t q = mq_open(interrupt_queue_path, O_RDONLY | O_CREAT, S_IWUSR | S_IRUSR, &mq_attrs);
-  if (q == -1) {
-    perror("mq_open");
-    exit(1);
   }
 
   do {
     struct event msg;
 
-    size_t rsize = mq_receive(q, (char *)&msg, sizeof(msg), 0);
+    size_t rsize = read(*interrupt_fd, &msg, sizeof(msg));
     if (rsize < 0) {
       if (errno == EINTR) {
         continue;
       }
-      perror("mq_receive");
+      perror("read");
       exit(1);
     }
 
@@ -439,21 +428,14 @@ static void do_output_slots() {
  * responsible for triggering event timer, buffer swap, and trigger events
  */
 
-void *platform_timebase_thread(void *_unused) {
+void *platform_timebase_thread(void *_interrupt_fd) {
+  int *interrupt_fd = (int *)_interrupt_fd;
   struct sched_param sp = (struct sched_param){
     .sched_priority = 1,
   };
 
   if (sched_setscheduler(0, SCHED_RR, &sp)) {
     perror("sched_setscheduler");
-  }
-  struct mq_attr mq_attrs = {
-    .mq_msgsize = sizeof(struct event),
-    .mq_maxmsg = 8,
-  };
-  mqd_t q = mq_open(interrupt_queue_path, O_WRONLY | O_CREAT, S_IWUSR | S_IRUSR, &mq_attrs);
-  if (q == -1) {
-    perror("mq_open");
   }
 
   struct timespec current_time;
@@ -481,13 +463,13 @@ void *platform_timebase_thread(void *_unused) {
     do_output_slots();
 
     if ((curtime % 5000) == 0) {
-      do_test_trigger(q);
+      do_test_trigger(*interrupt_fd);
     }
     
     if (eventtimer_enable && (eventtimer_time + 1 == curtime)) {
       struct event event = {.type = SCHEDULED_EVENT};
-      if (mq_send(q, (const char *)&event, sizeof(event), 0) < 0) {
-        perror("mq_send");
+      if (write(*interrupt_fd, &event, sizeof(event)) < 0) {
+        perror("write");
         exit(2);
       }
     }
@@ -496,6 +478,8 @@ void *platform_timebase_thread(void *_unused) {
   } while(1);
 
 }
+
+static int interrupt_pipes[2];
 
 void platform_init() {
 
@@ -509,11 +493,13 @@ void platform_init() {
     perror("mq_open");
   }
 
+  pipe(interrupt_pipes);
+
   pthread_t timebase;
-  pthread_create(&timebase, NULL, platform_timebase_thread, NULL);
+  pthread_create(&timebase, NULL, platform_timebase_thread, &interrupt_pipes[1]);
 
   pthread_t interrupts;
-  pthread_create(&interrupts, NULL, platform_interrupt_thread, NULL);
+  pthread_create(&interrupts, NULL, platform_interrupt_thread, &interrupt_pipes[0]);
 
   sensors_process(SENSOR_ADC);
   sensors_process(SENSOR_FREQ);
