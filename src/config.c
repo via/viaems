@@ -277,8 +277,7 @@ struct config config __attribute__((section(".configdata"))) = {
     },
   },
   .ignition = {
-    .dwell = DWELL_FIXED_TIME,
-    .dwell_us = 2800,
+    .dwell = DWELL_BRV,
     .min_fire_time_us = 500,
   },
   .boost_control = {
