@@ -159,17 +159,12 @@ size_t console_write(const void *buf, size_t len) {
   return 0;
 }
 
-char rx_buffer[128];
-int rx_amt = 0;
 size_t console_read(void *buf, size_t len) {
-  if (rx_amt == 0) {
+  ssize_t res = read(STDIN_FILENO, buf, len);
+  if (res < 0) {
     return 0;
   }
-
-  size_t amt = len < rx_amt ? len : rx_amt;
-  memcpy(buf, rx_buffer, amt);
-  rx_amt -= amt;
-  return amt;
+  return (size_t)res;
 }
 
 void platform_load_config() {}
@@ -354,19 +349,19 @@ void *platform_interrupt_thread(void *_interrupt_fd) {
     switch (msg.type) {
       case TRIGGER0:
         mq_send(output_queue, (const char *)&msg, sizeof(msg), 0);
-        decoder_update_scheduling(&(struct decoder_event){.t0 = 1, .time = curtime}, 1);
+        decoder_update_scheduling(&(struct decoder_event){.trigger = 0, .time = curtime}, 1);
         break;
       case TRIGGER0_W_TIME:
         mq_send(output_queue, (const char *)&msg, sizeof(msg), 0);
-        decoder_update_scheduling(&(struct decoder_event){.t0 = 1, .time = msg.time}, 1);
+        decoder_update_scheduling(&(struct decoder_event){.trigger = 0, .time = msg.time}, 1);
         break;
       case TRIGGER1:
         mq_send(output_queue, (const char *)&msg, sizeof(msg), 0);
-        decoder_update_scheduling(&(struct decoder_event){.t1 = 1, .time = curtime}, 1);
+        decoder_update_scheduling(&(struct decoder_event){.trigger = 1, .time = curtime}, 1);
         break;
       case TRIGGER1_W_TIME:
         mq_send(output_queue, (const char *)&msg, sizeof(msg), 0);
-        decoder_update_scheduling(&(struct decoder_event){.t1 = 1, .time = msg.time}, 1);
+        decoder_update_scheduling(&(struct decoder_event){.trigger = 1, .time = msg.time}, 1);
         break;
       case SCHEDULED_EVENT:
         scheduler_callback_timer_execute();
@@ -482,6 +477,9 @@ void *platform_timebase_thread(void *_interrupt_fd) {
 static int interrupt_pipes[2];
 
 void platform_init() {
+
+  /* Set stdin nonblock */
+  fcntl(STDIN_FILENO, F_SETFL, fcntl(STDIN_FILENO, F_GETFL, 0) | O_NONBLOCK);
 
   const char *output_queue_path = "/viaems_output_queue";
   struct mq_attr mq_attrs = {
