@@ -14,7 +14,7 @@
 
 static timeval_t curtime = 0;
 static timeval_t cureventtime = 0;
-static int int_on = 1;
+static int int_disables = 0;
 static int output_states[16] = { 0 };
 static int gpio_states[16] = { 0 };
 static int current_buffer = 0;
@@ -33,14 +33,13 @@ void check_platform_reset() {
   initialize_scheduler();
 }
 
-int disable_interrupts() {
-  int old = int_on;
-  int_on = 0;
-  return old;
+void disable_interrupts() {
+  int_disables += 1;
 }
 
 void enable_interrupts() {
-  int_on = 1;
+  int_disables -= 1;
+  ck_assert(int_disables >= 0);
 }
 
 timeval_t current_time() {
@@ -80,7 +79,7 @@ void disable_event_timer() {
 }
 
 int interrupts_enabled() {
-  return int_on;
+  return int_disables == 0;
 }
 
 void set_output(int output, char value) {

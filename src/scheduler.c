@@ -378,9 +378,6 @@ static int schedule_ignition_event(struct output_event *ev,
     return 0;
   }
 
-  double amt = (current_time() % time_from_us(30000000)) / (double)time_from_us(30000000);
-  advance = 40.0 - 30*amt;
-
   firing_angle =
     clamp_angle(ev->angle - advance - d->last_trigger_angle + d->offset, 720);
 
