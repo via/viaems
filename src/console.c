@@ -901,6 +901,10 @@ static struct console_config_node console_config_nodes[] = {
     .val = &boost_control_pwm,
     .get = console_get_table,
     .set = console_set_table },
+  { .name = "config.tables.dwell",
+    .val = &dwell_ms_vs_brv,
+    .get = console_get_table,
+    .set = console_set_table },
 
   /* Decoding */
   { .name = "config.decoder" },
