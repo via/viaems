@@ -1213,17 +1213,19 @@ void dma2_stream1_isr(void) {
   stats_finish_timing(STATS_INT_TOTAL_TIME);
 }
 
+int interrupt_disables = 0;
 void enable_interrupts() {
   stats_finish_timing(STATS_INT_DISABLE_TIME);
+  interrupt_disables -= 1;
+  assert(interrupt_disables >= 0);
   cm_enable_interrupts();
 }
 
 /* Returns current enabled status prior to call */
-int disable_interrupts() {
-  int ret = interrupts_enabled();
+void disable_interrupts() {
   cm_disable_interrupts();
   stats_start_timing(STATS_INT_DISABLE_TIME);
-  return ret;
+  interrupt_disables += 1;
 }
 
 int interrupts_enabled() {
