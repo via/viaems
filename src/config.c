@@ -55,6 +55,18 @@ struct table tipin_duration_vs_rpm __attribute__((section(".configdata"))) = {
   },
 };
 
+struct table dwell_ms_vs_brv __attribute__((section(".configdata"))) = {
+  .title = "dwell", .num_axis = 1,
+  .axis = { { 
+      .name = "BRV", .num = 4,
+      .values = {5, 10, 14, 18},
+    },
+  },
+  .data = {
+    .one = {6.0, 4.0, 2.5, 1.8}
+  },
+};
+
 struct table ve_vs_rpm_and_map __attribute__((section(".configdata"))) = {
   .title = "ve", .num_axis = 2,
   .axis = { { 
@@ -247,6 +259,7 @@ struct config config __attribute__((section(".configdata"))) = {
   .engine_temp_enrich = &enrich_vs_temp_and_map,
   .tipin_enrich_amount = &tipin_vs_tpsrate_and_tps,
   .tipin_enrich_duration = &tipin_duration_vs_rpm,
+  .dwell = &dwell_ms_vs_brv,
   .rpm_stop = 6700,
   .rpm_start = 6200,
   .fueling = {
