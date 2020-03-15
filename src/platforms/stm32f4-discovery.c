@@ -497,7 +497,7 @@ void exti15_10_isr() {
  * sample result each time, command 1 in spi_tx_list corresponds to response 2
  * in spi_rx_raw_adc, and so forth.
  *
- * Currently sample rate is about 50 khz, with a SPI bus frequency of 1.3ish MHz
+ * Currently sample rate is about 70 khz, with a SPI bus frequency of 1.3ish MHz
  *
  * Each call to adc_gather reconfigures TX DMA, resets and starts TIM7, and
  * lowers CS Once all 13 receives are complete, RX dma completes, notifies
@@ -554,7 +554,7 @@ static void platform_init_spi_adc() {
 
   /* Configure TIM7 to drive DMA for SPI */
   timer_set_mode(TIM7, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
-  timer_set_period(TIM7, 1800); /* Approx 50 khz sampling rate */
+  timer_set_period(TIM7, 1200); /* Approx 75 khz sampling rate */
   timer_disable_preload(TIM7);
   timer_continuous_mode(TIM7);
   /* Setup output compare registers */
