@@ -78,6 +78,8 @@ struct decoder_event {
 void decoder_init(struct decoder *);
 void decoder_update_scheduling(struct decoder_event *, unsigned int count);
 
+degrees_t current_angle();
+
 #ifdef UNITTEST
 #include <check.h>
 TCase *setup_decoder_tests();

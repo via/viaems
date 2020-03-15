@@ -256,6 +256,17 @@ void decoder_update_scheduling(struct decoder_event *events,
   stats_finish_timing(STATS_SCHEDULE_LATENCY);
 }
 
+degrees_t current_angle() {
+  if (!config.decoder.rpm) {
+    return config.decoder.last_trigger_angle;
+  }
+  degrees_t angle_since_last_tooth = degrees_from_time_diff(
+    current_time() - config.decoder.last_trigger_time, config.decoder.rpm);
+
+  return clamp_angle(config.decoder.last_trigger_angle + angle_since_last_tooth,
+                     720);
+}
+
 #ifdef UNITTEST
 #include "config.h"
 #include "decoder.h"

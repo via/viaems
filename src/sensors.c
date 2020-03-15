@@ -1,6 +1,7 @@
 #include <math.h>
 
 #include "config.h"
+#include "decoder.h"
 #include "platform.h"
 #include "sensors.h"
 #include "stats.h"
@@ -9,6 +10,46 @@ static float sensor_convert_linear(struct sensor_input *in, float raw) {
   float partial = raw / 4096.0f;
   return in->params.range.min +
          partial * (in->params.range.max - in->params.range.min);
+}
+
+static int current_angle_in_window(struct sensor_input *in) {
+  degrees_t cur_angle = clamp_angle(current_angle() - in->window.offset, 720);
+  for (uint32_t i = 0; i < 720; i += in->window.total_width) {
+    if ((cur_angle > i) && (cur_angle < i + in->window.capture_width)) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
+static float sensor_convert_linear_windowed(struct sensor_input *in,
+                                            float raw) {
+  if (!config.decoder.rpm) {
+    /* If engine not turning, don't window */
+    return sensor_convert_linear(in, raw);
+  }
+  if (current_angle_in_window(in)) {
+    if (!in->window.collecting) {
+      in->window.collection_start_angle = current_angle();
+      in->window.accumulator = 0;
+      in->window.samples = 0;
+    }
+    in->window.collecting = 1;
+    in->window.accumulator += sensor_convert_linear(in, raw);
+    in->window.samples += 1;
+  }
+
+  if (!current_angle_in_window(in) ||
+      clamp_angle(current_angle() - in->window.collection_start_angle, 720) >
+        in->window.capture_width) {
+
+    in->window.collecting = 0;
+    if (in->window.samples) {
+      return in->window.accumulator / in->window.samples;
+    }
+  }
+  /* Return previous processed value */
+  return in->processed_value;
 }
 
 static float sensor_convert_freq(float raw) {
@@ -61,6 +102,9 @@ static void sensor_convert(struct sensor_input *in) {
   switch (in->method) {
   case METHOD_LINEAR:
     in->processed_value = sensor_convert_linear(in, raw);
+    break;
+  case METHOD_LINEAR_WINDOWED:
+    in->processed_value = sensor_convert_linear_windowed(in, raw);
     break;
   case METHOD_TABLE:
     in->processed_value = interpolate_table_oneaxis(in->params.table, raw);
