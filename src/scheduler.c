@@ -408,27 +408,6 @@ static int schedule_fuel_event(struct output_event *ev,
   return 1;
 }
 
-static int schedule_adc_event(struct output_event *ev, struct decoder *d) {
-  int firing_angle;
-  timeval_t collect_time;
-
-  if (!d->rpm || !config.decoder.valid) {
-    return 0;
-  }
-
-  firing_angle =
-    clamp_angle(ev->angle - d->last_trigger_angle + d->offset, 720);
-
-  collect_time =
-    d->last_trigger_time + time_from_rpm_diff(d->rpm, firing_angle);
-
-  ev->callback.callback = adc_gather;
-
-  schedule_callback(&ev->callback, collect_time);
-
-  return 1;
-}
-
 void schedule_event(struct output_event *ev) {
   switch (ev->type) {
   case IGNITION_EVENT:
@@ -450,9 +429,6 @@ void schedule_event(struct output_event *ev) {
     schedule_fuel_event(ev, &config.decoder, calculated_values.fueling_us);
     break;
 
-  case ADC_EVENT:
-    schedule_adc_event(ev, &config.decoder);
-    break;
   default:
     break;
   }

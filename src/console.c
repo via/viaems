@@ -336,6 +336,9 @@ static void console_get_sensor(const struct console_config_node *self,
   case METHOD_LINEAR:
     method = "linear";
     break;
+  case METHOD_LINEAR_WINDOWED:
+    method = "linear-window";
+    break;
   case METHOD_TABLE:
     method = "table";
     break;
@@ -348,6 +351,11 @@ static void console_get_sensor(const struct console_config_node *self,
   if (s->source == SENSOR_CONST) {
     dest += sprintf(dest, "fixed-val=%.2f ", s->params.fixed_value);
   } else if (s->method == METHOD_LINEAR) {
+    dest += sprintf(dest,
+                    "range-min=%.2f range-max=%.2f ",
+                    s->params.range.min,
+                    s->params.range.max);
+  } else if (s->method == METHOD_LINEAR_WINDOWED) {
     dest += sprintf(dest,
                     "range-min=%.2f range-max=%.2f ",
                     s->params.range.min,
@@ -390,6 +398,8 @@ static sensor_source console_sensor_source_from_str(const char *str) {
 static sensor_method console_sensor_method_from_str(const char *str) {
   if (!strcmp("linear", str)) {
     return METHOD_LINEAR;
+  } else if (!strcmp("linear-windowed", str)) {
+    return METHOD_LINEAR_WINDOWED;
   } else if (!strcmp("table", str)) {
     return METHOD_TABLE;
   } else if (!strcmp("therm", str)) {
@@ -620,9 +630,6 @@ static void console_get_events(const struct console_config_node *self
     case IGNITION_EVENT:
       ev_type = "ignition";
       break;
-    case ADC_EVENT:
-      ev_type = "adc";
-      break;
     default:
       ev_type = "disabled";
       break;
@@ -668,8 +675,6 @@ static void console_set_events(const struct console_config_node *self
         ev->type = FUEL_EVENT;
       } else if (!strcmp("ignition", v)) {
         ev->type = IGNITION_EVENT;
-      } else if (!strcmp("adc", v)) {
-        ev->type = ADC_EVENT;
       } else if (!strcmp("disabled", v)) {
         ev->type = DISABLED_EVENT;
       }

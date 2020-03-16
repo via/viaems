@@ -19,6 +19,7 @@ int main() {
   initialize_scheduler();
 
   assert(config_valid());
+  set_test_trigger_rpm(6000);
 
   sensors_process(SENSOR_CONST);
   while (1) {
@@ -29,8 +30,6 @@ int main() {
     handle_boost_control();
     handle_idle_control();
     handle_check_engine_light();
-
-    adc_gather();
   }
 
   return 0;

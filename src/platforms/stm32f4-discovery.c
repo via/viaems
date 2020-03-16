@@ -499,7 +499,7 @@ void exti15_10_isr() {
  *
  * Currently sample rate is about 70 khz, with a SPI bus frequency of 1.3ish MHz
  *
- * Each call to adc_gather reconfigures TX DMA, resets and starts TIM7, and
+ * Each call to start_adc_sampling reconfigures TX DMA, resets and starts TIM7, and
  * lowers CS Once all 13 receives are complete, RX dma completes, notifies
  * completion, and raises CS.
  */
@@ -509,6 +509,47 @@ void exti15_10_isr() {
 #define SPI_WRITE_COUNT 9
 #endif
 static volatile uint16_t spi_rx_raw_adc[SPI_WRITE_COUNT] = { 0 };
+
+void start_adc_sampling() {
+#ifdef SPI_TLC2543
+  static const uint16_t spi_tx_list[] = {
+    0x0C00, 0x1C00, 0x2C00, 0x3C00, 0x4C00, 0x5C00, 0x6C00,
+    0x7C00, 0x8C00, 0x9C00, 0xAC00, 0xBC00, /* Check value (Vref+ + Vref-) / 2
+                                             */
+    0xBC00, /* Duplicated to actually get previous read */
+  };
+#else
+  static const uint16_t spi_tx_list[] = {
+    0x0400, 0x0C00, 0x1400, 0x1C00, 0x2400, 0x2C00, 0x3400, 0x3C00, 0x3C00,
+  };
+#endif
+
+  timer_set_counter(TIM7, 0);
+  /* CS low */
+  gpio_clear(GPIOB, GPIO12);
+
+  /* Set up DMA for SPI TX */
+  dma_stream_reset(DMA1, DMA_STREAM2);
+  dma_set_priority(DMA1, DMA_STREAM2, DMA_SxCR_PL_LOW);
+  dma_set_memory_size(DMA1, DMA_STREAM2, DMA_SxCR_MSIZE_16BIT);
+  dma_set_peripheral_size(DMA1, DMA_STREAM2, DMA_SxCR_PSIZE_16BIT);
+  dma_enable_memory_increment_mode(DMA1, DMA_STREAM2);
+  dma_set_transfer_mode(DMA1, DMA_STREAM2, DMA_SxCR_DIR_MEM_TO_PERIPHERAL);
+  dma_set_peripheral_address(DMA1, DMA_STREAM2, (uint32_t)&SPI2_DR);
+  dma_set_memory_address(DMA1, DMA_STREAM2, (uint32_t)spi_tx_list);
+  dma_set_number_of_data(
+    DMA1, DMA_STREAM2, sizeof(spi_tx_list) / sizeof(spi_tx_list[0]));
+  dma_channel_select(DMA1, DMA_STREAM2, DMA_SxCR_CHSEL_1);
+  dma_enable_direct_mode(DMA1, DMA_STREAM2);
+  dma_enable_stream(DMA1, DMA_STREAM2);
+
+  timer_enable_counter(TIM7);
+  timer_enable_update_event(TIM7);
+  timer_update_on_overflow(TIM7);
+  timer_set_dma_on_update_event(TIM7);
+  TIM7_DIER |= TIM_DIER_UDE; /* Enable update dma */
+}
+
 
 static void platform_init_spi_adc() {
   /* Configure SPI output */
@@ -564,6 +605,8 @@ static void platform_init_spi_adc() {
   timer_disable_oc_output(TIM7, TIM_OC4);
 
   timer_set_prescaler(TIM7, 0);
+ 
+  start_adc_sampling();
 }
 
 static uint8_t usbd_control_buffer[128];
@@ -917,52 +960,6 @@ uint32_t cycle_count() {
   return dwt_read_cycle_counter();
 }
 
-static volatile int adc_gather_in_progress = 0;
-void adc_gather() {
-#ifdef SPI_TLC2543
-  static const uint16_t spi_tx_list[] = {
-    0x0C00, 0x1C00, 0x2C00, 0x3C00, 0x4C00, 0x5C00, 0x6C00,
-    0x7C00, 0x8C00, 0x9C00, 0xAC00, 0xBC00, /* Check value (Vref+ + Vref-) / 2
-                                             */
-    0xBC00, /* Duplicated to actually get previous read */
-  };
-#else
-  static const uint16_t spi_tx_list[] = {
-    0x0400, 0x0C00, 0x1400, 0x1C00, 0x2400, 0x2C00, 0x3400, 0x3C00, 0x3C00,
-  };
-#endif
-
-  if (adc_gather_in_progress) {
-    return; /* Don't start another until RX completes */
-  }
-  adc_gather_in_progress = 1;
-
-  timer_set_counter(TIM7, 0);
-  /* CS low */
-  gpio_clear(GPIOB, GPIO12);
-
-  /* Set up DMA for SPI TX */
-  dma_stream_reset(DMA1, DMA_STREAM2);
-  dma_set_priority(DMA1, DMA_STREAM2, DMA_SxCR_PL_LOW);
-  dma_set_memory_size(DMA1, DMA_STREAM2, DMA_SxCR_MSIZE_16BIT);
-  dma_set_peripheral_size(DMA1, DMA_STREAM2, DMA_SxCR_PSIZE_16BIT);
-  dma_enable_memory_increment_mode(DMA1, DMA_STREAM2);
-  dma_set_transfer_mode(DMA1, DMA_STREAM2, DMA_SxCR_DIR_MEM_TO_PERIPHERAL);
-  dma_set_peripheral_address(DMA1, DMA_STREAM2, (uint32_t)&SPI2_DR);
-  dma_set_memory_address(DMA1, DMA_STREAM2, (uint32_t)spi_tx_list);
-  dma_set_number_of_data(
-    DMA1, DMA_STREAM2, sizeof(spi_tx_list) / sizeof(spi_tx_list[0]));
-  dma_channel_select(DMA1, DMA_STREAM2, DMA_SxCR_CHSEL_1);
-  dma_enable_direct_mode(DMA1, DMA_STREAM2);
-  dma_enable_stream(DMA1, DMA_STREAM2);
-
-  timer_enable_counter(TIM7);
-  timer_enable_update_event(TIM7);
-  timer_update_on_overflow(TIM7);
-  timer_set_dma_on_update_event(TIM7);
-  TIM7_DIER |= TIM_DIER_UDE; /* Enable update dma */
-}
-
 /* Sensor sampling complete
  * Also process frequency inputs */
 void dma1_stream3_isr(void) {
@@ -1016,9 +1013,9 @@ void dma1_stream3_isr(void) {
   }
 
   sensors_process(SENSOR_ADC);
-  adc_gather_in_progress = 0;
-
   sensors_process(SENSOR_FREQ);
+
+  start_adc_sampling();
 }
 
 static int freq_input_peek(struct decoder_event *ev, uint8_t pin) {

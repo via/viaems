@@ -12,10 +12,10 @@ static float sensor_convert_linear(struct sensor_input *in, float raw) {
          partial * (in->params.range.max - in->params.range.min);
 }
 
-static int current_angle_in_window(struct sensor_input *in) {
-  degrees_t cur_angle = clamp_angle(current_angle() - in->window.offset, 720);
+static int current_angle_in_window(struct sensor_input *in, degrees_t angle) {
+  degrees_t cur_angle = clamp_angle(angle - in->window.offset, 720);
   for (uint32_t i = 0; i < 720; i += in->window.total_width) {
-    if ((cur_angle > i) && (cur_angle < i + in->window.capture_width)) {
+    if ((cur_angle >= i) && (cur_angle < i + in->window.capture_width)) {
       return 1;
     }
   }
@@ -23,28 +23,32 @@ static int current_angle_in_window(struct sensor_input *in) {
 }
 
 static float sensor_convert_linear_windowed(struct sensor_input *in,
-                                            float raw) {
+                                            degrees_t angle, float raw) {
   if (!config.decoder.rpm) {
     /* If engine not turning, don't window */
     return sensor_convert_linear(in, raw);
   }
-  if (current_angle_in_window(in)) {
+
+  /* Currently in a window. If we just started collecting, initialize */
+  if (current_angle_in_window(in, angle)) {
     if (!in->window.collecting) {
-      in->window.collection_start_angle = current_angle();
+      in->window.collection_start_angle = angle;
       in->window.accumulator = 0;
       in->window.samples = 0;
     }
+    /* Accumulate */
     in->window.collecting = 1;
     in->window.accumulator += sensor_convert_linear(in, raw);
     in->window.samples += 1;
   }
 
-  if (!current_angle_in_window(in) ||
-      clamp_angle(current_angle() - in->window.collection_start_angle, 720) >
+  /* If not in a window, or we have exceeded a window size */
+  if (!current_angle_in_window(in, angle) ||
+      clamp_angle(angle - in->window.collection_start_angle, 720) >
         in->window.capture_width) {
 
-    in->window.collecting = 0;
-    if (in->window.samples) {
+    if (in->window.collecting && in->window.samples) {
+      in->window.collecting = 0;
       return in->window.accumulator / in->window.samples;
     }
   }
@@ -104,7 +108,7 @@ static void sensor_convert(struct sensor_input *in) {
     in->processed_value = sensor_convert_linear(in, raw);
     break;
   case METHOD_LINEAR_WINDOWED:
-    in->processed_value = sensor_convert_linear_windowed(in, raw);
+    in->processed_value = sensor_convert_linear_windowed(in, current_angle(), raw);
     break;
   case METHOD_TABLE:
     in->processed_value = interpolate_table_oneaxis(in->params.table, raw);
@@ -190,11 +194,34 @@ START_TEST(check_sensor_convert_therm) {
 }
 END_TEST
 
+START_TEST(check_current_angle_in_window) {
+  struct sensor_input in = {
+    .window = {
+      .offset = 0,
+      .total_width=100,
+      .capture_width=60,
+    },
+  };
+  ck_assert(current_angle_in_window(&in, 0));
+  ck_assert(current_angle_in_window(&in, 50));
+  ck_assert(!current_angle_in_window(&in, 70));
+
+  ck_assert(current_angle_in_window(&in, 100));
+  ck_assert(current_angle_in_window(&in, 120));
+  ck_assert(!current_angle_in_window(&in, 170));
+
+  ck_assert(!current_angle_in_window(&in, 690));
+  ck_assert(current_angle_in_window(&in, 710));
+} END_TEST
+
+
 TCase *setup_sensor_tests() {
   TCase *sensor_tests = tcase_create("sensors");
   tcase_add_test(sensor_tests, check_sensor_convert_linear);
   tcase_add_test(sensor_tests, check_sensor_convert_freq);
   tcase_add_test(sensor_tests, check_sensor_convert_therm);
+
+  tcase_add_test(sensor_tests, check_current_angle_in_window);
   return sensor_tests;
 }
 

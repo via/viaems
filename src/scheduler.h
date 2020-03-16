@@ -8,7 +8,6 @@ typedef enum {
   DISABLED_EVENT,
   FUEL_EVENT,
   IGNITION_EVENT,
-  ADC_EVENT,
 } event_type_t;
 
 struct sched_entry {
