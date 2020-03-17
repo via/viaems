@@ -6,10 +6,11 @@ addons:
   apt:
     packages:
       - bmake
+      - clang-tidy
 before_install:
   - "mkdir libcheck"
   - "wget https://github.com/libcheck/check/releases/download/0.12.0/check-0.12.0.tar.gz -O - | tar -xvz"
   - "pushd check-0.12.0; ./configure --prefix=/usr; make; sudo make install; popd"
 
 script:
-  - cd src && bmake check
+  - cd src && bmake check && bmake lint

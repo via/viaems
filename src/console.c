@@ -1392,8 +1392,7 @@ static int console_output_events() {
   }
 
   if (num_ev != 0) {
-    console_write_full(console.txbuffer,
-                       strlen(console.txbuffer));
+    console_write_full(console.txbuffer, strlen(console.txbuffer));
   }
   return num_ev;
 }
@@ -1423,8 +1422,7 @@ void console_process() {
   console.txbuffer[0] = '\0';
   if (!console_output_events() && console_feed_config.n_nodes) {
     console_feed_line(console.txbuffer);
-    console_write_full(console.txbuffer,
-                       strlen(console.txbuffer));
+    console_write_full(console.txbuffer, strlen(console.txbuffer));
   }
 
   stats_finish_timing(STATS_CONSOLE_TIME);

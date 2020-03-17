@@ -59,7 +59,9 @@ static void trigger_update_rpm(struct decoder *d) {
     d->rpm = rpm_from_time_diff(d->times[0] - d->times[rpm_window_size - 1],
                                 d->degrees_per_trigger * (rpm_window_size - 1));
     if (d->rpm) {
-      d->trigger_cur_rpm_change = abs(d->rpm - slicerpm) / (float)d->rpm;
+      unsigned int delta =
+        (d->rpm > slicerpm) ? d->rpm - slicerpm : slicerpm - d->rpm;
+      d->trigger_cur_rpm_change = delta / (float)d->rpm;
     }
   } else {
     d->rpm = 0;

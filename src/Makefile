@@ -66,6 +66,9 @@ coverage: check
 format:
 	clang-format -i *.c *.h platforms/*.c
 
+lint:
+	clang-tidy *.c -- -I . -D TICKRATE=1000000
+
 
 clean:
 	-rm *.o *.a
