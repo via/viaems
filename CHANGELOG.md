@@ -8,6 +8,9 @@ port A.
 - Implement cold start cranking enrich
 - Record frequency and trigger edges with DMA, allowing higher rpm operation
 - Implement dwell controlled by battery voltage
+- Better ADC strategy:
+  - Faster and more deterministic sampling
+  - Implement customizable averaging windows based on crank angles
 
 ### 1.1.0 (2019 Dec 14)
 Introduces a breaking change with the console format for tables, as well as

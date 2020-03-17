@@ -3,6 +3,3 @@
 + Basic tasks
     + Fan control
     + Idle Control
-
-- Determine better ADC strategy, the graphs look awful for every-tooth (for now
-  just gather adc async)
