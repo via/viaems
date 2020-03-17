@@ -591,7 +591,7 @@ static void platform_init_spi_adc() {
   dma_enable_stream(DMA1, DMA_STREAM3);
 
   nvic_enable_irq(NVIC_DMA1_STREAM3_IRQ);
-  nvic_set_priority(NVIC_DMA1_STREAM3_IRQ, 16);
+  nvic_set_priority(NVIC_DMA1_STREAM3_IRQ, 64);
 
   /* Configure TIM7 to drive DMA for SPI */
   timer_set_mode(TIM7, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
