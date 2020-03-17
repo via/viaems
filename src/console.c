@@ -562,6 +562,9 @@ static void console_get_dwell_type(const struct console_config_node *self,
   case DWELL_FIXED_TIME:
     result = "fixed-time";
     break;
+  case DWELL_BRV:
+    result = "brv";
+    break;
   }
   strcat(dest, result);
 }
@@ -576,6 +579,8 @@ static void console_set_dwell_type(const struct console_config_node *self,
     *t = DWELL_FIXED_DUTY;
   } else if (!strcmp("fixed-time", remaining)) {
     *t = DWELL_FIXED_TIME;
+  } else if (!strcmp("brv", remaining)) {
+    *t = DWELL_BRV;
   }
 }
 
@@ -894,6 +899,10 @@ static struct console_config_node console_config_nodes[] = {
     .set = console_set_table },
   { .name = "config.tables.boost_control",
     .val = &boost_control_pwm,
+    .get = console_get_table,
+    .set = console_set_table },
+  { .name = "config.tables.dwell",
+    .val = &dwell_ms_vs_brv,
     .get = console_get_table,
     .set = console_set_table },
 

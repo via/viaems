@@ -22,6 +22,7 @@ struct fueling_config {
 typedef enum {
   DWELL_FIXED_DUTY,
   DWELL_FIXED_TIME,
+  DWELL_BRV,
 } dwell_type;
 
 struct ignition_config {

@@ -49,6 +49,9 @@ void calculate_ignition() {
   case DWELL_FIXED_TIME:
     calculated_values.dwell_us = config.ignition.dwell_us;
     break;
+  case DWELL_BRV:
+    calculated_values.dwell_us = 1000 * interpolate_table_oneaxis(config.dwell, config.sensors[SENSOR_BRV].processed_value);
+    break;
   }
 }
 
