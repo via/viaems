@@ -96,7 +96,7 @@ Member | Meaning
 `fueling.cylinder_cc` | Individual cylinder volume
 `fueling.injections_per_cycle` | Number of times an injector is fired per cycle.  1 for sequential, 2 for batched pairs, etc
 `fueling.fuel_pump_pin` | GPIO port number that controls the fuel pump
-`ignition.dwell_us` | Fixed (currently) time in uS to dwell ignition
+`ignition.dwell_us` | Fixed (when in fixed dwell mode) time in uS to dwell ignition
 
 ### Frequency and Trigger inputs
 Certain inputs are used as frequency inputs which may also act as the decoder
