@@ -1,13 +1,8 @@
 - Detect overlapping output schedules on same pin
-- New frequency sensors that use DMA (TBD)
 
-+ Trigger input DMA to circular buffer
-+ Dwell time vs BRV
 + Basic tasks
-    + Boost control
     + Fan control
     + Idle Control
-    + Priming
 
 - Determine better ADC strategy, the graphs look awful for every-tooth (for now
   just gather adc async)
