@@ -139,7 +139,7 @@ void calculate_fueling() {
   float clt = config.sensors[SENSOR_CLT].processed_value;
 
   float tps = config.sensors[SENSOR_TPS].processed_value;
-  float tpsrate = config.sensors[SENSOR_TPS].derivative;
+  float tpsrate = config.sensors[SENSOR_TPS].derivative.value;
 
   if (config.ve) {
     float load = map / aap * 100.0f;

@@ -102,7 +102,6 @@ static void sensor_convert(struct sensor_input *in) {
     break;
   }
 
-  float old_value = in->processed_value;
   switch (in->method) {
   case METHOD_LINEAR:
     in->processed_value = sensor_convert_linear(in, raw);
@@ -118,17 +117,22 @@ static void sensor_convert(struct sensor_input *in) {
     break;
   }
 
-  /* Do lag filtering */
+  /* Do lag filtering over 10ish ms derivative window */
   in->processed_value =
-    ((old_value * in->lag) + (in->processed_value * (100.0f - in->lag))) / 100.0f;
+    ((in->derivative.last_sample_value * in->lag) + 
+     (in->processed_value * (100.0f - in->lag))) / 100.0f;
 
   /* Process derivative */
   timeval_t process_time = current_time();
-  if (process_time != in->process_time) {
-    in->derivative = TICKRATE * (in->processed_value - old_value) /
-                     (process_time - in->process_time);
+
+  /* We want derivatives at a minimum of 10 ms dt to keep noise at a minimum */
+  if (process_time - in->derivative.last_sample_time > time_from_us(10000)) {
+    in->derivative.value = TICKRATE * 
+                     (in->processed_value - in->derivative.last_sample_value) /
+                     (process_time - in->derivative.last_sample_time);
+    in->derivative.last_sample_time = process_time;
+    in->derivative.last_sample_value = in->processed_value;
   }
-  in->process_time = process_time;
 }
 
 void sensors_process(sensor_source source) {

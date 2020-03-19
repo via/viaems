@@ -61,8 +61,11 @@ struct sensor_input {
   uint32_t raw_value;
   float processed_value;
   float lag;
-  timeval_t process_time;
-  float derivative;
+  struct {
+    timeval_t last_sample_time;
+    float last_sample_value;
+    float value;
+  } derivative;
   struct {
     uint32_t min;
     uint32_t max;
