@@ -294,8 +294,9 @@ struct config config __attribute__((section(".configdata"))) = {
   },
   .closed_loop = {
     .max_correction = 3,
-    .K_p = 0.05,
-    .K_i = 0.01,
+    .max_cumulative_error = 300,
+    .K_p = 3.0,
+    .K_i = 0.0,
   },
 };
 
