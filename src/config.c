@@ -243,7 +243,7 @@ struct config config __attribute__((section(".configdata"))) = {
     [SENSOR_MAP] = {.pin=4, .source=SENSOR_ADC, .method=METHOD_LINEAR_WINDOWED,
       .params={.range={.min=12, .max=420}}, /* AEM 3.5 bar MAP sensor*/
       .fault_config={.min = 10, .max = 4050, .fault_value = 50.0},
-      .window={.total_width=120, .capture_width = 90}},
+      .window={.total_width=120, .capture_width = 120}},
     [SENSOR_AAP] = {.pin=5, .source=SENSOR_ADC, .method=METHOD_LINEAR,
       .params={.range={.min=10.5, .max=121.6}}, /* AEM 3.5 bar MAP sensor*/
       .fault_config={.min = 10, .max = 4050, .fault_value = 50.0}},
