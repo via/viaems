@@ -292,6 +292,11 @@ struct config config __attribute__((section(".configdata"))) = {
     .lean_boost_kpa = 140.0,
     .lean_boost_ego = .91,
   },
+  .closed_loop = {
+    .max_correction = 3,
+    .K_p = 0.05,
+    .K_i = 0.01,
+  },
 };
 
 int config_valid() {
