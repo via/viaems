@@ -119,6 +119,51 @@ void handle_check_engine_light() {
            determine_cel_pin_state(cel_state, current_time(), last_cel));
 }
 
+struct notable_tuning_event {
+  timeval_t time;
+  int is_usable;
+  float rpm;
+  float map;
+  float ego;
+};
+
+#define NUM_TUNING_EVENTS 32
+static struct notable_tuning_event tuning_events[NUM_TUNING_EVENTS] = {0};
+static uint32_t tuning_event_pos = 0;
+
+/* Record usable events at 100 hz */
+static void record_tuning_event() {
+  
+  /* Wait until 10ms has passed */
+  timeval_t time = current_time();
+  if (time - tuning_events[tuning_event_pos].time < time_from_us(10000)) {
+    return;
+  }
+
+  float map = config.sensors[SENSOR_MAP].processed_value;
+  float rpm = config.decoder.rpm;
+  float ego = config.sensors[SENSOR_EGO].processed_value;
+
+  int is_usable = (calculated_values.tipin < 0.1f) &&
+    (config.sensors[SENSOR_MAP].derivative.value < 50.0f) &&
+    (config.sensors[SENSOR_TPS].derivative.value < 50.0f) &&
+    (config.sensors[SENSOR_EGO].derivative.value < 50.0f);
+
+  tuning_event_pos = (tuning_event_pos + 1) % NUM_TUNING_EVENTS;
+  tuning_events[tuning_event_pos] = {
+    .time = time,
+    .map = map,
+    .ego = ego,
+    .rpm = rpm,
+    .is_usable = is_usable
+  };
+}
+
+
+void handle_closed_loop_feedback() {
+
+}
+
 void handle_emergency_shutdown() {
 
   /* Fuel pump off */
