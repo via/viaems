@@ -266,6 +266,34 @@ START_TEST(check_sensor_convert_linear_windowed_wide) {
   ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 210, 2000), 1733.33, 0.1);
 } END_TEST
 
+START_TEST(check_sensor_convert_linear_windowed_offset) {
+  struct sensor_input si = {
+    .processed_value = 12.0,
+    .params = {
+      .range = { .min=0, .max=4096.0},
+    },
+    .window = {
+      .total_width = 90,
+      .capture_width = 45,
+      .offset = 45,
+    },
+  };
+
+  config.decoder.rpm = 1000;
+
+  /* All values should be ignored */
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 0, 2048), 12.0, 0.01);
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 10, 2500), 12.0, 0.01);
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 40, 2600), 12.0, 0.01);
+
+  /* Start of real window */
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 50, 2700), 12, 0.1);
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 80, 2400), 12, 0.1);
+
+  /* End of window, should produce average of two prior samples */
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 90, 2000), 2550, 0.1);
+} END_TEST
+
 START_TEST(check_sensor_convert_freq) {
   ck_assert_float_eq_tol(sensor_convert_freq(100.0), 40000, .1);
 
@@ -317,6 +345,7 @@ TCase *setup_sensor_tests() {
   tcase_add_test(sensor_tests, check_sensor_convert_linear_windowed);
   tcase_add_test(sensor_tests, check_sensor_convert_linear_windowed_skipped);
   tcase_add_test(sensor_tests, check_sensor_convert_linear_windowed_wide);
+  tcase_add_test(sensor_tests, check_sensor_convert_linear_windowed_offset);
   tcase_add_test(sensor_tests, check_sensor_convert_freq);
   tcase_add_test(sensor_tests, check_sensor_convert_therm);
 
