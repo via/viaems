@@ -14,6 +14,7 @@ OBJCOPY=arm-none-eabi-objcopy
 OPENCM3_DIR=../libopencm3
 CFLAGS=  -I. -std=c99 -Wall -O3 -Wextra -g -DGIT_DESCRIBE=\"${GITDESC}\"
 CFLAGS+= -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mthumb -mcpu=cortex-m4
+CFLAGS+= -Wdouble-promotion
 CFLAGS+= -D TICKRATE=4000000
 CFLAGS+=  -L${OPENCM3_DIR}/lib -I${OPENCM3_DIR}/include -DSTM32F4
 CFLAGS+= -fstack-protector-strong -fno-strict-aliasing

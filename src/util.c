@@ -2,19 +2,21 @@
 #include "limits.h"
 #include "platform.h"
 
+const float tick_degree_rpm_ratio = (TICKRATE / 6.0f);
+
 unsigned int rpm_from_time_diff(timeval_t t1, degrees_t deg) {
   float ticks_per_degree = t1 / deg;
-  unsigned int rpm = (TICKRATE / 6) / ticks_per_degree;
+  unsigned int rpm = tick_degree_rpm_ratio / ticks_per_degree;
   return rpm;
 }
 
 timeval_t time_from_rpm_diff(unsigned int rpm, degrees_t deg) {
-  float ticks_per_degree = (TICKRATE / 6.0) / (float)rpm;
+  float ticks_per_degree = tick_degree_rpm_ratio / (float)rpm;
   return ticks_per_degree * deg;
 }
 
 timeval_t time_from_us(unsigned int us) {
-  timeval_t ticks = us * (TICKRATE / 1000000.0);
+  timeval_t ticks = us * (TICKRATE / 1000000.0f);
   return ticks;
 }
 

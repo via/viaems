@@ -71,7 +71,7 @@ static void sensor_convert(struct sensor_input *in) {
 
   /* Do lag filtering */
   in->processed_value =
-    ((old_value * in->lag) + (in->processed_value * (100.0 - in->lag))) / 100.0;
+    ((old_value * in->lag) + (in->processed_value * (100.0f - in->lag))) / 100.0f;
 
   /* Process derivative */
   timeval_t process_time = current_time();
