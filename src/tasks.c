@@ -147,6 +147,7 @@ static int record_tuning_event() {
   float lambda = calculated_values.lambda;
 
   int is_usable = (calculated_values.tipin < 0.1f) &&
+    (rpm > 300) &&
     (config.sensors[SENSOR_MAP].derivative.value < 50.0f) &&
     (config.sensors[SENSOR_TPS].derivative.value < 50.0f) &&
     (config.sensors[SENSOR_EGO].derivative.value < 50.0f);
@@ -182,11 +183,17 @@ void handle_closed_loop_feedback() {
   if (!event.is_usable) {
     return;
   }
-  float error = event.ego - event.lambda;
-  calculated_values.closed_loop_cumulative_error += error;
+
+  float error = tuning_events[tuning_event_pos].ego - event.lambda;
+  float cumulative_error = calculated_values.closed_loop_cumulative_error + error;
+  if (cumulative_error > config.closed_loop.max_cumulative_error) {
+    cumulative_error = config.closed_loop.max_cumulative_error;
+  } else if (cumulative_error < -config.closed_loop.max_cumulative_error) {
+    cumulative_error = -config.closed_loop.max_cumulative_error;
+  }
 
   float correction = config.closed_loop.K_p * error + 
-    config.closed_loop.K_i * calculated_values.closed_loop_cumulative_error;
+    config.closed_loop.K_i * cumulative_error;
 
   if (correction > config.closed_loop.max_correction) {
     correction = config.closed_loop.max_correction;
@@ -195,6 +202,7 @@ void handle_closed_loop_feedback() {
   }
 
   calculated_values.closed_loop_correction = correction;
+  calculated_values.closed_loop_cumulative_error = cumulative_error;
 }
 
 void handle_emergency_shutdown() {
