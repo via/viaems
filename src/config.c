@@ -293,10 +293,10 @@ struct config config __attribute__((section(".configdata"))) = {
     .lean_boost_ego = .91,
   },
   .closed_loop = {
-    .max_correction = 3,
-    .max_cumulative_error = 300,
-    .K_p = 3.0,
-    .K_i = 0.0,
+    .max_correction = 5,
+    .max_cumulative_error = 30,
+    .K_p = 1.35,
+    .K_i = 1.35,
   },
 };
 
