@@ -29,9 +29,23 @@ static float sensor_convert_linear_windowed(struct sensor_input *in,
     return sensor_convert_linear(in, raw);
   }
 
+  float result = in->processed_value;
+
+  /* If not in a window, or we have exceeded a window size */
+  if (!current_angle_in_window(in, angle) ||
+      clamp_angle(angle - in->window.collection_start_angle, 720) >=
+        in->window.capture_width) {
+
+    if (in->window.collecting && in->window.samples) {
+      in->window.collecting = 0;
+      result = in->window.accumulator / in->window.samples;
+    }
+  }
+
   /* Currently in a window. If we just started collecting, initialize */
   if (current_angle_in_window(in, angle)) {
     if (!in->window.collecting) {
+      /* TODO: change this to current window start, not current angle */
       in->window.collection_start_angle = angle;
       in->window.accumulator = 0;
       in->window.samples = 0;
@@ -42,18 +56,8 @@ static float sensor_convert_linear_windowed(struct sensor_input *in,
     in->window.samples += 1;
   }
 
-  /* If not in a window, or we have exceeded a window size */
-  if (!current_angle_in_window(in, angle) ||
-      clamp_angle(angle - in->window.collection_start_angle, 720) >
-        in->window.capture_width) {
-
-    if (in->window.collecting && in->window.samples) {
-      in->window.collecting = 0;
-      return in->window.accumulator / in->window.samples;
-    }
-  }
   /* Return previous processed value */
-  return in->processed_value;
+  return result;
 }
 
 static float sensor_convert_freq(float raw) {
@@ -174,6 +178,94 @@ START_TEST(check_sensor_convert_linear) {
 }
 END_TEST
 
+START_TEST(check_sensor_convert_linear_windowed) {
+  struct sensor_input si = {
+    .processed_value = 12.0,
+    .params = {
+      .range = { .min=0, .max=4096.0},
+    },
+    .window = {
+      .total_width = 90,
+      .capture_width = 45,
+    },
+  };
+
+  config.decoder.rpm = 1000;
+
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 0, 2048), 12.0, 0.01);
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 10, 2500), 12.0, 0.01);
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 40, 2600), 12.0, 0.01);
+  /* End of window, should average first three results together */
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 50, 2700), 2382.666, 0.1);
+
+
+  /* All values in this non-capture window should be ignored */
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 60, 2800), 12, 0.1);
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 80, 2800), 12, 0.1);
+} END_TEST
+
+START_TEST(check_sensor_convert_linear_windowed_skipped) {
+  struct sensor_input si = {
+    .processed_value = 12.0,
+    .params = {
+      .range = { .min=0, .max=4096.0},
+    },
+    .window = {
+      .total_width = 90,
+      .capture_width = 45,
+    },
+  };
+
+  config.decoder.rpm = 1000;
+
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 0, 2048), 12.0, 0.01);
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 10, 2500), 12.0, 0.01);
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 40, 2600), 12.0, 0.01);
+
+  /* Move into next capture window, it should still produce average */
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 100, 2700), 2382.666, 0.1);
+
+  /* Remaining samples in this window should add to average */
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 120, 1000), 12, 0.1);
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 130, 1500), 12, 0.1);
+
+  /* Reaches end of window, should average two prior samples */
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 140, 2000), 1733.33, 0.1);
+} END_TEST
+
+START_TEST(check_sensor_convert_linear_windowed_wide) {
+  struct sensor_input si = {
+    .processed_value = 12.0,
+    .params = {
+      .range = { .min=0, .max=4096.0},
+    },
+    .window = {
+      .total_width = 90,
+      .capture_width = 90,
+    },
+  };
+
+  config.decoder.rpm = 1000;
+
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 0, 2048), 12.0, 0.01);
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 45, 2500), 12.0, 0.01);
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 89, 2600), 12.0, 0.01);
+
+  /* Move into next capture window, it should still produce average of all three*/
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 100, 2700), 2382.666, 0.1);
+
+  /* Remaining samples in this window should add to average at end */
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 120, 1000), 12, 0.1);
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 130, 1500), 12, 0.1);
+
+
+  /* TODO: right now this needs to be capture_width degrees past the first
+   * sample in the last window, which is not ideal. We should just treat all
+   * samples in the window as acceptable */
+  /* Reaches end of window, should average all three prior samples */
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 210, 2000), 1733.33, 0.1);
+} END_TEST
+
 START_TEST(check_sensor_convert_freq) {
   ck_assert_float_eq_tol(sensor_convert_freq(100.0), 40000, .1);
 
@@ -222,6 +314,9 @@ START_TEST(check_current_angle_in_window) {
 TCase *setup_sensor_tests() {
   TCase *sensor_tests = tcase_create("sensors");
   tcase_add_test(sensor_tests, check_sensor_convert_linear);
+  tcase_add_test(sensor_tests, check_sensor_convert_linear_windowed);
+  tcase_add_test(sensor_tests, check_sensor_convert_linear_windowed_skipped);
+  tcase_add_test(sensor_tests, check_sensor_convert_linear_windowed_wide);
   tcase_add_test(sensor_tests, check_sensor_convert_freq);
   tcase_add_test(sensor_tests, check_sensor_convert_therm);
 
