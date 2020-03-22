@@ -336,6 +336,9 @@ static void console_get_sensor(const struct console_config_node *self,
   case METHOD_LINEAR:
     method = "linear";
     break;
+  case METHOD_LINEAR_WINDOWED:
+    method = "linear-window";
+    break;
   case METHOD_TABLE:
     method = "table";
     break;
@@ -352,6 +355,13 @@ static void console_get_sensor(const struct console_config_node *self,
                     "range-min=%.2f range-max=%.2f ",
                     s->params.range.min,
                     s->params.range.max);
+  } else if (s->method == METHOD_LINEAR_WINDOWED) {
+    dest += sprintf(dest,
+                    "range-min=%.2f range-max=%.2f window-total-size=%u window-capture-size=%u",
+                    s->params.range.min,
+                    s->params.range.max,
+                    (unsigned int)s->window.total_width,
+                    (unsigned int)s->window.capture_width);
   } else if (s->method == METHOD_TABLE) {
     dest += sprintf(dest, "table=%s ", "unsupported");
   } else if (s->method == METHOD_THERM) {
@@ -390,6 +400,8 @@ static sensor_source console_sensor_source_from_str(const char *str) {
 static sensor_method console_sensor_method_from_str(const char *str) {
   if (!strcmp("linear", str)) {
     return METHOD_LINEAR;
+  } else if (!strcmp("linear-windowed", str)) {
+    return METHOD_LINEAR_WINDOWED;
   } else if (!strcmp("table", str)) {
     return METHOD_TABLE;
   } else if (!strcmp("therm", str)) {
@@ -430,6 +442,10 @@ static void console_set_sensor(const struct console_config_node *self,
       s->params.therm.b = atof(v);
     } else if (!strcmp("therm-c", k)) {
       s->params.therm.c = atof(v);
+    } else if (!strcmp("window-total-size", k)) {
+      s->window.total_width = atoi(v);
+    } else if (!strcmp("window-capture-size", k)) {
+      s->window.capture_width = atoi(v);
     } else if (!strcmp("fault-min", k)) {
       s->fault_config.min = atoi(v);
     } else if (!strcmp("fault-max", k)) {
@@ -620,9 +636,6 @@ static void console_get_events(const struct console_config_node *self
     case IGNITION_EVENT:
       ev_type = "ignition";
       break;
-    case ADC_EVENT:
-      ev_type = "adc";
-      break;
     default:
       ev_type = "disabled";
       break;
@@ -668,8 +681,6 @@ static void console_set_events(const struct console_config_node *self
         ev->type = FUEL_EVENT;
       } else if (!strcmp("ignition", v)) {
         ev->type = IGNITION_EVENT;
-      } else if (!strcmp("adc", v)) {
-        ev->type = ADC_EVENT;
       } else if (!strcmp("disabled", v)) {
         ev->type = DISABLED_EVENT;
       }
@@ -1860,7 +1871,8 @@ START_TEST(check_console_set_sensor) {
   const struct console_config_node n = { .val = &s };
 
   char buf[] = "source=freq pin=2 method=linear lag=0.2 range-min=20.1 "
-               "range-max=100.1 fault-min=200 fault-max=400, fault-val=19.2";
+               "range-max=100.1 fault-min=200 fault-max=400, fault-val=19.2 "
+               "window-total-size=120 window-capture-size=90";
 
   console_set_sensor(&n, buf);
   ck_assert_int_eq(s.source, SENSOR_FREQ);
@@ -1872,6 +1884,9 @@ START_TEST(check_console_set_sensor) {
   ck_assert_float_eq(s.fault_config.fault_value, 19.2);
   ck_assert_int_eq(s.fault_config.min, 200);
   ck_assert_int_eq(s.fault_config.max, 400);
+
+  ck_assert_int_eq(s.window.total_width, 120);
+  ck_assert_int_eq(s.window.capture_width, 90);
 
   char buf2[] = "source=const fixed-val=101.1";
   console_set_sensor(&n, buf2);

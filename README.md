@@ -149,6 +149,9 @@ Member | Meaning
 `fault_config.max` | Raw sensor value, above this indicates sensor fault
 `fault_config.fault_value` | During sensor fault, use this fallback value
 `lag` | Lag filtering value. 0 means no filtering, 100 will effectively never change.
+`window.total_width` | When method is windowed, total stride of degrees for a single averaging
+`window.capture_width` | When method is windowed, window inside of total stride to average samples for
+`window.offset` | When method is windowed, offset of capture window inside total window
 
 For method `SENSOR_LINEAR`, the processed value is linear interpolated based on
 the raw value between min and max (with the raw value being 0 - 4095 for 12-bit

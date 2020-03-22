@@ -15,6 +15,11 @@ timeval_t time_from_rpm_diff(unsigned int rpm, degrees_t deg) {
   return ticks_per_degree * deg;
 }
 
+degrees_t degrees_from_time_diff(timeval_t t, unsigned int rpm) {
+  float ticks_per_degree = tick_degree_rpm_ratio / (float)rpm;
+  return t / ticks_per_degree;
+}
+
 timeval_t time_from_us(unsigned int us) {
   timeval_t ticks = us * (TICKRATE / 1000000.0f);
   return ticks;
@@ -71,6 +76,15 @@ START_TEST(check_time_from_rpm_diff) {
 
   /* 6000 RPMS, 90 is 0.00125 s */
   ck_assert_float_eq_tol(time_from_rpm_diff(6000, 45), 5000, 50);
+}
+END_TEST
+
+START_TEST(check_degrees_from_time_diff) {
+  /* 6000 RPMS, 180 degrees = 0.005 s */
+  ck_assert_float_eq_tol(degrees_from_time_diff(20000, 6000), 180, 1);
+
+  /* 6000 RPMS, 90 is 0.00125 s */
+  ck_assert_float_eq_tol(degrees_from_time_diff(5000, 6000), 45, 1);
 }
 END_TEST
 
@@ -145,6 +159,7 @@ TCase *setup_util_tests() {
   TCase *util_tests = tcase_create("util");
   tcase_add_test(util_tests, check_rpm_from_time_diff);
   tcase_add_test(util_tests, check_time_from_rpm_diff);
+  tcase_add_test(util_tests, check_degrees_from_time_diff);
   tcase_add_test(util_tests, check_time_in_range);
   tcase_add_test(util_tests, check_time_diff);
   tcase_add_test(util_tests, check_clamp_angle);

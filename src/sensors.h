@@ -27,6 +27,7 @@ typedef enum {
 
 typedef enum {
   METHOD_LINEAR,
+  METHOD_LINEAR_WINDOWED,
   METHOD_TABLE,
   METHOD_THERM,
 } sensor_method;
@@ -60,13 +61,26 @@ struct sensor_input {
   uint32_t raw_value;
   float processed_value;
   float lag;
-  timeval_t process_time;
-  float derivative;
+  struct {
+    timeval_t last_sample_time;
+    float last_sample_value;
+    float value;
+  } derivative;
   struct {
     uint32_t min;
     uint32_t max;
     float fault_value;
   } fault_config;
+  struct window {
+    uint32_t capture_width;
+    uint32_t total_width;
+    uint32_t offset;
+
+    float accumulator;
+    uint32_t samples;
+    uint8_t collecting;
+    degrees_t collection_start_angle;
+  } window;
   sensor_fault fault;
 };
 
