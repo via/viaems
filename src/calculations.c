@@ -185,7 +185,8 @@ void calculate_fueling() {
 
   float raw_pw_us =
     (calculated_values.fuelvol_per_cycle +
-     (calculated_values.tipin / 1000)) / /* Tipin unit is mm^3 */
+     (calculated_values.tipin / 1000) + /* Tipin unit is mm^3 */
+     (calculated_values.closed_loop_correction / 1000)) /
     config.fueling.injector_cc_per_minute *
     60000000 /                           /* uS per minute */
     config.fueling.injections_per_cycle; /* This many pulses */

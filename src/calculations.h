@@ -47,6 +47,7 @@ struct calculated_values {
   float lambda;
   float ve;
   float ete;
+  float closed_loop_correction; /* short term fuel trim correction in mm^3 */
 };
 
 extern struct calculated_values calculated_values;

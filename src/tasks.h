@@ -15,10 +15,17 @@ struct cel_config {
   float lean_boost_ego;
 };
 
+struct closed_loop_config {
+  float K_p; /* Correction proportionality constant */
+  float K_i; /* Corretion integration constant */
+  float max_correction;
+};
+
 void handle_fuel_pump();
 void handle_boost_control();
 void handle_check_engine_light();
 void handle_idle_control();
+void handle_closed_loop_feedback();
 void handle_emergency_shutdown();
 
 #ifdef UNITTEST
