@@ -125,6 +125,7 @@ struct notable_tuning_event {
   float rpm;
   float map;
   float ego;
+  float lambda;
 };
 
 #define NUM_TUNING_EVENTS 32
@@ -132,17 +133,18 @@ static struct notable_tuning_event tuning_events[NUM_TUNING_EVENTS] = {0};
 static uint32_t tuning_event_pos = 0;
 
 /* Record usable events at 100 hz */
-static void record_tuning_event() {
+static int record_tuning_event() {
   
   /* Wait until 10ms has passed */
   timeval_t time = current_time();
   if (time - tuning_events[tuning_event_pos].time < time_from_us(10000)) {
-    return;
+    return 0;
   }
 
   float map = config.sensors[SENSOR_MAP].processed_value;
   float rpm = config.decoder.rpm;
   float ego = config.sensors[SENSOR_EGO].processed_value;
+  float lambda = calculated_values.lambda;
 
   int is_usable = (calculated_values.tipin < 0.1f) &&
     (config.sensors[SENSOR_MAP].derivative.value < 50.0f) &&
@@ -150,18 +152,49 @@ static void record_tuning_event() {
     (config.sensors[SENSOR_EGO].derivative.value < 50.0f);
 
   tuning_event_pos = (tuning_event_pos + 1) % NUM_TUNING_EVENTS;
-  tuning_events[tuning_event_pos] = {
+  tuning_events[tuning_event_pos] = (struct notable_tuning_event){
     .time = time,
     .map = map,
     .ego = ego,
     .rpm = rpm,
+    .lambda = lambda,
     .is_usable = is_usable
   };
+  return 1;
 }
 
 
 void handle_closed_loop_feedback() {
 
+  if (!record_tuning_event()) {
+    /* Take no action */
+    return;
+  }
+
+  /* Calculate notable event from 100 ms ago */
+  int delay_ms = 100;
+  int event_pos = tuning_event_pos - (delay_ms / 10);
+  while (event_pos < 0) {
+    event_pos += NUM_TUNING_EVENTS;
+  }
+
+  struct notable_tuning_event event = tuning_events[event_pos];
+  if (!event.is_usable) {
+    return;
+  }
+  float error = event.ego - event.lambda;
+  calculated_values.closed_loop_cumulative_error += error;
+
+  float correction = config.closed_loop.K_p * error + 
+    config.closed_loop.K_i * calculated_values.closed_loop_cumulative_error;
+
+  if (correction > config.closed_loop.max_correction) {
+    correction = config.closed_loop.max_correction;
+  } else if (correction < -config.closed_loop.max_correction) {
+    correction = -config.closed_loop.max_correction;
+  }
+
+  calculated_values.closed_loop_correction = correction;
 }
 
 void handle_emergency_shutdown() {
