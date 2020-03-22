@@ -21,7 +21,8 @@ static float sensor_convert_freq(float raw) {
 float sensor_convert_thermistor(struct thermistor_config *tc, float raw) {
   stats_start_timing(STATS_SENSOR_THERM_TIME);
   float r = tc->bias / ((4096.0f / raw) - 1);
-  float t = 1 / (tc->a + tc->b * logf(r) + tc->c * powf(logf(r), 3));
+  float logf_r = logf(r);
+  float t = 1 / (tc->a + tc->b * logf_r + tc->c * logf_r * logf_r * logf_r);
   stats_finish_timing(STATS_SENSOR_THERM_TIME);
 
   return t - 273.15f;
@@ -71,7 +72,7 @@ static void sensor_convert(struct sensor_input *in) {
 
   /* Do lag filtering */
   in->processed_value =
-    ((old_value * in->lag) + (in->processed_value * (100.0 - in->lag))) / 100.0;
+    ((old_value * in->lag) + (in->processed_value * (100.0f - in->lag))) / 100.0f;
 
   /* Process derivative */
   timeval_t process_time = current_time();

@@ -63,15 +63,15 @@ static float air_density(float iat_celsius, float atmos_kpa) {
 
 static float fuel_density(float fuel_celsius) {
   const float beta = 950.0; /* Gasoline 10^-6/K */
-  float delta_temp = fuel_celsius - 15.0;
-  return config.fueling.density_of_fuel - (delta_temp * beta / 1000000.0);
+  float delta_temp = fuel_celsius - 15.0f;
+  return config.fueling.density_of_fuel - (delta_temp * beta / 1000000.0f);
 }
 
 /* Returns mass of air injested into a cylinder */
 static float calculate_airmass(float ve, float map, float aap, float iat) {
 
   float injested_air_volume_per_cycle =
-    (ve / 100.0) * (map / aap) * config.fueling.cylinder_cc;
+    (ve / 100.0f) * (map / aap) * config.fueling.cylinder_cc;
 
   float injested_air_mass_per_cycle =
     injested_air_volume_per_cycle * air_density(iat, aap);
@@ -142,7 +142,7 @@ void calculate_fueling() {
   float tpsrate = config.sensors[SENSOR_TPS].derivative;
 
   if (config.ve) {
-    float load = map / aap * 100.0;
+    float load = map / aap * 100.0f;
     ve = interpolate_table_twoaxis(config.ve, config.decoder.rpm, load);
   } else {
     ve = 100.0;
