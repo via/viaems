@@ -185,7 +185,9 @@ void handle_closed_loop_feedback() {
   }
 
   float error = tuning_events[tuning_event_pos].ego - event.lambda;
-  float cumulative_error = calculated_values.closed_loop_cumulative_error + error;
+
+  /* Integral sampled at 100 hz */
+  float cumulative_error = calculated_values.closed_loop_cumulative_error + (error / 100);
   if (cumulative_error > config.closed_loop.max_cumulative_error) {
     cumulative_error = config.closed_loop.max_cumulative_error;
   } else if (cumulative_error < -config.closed_loop.max_cumulative_error) {
