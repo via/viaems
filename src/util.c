@@ -16,7 +16,7 @@ timeval_t time_from_rpm_diff(unsigned int rpm, degrees_t deg) {
 }
 
 degrees_t degrees_from_time_diff(timeval_t t, unsigned int rpm) {
-  float ticks_per_degree = (TICKRATE / 6.0) / (float)rpm;
+  float ticks_per_degree = tick_degree_rpm_ratio / (float)rpm;
   return t / ticks_per_degree;
 }
 
