@@ -119,83 +119,63 @@ void handle_check_engine_light() {
            determine_cel_pin_state(cel_state, current_time(), last_cel));
 }
 
-struct notable_tuning_event {
-  timeval_t time;
-  int is_usable;
-  float rpm;
-  float map;
-  float ego;
-  float lambda;
-};
-
-#define NUM_TUNING_EVENTS 32
-static struct notable_tuning_event tuning_events[NUM_TUNING_EVENTS] = {0};
-static uint32_t tuning_event_pos = 0;
-
 /* Record usable events at 100 hz */
-static int record_tuning_event() {
+static int tuning_point_usable() {
   
-  /* Wait until 10ms has passed */
-  timeval_t time = current_time();
-  if (time - tuning_events[tuning_event_pos].time < time_from_us(10000)) {
-    return 0;
-  }
-
-  float map = config.sensors[SENSOR_MAP].processed_value;
-  float rpm = config.decoder.rpm;
-  float ego = config.sensors[SENSOR_EGO].processed_value;
-  float lambda = calculated_values.lambda;
 
   int is_usable = (calculated_values.tipin < 0.1f) &&
-    (rpm > 300) &&
-    (config.sensors[SENSOR_MAP].derivative.value < 50.0f) &&
-    (config.sensors[SENSOR_TPS].derivative.value < 50.0f) &&
-    (config.sensors[SENSOR_EGO].derivative.value < 50.0f);
+    (config.decoder.rpm > 300) &&
+    (config.sensors[SENSOR_TPS].derivative.value < 10.0f) &&
+    (config.sensors[SENSOR_EGO].derivative.value < 10.0f);
 
-  tuning_event_pos = (tuning_event_pos + 1) % NUM_TUNING_EVENTS;
-  tuning_events[tuning_event_pos] = (struct notable_tuning_event){
-    .time = time,
-    .map = map,
-    .ego = ego,
-    .rpm = rpm,
-    .lambda = lambda,
-    .is_usable = is_usable
-  };
-  return 1;
+  return is_usable;
+}
+
+static float current_tuning_error() {
+  float lambda = config.sensors[SENSOR_MAP].processed_value;
+  float ego = config.sensors[SENSOR_EGO].processed_value;
+
+  return ego - lambda;
 }
 
 
 void handle_closed_loop_feedback() {
 
-  if (!record_tuning_event()) {
-    /* Take no action */
+  static timeval_t last_time = 0;
+  timeval_t time = current_time();
+
+  /* Wait until 10ms has passed */
+  if (time - last_time < time_from_us(10000)) {
     return;
   }
 
-  /* Calculate notable event from 100 ms ago */
-  int delay_ms = 200;
-  int event_pos = tuning_event_pos - (delay_ms / 10);
-  while (event_pos < 0) {
-    event_pos += NUM_TUNING_EVENTS;
-  }
-
-  struct notable_tuning_event event = tuning_events[event_pos];
-  if (!event.is_usable) {
+  if (!tuning_point_usable()) {
     return;
   }
 
-  float error = tuning_events[tuning_event_pos].ego - event.lambda;
+  float error = current_tuning_error();
 
   struct closed_loop_config *cl_config = &config.closed_loop;
-  /* Integral sampled at 100 hz */
-  float cumulative_error = calculated_values.closed_loop_cumulative_error + (error / 100);
+
+  /* Integrate cumulative error over seconds, so convert 100hz to 1hz */
+  float cumulative_error = calculated_values.closed_loop_cumulative_error + (error / 100.0f);
   if (cumulative_error > cl_config->max_cumulative_error) {
     cumulative_error = cl_config->max_cumulative_error;
   } else if (cumulative_error < -cl_config->max_cumulative_error) {
     cumulative_error = -cl_config->max_cumulative_error;
   }
 
-  float correction = cl_config->K_p * error + cl_config->K_i * cumulative_error;
+  /* Assume oscillation frequency is roughly twice EGO response time */
+  float T_u = cl_config->ego_response_time * 2.0f;
+
+  /* Ziegler-Nichols method */
+  float K_p = 0.45f * cl_config->K_u;
+  float K_i = 0.0f;
+  if (T_u > 0) {
+    K_i = 0.54f * cl_config->K_u / T_u;
+  }
+
+  float correction = K_p * error + K_i * cumulative_error;
 
   if (correction > cl_config->max_correction) {
     correction = cl_config->max_correction;
@@ -205,6 +185,8 @@ void handle_closed_loop_feedback() {
 
   calculated_values.closed_loop_correction = correction;
   calculated_values.closed_loop_cumulative_error = cumulative_error;
+
+  last_time = time;
 }
 
 void handle_emergency_shutdown() {
