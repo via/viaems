@@ -173,7 +173,7 @@ void handle_closed_loop_feedback() {
   }
 
   /* Calculate notable event from 100 ms ago */
-  int delay_ms = 100;
+  int delay_ms = 200;
   int event_pos = tuning_event_pos - (delay_ms / 10);
   while (event_pos < 0) {
     event_pos += NUM_TUNING_EVENTS;
