@@ -16,8 +16,8 @@ struct cel_config {
 };
 
 struct closed_loop_config {
-  float K_p; /* Correction proportionality constant */
-  float K_i; /* Corretion integration constant */
+  float ego_response_time; /* TODO: table lookup */
+  float K_u; /* Ulimate gain */
   float max_correction;
   float max_cumulative_error;
 };
