@@ -186,21 +186,21 @@ void handle_closed_loop_feedback() {
 
   float error = tuning_events[tuning_event_pos].ego - event.lambda;
 
+  struct closed_loop_config *cl_config = &config.closed_loop;
   /* Integral sampled at 100 hz */
   float cumulative_error = calculated_values.closed_loop_cumulative_error + (error / 100);
-  if (cumulative_error > config.closed_loop.max_cumulative_error) {
-    cumulative_error = config.closed_loop.max_cumulative_error;
-  } else if (cumulative_error < -config.closed_loop.max_cumulative_error) {
-    cumulative_error = -config.closed_loop.max_cumulative_error;
+  if (cumulative_error > cl_config->max_cumulative_error) {
+    cumulative_error = cl_config->max_cumulative_error;
+  } else if (cumulative_error < -cl_config->max_cumulative_error) {
+    cumulative_error = -cl_config->max_cumulative_error;
   }
 
-  float correction = config.closed_loop.K_p * error + 
-    config.closed_loop.K_i * cumulative_error;
+  float correction = cl_config->K_p * error + cl_config->K_i * cumulative_error;
 
-  if (correction > config.closed_loop.max_correction) {
-    correction = config.closed_loop.max_correction;
-  } else if (correction < -config.closed_loop.max_correction) {
-    correction = -config.closed_loop.max_correction;
+  if (correction > cl_config->max_correction) {
+    correction = cl_config->max_correction;
+  } else if (correction < -cl_config->max_correction) {
+    correction = -cl_config->max_correction;
   }
 
   calculated_values.closed_loop_correction = correction;
