@@ -63,6 +63,7 @@ extern struct table tipin_vs_tpsrate_and_tps;
 extern struct table tipin_duration_vs_rpm;
 extern struct table boost_control_pwm;
 extern struct table dwell_ms_vs_brv;
+extern struct table ego_response_time;
 
 int config_valid();
 

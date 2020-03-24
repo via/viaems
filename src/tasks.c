@@ -132,7 +132,7 @@ static int tuning_point_usable() {
 }
 
 static float current_tuning_error() {
-  float lambda = config.sensors[SENSOR_MAP].processed_value;
+  float lambda = calculated_values.lambda;
   float ego = config.sensors[SENSOR_EGO].processed_value;
 
   return ego - lambda;
@@ -166,7 +166,9 @@ void handle_closed_loop_feedback() {
   }
 
   /* Assume oscillation frequency is roughly twice EGO response time */
-  float T_u = cl_config->ego_response_time * 2.0f;
+  float map = config.sensors[SENSOR_MAP].processed_value;
+  float rpm = config.decoder.rpm;
+  float T_u = interpolate_table_twoaxis(cl_config->ego_response_time, map, rpm) * 2.0f;
 
   /* Ziegler-Nichols method */
   float K_p = 0.45f * cl_config->K_u;
