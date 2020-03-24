@@ -16,7 +16,7 @@ struct cel_config {
 };
 
 struct closed_loop_config {
-  float ego_response_time; /* TODO: table lookup */
+  struct table *ego_response_time;
   float K_u; /* Ulimate gain */
   float max_correction;
   float max_cumulative_error;
