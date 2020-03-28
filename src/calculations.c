@@ -176,31 +176,29 @@ void calculate_fueling() {
   calculated_values.tipin =
     calculate_tipin_enrichment(tps, tpsrate, config.decoder.rpm);
 
-  /* Apply closed loop correction as a percentage if MAP < 120 */
-  float closed_loop_correction = 1.0f;
-  if (map < 120.0f) {
-    closed_loop_correction = (100.0f + calculated_values.closed_loop_correction) / 100.0f;
-  }
-
   calculated_values.airmass_per_cycle = calculate_airmass(ve, map, aap, iat);
 
   float fuel_vol_at_stoich =
     calculate_fuel_volume(calculated_values.airmass_per_cycle, frt);
 
-  calculated_values.fuelvol_per_cycle = fuel_vol_at_stoich * closed_loop_correction / lambda;
+  calculated_values.fuelvol_per_cycle = fuel_vol_at_stoich / lambda;
 
   float raw_pw_us =
     (calculated_values.fuelvol_per_cycle +
-     (calculated_values.tipin / 1000)) / + /* Tipin unit is mm^3 */
+     (calculated_values.tipin / 1000)) / /* Tipin unit is mm^3 */
     config.fueling.injector_cc_per_minute *
     60000000 /                           /* uS per minute */
     config.fueling.injections_per_cycle; /* This many pulses */
+
+  raw_pw_us *= ete;
+  raw_pw_us += (idt * 1000.0f);
+  raw_pw_us += calculated_values.closed_loop_correction_us;
 
   calculated_values.ete = ete;
   calculated_values.idt = idt;
   calculated_values.ve = ve;
   calculated_values.lambda = lambda;
-  calculated_values.fueling_us = (raw_pw_us * ete) + (idt * 1000);
+  calculated_values.fueling_us = raw_pw_us > 0 ? raw_pw_us : 0;
 
   stats_finish_timing(STATS_FUELCALC_TIME);
 }
