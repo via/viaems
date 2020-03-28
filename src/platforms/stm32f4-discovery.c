@@ -890,6 +890,7 @@ void platform_init() {
   stats_init(168000000);
 }
 
+#define BOOTLOADER_ADDR 0x1fff0000
 void platform_reset_into_bootloader() {
   handle_emergency_shutdown();
 
@@ -950,8 +951,8 @@ void platform_reset_into_bootloader() {
   /* 168 Mhz clock */
   rcc_clock_setup_pll(&rcc_hsi_configs[RCC_CLOCK_3V3_168MHZ]);
 
-  __asm__ volatile("msr msp, %0" ::"g"(*(volatile uint32_t *)0x20001000));
-  (*(void (**)())(0x1fff0004))();
+  __asm__ volatile("msr msp, %0" ::"g"(*(volatile uint32_t *)BOOTLOADER_ADDR));
+  (*(void (**)())(BOOTLOADER_ADDR + 4))();
   while (1)
     ;
 }
