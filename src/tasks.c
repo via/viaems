@@ -121,12 +121,11 @@ void handle_check_engine_light() {
 
 /* Record usable events at 100 hz */
 static int tuning_point_usable() {
-  
 
   int is_usable = (calculated_values.tipin < 0.1f) &&
-    (config.decoder.rpm > 300) &&
-    (config.sensors[SENSOR_TPS].derivative.value < 10.0f) &&
-    (config.sensors[SENSOR_EGO].derivative.value < 10.0f);
+                  (config.decoder.rpm > 300) &&
+                  (config.sensors[SENSOR_TPS].derivative.value < 10.0f) &&
+                  (config.sensors[SENSOR_EGO].derivative.value < 10.0f);
 
   return is_usable;
 }
@@ -138,7 +137,6 @@ static float current_tuning_error() {
   return ego - lambda;
 }
 
-
 void handle_closed_loop_feedback() {
 
   static timeval_t last_time = 0;
@@ -149,43 +147,37 @@ void handle_closed_loop_feedback() {
     return;
   }
 
-  if (!tuning_point_usable()) {
+  struct closed_loop_config *cl = &config.closed_loop;
+  float map = config.sensors[SENSOR_MAP].processed_value;
+
+  if (map > cl->low_load_map) {
     return;
   }
 
   float error = current_tuning_error();
 
-  struct closed_loop_config *cl_config = &config.closed_loop;
-
   /* Integrate cumulative error over seconds, so convert 100hz to 1hz */
-  float cumulative_error = calculated_values.closed_loop_cumulative_error + (error / 100.0f);
-  if (cumulative_error > cl_config->max_cumulative_error) {
-    cumulative_error = cl_config->max_cumulative_error;
-  } else if (cumulative_error < -cl_config->max_cumulative_error) {
-    cumulative_error = -cl_config->max_cumulative_error;
+  float cumulative_error =
+    calculated_values.closed_loop_cumulative_error + (error / 100.0f);
+  float max_cumulative_error =
+    2.0f * cl->low_load_max_correction_us / cl->low_load_K_i;
+
+  if (cumulative_error > max_cumulative_error) {
+    cumulative_error = max_cumulative_error;
+  } else if (cumulative_error < -max_cumulative_error) {
+    cumulative_error = -max_cumulative_error;
   }
 
-  /* Assume oscillation frequency is roughly twice EGO response time */
-  float map = config.sensors[SENSOR_MAP].processed_value;
-  float rpm = config.decoder.rpm;
-  float T_u = interpolate_table_twoaxis(cl_config->ego_response_time, map, rpm) * 2.0f;
+  float correction =
+    cl->low_load_K_p * error + cl->low_load_K_i * cumulative_error;
 
-  /* Ziegler-Nichols method */
-  float K_p = 0.45f * cl_config->K_u;
-  float K_i = 0.0f;
-  if (T_u > 0) {
-    K_i = 0.54f * cl_config->K_u / T_u;
+  if (correction > cl->low_load_max_correction_us) {
+    correction = cl->low_load_max_correction_us;
+  } else if (correction < -cl->low_load_max_correction_us) {
+    correction = -cl->low_load_max_correction_us;
   }
 
-  float correction = K_p * error + K_i * cumulative_error;
-
-  if (correction > cl_config->max_correction) {
-    correction = cl_config->max_correction;
-  } else if (correction < -cl_config->max_correction) {
-    correction = -cl_config->max_correction;
-  }
-
-  calculated_values.closed_loop_correction = correction;
+  calculated_values.closed_loop_correction_us = correction;
   calculated_values.closed_loop_cumulative_error = cumulative_error;
 
   last_time = time;
