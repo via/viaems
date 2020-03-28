@@ -50,7 +50,9 @@ void calculate_ignition() {
     calculated_values.dwell_us = config.ignition.dwell_us;
     break;
   case DWELL_BRV:
-    calculated_values.dwell_us = 1000 * interpolate_table_oneaxis(config.dwell, config.sensors[SENSOR_BRV].processed_value);
+    calculated_values.dwell_us =
+      1000 * interpolate_table_oneaxis(
+               config.dwell, config.sensors[SENSOR_BRV].processed_value);
     break;
   }
 }
@@ -198,7 +200,7 @@ void calculate_fueling() {
   calculated_values.idt = idt;
   calculated_values.ve = ve;
   calculated_values.lambda = lambda;
-  calculated_values.fueling_us = raw_pw_us > 0 ? raw_pw_us : 0;
+  calculated_values.fueling_us = raw_pw_us > 0.0f ? raw_pw_us : 0;
 
   stats_finish_timing(STATS_FUELCALC_TIME);
 }
