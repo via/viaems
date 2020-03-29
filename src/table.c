@@ -1,10 +1,8 @@
+#include <assert.h>
 #include "table.h"
 
 float interpolate_table_oneaxis(struct table *t, float val) {
-  if (t->num_axis != 1) {
-    while (1)
-      ;
-  }
+  assert(t->num_axis == 1);
   /* Clamp to bottom */
   if (val < t->axis[0].values[0]) {
     val = t->axis[0].values[0];
@@ -30,10 +28,7 @@ float interpolate_table_twoaxis(struct table *t, float x, float y) {
   float x1 = 0, x2 = 0, y1 = 0, y2 = 0;
   int x1_ind = 0, y1_ind = 0;
   float xy1, xy2, xy;
-  if (t->num_axis != 2) {
-    while (1)
-      ;
-  }
+  assert(t->num_axis == 2);
   /* Clamp X to bottom */
   if (x < t->axis[0].values[0]) {
     x = t->axis[0].values[0];

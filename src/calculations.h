@@ -49,6 +49,9 @@ struct calculated_values {
   float ete;
   float closed_loop_correction_us; /* short term fuel trim correction us */
   float closed_loop_cumulative_error;
+
+  float closed_loop_ego_delay;
+  float closed_loop_corrected_ve;
 };
 
 extern struct calculated_values calculated_values;
