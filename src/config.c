@@ -192,18 +192,18 @@ struct table boost_control_pwm __attribute__((section(".configdata"))) = {
 struct table ego_response_time  __attribute__((section(".configdata"))) = {
   .title = "tipin_enrich_amount", .num_axis = 2,
   .axis = { { 
-      .name = "MAP", .num = 3,
-      .values = {20, 40, 80},
-    },
-    { .name = "RPM", .num = 3,
+      .name = "RPM", .num = 3,
       .values = {1000, 2000, 4000},
+    },
+    { .name = "MAP", .num = 3,
+      .values = {20, 40, 80},
     },
   },
   .data = {
     .two = {
-      {2.5, 1.0, .4},
-      {1.5, .5, .2},
-      {.5, .3, .1},
+      {2.5, 1.5, .5},
+      {1.0, .5, .3},
+      {.4, .2, .1},
     },
   },
 };
@@ -312,9 +312,10 @@ struct config config __attribute__((section(".configdata"))) = {
     .lean_boost_ego = .91,
   },
   .closed_loop = {
+    .ego_response_time = &ego_response_time,
     .low_load_max_correction_us = 100,
-    .low_load_K_p = 100.0,
-    .low_load_K_i = 80.0,
+    .low_load_K_p = 40.0,
+    .low_load_K_i = 50.0,
     .low_load_map = 40.0,
   },
 };

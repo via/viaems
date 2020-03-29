@@ -16,8 +16,12 @@ struct cel_config {
 };
 
 struct closed_loop_config {
+  /* Full table VE correction */
   struct table *ve_correction;
+  struct table *ego_response_time;
+  float ve_correction_max_percent;
 
+  /* PID Pulse width correction for low load */
   float low_load_K_p;
   float low_load_K_i;
   float low_load_max_correction_us;

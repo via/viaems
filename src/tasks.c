@@ -119,42 +119,50 @@ void handle_check_engine_light() {
            determine_cel_pin_state(cel_state, current_time(), last_cel));
 }
 
-/* Record usable events at 100 hz */
+struct tuning_data_point {
+  float rpm;
+  float map;
+  float lambda;
+  float ve;
+  int is_usable;
+};
+
 static int tuning_point_usable() {
 
-  int is_usable = (calculated_values.tipin < 0.1f) &&
+  int is_usable = (calculated_values.tipin < 0.1f) && !sensor_fault_status() &&
                   (config.decoder.rpm > 300) &&
-                  (config.sensors[SENSOR_TPS].derivative.value < 10.0f) &&
-                  (config.sensors[SENSOR_EGO].derivative.value < 10.0f);
+
+                  (config.sensors[SENSOR_TPS].derivative.value < 50.0f) &&
+                  (config.sensors[SENSOR_TPS].derivative.value > -50.0f) &&
+
+                  (config.sensors[SENSOR_MAP].derivative.value < 250.0f) &&
+                  (config.sensors[SENSOR_MAP].derivative.value > -250.0f) &&
+
+                  (config.sensors[SENSOR_EGO].derivative.value < .3f) &&
+                  (config.sensors[SENSOR_EGO].derivative.value > -.3f);
 
   return is_usable;
 }
 
-static float current_tuning_error() {
-  float lambda = calculated_values.lambda;
-  float ego = config.sensors[SENSOR_EGO].processed_value;
-
-  return ego - lambda;
+static struct tuning_data_point current_tuning_data_point() {
+  return (struct tuning_data_point){
+    .rpm = config.decoder.rpm,
+    .map = config.sensors[SENSOR_MAP].processed_value,
+    .lambda = calculated_values.lambda,
+    .ve = calculated_values.ve,
+    .is_usable = tuning_point_usable(),
+  };
 }
 
-void handle_closed_loop_feedback() {
+static float current_tuning_error(struct tuning_data_point *reference) {
+  float ego = config.sensors[SENSOR_EGO].processed_value;
 
-  static timeval_t last_time = 0;
-  timeval_t time = current_time();
+  return ego - reference->lambda;
+}
 
-  /* Wait until 10ms has passed */
-  if (time - last_time < time_from_us(10000)) {
-    return;
-  }
-
-  struct closed_loop_config *cl = &config.closed_loop;
-  float map = config.sensors[SENSOR_MAP].processed_value;
-
-  if (map > cl->low_load_map) {
-    return;
-  }
-
-  float error = current_tuning_error();
+static void handle_low_load_pw_correction(struct closed_loop_config *cl,
+                                          struct tuning_data_point *point) {
+  float error = current_tuning_error(point);
 
   /* Integrate cumulative error over seconds, so convert 100hz to 1hz */
   float cumulative_error =
@@ -179,8 +187,68 @@ void handle_closed_loop_feedback() {
 
   calculated_values.closed_loop_correction_us = correction;
   calculated_values.closed_loop_cumulative_error = cumulative_error;
+}
+
+
+static void handle_closed_loop_ve_correction(struct closed_loop_config *cl, struct tuning_data_point *reference) {
+  (void)cl;
+  (void)reference;
+
+  float correction;
+  if (reference->is_usable) {
+    correction = (reference->lambda + current_tuning_error(reference)) / reference->lambda;
+  } else {
+    correction = 0.0f;
+  }
+
+  calculated_values.closed_loop_corrected_ve = reference->ve * correction;
+}
+
+void handle_closed_loop_feedback() {
+
+  #define NUM_HISTORICAL_POINTS 32
+  static struct tuning_data_point historical_points[NUM_HISTORICAL_POINTS] = {0};
+  static size_t historical_points_pos = 0;
+
+  static timeval_t last_time = 0;
+  timeval_t time = current_time();
+
+  /* Wait until 10ms has passed */
+  if (time - last_time < time_from_us(10000)) {
+    return;
+  }
 
   last_time = time;
+
+  struct closed_loop_config *cl = &config.closed_loop;
+  struct tuning_data_point point = current_tuning_data_point();
+
+  if (point.map <= cl->low_load_map) {
+    handle_low_load_pw_correction(cl, &point);
+  }
+
+
+  historical_points[historical_points_pos] = point;
+  historical_points_pos = (historical_points_pos + 1) % NUM_HISTORICAL_POINTS;
+
+  float delay_in_seconds = interpolate_table_twoaxis(cl->ego_response_time, point.rpm, point.map);
+  if (delay_in_seconds < 0) {
+    delay_in_seconds = 0;
+  }
+  size_t delay_in_index = delay_in_seconds * 100; /* Convert to 100ths of second, 100 hz */
+  if (delay_in_index >= NUM_HISTORICAL_POINTS) {
+    delay_in_index = NUM_HISTORICAL_POINTS - 1;
+  }
+  
+  int historical_index = historical_points_pos - delay_in_index;
+  if (historical_index < 0) {
+    historical_index += NUM_HISTORICAL_POINTS;
+  }
+  struct tuning_data_point *historical_reference = &historical_points[historical_index];
+
+  handle_closed_loop_ve_correction(cl, historical_reference);
+  calculated_values.closed_loop_ego_delay = delay_in_seconds;
+
 }
 
 void handle_emergency_shutdown() {
