@@ -52,6 +52,8 @@
  *
  *  CAN2:
  *    PB5, PB6
+ *  CAN1:
+ *    PB8, PB9
  *
  *  USB:
  *    PA9, PA11, PA12
@@ -64,11 +66,28 @@
  *
  *  Configurable pin mapping:
  *  Scheduled Outputs:
- *   - 0-15 maps to port D, pins 0-15
+ *   - 0-15 maps to port E, pins 0-15
  *  PWM Outputs
- *   - 0-PC6  1-PC7 2-PC8 3-PC9 TIM3 channel 1-4
+ *   - 0-PB0  1-PB1 2-PB3 3-PB4 TIM3 channel 1-4
+ *   - 4-PD12  5-PD13 6-PD14 7-PD15 TIM4 channel 1-4
+ *   - 8-PA8 (TIM1 CH1) 9-PA10 (TIM1 CH3)
  *  GPIO (Digital Sensor or Output)
- *   - 0-15 Maps to Port E
+ *   - 0-15 Maps to Port D
+ *     * Except D2 if SDIO enabled
+ *     * D12-D15 overlap with pwm
+ *  EXTRA:
+ *     PC0-PC7 - Expansion/Control/Internal ADC
+ *     PA4-7 SPI1
+ *
+ *  SDIO:
+ *    PD2 - SDCMD
+ *    PC12 - SDCLK
+ *    PC8-PC11 SD D0-3
+ *
+ *
+ *   Backup:
+ *     PC14/15 - OSC32
+ *     VBAT
  *
  */
 
