@@ -137,14 +137,46 @@ void handle_emergency_shutdown() {
   }
 }
 
+#ifdef LOG_REPLAY
+static const uint8_t replay_img[] = {
+#include "replay.xxd"
+};
+#else
+static const uint8_t replay_img[] = {};
+#endif
+
+struct replay_ptr {
+  uint32_t rpm;
+  float map;
+};
+static struct replay_ptr *replay_ptr = (struct replay_ptr *)&replay_img;
+static size_t replay_count = sizeof(replay_img) / sizeof(struct replay_ptr);
+static timeval_t last_replay = 0;
+
+static void handle_log_replay() {
+  if (time_diff(current_time(), last_replay) > time_from_us(10000)) {
+    set_test_trigger_rpm(replay_ptr->rpm);
+    replay_ptr++;
+    replay_count--;
+    last_replay = current_time();
+  }
+  if (replay_count == 0) {
+    replay_ptr = (struct replay_ptr *)&replay_img;
+    replay_count = sizeof(replay_img) / sizeof(struct replay_ptr); 
+  }
+
+}
+
 void run_tasks() {
   stats_start_timing(STATS_TASK_TIME);
   handle_fuel_pump();
   handle_boost_control();
   handle_idle_control();
   handle_check_engine_light();
+  handle_log_replay();
   stats_finish_timing(STATS_TASK_TIME);
 }
+
 
 #ifdef UNITTEST
 #include <check.h>
