@@ -225,9 +225,20 @@ struct event {
   uint16_t values;
 };
 
-
 static void do_test_trigger(int interrupt_fd) {
+  static timeval_t last_trigger_time = 0;
   static int trigger = 0;
+
+  if (!test_trigger_rpm) {
+    return;
+  }
+
+  timeval_t time_between_teeth = time_from_rpm_diff(test_trigger_rpm, 30);
+  timeval_t curtime = current_time();
+  if (time_diff(curtime, last_trigger_time) < time_between_teeth) {
+    return;
+  }
+  last_trigger_time = curtime;
 
   struct event ev = { .type = TRIGGER0_W_TIME, .time = curtime};
   if (write(interrupt_fd, &ev, sizeof(ev)) < 0) {
@@ -378,17 +389,12 @@ void *platform_timebase_thread(void *_interrupt_fd) {
 
     curtime += 1;
 
-
     do_output_slots();
-
-    /* TODO: make configurable */
-    if ((curtime % 5000) == 0) {
-      do_test_trigger(*interrupt_fd);
-    }
 
     if ((curtime % 10000) == 0) {
       run_tasks();
     }
+    do_test_trigger(*interrupt_fd);
     
     if (eventtimer_enable && (eventtimer_time + 1 == curtime)) {
       struct event event = {.type = SCHEDULED_EVENT};
@@ -398,10 +404,7 @@ void *platform_timebase_thread(void *_interrupt_fd) {
       }
     }
 
-  
   } while(1);
-
-
 }
 
 static int interrupt_pipes[2];
