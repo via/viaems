@@ -105,11 +105,11 @@ static int sched_entry_disable(const struct sched_entry *en, timeval_t time) {
   *addr = value;
   timeval_t after_time = current_time();
 
-  if (time_in_range(time, before_time, after_time + 1)) {
+  if (time_in_range(time - 1, before_time, after_time)) {
     set_output(en->pin, en->val);
     return 0;
   }
-  if (time_before(time, before_time) || en->fired) {
+  if (time_before(time - 1, before_time) || en->fired) {
     return 0;
   }
 
@@ -149,11 +149,11 @@ static int sched_entry_enable(const struct sched_entry *en, timeval_t time) {
   *addr = value;
   timeval_t after_time = current_time();
 
-  if (time_in_range(time, before_time, after_time + 1)) {
+  if (time_in_range(time - 1, before_time, after_time)) {
     set_output(en->pin, en->val);
   }
 
-  if (time_before(time, before_time)) {
+  if (time_before(time - 1, before_time)) {
     return 0;
   }
 
