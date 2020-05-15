@@ -211,12 +211,9 @@ void clock_nanosleep_busywait(struct timespec until) {
 
 typedef enum event_type {
   TRIGGER0,
-  TRIGGER0_W_TIME,
   TRIGGER1,
-  TRIGGER1_W_TIME,
-  SCHEDULED_EVENT,
   OUTPUT_CHANGED,
-  GPIO_CHANGED,
+  SCHEDULED_EVENT,
 } event_type;
 
 struct event {
@@ -240,7 +237,7 @@ static void do_test_trigger(int interrupt_fd) {
   }
   last_trigger_time = curtime;
 
-  struct event ev = { .type = TRIGGER0_W_TIME, .time = curtime};
+  struct event ev = { .type = TRIGGER0, .time = curtime};
   if (write(interrupt_fd, &ev, sizeof(ev)) < 0) {
     perror("write");
     exit(3);
@@ -248,7 +245,7 @@ static void do_test_trigger(int interrupt_fd) {
 
   trigger++;
   if (trigger == 24) {
-    struct event ev = { .type = TRIGGER1_W_TIME, .time = curtime};
+    struct event ev = { .type = TRIGGER1, .time = curtime};
     if (write(interrupt_fd, &ev, sizeof(ev)) < 0) {
       perror("write");
       exit(4);
@@ -256,8 +253,6 @@ static void do_test_trigger(int interrupt_fd) {
     trigger = 0;
   }
 }
-
-static mqd_t output_queue;
 
 void *platform_interrupt_thread(void *_interrupt_fd) {
   int *interrupt_fd = (int *)_interrupt_fd;
@@ -282,21 +277,16 @@ void *platform_interrupt_thread(void *_interrupt_fd) {
     }
 
 
+    char output[64];
     switch (msg.type) {
       case TRIGGER0:
-        mq_send(output_queue, (const char *)&msg, sizeof(msg), 0);
-        decoder_update_scheduling(&(struct decoder_event){.trigger = 0, .time = curtime}, 1);
-        break;
-      case TRIGGER0_W_TIME:
-        mq_send(output_queue, (const char *)&msg, sizeof(msg), 0);
+        sprintf(output, "# TRIGGER0 %d\n", msg.time);
+        write(STDERR_FILENO, output, strlen(output));
         decoder_update_scheduling(&(struct decoder_event){.trigger = 0, .time = msg.time}, 1);
         break;
       case TRIGGER1:
-        mq_send(output_queue, (const char *)&msg, sizeof(msg), 0);
-        decoder_update_scheduling(&(struct decoder_event){.trigger = 1, .time = curtime}, 1);
-        break;
-      case TRIGGER1_W_TIME:
-        mq_send(output_queue, (const char *)&msg, sizeof(msg), 0);
+        sprintf(output, "# TRIGGER1 %d\n", msg.time);
+        write(STDERR_FILENO, output, strlen(output));
         decoder_update_scheduling(&(struct decoder_event){.trigger = 1, .time = msg.time}, 1);
         break;
       case SCHEDULED_EVENT:
@@ -339,12 +329,9 @@ static void do_output_slots() {
   old_fifo_off_mask = output_slots[read_buffer][read_slot].off_mask;
   
   if (cur_outputs != old_outputs) {
-    const struct event msg = {
-      .type = OUTPUT_CHANGED,
-      .time = curtime,
-      .values = cur_outputs,
-    };
-    mq_send(output_queue, (const char *)&msg, sizeof(msg), 0);
+    char output[64];
+    sprintf(output, "# OUTPUTS %lu %2x\n", (long unsigned)curtime, cur_outputs);
+    write(STDERR_FILENO, output, strlen(output));
     console_record_event((struct logged_event){
       .time = curtime,
       .value = cur_outputs,
@@ -413,16 +400,6 @@ void platform_init() {
 
   /* Set stdin nonblock */
   fcntl(STDIN_FILENO, F_SETFL, fcntl(STDIN_FILENO, F_GETFL, 0) | O_NONBLOCK);
-
-  const char *output_queue_path = "/viaems_output_queue";
-  struct mq_attr mq_attrs = {
-    .mq_msgsize = sizeof(struct event),
-    .mq_maxmsg = 512,
-  };
-  output_queue = mq_open(output_queue_path, O_WRONLY | O_CREAT | O_NONBLOCK, S_IWUSR | S_IRUSR | S_IROTH, &mq_attrs);
-  if (output_queue == -1) {
-    perror("mq_open");
-  }
 
   pipe(interrupt_pipes);
 
