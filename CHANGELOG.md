@@ -11,6 +11,7 @@ port A.
 - Better ADC strategy:
   - Faster and more deterministic sampling
   - Implement customizable averaging windows based on crank angles
+- Fix occasional miss due to incorrectly descheduling events
 
 ### 1.1.0 (2019 Dec 14)
 Introduces a breaking change with the console format for tables, as well as
