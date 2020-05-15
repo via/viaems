@@ -28,10 +28,10 @@ static int sched_entry_has_fired(struct sched_entry *en) {
   int ret = 0;
   int ints_on = disable_interrupts();
 
-  if (en->buffer) {
-    if (time_in_range(en->time, en->buffer->start, current_time())) {
-      ret = 1;
-    }
+  if (en->buffer && 
+      time_before(en->buffer->start, current_time()) &&
+      time_in_range(en->time, en->buffer->start, current_time())) {
+    ret = 1;
   }
   if (en->fired) {
     ret = 1;
@@ -82,7 +82,8 @@ static int sched_entry_disable(const struct sched_entry *en, timeval_t time) {
 
   assert(!interrupts_enabled());
   /* before either buffer starts */
-  if (time_before(time, output_buffers[current_output_buffer()].start)) {
+  if (time_before(time, output_buffers[0].start) &&
+      time_before(time, output_buffers[1].start)) {
     return 0;
   }
 
@@ -125,7 +126,8 @@ static int sched_entry_enable(const struct sched_entry *en, timeval_t time) {
 
   assert(!interrupts_enabled());
   /* before either buffer starts */
-  if (time_before(time, output_buffers[current_output_buffer()].start)) {
+  if (time_before(time, output_buffers[0].start) &&
+      time_before(time, output_buffers[1].start)) {
     return 0;
   }
 
