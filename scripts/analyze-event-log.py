@@ -39,12 +39,12 @@ TICKRATE = 4000000
 
 config = {
         "pins": {
-            "0": {"type": "ignition", "angles": [0.0, 360.0]},
-            "1": {"type": "ignition", "angles": [120.0, 480.0]},
-            "2": {"type": "ignition", "angles": [240.0, 600.0]},
-            "8": {"type": "fuel", "angles": [0.0, 360.0]},
-            "9": {"type": "fuel", "angles": [120.0, 480.0]},
-            "10": {"type": "fuel", "angles": [240.0, 600.0]},
+            "0": {"fires": 0, "type": "ignition", "angles": [0.0, 360.0]},
+            "1": {"fires": 0, "type": "ignition", "angles": [120.0, 480.0]},
+            "2": {"fires": 0, "type": "ignition", "angles": [240.0, 600.0]},
+            "8": {"fires": 0, "type": "fuel", "angles": [0.0, 360.0]},
+            "9": {"fires": 0, "type": "fuel", "angles": [120.0, 480.0]},
+            "10": {"fires": 0, "type": "fuel", "angles": [240.0, 600.0]},
             }
         }
 
@@ -104,10 +104,11 @@ class Validator:
 
     def new_rev(self):
         self.rev += 1
-        self.evcount = sum([len(config["pins"][x]["angles"]) for x in config["pins"]])
-        if self.events_for_last_rev != self.evcount:
-            print("Bad event count, rev {}".format(self.rev))
-        self.events_for_last_rev = 0
+        for n, pin in self.pins.items():
+            delta = pin['fires'] - len(pin['angles'])
+            if delta != 0:
+                print("Bad event count, rev {}, pin {} ({})".format(self.rev, n, delta))
+            pin['fires'] = 0
 
     def _validate_ignition(self, time, pin, duration, angle):
         for possible_angle in pin["angles"]:
@@ -149,11 +150,11 @@ class Validator:
         if pin["type"] == "ignition":
             success = self._validate_ignition(time, pin, duration / (TICKRATE / 1000), angle)
             if success:
-                self.events_for_last_rev += 1
+                pin['fires'] += 1
         elif pin["type"] == "fuel": 
             success = self._validate_fueling(time, pin, duration / (TICKRATE / 1000), angle)
             if success:
-                self.events_for_last_rev += 1
+                pin['fires'] += 1
 
 class Outputs:
     def __init__(self):
