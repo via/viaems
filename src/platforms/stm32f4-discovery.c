@@ -3,6 +3,7 @@
 #include <libopencm3/cm3/dwt.h>
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/cm3/scb.h>
+#include <libopencm3/cm3/systick.h>
 #include <libopencm3/stm32/adc.h>
 #include <libopencm3/stm32/dma.h>
 #include <libopencm3/stm32/exti.h>
@@ -69,6 +70,16 @@
  *   - 0-PC6  1-PC7 2-PC8 3-PC9 TIM3 channel 1-4
  *  GPIO (Digital Sensor or Output)
  *   - 0-15 Maps to Port E
+ *
+ *  nvic priorities:
+ *    tim2 (triggers) 32
+ *    tim5 (event timer) 32
+ *    dma2s1 (buffer swap) 16
+ *    dma1s3 (adc) 64
+ *    tim6 (test trigger) 0
+ *
+ *    unset:
+ *    otg (usb) 0
  *
  */
 
@@ -888,6 +899,16 @@ void platform_init() {
   }
   dwt_enable_cycle_counter();
   stats_init(168000000);
+
+  /* Set up systick for 100 hz */
+	systick_set_reload(1680000);
+	systick_set_clocksource(STK_CSR_CLKSOURCE_AHB);
+	systick_counter_enable();
+	systick_interrupt_enable();
+}
+
+void sys_tick_handler(void) {
+  run_tasks();
 }
 
 #define BOOTLOADER_ADDR 0x1fff0000

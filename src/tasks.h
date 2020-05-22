@@ -15,11 +15,8 @@ struct cel_config {
   float lean_boost_ego;
 };
 
-void handle_fuel_pump();
-void handle_boost_control();
-void handle_check_engine_light();
-void handle_idle_control();
 void handle_emergency_shutdown();
+void run_tasks();
 
 #ifdef UNITTEST
 #include <check.h>
