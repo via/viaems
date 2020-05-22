@@ -3,6 +3,14 @@
 #define _POSIX_C_SOURCE 1
 #endif
 
+#include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <strings.h>
+
+#include <cbor.h>
+
 #include "console.h"
 #include "calculations.h"
 #include "config.h"
@@ -11,11 +19,6 @@
 #include "sensors.h"
 #include "stats.h"
 
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <strings.h>
 
 static struct console console;
 
@@ -94,16 +97,19 @@ static void console_get_feed(const struct console_config_node *self,
 
 static void console_get_time(const struct console_config_node *self
                              __attribute__((unused)),
-                             char *dest,
+                             char *_dest,
                              char *remaining __attribute__((unused))) {
-  sprintf(dest, "%u", (unsigned int)current_time());
+
+  CborEncoder *enc = (CborEncoder *)_dest;
+  cbor_encode_uint(enc, current_time());
 }
 
 static void console_get_float(const struct console_config_node *self,
-                              char *dest,
+                              char *_dest,
                               char *remaining __attribute__((unused))) {
   float *v = self->val;
-  sprintf(dest, "%.4f", *v);
+  CborEncoder *enc = (CborEncoder *)_dest;
+  cbor_encode_float(enc, *v);
 }
 
 static void console_set_float(const struct console_config_node *self,
@@ -113,10 +119,11 @@ static void console_set_float(const struct console_config_node *self,
 }
 
 static void console_get_uint(const struct console_config_node *self,
-                             char *dest,
+                             char *_dest,
                              char *remaining __attribute__((unused))) {
   unsigned int *v = self->val;
-  sprintf(dest, "%u", *v);
+  CborEncoder *enc = (CborEncoder *)_dest;
+  cbor_encode_uint(enc, *v);
 }
 
 static void console_set_uint(const struct console_config_node *self,
@@ -1244,9 +1251,7 @@ int console_parse_request(char *dest, char *line) {
 void console_init() {
   const char *console_feed_defaults[] = {
     "status.current_time",
-    "status.decoder.state",
     "status.decoder.rpm",
-    "status.decoder.loss_reason",
     "status.decoder.rpm_variance",
     "status.decoder.t0_count",
     "status.decoder.t1_count",
@@ -1278,6 +1283,7 @@ void console_init() {
   console_feed_config.n_nodes = count;
 }
 
+#if 0
 static void console_feed_line(char *dest) {
 
   unsigned int i;
@@ -1296,6 +1302,48 @@ static void console_feed_line(char *dest) {
     }
   }
   strcat(dest, "\r\n");
+}
+#endif
+static size_t console_feed_line_keys(uint8_t *dest) {
+  CborEncoder encoder;
+  cbor_encoder_init(&encoder, dest, 1024, 0);
+
+  CborEncoder top_encoder;
+  cbor_encoder_create_map(&encoder, &top_encoder, 2);
+  cbor_encode_text_stringz(&top_encoder, "type");
+  cbor_encode_text_stringz(&top_encoder, "description");
+
+  cbor_encode_text_stringz(&top_encoder, "keys");
+  CborEncoder key_list_encoder;
+  cbor_encoder_create_array(&top_encoder, &key_list_encoder, CborIndefiniteLength);
+  for (int i = 0; i < console_feed_config.n_nodes; i++) {
+    const struct console_config_node *node = console_feed_config.nodes[i];
+    cbor_encode_text_stringz(&key_list_encoder, node->name);
+  }
+  cbor_encoder_close_container(&top_encoder, &key_list_encoder);
+  cbor_encoder_close_container(&encoder, &top_encoder);
+  return cbor_encoder_get_buffer_size(&encoder, dest);
+}
+
+static size_t console_feed_line(uint8_t *dest) {
+  CborEncoder encoder;
+  cbor_encoder_init(&encoder, dest, 1024, 0);
+
+  CborEncoder top_encoder;
+  cbor_encoder_create_map(&encoder, &top_encoder, 2);
+  cbor_encode_text_stringz(&top_encoder, "type");
+  cbor_encode_text_stringz(&top_encoder, "feed");
+
+  cbor_encode_text_stringz(&top_encoder, "values");
+  CborEncoder value_list_encoder;
+  cbor_encoder_create_array(&top_encoder, &value_list_encoder, CborIndefiniteLength);
+  for (int i = 0; i < console_feed_config.n_nodes; i++) {
+    const struct console_config_node *node = console_feed_config.nodes[i];
+    node->get(node, &value_list_encoder, "");
+  }
+  cbor_encoder_close_container(&top_encoder, &value_list_encoder);
+  cbor_encoder_close_container(&encoder, &top_encoder);
+  return cbor_encoder_get_buffer_size(&encoder, dest);
 }
 
 struct {
@@ -1442,8 +1490,18 @@ void console_process() {
 
   console.txbuffer[0] = '\0';
   if (!console_output_events() && console_feed_config.n_nodes) {
-    console_feed_line(console.txbuffer);
-    console_write_full(console.txbuffer, strlen(console.txbuffer));
+    static int count = 0;
+    if (count == 0) {
+      size_t len = console_feed_line_keys((uint8_t*)console.txbuffer);
+      console_write_full(console.txbuffer, len);
+    } else {
+      size_t len = console_feed_line((uint8_t*)console.txbuffer);
+      console_write_full(console.txbuffer, len);
+    }
+    count++;
+    if (count == 100) {
+      count = 0;
+    }
   }
 
   stats_finish_timing(STATS_CONSOLE_TIME);
