@@ -23,12 +23,7 @@ int main() {
   sensors_process(SENSOR_CONST);
   while (1) {
     stats_increment_counter(STATS_MAINLOOP_RATE);
-
     console_process();
-    handle_fuel_pump();
-    handle_boost_control();
-    handle_idle_control();
-    handle_check_engine_light();
   }
 
   return 0;

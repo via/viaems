@@ -51,6 +51,9 @@ struct stats_entry stats_entries[] = {
     .name = "total interrupt time",
     .is_interrupt = 1,
   },
+	[STATS_TASK_TIME] = {
+		.name = "time spent handling tasks",
+	},
 	[STATS_USB_INTERRUPT_TIME] = {
 		.name = "time spent in usb interrupt",
 	},
