@@ -138,25 +138,13 @@ void handle_emergency_shutdown() {
 }
 
 void run_tasks() {
-  static timeval_t last_task_run = 0;
-  static int first_run = 1;
-
   stats_start_timing(STATS_TASK_TIME);
   handle_fuel_pump();
   handle_boost_control();
   handle_idle_control();
   handle_check_engine_light();
-
-  timeval_t curtime = current_time();
-  if (!first_run && time_diff(curtime, last_task_run) > time_from_us(20000)) {
-    handle_emergency_shutdown();
-    abort();
-  }
   stats_finish_timing(STATS_TASK_TIME);
-  last_task_run = curtime;
-  first_run = 0;
 }
-
 
 #ifdef UNITTEST
 #include <check.h>
