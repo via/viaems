@@ -13,6 +13,7 @@
 #include <libopencm3/stm32/spi.h>
 #include <libopencm3/stm32/syscfg.h>
 #include <libopencm3/stm32/timer.h>
+#include <libopencm3/stm32/iwdg.h>
 #include <libopencm3/usb/cdc.h>
 #include <libopencm3/usb/usbd.h>
 
@@ -854,6 +855,18 @@ void platform_init_test_trigger() {
   timer_enable_irq(TIM6, TIM_DIER_UIE);
 }
 
+static void setup_task_handler() {
+  /* Set up systick for 100 hz */
+	systick_set_reload(1680000);
+	systick_set_clocksource(STK_CSR_CLKSOURCE_AHB);
+	systick_counter_enable();
+	systick_interrupt_enable();
+
+  /* Setup IWDG to reset if we pass 30 mS without an interrupt */
+  iwdg_set_period_ms(30);
+  iwdg_start();
+}
+
 void platform_init() {
 
   /* 168 Mhz clock */
@@ -900,15 +913,12 @@ void platform_init() {
   dwt_enable_cycle_counter();
   stats_init(168000000);
 
-  /* Set up systick for 100 hz */
-	systick_set_reload(1680000);
-	systick_set_clocksource(STK_CSR_CLKSOURCE_AHB);
-	systick_counter_enable();
-	systick_interrupt_enable();
+  setup_task_handler();
 }
 
 void sys_tick_handler(void) {
   run_tasks();
+  iwdg_reset();
 }
 
 #define BOOTLOADER_ADDR 0x1fff0000
