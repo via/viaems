@@ -277,6 +277,10 @@ static void hosted_platform_timer(int sig, siginfo_t *info, void *ucontext) {
       .type = EVENT_OUTPUT,
     });
     old_outputs = cur_outputs;
+
+    if ((curtime % 10000) == 0) {
+      run_tasks();
+    }
   }
 
   /* poll for command input */
