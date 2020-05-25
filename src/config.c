@@ -271,7 +271,7 @@ struct config config __attribute__((section(".configdata"))) = {
     .min_fire_time_us = 500,
   },
   .boost_control = {
-    .target_kpa = 165,
+    .target_kpa = 170,
     .min_tps = 90,
     .min_kpa = 120,
     .pin = 1,

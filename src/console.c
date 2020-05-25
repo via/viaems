@@ -1070,7 +1070,7 @@ static struct console_config_node console_config_nodes[] = {
     .val = &config.boost_control.target_kpa,
     .get = console_get_float,
     .set = console_set_float },
-  { .name = "config.tasks.boost_control.output",
+  { .name = "status.boost_control_output",
     .val = &config.boost_control.duty,
     .get = console_get_float,
     .set = console_set_float },
@@ -1299,7 +1299,7 @@ void console_init() {
     "status.sensors.iat",
     "status.sensors.clt",
     "status.sensors.ego",
-    "config.tasks.boost_control.output",
+    "status.boost_control_output",
     NULL,
   };
 
