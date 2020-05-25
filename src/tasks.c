@@ -5,6 +5,26 @@
 #include "util.h"
 #include "stats.h"
 
+float perform_pid(struct pid_controller *pid, float error) {
+  /* Add to integral accumulator and clamp to maximums */
+  pid->i_accum += error;
+  if (pid->i_accum > pid->i_max) {
+    pid->i_accum = pid->i_max;
+  }
+  if (pid->i_accum < -pid->i_max) {
+    pid->i_accum = -pid->i_max;
+  }
+
+  float p_term = pid->p * error;
+  float i_term = pid->i * pid->i_accum;
+  float d_term = pid->d * (error - pid->prev_e);
+
+  pid->prev_e = error;
+
+  return p_term + i_term + d_term;
+}
+
+
 static void handle_fuel_pump() {
   static timeval_t last_valid = 0;
 
@@ -27,19 +47,23 @@ static void handle_fuel_pump() {
 }
 
 static void handle_boost_control() {
-  float duty;
-  if ((config.sensors[SENSOR_MAP].processed_value <
-       config.boost_control.threshhold_kpa)) {
-    if (config.sensors[SENSOR_TPS].processed_value > 90.0f) {
-      duty = 100.0;
-    } else {
-      duty = 0.0;
-    }
-  } else {
-    duty = interpolate_table_oneaxis(config.boost_control.pwm_duty_vs_rpm,
-                                     config.decoder.rpm);
+  if ((config.sensors[SENSOR_MAP].processed_value < config.boost_control.min_kpa) ||
+      (config.sensors[SENSOR_TPS].processed_value < config.boost_control.min_tps)) {
+    set_pwm(config.boost_control.pin, 0.0f);
   }
-  set_pwm(config.boost_control.pin, duty);
+
+  float setpoint = config.boost_control.target_kpa;
+  float error = setpoint - config.sensors[SENSOR_MAP].processed_value;
+
+  float duty = perform_pid(&config.boost_control.pid, error);
+  if (duty < 0.0f) {
+    duty = 0.0f;
+  }
+  if (duty > 100.0f) {
+    duty = 100.0f;
+  }
+  config.boost_control.duty = duty / 100.0f;
+  set_pwm(config.boost_control.pin, config.boost_control.duty);
 }
 
 static void handle_idle_control() {}

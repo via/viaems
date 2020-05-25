@@ -1,11 +1,24 @@
 #ifndef TASKS_H
 #define TASKS_H
 
+struct pid_controller {
+  float p;
+  float i;
+  float i_max;
+  float d;
+
+  float i_accum;
+  float prev_e; /* Used for D calculation */
+};
+
 struct boost_control_config {
-  struct table *pwm_duty_vs_rpm;
-  float threshhold_kpa;
+  float target_kpa;
+  float min_tps;
+  float min_kpa;
+  struct pid_controller pid;
   int pin;
   float overboost;
+  float duty;
 };
 
 struct cel_config {
@@ -17,6 +30,8 @@ struct cel_config {
 
 void handle_emergency_shutdown();
 void run_tasks();
+
+float perform_pid(struct pid_controller *pid, float error);
 
 #ifdef UNITTEST
 #include <check.h>
