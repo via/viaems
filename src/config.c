@@ -273,12 +273,12 @@ struct config config __attribute__((section(".configdata"))) = {
   .boost_control = {
     .target_kpa = 165,
     .min_tps = 90,
-    .min_kpa = 130,
+    .min_kpa = 120,
     .pin = 1,
     .pid = {
       .p = 1,
       .i = 0,
-      .i_max = 0,
+      .i_max = 85,
       .d = 0,
     },
     .overboost = 230,
