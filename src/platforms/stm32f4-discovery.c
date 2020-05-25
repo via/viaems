@@ -921,10 +921,7 @@ void sys_tick_handler(void) {
   iwdg_reset();
 }
 
-#define BOOTLOADER_ADDR 0x1fff0000
-void platform_reset_into_bootloader() {
-  handle_emergency_shutdown();
-
+static void platform_disable_periphs() {
   rcc_periph_reset_pulse(RST_OTGFS);
 
   /* Shut down subsystems */
@@ -978,6 +975,13 @@ void platform_reset_into_bootloader() {
 
   rcc_periph_reset_pulse(RST_OTGFS);
   rcc_periph_clock_disable(RCC_OTGFS);
+}
+
+#define BOOTLOADER_ADDR 0x1fff0000
+void platform_reset_into_bootloader() {
+  handle_emergency_shutdown();
+
+  platform_disable_periphs();
 
   /* 168 Mhz clock */
   rcc_clock_setup_pll(&rcc_hsi_configs[RCC_CLOCK_3V3_168MHZ]);
@@ -1284,6 +1288,11 @@ void platform_load_config() {
 void platform_save_config() {
   volatile unsigned *src, *dest;
   int n_sectors, conf_bytes;
+
+  handle_emergency_shutdown();
+  /* Flash erase takes longer than our watchdog */
+  iwdg_set_period_ms(5000);
+
   flash_unlock();
 
   /* configrom is sectors 1 through 3, each 16k,
@@ -1300,6 +1309,8 @@ void platform_save_config() {
   }
 
   flash_lock();
+  platform_disable_periphs();
+  reset_handler();
 }
 
 size_t console_read(void *buf, size_t max) {
