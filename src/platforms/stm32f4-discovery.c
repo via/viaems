@@ -857,10 +857,11 @@ void platform_init_test_trigger() {
 
 static void setup_task_handler() {
   /* Set up systick for 100 hz */
-	systick_set_reload(1680000);
-	systick_set_clocksource(STK_CSR_CLKSOURCE_AHB);
-	systick_counter_enable();
-	systick_interrupt_enable();
+  systick_set_reload(1680000);
+  systick_set_clocksource(STK_CSR_CLKSOURCE_AHB);
+  systick_counter_enable();
+  nvic_set_priority(NVIC_SYSTICK_IRQ, 128);
+  systick_interrupt_enable();
 
   /* Setup IWDG to reset if we pass 30 mS without an interrupt */
   iwdg_set_period_ms(30);
