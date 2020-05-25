@@ -5,30 +5,39 @@
 #include "util.h"
 #include "stats.h"
 
+void reset_pid(struct pid_controller *pid) {
+  pid->i_accum = 0;
+  pid->previous_error = 0;
+}
+
 float perform_pid(struct pid_controller *pid, float error) {
-  /* Add to integral accumulator and clamp to maximums */
-  pid->i_accum += error;
+  /* Add to integral accumulator (At 100 hz) and clamp to maximums */
+  pid->i_accum += (error / 100.0f);
 
   /* i_max is a limit to the whole I term, convert to a limit of the accumulator
    * */
-  float accum_max = 0.0f;
+  float accum_max = 0;
   if (pid->i) {
     accum_max = pid->i_max / pid->i;
   }
 
   if (pid->i_accum > accum_max) {
-    pid->i_accum = accum_max;
+    pid->i_accum = 0;
   }
   if (pid->i_accum < -accum_max) {
-    pid->i_accum = -accum_max;
+    pid->i_accum = 0;
   }
 
   float p_term = pid->p * error;
   float i_term = pid->i * pid->i_accum;
-  float d_term = pid->d * (error - pid->prev_e);
+  float d_term = pid->d * (error - pid->previous_error);
 
-  pid->prev_e = error;
+  pid->p_val = p_term;
+  pid->i_val = i_term;
+  pid->d_val = d_term;
 
+  /* Previous error lagged over 0.1 second */
+  pid->previous_error = (0.9f * pid->previous_error) + (0.1f * error);
   return p_term + i_term + d_term;
 }
 
@@ -55,17 +64,19 @@ static void handle_fuel_pump() {
 }
 
 static void handle_boost_control() {
+  struct pid_controller *pid = &config.boost_control.pid;
   if ((config.sensors[SENSOR_MAP].processed_value < config.boost_control.min_kpa) ||
       (config.sensors[SENSOR_TPS].processed_value < config.boost_control.min_tps)) {
     config.boost_control.duty = 0.0f;
     set_pwm(config.boost_control.pin, config.boost_control.duty);
+    reset_pid(pid);
     return;
   }
 
   float setpoint = config.boost_control.target_kpa;
   float error = setpoint - config.sensors[SENSOR_MAP].processed_value;
 
-  float duty = perform_pid(&config.boost_control.pid, error);
+  float duty = perform_pid(pid, error);
   if (duty < 0.0f) {
     duty = 0.0f;
   }

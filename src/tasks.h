@@ -8,7 +8,11 @@ struct pid_controller {
   float d;
 
   float i_accum;
-  float prev_e; /* Used for D calculation */
+  float previous_error;
+
+  float p_val;
+  float i_val;
+  float d_val;
 };
 
 struct boost_control_config {
