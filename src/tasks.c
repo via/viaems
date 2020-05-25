@@ -57,7 +57,9 @@ static void handle_fuel_pump() {
 static void handle_boost_control() {
   if ((config.sensors[SENSOR_MAP].processed_value < config.boost_control.min_kpa) ||
       (config.sensors[SENSOR_TPS].processed_value < config.boost_control.min_tps)) {
-    set_pwm(config.boost_control.pin, 0.0f);
+    config.boost_control.duty = 0.0f;
+    set_pwm(config.boost_control.pin, config.boost_control.duty);
+    return;
   }
 
   float setpoint = config.boost_control.target_kpa;
