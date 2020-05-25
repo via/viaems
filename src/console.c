@@ -862,6 +862,37 @@ static void console_get_version(const struct console_config_node *self,
   strcpy(dest, GIT_DESCRIBE);
 }
 
+static void console_get_pid(const struct console_config_node *self,
+                               char *dest,
+                               char *remaining __attribute__((unused))) {
+  struct pid_controller *pid = self->val;
+  sprintf(dest, "p=%f i=%f d=%f i_max=%f", 
+      pid->p, pid->i, pid->d, pid->i_max);
+}
+
+static void console_set_pid(const struct console_config_node *self,
+                               char *remaining) {
+  assert(self);
+  assert(self->val);
+  assert(remaining);
+
+  struct pid_controller *pid = self->val;
+
+  char *k, *v;
+  while (parse_keyval_pair(&k, &v, &remaining)) {
+    float fv = atof(v);
+    if (!strcmp("p", k)) {
+      pid->p = fv;
+    } else if (!strcmp("i", k)) {
+      pid->i = fv;
+    } else if (!strcmp("d", k)) {
+      pid->d = fv;
+    } else if (!strcmp("i_max", k)) {
+      pid->i_max = fv;
+    }
+  }
+}
+
 static struct console_config_node console_config_nodes[] = {
   /* Config hierarchy */
   { .name = "config" },
@@ -1039,10 +1070,14 @@ static struct console_config_node console_config_nodes[] = {
     .val = &config.boost_control.target_kpa,
     .get = console_get_float,
     .set = console_set_float },
-  { .name = "config.tasks.boost_control.duty",
+  { .name = "config.tasks.boost_control.output",
     .val = &config.boost_control.duty,
     .get = console_get_float,
     .set = console_set_float },
+  { .name = "config.tasks.boost_control.pid",
+    .val = &config.boost_control.pid,
+    .get = console_get_pid,
+    .set = console_set_pid },
   { .name = "config.tasks.cel.pin",
     .val = &config.cel.pin,
     .get = console_get_uint,
@@ -1264,6 +1299,7 @@ void console_init() {
     "status.sensors.iat",
     "status.sensors.clt",
     "status.sensors.ego",
+    "config.tasks.boost_control.output",
     NULL,
   };
 

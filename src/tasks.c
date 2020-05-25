@@ -8,11 +8,19 @@
 float perform_pid(struct pid_controller *pid, float error) {
   /* Add to integral accumulator and clamp to maximums */
   pid->i_accum += error;
-  if (pid->i_accum > pid->i_max) {
-    pid->i_accum = pid->i_max;
+
+  /* i_max is a limit to the whole I term, convert to a limit of the accumulator
+   * */
+  float accum_max = 0.0f;
+  if (pid->i) {
+    accum_max = pid->i_max / pid->i;
   }
-  if (pid->i_accum < -pid->i_max) {
-    pid->i_accum = -pid->i_max;
+
+  if (pid->i_accum > accum_max) {
+    pid->i_accum = accum_max;
+  }
+  if (pid->i_accum < -accum_max) {
+    pid->i_accum = -accum_max;
   }
 
   float p_term = pid->p * error;
