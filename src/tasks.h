@@ -1,11 +1,19 @@
 #ifndef TASKS_H
 #define TASKS_H
 
+enum pid_windup {
+  WINDUP_NONE,
+  WINDUP_CLAMP,
+  WINDUP_ZERO,
+};
+
 struct pid_controller {
   float p;
   float i;
   float i_max;
   float d;
+
+  enum pid_windup windup;
 
   float i_accum;
   float previous_error;

@@ -866,8 +866,22 @@ static void console_get_pid(const struct console_config_node *self,
                                char *dest,
                                char *remaining __attribute__((unused))) {
   struct pid_controller *pid = self->val;
-  sprintf(dest, "p=%f i=%f d=%f i_max=%f", 
-      pid->p, pid->i, pid->d, pid->i_max);
+
+  const char *windup;
+  switch (pid->windup) {
+  case WINDUP_NONE:
+    windup = "none";
+    break;
+  case WINDUP_CLAMP:
+    windup = "clamp";
+    break;
+  case WINDUP_ZERO:
+  default:
+    windup = "zero";
+    break;
+  }
+  sprintf(dest, "p=%f i=%f d=%f i_max=%f windup=%s", 
+      pid->p, pid->i, pid->d, pid->i_max, windup);
 }
 
 static void console_set_pid(const struct console_config_node *self,
@@ -889,6 +903,14 @@ static void console_set_pid(const struct console_config_node *self,
       pid->d = fv;
     } else if (!strcmp("i_max", k)) {
       pid->i_max = fv;
+    } else if (!strcmp("windup", k)) {
+      if (!strcmp(v, "none")) {
+        pid->windup = WINDUP_NONE;
+      } else if (!strcmp(v, "clamp")) {
+        pid->windup = WINDUP_CLAMP;
+      } else if (!strcmp(v, "zero")) {
+        pid->windup = WINDUP_ZERO;
+      }
     }
   }
 }
