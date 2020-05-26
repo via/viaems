@@ -138,34 +138,44 @@ void handle_emergency_shutdown() {
 }
 
 #ifdef LOG_REPLAY
-static const uint8_t replay_img[] = {
-#include "replay.xxd"
-};
-#else
-static const uint8_t replay_img[] = {};
-#endif
+#include <cbor.h>
+extern const uint8_t _binary_replay_data_cbor_start;
+extern const int _binary_replay_data_cbor_size;
 
-struct replay_ptr {
-  uint32_t rpm;
-  float map;
-};
-static struct replay_ptr *replay_ptr = (struct replay_ptr *)&replay_img;
-static size_t replay_count = sizeof(replay_img) / sizeof(struct replay_ptr);
-static timeval_t last_replay = 0;
+const uint8_t *replay_data = &_binary_replay_data_cbor_start;
+const size_t replay_data_len = (size_t)&_binary_replay_data_cbor_size;
 
 static void handle_log_replay() {
-  if (time_diff(current_time(), last_replay) > time_from_us(10000)) {
-    set_test_trigger_rpm(replay_ptr->rpm);
-    replay_ptr++;
-    replay_count--;
-    last_replay = current_time();
+  static int parser_initialized = 0;
+  static CborParser parser;
+  static CborValue event_list;
+  static CborValue event;
+
+  if (!parser_initialized) {
+    cbor_parser_init(replay_data, replay_data_len, 0, &parser, &event_list); 
+    if (!cbor_value_is_container(&event_list)) {
+      return;
+    }
+    cbor_value_enter_container(&event_list, &event);
+    parser_initialized = 1;
   }
-  if (replay_count == 0) {
-    replay_ptr = (struct replay_ptr *)&replay_img;
-    replay_count = sizeof(replay_img) / sizeof(struct replay_ptr); 
+  if (!cbor_value_is_map(&event)) {
+    return;
   }
 
+  CborValue cbor_rpm;
+  int rpm;
+  cbor_value_map_find_value(&event, "rpm", &cbor_rpm);
+  cbor_value_get_int_checked(&cbor_rpm, &rpm);
+
+  set_test_trigger_rpm(rpm);
+
+  cbor_value_advance(&event);
 }
+#else
+static void handle_log_replay() { }
+#endif
+
 
 void run_tasks() {
   stats_start_timing(STATS_TASK_TIME);
