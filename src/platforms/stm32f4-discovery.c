@@ -863,8 +863,8 @@ static void setup_task_handler() {
   systick_interrupt_enable();
 
   /* Setup IWDG to reset if we pass 30 mS without an interrupt */
-  iwdg_set_period_ms(30);
-  iwdg_start();
+//  iwdg_set_period_ms(30000);
+//  iwdg_start();
 }
 
 void platform_init() {

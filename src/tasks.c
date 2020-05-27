@@ -145,6 +145,15 @@ extern const int _binary_replay_data_cbor_size;
 const uint8_t *replay_data = &_binary_replay_data_cbor_start;
 const size_t replay_data_len = (size_t)&_binary_replay_data_cbor_size;
 
+struct replay_sensor_mapping_entry {
+  const char *name;
+  struct sensor_input *ptr;
+}; 
+static struct replay_sensor_mapping_entry replay_sensor_mapping[] = {
+  {"map", &config.sensors[SENSOR_MAP]},
+  {"iat", &config.sensors[SENSOR_IAT]},
+};
+
 static void handle_log_replay() {
   static int parser_initialized = 0;
   static CborParser parser;
@@ -153,12 +162,15 @@ static void handle_log_replay() {
 
   if (!parser_initialized) {
     cbor_parser_init(replay_data, replay_data_len, 0, &parser, &event_list); 
-    if (!cbor_value_is_container(&event_list)) {
+    /* Toplevel structure is expected to be an array of maps */
+    if (!cbor_value_is_array(&event_list)) {
       return;
     }
     cbor_value_enter_container(&event_list, &event);
     parser_initialized = 1;
   }
+
+  /* Each element should be a map */
   if (!cbor_value_is_map(&event)) {
     return;
   }
@@ -166,10 +178,23 @@ static void handle_log_replay() {
   CborValue cbor_rpm;
   int rpm;
   cbor_value_map_find_value(&event, "rpm", &cbor_rpm);
-  cbor_value_get_int_checked(&cbor_rpm, &rpm);
+  if (cbor_value_get_type(&cbor_rpm) == CborIntegerType) {
+    cbor_value_get_int(&cbor_rpm, &rpm);
+    set_test_trigger_rpm(rpm);
+  }
 
-  set_test_trigger_rpm(rpm);
-
+  for (int i = 0; i < sizeof(replay_sensor_mapping) / sizeof(struct replay_sensor_mapping_entry); i++) {
+    CborValue cbor_sensor;
+    cbor_value_map_find_value(&event, replay_sensor_mapping[i].name, &cbor_sensor);
+    if (cbor_value_get_type(&cbor_sensor) == CborDoubleType) {
+      double val;
+      cbor_value_get_double(&cbor_sensor, &val);
+      replay_sensor_mapping[i].ptr->source = SENSOR_CONST;
+      replay_sensor_mapping[i].ptr->fault = FAULT_NONE;
+      replay_sensor_mapping[i].ptr->params.fixed_value = val;
+    }
+  }
+  sensors_process(SENSOR_CONST);
   cbor_value_advance(&event);
 }
 #else

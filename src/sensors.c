@@ -80,7 +80,7 @@ float sensor_convert_thermistor(struct thermistor_config *tc, float raw) {
 
 static void sensor_convert(struct sensor_input *in) {
   /* Handle conn and range fault conditions */
-  if ((in->fault == FAULT_NONE) && (in->fault_config.max != 0)) {
+  if ((in->source != SENSOR_CONST) && (in->fault == FAULT_NONE) && (in->fault_config.max != 0)) {
     if ((in->fault_config.min > in->raw_value) ||
         (in->fault_config.max < in->raw_value)) {
       in->fault = FAULT_RANGE;
