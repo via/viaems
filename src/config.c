@@ -276,12 +276,14 @@ struct config config __attribute__((section(".configdata"))) = {
     .min_kpa = 140,
     .pin = 1,
     .pid = {
-      .p = 3,
-      .i = 2,
-      .i_max = 90,
+      .p = 1,
+      .i = 0,
       .d = 0,
-      .windup = WINDUP_ZERO,
+      .i_max = 20,
+      .windup = WINDUP_CLAMP,
     },
+    .min_duty = 30,
+    .max_duty = 90,
     .overboost = 230,
   },
   .cel = {

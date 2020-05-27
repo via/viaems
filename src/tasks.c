@@ -5,6 +5,14 @@
 #include "util.h"
 #include "stats.h"
 
+void reset_pid(struct pid_controller *pid) {
+  pid->i_accum = 0;
+  pid->previous_error = 0;
+  pid->p_val = 0;
+  pid->i_val = 0;
+  pid->d_val = 0;
+}
+
 float perform_pid(struct pid_controller *pid, float error) {
   /* Add to integral accumulator (At 100 hz) and clamp to maximums */
   pid->i_accum += (error / 100.0f);
@@ -25,16 +33,25 @@ float perform_pid(struct pid_controller *pid, float error) {
     }
   }
 
-  float p_term = pid->p * error;
-  float i_term = pid->i * pid->i_accum;
-  float d_term = pid->d * (error - pid->previous_error);
+  /* Prevent extreme delta on first PID activation */
+  if (pid->previous_error == 0) {
+    pid->previous_error = error;
+  }
+
+  float p_term = pid->p * (error / 100.0f); /* Apply P per second */
+  float i_term = pid->i * (pid->i_accum / 100.0f); /* Apply I per second */
+  float d_term = 0;
+  if (error != pid->previous_error) {
+    /* D applied over 1 s */
+    d_term = pid->d * ((error - pid->previous_error) / 100.0f);
+  }
 
   pid->p_val = p_term;
   pid->i_val = i_term;
   pid->d_val = d_term;
 
   /* Previous error lagged over 0.1 second */
-  pid->previous_error = (0.9f * pid->previous_error) + (0.1f * error);
+  pid->previous_error = error;
   return p_term + i_term + d_term;
 }
 
@@ -61,28 +78,29 @@ static void handle_fuel_pump() {
 }
 
 static void handle_boost_control() {
-  struct pid_controller *pid = &config.boost_control.pid;
-  if ((config.sensors[SENSOR_MAP].processed_value < config.boost_control.min_kpa) ||
-      (config.sensors[SENSOR_TPS].processed_value < config.boost_control.min_tps)) {
-    config.boost_control.duty = 0.0f;
-    set_pwm(config.boost_control.pin, config.boost_control.duty);
+  struct boost_control_config *bc = &config.boost_control;
+  if ((config.sensors[SENSOR_MAP].processed_value < bc->min_kpa) ||
+      (config.sensors[SENSOR_TPS].processed_value < bc->min_tps)) {
+    reset_pid(&bc->pid);
+    bc->duty = 0.0f;
+    set_pwm(config.boost_control.pin, bc->duty / 100.0f);
     return;
   }
 
-  float setpoint = config.boost_control.target_kpa;
+  float setpoint = bc->target_kpa;
   float error = setpoint - config.sensors[SENSOR_MAP].processed_value;
 
-  float duty_correction = (perform_pid(pid, error) / 100.0f);
-  float duty = config.boost_control.duty + duty_correction;
+  float duty_correction = perform_pid(&bc->pid, error);
+  float duty = bc->duty + duty_correction;
 
-  if (duty < 0.0f) {
-    duty = 0.0f;
+  if (duty < bc->min_duty) {
+    duty = bc->min_duty;
   }
-  if (duty > 1.0f) {
-    duty = 1.0f;
+  if (duty > bc->max_duty) {
+    duty = bc->max_duty;
   }
-  config.boost_control.duty = duty;
-  set_pwm(config.boost_control.pin, config.boost_control.duty);
+  bc->duty = duty;
+  set_pwm(config.boost_control.pin, bc->duty / 100.0f);
 }
 
 static void handle_idle_control() {}

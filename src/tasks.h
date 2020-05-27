@@ -27,6 +27,8 @@ struct boost_control_config {
   float target_kpa;
   float min_tps;
   float min_kpa;
+  float min_duty;
+  float max_duty;
   struct pid_controller pid;
   int pin;
   float overboost;
