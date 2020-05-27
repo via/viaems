@@ -72,14 +72,16 @@ static void handle_boost_control() {
   float setpoint = config.boost_control.target_kpa;
   float error = setpoint - config.sensors[SENSOR_MAP].processed_value;
 
-  float duty = perform_pid(pid, error);
+  float duty_correction = (perform_pid(pid, error) / 100.0f);
+  float duty = config.boost_control.duty + duty_correction;
+
   if (duty < 0.0f) {
     duty = 0.0f;
   }
-  if (duty > 100.0f) {
-    duty = 100.0f;
+  if (duty > 1.0f) {
+    duty = 1.0f;
   }
-  config.boost_control.duty = duty / 100.0f;
+  config.boost_control.duty = duty;
   set_pwm(config.boost_control.pin, config.boost_control.duty);
 }
 
