@@ -38,12 +38,12 @@ float perform_pid(struct pid_controller *pid, float error) {
     pid->previous_error = error;
   }
 
-  float p_term = pid->p * (error / 100.0f); /* Apply P per second */
-  float i_term = pid->i * (pid->i_accum / 100.0f); /* Apply I per second */
+  float p_term = pid->p * error; /* Apply P per second */
+  float i_term = pid->i * pid->i_accum; /* Apply I per second */
   float d_term = 0;
   if (error != pid->previous_error) {
     /* D applied over 1 s */
-    d_term = pid->d * ((error - pid->previous_error) / 100.0f);
+    d_term = pid->d * (error - pid->previous_error);
   }
 
   pid->p_val = p_term;
@@ -91,7 +91,7 @@ static void handle_boost_control() {
   float error = setpoint - config.sensors[SENSOR_MAP].processed_value;
 
   float duty_correction = perform_pid(&bc->pid, error);
-  float duty = bc->duty + duty_correction;
+  float duty = 50.0f + duty_correction;
 
   if (duty < bc->min_duty) {
     duty = bc->min_duty;
