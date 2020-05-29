@@ -277,6 +277,7 @@ static void hosted_platform_timer(int sig, siginfo_t *info, void *ucontext) {
       .type = EVENT_OUTPUT,
     });
     old_outputs = cur_outputs;
+
   }
 
   /* poll for command input */
@@ -290,12 +291,17 @@ static void hosted_platform_timer(int sig, siginfo_t *info, void *ucontext) {
     }
   }
 
+
   if (eventtimer_enable && (eventtimer_time + 1 == curtime)) {
     scheduler_callback_timer_execute();
   }
 
   sensors_process(SENSOR_ADC);
   sensors_process(SENSOR_FREQ);
+
+  if ((curtime % 10000) == 0) {
+    run_tasks();
+  }
 
   stats_finish_timing(STATS_INT_TOTAL_TIME);
   signal_handler_exited();

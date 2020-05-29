@@ -3,8 +3,9 @@
 #include "decoder.h"
 #include "platform.h"
 #include "util.h"
+#include "stats.h"
 
-void handle_fuel_pump() {
+static void handle_fuel_pump() {
   static timeval_t last_valid = 0;
 
   /* If engine is turning, keep pump on */
@@ -25,7 +26,7 @@ void handle_fuel_pump() {
   }
 }
 
-void handle_boost_control() {
+static void handle_boost_control() {
   float duty;
   if ((config.sensors[SENSOR_MAP].processed_value <
        config.boost_control.threshhold_kpa)) {
@@ -41,7 +42,7 @@ void handle_boost_control() {
   set_pwm(config.boost_control.pin, duty);
 }
 
-void handle_idle_control() {}
+static void handle_idle_control() {}
 
 /* Checks for a variety of failure conditions, and produces a check engine
  * output:
@@ -100,7 +101,7 @@ static int determine_cel_pin_state(cel_state_t state,
   }
 }
 
-void handle_check_engine_light() {
+static void handle_check_engine_light() {
 
   cel_state_t next_cel_state = determine_next_cel_state();
 
@@ -266,6 +267,15 @@ void handle_emergency_shutdown() {
       set_output(config.events[i].pin, config.events[i].inverted);
     }
   }
+}
+
+void run_tasks() {
+  stats_start_timing(STATS_TASK_TIME);
+  handle_fuel_pump();
+  handle_boost_control();
+  handle_idle_control();
+  handle_check_engine_light();
+  stats_finish_timing(STATS_TASK_TIME);
 }
 
 #ifdef UNITTEST

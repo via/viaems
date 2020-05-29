@@ -3,6 +3,7 @@
 #include <libopencm3/cm3/dwt.h>
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/cm3/scb.h>
+#include <libopencm3/cm3/systick.h>
 #include <libopencm3/stm32/adc.h>
 #include <libopencm3/stm32/dma.h>
 #include <libopencm3/stm32/exti.h>
@@ -12,6 +13,7 @@
 #include <libopencm3/stm32/spi.h>
 #include <libopencm3/stm32/syscfg.h>
 #include <libopencm3/stm32/timer.h>
+#include <libopencm3/stm32/iwdg.h>
 #include <libopencm3/usb/cdc.h>
 #include <libopencm3/usb/usbd.h>
 
@@ -69,6 +71,16 @@
  *   - 0-PC6  1-PC7 2-PC8 3-PC9 TIM3 channel 1-4
  *  GPIO (Digital Sensor or Output)
  *   - 0-15 Maps to Port E
+ *
+ *  nvic priorities:
+ *    tim2 (triggers) 32
+ *    tim5 (event timer) 32
+ *    dma2s1 (buffer swap) 16
+ *    dma1s3 (adc) 64
+ *    tim6 (test trigger) 0
+ *
+ *    unset:
+ *    otg (usb) 0
  *
  */
 
@@ -842,6 +854,19 @@ void platform_init_test_trigger() {
   timer_enable_irq(TIM6, TIM_DIER_UIE);
 }
 
+static void setup_task_handler() {
+  /* Set up systick for 100 hz */
+  systick_set_reload(1680000);
+  systick_set_clocksource(STK_CSR_CLKSOURCE_AHB);
+  systick_counter_enable();
+  nvic_set_priority(NVIC_SYSTICK_IRQ, 128);
+  systick_interrupt_enable();
+
+  /* Setup IWDG to reset if we pass 30 mS without an interrupt */
+  iwdg_set_period_ms(30);
+  iwdg_start();
+}
+
 void platform_init() {
 
   /* 168 Mhz clock */
@@ -887,12 +912,16 @@ void platform_init() {
   }
   dwt_enable_cycle_counter();
   stats_init(168000000);
+
+  setup_task_handler();
 }
 
-#define BOOTLOADER_ADDR 0x1fff0000
-void platform_reset_into_bootloader() {
-  handle_emergency_shutdown();
+void sys_tick_handler(void) {
+  run_tasks();
+  iwdg_reset();
+}
 
+static void platform_disable_periphs() {
   rcc_periph_reset_pulse(RST_OTGFS);
 
   /* Shut down subsystems */
@@ -946,6 +975,13 @@ void platform_reset_into_bootloader() {
 
   rcc_periph_reset_pulse(RST_OTGFS);
   rcc_periph_clock_disable(RCC_OTGFS);
+}
+
+#define BOOTLOADER_ADDR 0x1fff0000
+void platform_reset_into_bootloader() {
+  handle_emergency_shutdown();
+
+  platform_disable_periphs();
 
   /* 168 Mhz clock */
   rcc_clock_setup_pll(&rcc_hsi_configs[RCC_CLOCK_3V3_168MHZ]);
@@ -1252,6 +1288,11 @@ void platform_load_config() {
 void platform_save_config() {
   volatile unsigned *src, *dest;
   int n_sectors, conf_bytes;
+
+  handle_emergency_shutdown();
+  /* Flash erase takes longer than our watchdog */
+  iwdg_set_period_ms(5000);
+
   flash_unlock();
 
   /* configrom is sectors 1 through 3, each 16k,
@@ -1268,6 +1309,8 @@ void platform_save_config() {
   }
 
   flash_lock();
+  platform_disable_periphs();
+  reset_handler();
 }
 
 size_t console_read(void *buf, size_t max) {

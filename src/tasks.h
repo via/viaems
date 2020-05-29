@@ -28,12 +28,8 @@ struct closed_loop_config {
   float low_load_map;
 };
 
-void handle_fuel_pump();
-void handle_boost_control();
-void handle_check_engine_light();
-void handle_idle_control();
-void handle_closed_loop_feedback();
 void handle_emergency_shutdown();
+void run_tasks();
 
 #ifdef UNITTEST
 #include <check.h>
