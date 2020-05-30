@@ -28,8 +28,7 @@ static int sched_entry_has_fired(struct sched_entry *en) {
   int ret = 0;
   int ints_on = disable_interrupts();
 
-  if (en->buffer && 
-      time_before(en->buffer->start, current_time()) &&
+  if (en->buffer && time_before(en->buffer->start, current_time()) &&
       time_in_range(en->time, en->buffer->start, current_time())) {
     ret = 1;
   }
@@ -224,8 +223,8 @@ static void reschedule_end(struct sched_entry *s,
   if (success) {
     success = fired_if_failed(s, sched_entry_disable(s, old));
     if (!success) {
-      /* if we failed to disable the old time, remove the stale enable of the new
-       * time */
+      /* if we failed to disable the old time, remove the stale enable of the
+       * new time */
       sched_entry_disable(s, new);
       sched_entry_update(s, old);
     } else {
@@ -238,7 +237,9 @@ static void reschedule_end(struct sched_entry *s,
    * anyway, or its before, and we must live with a longer-than-desired event */
 }
 
-static void schedule_output_safely_backwards(struct output_event *ev, timeval_t newstart, timeval_t newstop) {
+static void schedule_output_safely_backwards(struct output_event *ev,
+                                             timeval_t newstart,
+                                             timeval_t newstop) {
   timeval_t oldstart = ev->start.time;
   timeval_t oldstop = ev->stop.time;
   int success;
@@ -278,7 +279,9 @@ static void schedule_output_safely_backwards(struct output_event *ev, timeval_t 
   }
 }
 
-static void schedule_output_safely_forwards(struct output_event *ev, timeval_t newstart, timeval_t newstop) {
+static void schedule_output_safely_forwards(struct output_event *ev,
+                                            timeval_t newstart,
+                                            timeval_t newstop) {
   timeval_t oldstart = ev->start.time;
   timeval_t oldstop = ev->stop.time;
   int success;
@@ -286,7 +289,7 @@ static void schedule_output_safely_forwards(struct output_event *ev, timeval_t n
   /*  Moving an event forwards has three possible scenarios:
    *  1) New event starts after old ends, no overlap
    *  2) New event ends before old event ends, partial overlap
-   *  3) New event ends before old event ends, full overlap 
+   *  3) New event ends before old event ends, full overlap
    */
   if (time_in_range(newstart, oldstart, oldstop)) {
     /* Case (2) or (3), it is safe to schedule the new start, since failing
@@ -321,8 +324,8 @@ static void schedule_output_safely_forwards(struct output_event *ev, timeval_t n
  * that the start and stop times occur at least after curtime
  */
 static void schedule_output_event_safely(struct output_event *ev,
-                                  timeval_t newstart,
-                                  timeval_t newstop) {
+                                         timeval_t newstart,
+                                         timeval_t newstop) {
 
   stats_start_timing(STATS_SCHED_SINGLE_TIME);
 

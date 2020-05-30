@@ -277,7 +277,6 @@ static void hosted_platform_timer(int sig, siginfo_t *info, void *ucontext) {
       .type = EVENT_OUTPUT,
     });
     old_outputs = cur_outputs;
-
   }
 
   /* poll for command input */
@@ -290,7 +289,6 @@ static void hosted_platform_timer(int sig, siginfo_t *info, void *ucontext) {
       rx_amt = r;
     }
   }
-
 
   if (eventtimer_enable && (eventtimer_time + 1 == curtime)) {
     scheduler_callback_timer_execute();

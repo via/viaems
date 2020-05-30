@@ -9,11 +9,11 @@
 #include <libopencm3/stm32/exti.h>
 #include <libopencm3/stm32/flash.h>
 #include <libopencm3/stm32/gpio.h>
+#include <libopencm3/stm32/iwdg.h>
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/spi.h>
 #include <libopencm3/stm32/syscfg.h>
 #include <libopencm3/stm32/timer.h>
-#include <libopencm3/stm32/iwdg.h>
 #include <libopencm3/usb/cdc.h>
 #include <libopencm3/usb/usbd.h>
 
@@ -511,8 +511,8 @@ void exti15_10_isr() {
  *
  * Currently sample rate is about 70 khz, with a SPI bus frequency of 1.3ish MHz
  *
- * Each call to start_adc_sampling reconfigures TX DMA, resets and starts TIM7, and
- * lowers CS Once all 13 receives are complete, RX dma completes, notifies
+ * Each call to start_adc_sampling reconfigures TX DMA, resets and starts TIM7,
+ * and lowers CS Once all 13 receives are complete, RX dma completes, notifies
  * completion, and raises CS.
  */
 #ifdef SPI_TLC2543
@@ -561,7 +561,6 @@ void start_adc_sampling() {
   timer_set_dma_on_update_event(TIM7);
   TIM7_DIER |= TIM_DIER_UDE; /* Enable update dma */
 }
-
 
 static void platform_init_spi_adc() {
   /* Configure SPI output */
@@ -617,7 +616,7 @@ static void platform_init_spi_adc() {
   timer_disable_oc_output(TIM7, TIM_OC4);
 
   timer_set_prescaler(TIM7, 0);
- 
+
   start_adc_sampling();
 }
 

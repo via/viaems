@@ -357,7 +357,8 @@ static void console_get_sensor(const struct console_config_node *self,
                     s->params.range.max);
   } else if (s->method == METHOD_LINEAR_WINDOWED) {
     dest += sprintf(dest,
-                    "range-min=%.2f range-max=%.2f window-total-size=%u window-capture-size=%u",
+                    "range-min=%.2f range-max=%.2f window-total-size=%u "
+                    "window-capture-size=%u",
                     s->params.range.min,
                     s->params.range.max,
                     (unsigned int)s->window.total_width,
