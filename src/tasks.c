@@ -205,7 +205,7 @@ static void handle_closed_loop_ve_correction(struct closed_loop_config *cl, stru
   calculated_values.closed_loop_corrected_ve = reference->ve * correction;
 }
 
-void handle_closed_loop_feedback() {
+static void handle_closed_loop_feedback() {
 
   #define NUM_HISTORICAL_POINTS 32
   static struct tuning_data_point historical_points[NUM_HISTORICAL_POINTS] = {0};
@@ -275,6 +275,7 @@ void run_tasks() {
   handle_boost_control();
   handle_idle_control();
   handle_check_engine_light();
+  handle_closed_loop_feedback();
   stats_finish_timing(STATS_TASK_TIME);
 }
 
