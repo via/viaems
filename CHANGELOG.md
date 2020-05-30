@@ -1,5 +1,5 @@
 
-### master (unreleased)
+### 1.2.0 (2020 May 30)
 Introduces a breaking change for the trigger inputs. They are now configured in
 the frequency inputs section, and the pins dedicated to triggers have moved to
 port A.
