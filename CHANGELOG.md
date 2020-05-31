@@ -1,3 +1,5 @@
+### master (unreleased)
+- Switch build system to a GNU makefile at the toplevel
 
 ### 1.2.0 (2020 May 30)
 Introduces a breaking change for the trigger inputs. They are now configured in
