@@ -7,5 +7,5 @@ CFLAGS+= -fsanitize=undefined -fsanitize=address
 
 LDFLAGS+= $(shell pkg-config --libs check)
 
-check: viaems
+check: ${OBJDIR}/viaems
 	${OBJDIR}/viaems

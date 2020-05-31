@@ -5,3 +5,6 @@ CFLAGS+= -D TICKRATE=1000000 -D_POSIX_C_SOURCE=199309L -D_GNU_SOURCE
 CFLAGS+= -fsanitize=undefined -fsanitize=address
 
 LDFLAGS+= -lrt
+
+run: ${OBJDIR}/viaems
+	${OBJDIR}/viaems
