@@ -17,6 +17,9 @@ OBJS += calculations.o \
 				util.o \
 				viaems.o
 
+DEPS = $(wildcard ${OBJDIR}/*.d)
+-include $(DEPS)
+
 GITDESC=$(shell git describe --tags --dirty)
 CFLAGS+=-I src/ -Wall -Wextra -g -std=c99 -DGIT_DESCRIBE=\"${GITDESC}\"
 LDFLAGS+= -lm
@@ -30,7 +33,7 @@ $(OBJDIR):
 	mkdir -p ${OBJDIR}
 
 $(OBJDIR)/%.o: %.c
-	${CC} ${CFLAGS} -c -o $@ $<
+	${CC} ${CFLAGS} -MMD -c -o $@ $<
 
 $(OBJDIR)/viaems: ${OBJDIR} ${DESTOBJS}
 	${CC} -o $@ ${CFLAGS} ${DESTOBJS} ${LDFLAGS}
