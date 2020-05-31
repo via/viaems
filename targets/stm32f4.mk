@@ -3,6 +3,7 @@ AR=arm-none-eabi-ar
 LD=arm-none-eabi-ld
 OBJCOPY=arm-none-eabi-objcopy
 
+OPENCM3_DIR=$(PWD)/libopencm3
 CM3_LIB=libopencm3_stm32f4.a
 
 OBJS+= ${CM3_LIB}
