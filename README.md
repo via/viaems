@@ -301,7 +301,7 @@ Node | Meaning
 # Compiling
 Requires:
 - Complete arm toolchain with hardware fpu support.
-- BSD Make (bmake or pmake)
+- GNU make
 - check (for unit tests)
 
 Before trying to compile, make sure to bring in the libopencm3 submodule:
@@ -311,21 +311,16 @@ git submodule update --init
 
 To run the unit tests:
 ```
-cd src/
-bmake clean
-bmake check
+make PLATFORM=test check
 ```
 
 To build an ELF binary for the stm32f4:
 
 ```
-cd libopencm3
 make
-cd ../src/
-bmake clean
-bmake
 ```
-`tfi` is the resultant executable that can be loaded.  
+`obj/stm32f4/viaems` is the resultant executable that can be loaded.  
+
 
 # Programming
 You can use gdb to load, especially for development, but dfu is supported.  Connect the stm32f4 via
@@ -334,7 +329,7 @@ brought up by holding BOOT1 high, or for any already-programmed ViaEMS chip, the
 `get bootloader` command will reboot it into DFU mode. Either way, there is a
 make target:
 ```
-bmake program`
+make program
 ```
 that will load the binary.
 
@@ -342,7 +337,7 @@ that will load the binary.
 # Simulation
 The platform interface is also implemented for a Linux host machine.
 ```
-bmake PLATFORM=hosted
+make PLATFORM=hosted run
 ```
 This will build `tfi` as a Linux executable that will use stdin/stdout as the
 console.  The test trigger that is enabled by default will provide enough inputs
