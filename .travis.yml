@@ -5,7 +5,6 @@ compiler: gcc
 addons: 
   apt:
     packages:
-      - bmake
       - clang-tidy
 before_install:
   - "mkdir libcheck"
@@ -13,4 +12,4 @@ before_install:
   - "pushd check-0.12.0; ./configure --prefix=/usr; make; sudo make install; popd"
 
 script:
-  - cd src && bmake check && bmake lint
+  - make PLATFORM=test check && make lint
