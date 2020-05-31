@@ -30,7 +30,7 @@ static void handle_boost_control() {
   float duty;
   if ((config.sensors[SENSOR_MAP].processed_value <
        config.boost_control.threshhold_kpa)) {
-    if (config.sensors[SENSOR_TPS].processed_value > 90.0f) {
+    if (config.sensors[SENSOR_TPS].processed_value > 80.0f) {
       duty = 100.0;
     } else {
       duty = 0.0;
