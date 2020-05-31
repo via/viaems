@@ -37,10 +37,10 @@ $(OBJDIR)/viaems: ${OBJDIR} ${DESTOBJS}
 	${CC} -o $@ ${CFLAGS} ${DESTOBJS} ${LDFLAGS}
 
 format:
-	clang-format -i *.c *.h platforms/*.c
+	clang-format -i src/*.c src/*.h src/platforms/*.c
 
 lint:
-	clang-tidy *.c -- -I . -D TICKRATE=1000000
+	clang-tidy src/*.c -- -I . -D TICKRATE=1000000
 
 clean:
 	-rm ${OBJDIR}/*
