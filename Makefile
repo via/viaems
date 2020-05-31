@@ -18,7 +18,7 @@ OBJS += calculations.o \
 				viaems.o
 
 GITDESC=$(shell git describe --tags --dirty)
-CFLAGS+=-I src/ -Wall -std=c99 -DGIT_DESCRIBE=\"${GITDESC}\"
+CFLAGS+=-I src/ -Wall -Wextra -g -std=c99 -DGIT_DESCRIBE=\"${GITDESC}\"
 LDFLAGS+= -lm
 
 OPENCM3_DIR=$(PWD)/libopencm3
@@ -33,7 +33,6 @@ $(OBJDIR)/%.o: %.c
 	${CC} ${CFLAGS} -c -o $@ $<
 
 $(OBJDIR)/viaems: ${OBJDIR} ${DESTOBJS}
-	echo ${OBJS}
 	${CC} -o $@ ${CFLAGS} ${DESTOBJS} ${LDFLAGS}
 
 format:
