@@ -13,9 +13,8 @@ CFLAGS+= -D TICKRATE=4000000
 CFLAGS+= -I${OPENCM3_DIR}/include -DSTM32F4
 CFLAGS+= -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mthumb -mcpu=cortex-m4
 
-LDFLAGS+= -lopencm3_stm32f4 -lc -lm -lnosys
+LDFLAGS+= -lc -lnosys -L ${OBJDIR} -l:${CM3_LIB} 
 LDFLAGS+= -T src/platforms/stm32f4-discovery.ld -nostartfiles
-LDFLAGS+= -L arch/stm32f4 -l:${CM3_LIB}
 
 ${OBJDIR}/libssp.a:
 	${AR} rcs ${OBJDIR}/libssp.a
@@ -23,9 +22,12 @@ ${OBJDIR}/libssp.a:
 ${OBJDIR}/libssp_nonshared.a:
 	${AR} rcs ${OBJDIR}/libssp_nonshared.a
 
-
 ${OBJDIR}/${CM3_LIB}:
-	$(MAKE) -C ${OPENCM3_DIR} ${MAKEFLAGS} clean
 	$(MAKE) -C ${OPENCM3_DIR} ${MAKEFLAGS}
 	cp ${OPENCM3_DIR}/lib/${CM3_LIB} ${OBJDIR}
 
+${OBJDIR}/viaems.dfu: ${OBJDIR}/viaems
+	${OBJCOPY} -O binary ${OBJDIR}/viaems ${OBJDIR}/viaems.dfu
+
+program: ${OBJDIR}/viaems.dfu
+	dfu-util -D ${OBJDIR}/viaems.dfu -a 0 -s 0x8000000:leave

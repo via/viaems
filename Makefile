@@ -1,8 +1,9 @@
-OBJDIR=arch/stm32f4
+PLATFORM?=stm32f4
+OBJDIR=obj/${PLATFORM}
 
 all: $(OBJDIR)/viaems
 
-include stm32f4.mk
+include targets/${PLATFORM}.mk
 
 OBJS += calculations.o \
 				config.o \
@@ -16,19 +17,30 @@ OBJS += calculations.o \
 				util.o \
 				viaems.o
 
-CFLAGS+=-I src/
+GITDESC=$(shell git describe --tags --dirty)
+CFLAGS+=-I src/ -Wall -std=c99 -DGIT_DESCRIBE=\"${GITDESC}\"
+LDFLAGS+= -lm
 
 OPENCM3_DIR=$(PWD)/libopencm3
 
 VPATH=src src/platforms
 DESTOBJS = $(addprefix ${OBJDIR}/, ${OBJS})
 
+$(OBJDIR):
+	mkdir -p ${OBJDIR}
 
 $(OBJDIR)/%.o: %.c
 	${CC} ${CFLAGS} -c -o $@ $<
 
-$(OBJDIR)/viaems: ${DESTOBJS}
+$(OBJDIR)/viaems: ${OBJDIR} ${DESTOBJS}
+	echo ${OBJS}
 	${CC} -o $@ ${CFLAGS} ${DESTOBJS} ${LDFLAGS}
 
+format:
+	clang-format -i *.c *.h platforms/*.c
+
+lint:
+	clang-tidy *.c -- -I . -D TICKRATE=1000000
+
 clean:
-	-rm arch/stm32f4/*
+	-rm ${OBJDIR}/*
