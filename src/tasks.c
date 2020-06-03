@@ -142,8 +142,8 @@ void handle_emergency_shutdown() {
 extern const uint8_t _binary_replay_data_cbor_start;
 extern const int _binary_replay_data_cbor_size;
 
-const uint8_t *replay_data = &_binary_replay_data_cbor_start;
-const size_t replay_data_len = (size_t)&_binary_replay_data_cbor_size;
+static const uint8_t *replay_data = &_binary_replay_data_cbor_start;
+static const size_t replay_data_len = (size_t)&_binary_replay_data_cbor_size;
 
 struct replay_sensor_mapping_entry {
   const char *name;
@@ -183,7 +183,7 @@ static void handle_log_replay() {
     set_test_trigger_rpm(rpm);
   }
 
-  for (int i = 0; i < sizeof(replay_sensor_mapping) / sizeof(struct replay_sensor_mapping_entry); i++) {
+  for (unsigned int i = 0; i < sizeof(replay_sensor_mapping) / sizeof(struct replay_sensor_mapping_entry); i++) {
     CborValue cbor_sensor;
     cbor_value_map_find_value(&event, replay_sensor_mapping[i].name, &cbor_sensor);
     if (cbor_value_get_type(&cbor_sensor) == CborDoubleType) {

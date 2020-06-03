@@ -42,6 +42,7 @@ SECTIONS {
 		*(.text*)	/* Program code */
 		. = ALIGN(4);
 		*(.rodata*)	/* Read-only data */
+    */replay_data.o(*)
 		. = ALIGN(4);
 	} >rom
 
