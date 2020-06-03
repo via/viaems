@@ -36,7 +36,7 @@ DESTOBJS = $(addprefix ${OBJDIR}/, ${OBJS})
 $(OBJDIR):
 	mkdir -p ${OBJDIR}
 
-${OBJDIR}/replay_data.cbor:
+replay_data.cbor:
 
 ${OBJDIR}/replay_data.o: replay_data.cbor
 	if [ -f replay_data.cbor ]; then \
