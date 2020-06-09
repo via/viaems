@@ -88,7 +88,7 @@ void disable_event_timer() {
   eventtimer_enable = 0;
 }
 
-static ucontext_t *sig_context = NULL;
+static _Atomic ucontext_t *sig_context = NULL;
 static void signal_handler_entered(struct ucontext_t *context) {
   sig_context = context;
 }
@@ -312,6 +312,7 @@ void platform_init() {
   struct sigaction sa = {
     .sa_sigaction = hosted_platform_timer,
     .sa_mask = smask,
+    .sa_flags = SA_SIGINFO,
   };
   sigaction(SIGVTALRM, &sa, NULL);
 
