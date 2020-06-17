@@ -8,6 +8,7 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -31,10 +32,10 @@
  * RUN [TIME]
  */
 
-_Atomic static timeval_t curtime;
+static _Atomic timeval_t curtime;
 
-_Atomic static timeval_t eventtimer_time;
-_Atomic static uint32_t eventtimer_enable = 0;
+static _Atomic timeval_t eventtimer_time;
+static _Atomic uint32_t eventtimer_enable = 0;
 int event_logging_enabled = 1;
 uint32_t test_trigger_rpm = 0;
 timeval_t test_trigger_last = 0;
@@ -329,11 +330,11 @@ void platform_init() {
   struct itimerspec interval = {
     .it_interval = {
       .tv_sec = 0,
-      .tv_nsec = 10000,
+      .tv_nsec = 100000,
     },
     .it_value = {
       .tv_sec = 0,
-      .tv_nsec = 10000,
+      .tv_nsec = 100000,
     },
   };
   timer_settime(timer, 0, &interval, NULL);
