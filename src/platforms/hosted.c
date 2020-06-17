@@ -78,10 +78,10 @@ void disable_event_timer() {
 }
 
 /* Used to lock the interrupt thread */
-pthread_mutex_t interrupt_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
+static pthread_mutex_t interrupt_mutex;
 
 /* Used to determine when we've recursively unlocked */
-pthread_mutex_t interrupt_count_mutex = PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP;
+static pthread_mutex_t interrupt_count_mutex;
 _Atomic int interrupt_disables = 0;
 
 void disable_interrupts() {
@@ -397,6 +397,17 @@ void *platform_timebase_thread(void *_interrupt_fd) {
 static int interrupt_pipes[2];
 
 void platform_init() {
+
+  /* Initalize mutexes */
+  pthread_mutexattr_t im_attr;
+  pthread_mutexattr_init(&im_attr);
+  pthread_mutexattr_settype(&im_attr, PTHREAD_MUTEX_RECURSIVE);
+  pthread_mutex_init(&interrupt_mutex, &im_attr);
+
+  pthread_mutexattr_t imc_attr;
+  pthread_mutexattr_init(&imc_attr);
+  pthread_mutexattr_settype(&imc_attr, PTHREAD_MUTEX_ERRORCHECK);
+  pthread_mutex_init(&interrupt_count_mutex, &imc_attr);
 
   /* Set stdin nonblock */
   fcntl(STDIN_FILENO, F_SETFL, fcntl(STDIN_FILENO, F_GETFL, 0) | O_NONBLOCK);
