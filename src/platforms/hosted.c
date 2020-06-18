@@ -24,9 +24,6 @@ _Atomic static uint32_t eventtimer_enable = 0;
 int event_logging_enabled = 1;
 uint32_t test_trigger_rpm = 0;
 timeval_t test_trigger_last = 0;
-_Atomic int platform_decode_time = 0;
-_Atomic int platform_needs_decode = 0;
-_Atomic int platform_needs_event_callback = 0;
 
 struct slot {
   uint16_t on_mask;
@@ -70,7 +67,6 @@ timeval_t get_event_timer() {
 
 void clear_event_timer() {
   eventtimer_enable = 0;
-  platform_needs_event_callback = 0;
 }
 
 void disable_event_timer() {
@@ -257,13 +253,6 @@ static void do_test_trigger(int interrupt_fd) {
 void *platform_interrupt_thread(void *_interrupt_fd) {
   int *interrupt_fd = (int *)_interrupt_fd;
 
-  struct sched_param sp = (struct sched_param){
-    .sched_priority = 1,
-  };
-  if (sched_setscheduler(0, SCHED_RR, &sp)) {
-    perror("sched_setscheduler");
-  }
-
   do {
     struct event msg;
 
@@ -290,7 +279,9 @@ void *platform_interrupt_thread(void *_interrupt_fd) {
         decoder_update_scheduling(&(struct decoder_event){.trigger = 1, .time = msg.time}, 1);
         break;
       case SCHEDULED_EVENT:
-        scheduler_callback_timer_execute();
+        if (eventtimer_enable) {
+          scheduler_callback_timer_execute();
+        }
         break;
       default:
         break;
@@ -348,14 +339,6 @@ static void do_output_slots() {
 
 void *platform_timebase_thread(void *_interrupt_fd) {
   int *interrupt_fd = (int *)_interrupt_fd;
-  struct sched_param sp = (struct sched_param){
-    .sched_priority = 1,
-  };
-
-  if (sched_setscheduler(0, SCHED_RR, &sp)) {
-    perror("sched_setscheduler");
-  }
-
   struct timespec current_time;
   struct timespec tick_increment = {
     .tv_nsec = 250,
@@ -383,7 +366,7 @@ void *platform_timebase_thread(void *_interrupt_fd) {
     }
     do_test_trigger(*interrupt_fd);
     
-    if (eventtimer_enable && (eventtimer_time + 1 == curtime)) {
+    if (eventtimer_enable && (eventtimer_time == curtime)) {
       struct event event = {.type = SCHEDULED_EVENT};
       if (write(*interrupt_fd, &event, sizeof(event)) < 0) {
         perror("write");
@@ -415,10 +398,26 @@ void platform_init() {
   pipe(interrupt_pipes);
 
   pthread_t timebase;
-  pthread_create(&timebase, NULL, platform_timebase_thread, &interrupt_pipes[1]);
+  pthread_attr_t timebase_attr;
+  pthread_attr_init(&timebase_attr);
+  pthread_attr_setinheritsched(&timebase_attr, PTHREAD_EXPLICIT_SCHED);
+  pthread_attr_setschedpolicy(&timebase_attr, SCHED_RR);
+  struct sched_param timebase_param = {
+    .sched_priority = 1,
+  };
+  pthread_attr_setschedparam(&timebase_attr, &timebase_param);
+  pthread_create(&timebase, &timebase_attr, platform_timebase_thread, &interrupt_pipes[1]);
 
   pthread_t interrupts;
-  pthread_create(&interrupts, NULL, platform_interrupt_thread, &interrupt_pipes[0]);
+  pthread_attr_t interrupts_attr;
+  pthread_attr_init(&interrupts_attr);
+  pthread_attr_setinheritsched(&interrupts_attr, PTHREAD_EXPLICIT_SCHED);
+  pthread_attr_setschedpolicy(&interrupts_attr, SCHED_RR);
+  struct sched_param interrupts_param = {
+    .sched_priority = 2,
+  };
+  pthread_attr_setschedparam(&interrupts_attr, &interrupts_param);
+  pthread_create(&interrupts, &interrupts_attr, platform_interrupt_thread, &interrupt_pipes[0]);
 
   sensors_process(SENSOR_ADC);
   sensors_process(SENSOR_FREQ);
