@@ -338,11 +338,18 @@ that will load the binary.
 The platform interface is also implemented for a Linux host machine.
 ```
 make PLATFORM=hosted run
-```
-This will build `tfi` as a Linux executable that will use stdin/stdout as the
-console.  The test trigger that is enabled by default will provide enough inputs
-to verify some basic functionality.  Full integration testing using this
-simulation mode is planned.
+``` 
+This will build `tfi` as a Linux executable that will use stdin/stdout as
+the console, and event/trigger updates will be sent to stderr .  The test
+trigger that is enabled by default will provide enough inputs to verify some
+basic functionality.  Full integration testing using this simulation mode is
+planned.
+
+The hosted implementation uses threads to simulate interrupt handling and the
+timers/DMA.  It attempts to schedule these two threads with realtime priority.
+If you experience difficulty keeping sync due to expired triggers (due to
+scheduling latency), make sure the threads have permissions to be realtime, or
+otherwise constrain it to a single cpu.
 
 # Hardware
 The current primary hardware platform is an ST Micro STM32F407VGT
