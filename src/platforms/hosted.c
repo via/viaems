@@ -17,21 +17,21 @@
 #include "scheduler.h"
 #include "stats.h"
 
-_Atomic static timeval_t curtime;
+static _Atomic timeval_t curtime;
 
-_Atomic static timeval_t eventtimer_time;
-_Atomic static uint32_t eventtimer_enable = 0;
-int event_logging_enabled = 1;
-uint32_t test_trigger_rpm = 0;
-timeval_t test_trigger_last = 0;
+static _Atomic timeval_t eventtimer_time;
+static _Atomic uint32_t eventtimer_enable = 0;
+static int event_logging_enabled = 1;
+static uint32_t test_trigger_rpm = 0;
+static _Atomic uint16_t cur_outputs = 0;
 
 struct slot {
   uint16_t on_mask;
   uint16_t off_mask;
 } __attribute__((packed)) *output_slots[2] = {0};
-size_t max_slots;
-_Atomic size_t cur_slot = 0;
-_Atomic size_t cur_buffer = 0;
+static size_t max_slots;
+static _Atomic size_t cur_slot = 0;
+static _Atomic size_t cur_buffer = 0;
 
 void platform_enable_event_logging() {
   event_logging_enabled = 1;
@@ -43,7 +43,6 @@ void platform_disable_event_logging() {
 
 void platform_reset_into_bootloader() {}
 
-_Atomic static uint16_t cur_outputs = 0;
 
 timeval_t current_time() {
   return curtime;
@@ -130,7 +129,10 @@ void set_gpio(int output, char value) {
   }
 }
 
-void set_pwm(int output, float value) {}
+void set_pwm(int output, float value) {
+  (void)output;
+  (void)value;
+}
 
 void adc_gather() {}
 
@@ -140,7 +142,7 @@ size_t console_write(const void *buf, size_t len) {
     return 0;
   }
   struct timespec wait = {
-    .tv_nsec = 20000,
+    .tv_nsec = 1000000,
   };
   nanosleep(&wait, NULL);
   ssize_t written = -1;
@@ -256,7 +258,7 @@ void *platform_interrupt_thread(void *_interrupt_fd) {
   do {
     struct event msg;
 
-    size_t rsize = read(*interrupt_fd, &msg, sizeof(msg));
+    ssize_t rsize = read(*interrupt_fd, &msg, sizeof(msg));
     if (rsize < 0) {
       if (errno == EINTR) {
         continue;
@@ -406,7 +408,14 @@ void platform_init() {
     .sched_priority = 1,
   };
   pthread_attr_setschedparam(&timebase_attr, &timebase_param);
-  pthread_create(&timebase, &timebase_attr, platform_timebase_thread, &interrupt_pipes[1]);
+  if (pthread_create(&timebase, &timebase_attr, platform_timebase_thread, &interrupt_pipes[1])) {
+    perror("pthread_create");
+    /* Try without realtime sched */
+    if (pthread_create(&timebase, NULL, platform_timebase_thread, &interrupt_pipes[1])) {
+      perror("pthread_create");
+      exit(EXIT_FAILURE);
+    }
+  }
 
   pthread_t interrupts;
   pthread_attr_t interrupts_attr;
@@ -417,11 +426,16 @@ void platform_init() {
     .sched_priority = 2,
   };
   pthread_attr_setschedparam(&interrupts_attr, &interrupts_param);
-  pthread_create(&interrupts, &interrupts_attr, platform_interrupt_thread, &interrupt_pipes[0]);
+  if (pthread_create(&interrupts, &interrupts_attr, platform_interrupt_thread, &interrupt_pipes[0])) {
+    perror("pthread_create");
+    /* Try without realtime sched */
+    if (pthread_create(&interrupts, NULL, platform_interrupt_thread, &interrupt_pipes[0])) {
+      perror("pthread_create");
+      exit(EXIT_FAILURE);
+    }
+  }
 
   sensors_process(SENSOR_ADC);
   sensors_process(SENSOR_FREQ);
   sensors_process(SENSOR_CONST);
-
-
 }
