@@ -16,7 +16,7 @@ static struct output_buffer {
   struct output_slot {
     uint16_t on_mask;  /* On little endian arch, most-significant */
     uint16_t off_mask; /* are last in struct */
-  } __attribute__((packed)) slots[OUTPUT_BUFFER_LEN];
+  } __attribute__((packed)) __attribute__((aligned(4))) slots[OUTPUT_BUFFER_LEN];
 } output_buffers[2];
 
 #define MAX_CALLBACKS 32
