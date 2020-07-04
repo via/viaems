@@ -339,7 +339,7 @@ The platform interface is also implemented for a Linux host machine.
 ```
 make PLATFORM=hosted run
 ``` 
-This will build `tfi` as a Linux executable that will use stdin/stdout as
+This will build `viaems` as a Linux executable that will use stdin/stdout as
 the console, and event/trigger updates will be sent to stderr .  The test
 trigger that is enabled by default will provide enough inputs to verify some
 basic functionality.  Full integration testing using this simulation mode is

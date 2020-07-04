@@ -1,5 +1,6 @@
 ### master (unreleased)
 - Switch build system to a GNU makefile at the toplevel
+- New hosted mode that can run at realtime speed
 
 ### 1.2.0 (2020 May 30)
 Introduces a breaking change for the trigger inputs. They are now configured in
