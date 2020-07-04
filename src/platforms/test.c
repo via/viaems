@@ -25,7 +25,10 @@ void platform_disable_event_logging() {}
 
 void platform_reset_into_bootloader() {}
 
-void set_pwm(int pin, float val) {}
+void set_pwm(int pin, float val) {
+  (void)pin;
+  (void)val;
+}
 
 void check_platform_reset() {
   curtime = 0;
@@ -98,27 +101,38 @@ int get_gpio(int output) {
   return gpio_states[output];
 }
 
-void adc_gather(void *_adc) {}
+void adc_gather(void *_adc) {
+  (void)_adc;
+}
 
 int current_output_buffer() {
   return current_buffer;
 }
 
 timeval_t init_output_thread(uint32_t *b0, uint32_t *b1, uint32_t len) {
+	(void)b0;
+	(void)b1;
+	(void)len;
   return 0;
 }
 
-void set_test_trigger_rpm(unsigned int rpm) {}
+void set_test_trigger_rpm(unsigned int rpm) {
+  (void)rpm;
+}
 
 void platform_save_config() {}
 
 void platform_load_config() {}
 
 size_t console_read(void *ptr, size_t max) {
+  (void)ptr;
+  (void)max;
   return 0;
 }
 
 size_t console_write(const void *ptr, size_t max) {
+  (void)ptr;
+  (void)max;
   return 0;
 }
 
