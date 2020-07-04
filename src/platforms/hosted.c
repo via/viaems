@@ -1,7 +1,6 @@
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>           /* For O_* constants */
-#include <mqueue.h>
 #include <poll.h>
 #include <pthread.h>
 #include <stdio.h>
@@ -52,7 +51,7 @@ timeval_t cycle_count() {
 
   struct timespec tp;
   clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &tp);
-  return (timeval_t)(tp.tv_sec * 1000000000 + tp.tv_nsec);
+  return (timeval_t)((uint64_t)tp.tv_sec * 1000000000 + tp.tv_nsec);
 }
 
 void set_event_timer(timeval_t t) {
