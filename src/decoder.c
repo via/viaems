@@ -411,7 +411,7 @@ START_TEST(check_tfi_decoder_startup_normal) {
   prepare_decoder(FORD_TFI);
 
   /* Triggers to get RPM */
-  for (int i = 0; i < config.decoder.required_triggers_rpm - 1; ++i) {
+  for (unsigned int i = 0; i < config.decoder.required_triggers_rpm - 1; ++i) {
     add_trigger_event(&entries, 25000, 0);
   }
   add_trigger_event_transition_sync(&entries, 25000, 0);
@@ -430,7 +430,7 @@ START_TEST(check_tfi_decoder_syncloss_variation) {
   prepare_decoder(FORD_TFI);
 
   /* Triggers to get RPM */
-  for (int i = 0; i < config.decoder.required_triggers_rpm - 1; ++i) {
+  for (unsigned int i = 0; i < config.decoder.required_triggers_rpm - 1; ++i) {
     add_trigger_event(&entries, 25000, 0);
   }
   add_trigger_event_transition_sync(&entries, 25000, 0);
@@ -451,7 +451,7 @@ START_TEST(check_tfi_decoder_syncloss_expire) {
   prepare_decoder(FORD_TFI);
 
   /* Triggers to get RPM */
-  for (int i = 0; i < config.decoder.required_triggers_rpm - 1; ++i) {
+  for (unsigned int i = 0; i < config.decoder.required_triggers_rpm - 1; ++i) {
     add_trigger_event(&entries, 25000, 0);
   }
   add_trigger_event_transition_sync(&entries, 25000, 0);
@@ -478,7 +478,7 @@ END_TEST
 static void cam_nplusone_normal_startup_to_sync(
   struct decoder_event **entries) {
   /* Triggers to get RPM */
-  for (int i = 0; i < config.decoder.required_triggers_rpm - 1; ++i) {
+  for (unsigned int i = 0; i < config.decoder.required_triggers_rpm - 1; ++i) {
     add_trigger_event(entries, 25000, 0);
   }
   add_trigger_event_transition_rpm(entries, 25000, 0);
@@ -539,7 +539,7 @@ START_TEST(check_cam_nplusone_startup_normal_sustained) {
   cam_nplusone_normal_startup_to_sync(&entries);
 
   /* continued wheel of additional triggers */
-  for (int i = 0; i < config.decoder.num_triggers - 1; ++i) {
+  for (unsigned int i = 0; i < config.decoder.num_triggers - 1; ++i) {
     add_trigger_event(&entries, 25000, 0);
   }
   /* Plus another sync and trigger */
@@ -586,7 +586,7 @@ START_TEST(check_cam_nplusone_startup_normal_no_second_trigger) {
   cam_nplusone_normal_startup_to_sync(&entries);
 
   /* continued wheel of additional triggers */
-  for (int i = 0; i < config.decoder.num_triggers - 1; ++i) {
+  for (unsigned int i = 0; i < config.decoder.num_triggers - 1; ++i) {
     add_trigger_event(&entries, 25000, 0);
   }
   /* Another trigger, no sync when there should be one */

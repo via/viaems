@@ -302,7 +302,7 @@ START_TEST(check_calculate_ignition_fixedduty) {
   ck_assert(calculated_values.timing_advance == 10);
   /* 10 ms per rev, dwell should be 1/8 of rotation,
    * fuzzy estimate because math */
-  ck_assert(abs(calculated_values.dwell_us - (10000 / 8)) < 5);
+  ck_assert(abs((signed)calculated_values.dwell_us - (10000 / 8)) < 5);
 }
 END_TEST
 
