@@ -1,12 +1,12 @@
 #include <assert.h>
 #include <errno.h>
-#include <fcntl.h>           /* For O_* constants */
+#include <fcntl.h> /* For O_* constants */
 #include <poll.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h>        /* For mode constants */
+#include <sys/stat.h> /* For mode constants */
 #include <time.h>
 #include <unistd.h>
 
@@ -27,7 +27,7 @@ static _Atomic uint16_t cur_outputs = 0;
 struct slot {
   uint16_t on_mask;
   uint16_t off_mask;
-} __attribute__((packed)) *output_slots[2] = {0};
+} __attribute__((packed)) * output_slots[2] = { 0 };
 static size_t max_slots;
 static _Atomic size_t cur_slot = 0;
 static _Atomic size_t cur_buffer = 0;
@@ -41,7 +41,6 @@ void platform_disable_event_logging() {
 }
 
 void platform_reset_into_bootloader() {}
-
 
 timeval_t current_time() {
   return curtime;
@@ -201,9 +200,9 @@ void clock_nanosleep_busywait(struct timespec until) {
 
   do {
     clock_gettime(CLOCK_MONOTONIC, &current);
-  } while ((current.tv_sec < until.tv_sec) ||
-           ((current.tv_sec == until.tv_sec) &&
-            (current.tv_nsec < until.tv_nsec)));
+  } while (
+    (current.tv_sec < until.tv_sec) ||
+    ((current.tv_sec == until.tv_sec) && (current.tv_nsec < until.tv_nsec)));
 }
 
 typedef enum event_type {
@@ -234,7 +233,7 @@ static void do_test_trigger(int interrupt_fd) {
   }
   last_trigger_time = curtime;
 
-  struct event ev = { .type = TRIGGER0, .time = curtime};
+  struct event ev = { .type = TRIGGER0, .time = curtime };
   if (write(interrupt_fd, &ev, sizeof(ev)) < 0) {
     perror("write");
     exit(3);
@@ -242,7 +241,7 @@ static void do_test_trigger(int interrupt_fd) {
 
   trigger++;
   if (trigger == 24) {
-    struct event ev = { .type = TRIGGER1, .time = curtime};
+    struct event ev = { .type = TRIGGER1, .time = curtime };
     if (write(interrupt_fd, &ev, sizeof(ev)) < 0) {
       perror("write");
       exit(4);
@@ -266,39 +265,36 @@ void *platform_interrupt_thread(void *_interrupt_fd) {
       exit(1);
     }
 
-
     char output[64];
     switch (msg.type) {
-      case TRIGGER0:
-        sprintf(output, "# TRIGGER0 %lu\n", (unsigned long)msg.time);
-        write(STDERR_FILENO, output, strlen(output));
-        decoder_update_scheduling(&(struct decoder_event){.trigger = 0, .time = msg.time}, 1);
-        break;
-      case TRIGGER1:
-        sprintf(output, "# TRIGGER1 %lu\n", (unsigned long)msg.time);
-        write(STDERR_FILENO, output, strlen(output));
-        decoder_update_scheduling(&(struct decoder_event){.trigger = 1, .time = msg.time}, 1);
-        break;
-      case SCHEDULED_EVENT:
-        if (eventtimer_enable) {
-          scheduler_callback_timer_execute();
-        }
-        break;
-      default:
-        break;
-       
+    case TRIGGER0:
+      sprintf(output, "# TRIGGER0 %lu\n", (unsigned long)msg.time);
+      write(STDERR_FILENO, output, strlen(output));
+      decoder_update_scheduling(
+        &(struct decoder_event){ .trigger = 0, .time = msg.time }, 1);
+      break;
+    case TRIGGER1:
+      sprintf(output, "# TRIGGER1 %lu\n", (unsigned long)msg.time);
+      write(STDERR_FILENO, output, strlen(output));
+      decoder_update_scheduling(
+        &(struct decoder_event){ .trigger = 1, .time = msg.time }, 1);
+      break;
+    case SCHEDULED_EVENT:
+      if (eventtimer_enable) {
+        scheduler_callback_timer_execute();
+      }
+      break;
+    default:
+      break;
     }
 
-  } while(1);
-
+  } while (1);
 }
-
 
 static void do_output_slots() {
   static uint16_t old_outputs = 0;
   static uint16_t old_fifo_on_mask = 0;
   static uint16_t old_fifo_off_mask = 0;
-
 
   if (!output_slots[0]) {
     return;
@@ -319,7 +315,7 @@ static void do_output_slots() {
 
   old_fifo_on_mask = output_slots[read_buffer][read_slot].on_mask;
   old_fifo_off_mask = output_slots[read_buffer][read_slot].off_mask;
-  
+
   if (cur_outputs != old_outputs) {
     char output[64];
     sprintf(output, "# OUTPUTS %lu %2x\n", (long unsigned)curtime, cur_outputs);
@@ -331,8 +327,6 @@ static void do_output_slots() {
     });
     old_outputs = cur_outputs;
   }
-
-
 }
 /* Thread that busywaits to increment the primary timebase.  This loop is also
  * responsible for triggering event timer, buffer swap, and trigger events
@@ -366,16 +360,16 @@ void *platform_timebase_thread(void *_interrupt_fd) {
       run_tasks();
     }
     do_test_trigger(*interrupt_fd);
-    
+
     if (eventtimer_enable && (eventtimer_time == curtime)) {
-      struct event event = {.type = SCHEDULED_EVENT};
+      struct event event = { .type = SCHEDULED_EVENT };
       if (write(*interrupt_fd, &event, sizeof(event)) < 0) {
         perror("write");
         exit(2);
       }
     }
 
-  } while(1);
+  } while (1);
 }
 
 static int interrupt_pipes[2];
@@ -407,10 +401,14 @@ void platform_init() {
     .sched_priority = 1,
   };
   pthread_attr_setschedparam(&timebase_attr, &timebase_param);
-  if (pthread_create(&timebase, &timebase_attr, platform_timebase_thread, &interrupt_pipes[1])) {
+  if (pthread_create(&timebase,
+                     &timebase_attr,
+                     platform_timebase_thread,
+                     &interrupt_pipes[1])) {
     perror("pthread_create");
     /* Try without realtime sched */
-    if (pthread_create(&timebase, NULL, platform_timebase_thread, &interrupt_pipes[1])) {
+    if (pthread_create(
+          &timebase, NULL, platform_timebase_thread, &interrupt_pipes[1])) {
       perror("pthread_create");
       exit(EXIT_FAILURE);
     }
@@ -425,10 +423,14 @@ void platform_init() {
     .sched_priority = 2,
   };
   pthread_attr_setschedparam(&interrupts_attr, &interrupts_param);
-  if (pthread_create(&interrupts, &interrupts_attr, platform_interrupt_thread, &interrupt_pipes[0])) {
+  if (pthread_create(&interrupts,
+                     &interrupts_attr,
+                     platform_interrupt_thread,
+                     &interrupt_pipes[0])) {
     perror("pthread_create");
     /* Try without realtime sched */
-    if (pthread_create(&interrupts, NULL, platform_interrupt_thread, &interrupt_pipes[0])) {
+    if (pthread_create(
+          &interrupts, NULL, platform_interrupt_thread, &interrupt_pipes[0])) {
       perror("pthread_create");
       exit(EXIT_FAILURE);
     }

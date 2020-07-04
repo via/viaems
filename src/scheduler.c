@@ -5,7 +5,6 @@
 #include "stats.h"
 #include "util.h"
 
-
 #include <assert.h>
 #include <string.h>
 #include <strings.h>
@@ -16,14 +15,15 @@ static struct output_buffer {
   struct output_slot {
     uint16_t on_mask;  /* On little endian arch, most-significant */
     uint16_t off_mask; /* are last in struct */
-  } __attribute__((packed)) __attribute__((aligned(4))) slots[OUTPUT_BUFFER_LEN];
+  } __attribute__((packed)) __attribute__((aligned(4)))
+  slots[OUTPUT_BUFFER_LEN];
 } output_buffers[2];
 
 #define MAX_CALLBACKS 32
 struct timed_callback *callbacks[MAX_CALLBACKS] = { 0 };
 static int n_callbacks = 0;
 
-/* 
+/*
  * For this check to be valid, output buffer swaps *must* have executed in time
  */
 static int sched_entry_has_fired(struct sched_entry *en) {

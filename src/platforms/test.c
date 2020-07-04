@@ -110,9 +110,9 @@ int current_output_buffer() {
 }
 
 timeval_t init_output_thread(uint32_t *b0, uint32_t *b1, uint32_t len) {
-	(void)b0;
-	(void)b1;
-	(void)len;
+  (void)b0;
+  (void)b1;
+  (void)len;
   return 0;
 }
 
