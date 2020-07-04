@@ -1,13 +1,12 @@
-#include <sys/socket.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/un.h>
-
-#include <fcntl.h>
+#include <assert.h>
+#include <errno.h>
+#include <fcntl.h> /* For O_* constants */
 #include <poll.h>
-#include <signal.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h> /* For mode constants */
 #include <time.h>
 #include <unistd.h>
 
@@ -17,36 +16,21 @@
 #include "scheduler.h"
 #include "stats.h"
 
-/* A platform that runs on a hosted OS, preferably one that supports posix
- * timers.  Sends console to stdout/stdin
- *
- * Outputs:
- * [TIME] OUTPUTS [PORT-D VALUE]
- * [TIME] STOPPED
- *
- * Inputs:
- * TRIGGER1
- * TRIGGER2
- * ADC [PIN] [VALUE]
- * RUN [TIME]
- */
+static _Atomic timeval_t curtime;
 
-_Atomic static timeval_t curtime;
-
-_Atomic static timeval_t eventtimer_time;
-_Atomic static uint32_t eventtimer_enable = 0;
-int event_logging_enabled = 1;
-uint32_t test_trigger_rpm = 0;
-timeval_t test_trigger_last = 0;
+static _Atomic timeval_t eventtimer_time;
+static _Atomic uint32_t eventtimer_enable = 0;
+static int event_logging_enabled = 1;
+static uint32_t test_trigger_rpm = 0;
+static _Atomic uint16_t cur_outputs = 0;
 
 struct slot {
   uint16_t on_mask;
   uint16_t off_mask;
-} __attribute__((packed)) * output_slots[2];
-size_t max_slots;
-size_t cur_slot = 0;
-size_t cur_buffer = 0;
-sigset_t smask;
+} __attribute__((packed)) * output_slots[2] = { 0 };
+static size_t max_slots;
+static _Atomic size_t cur_slot = 0;
+static _Atomic size_t cur_buffer = 0;
 
 void platform_enable_event_logging() {
   event_logging_enabled = 1;
@@ -58,8 +42,6 @@ void platform_disable_event_logging() {
 
 void platform_reset_into_bootloader() {}
 
-uint16_t cur_outputs = 0;
-
 timeval_t current_time() {
   return curtime;
 }
@@ -68,7 +50,7 @@ timeval_t cycle_count() {
 
   struct timespec tp;
   clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &tp);
-  return (timeval_t)(tp.tv_sec * 1000000000 + tp.tv_nsec);
+  return (timeval_t)((uint64_t)tp.tv_sec * 1000000000 + tp.tv_nsec);
 }
 
 void set_event_timer(timeval_t t) {
@@ -88,45 +70,34 @@ void disable_event_timer() {
   eventtimer_enable = 0;
 }
 
-static ucontext_t *sig_context = NULL;
-static void signal_handler_entered(struct ucontext_t *context) {
-  sig_context = context;
-}
-static void signal_handler_exited() {
-  sig_context = NULL;
-}
+/* Used to lock the interrupt thread */
+static pthread_mutex_t interrupt_mutex;
 
-static int interrupts_disabled = 0;
-int disable_interrupts() {
-  int old = interrupts_disabled;
-  if (sig_context) {
-    sigaddset(&sig_context->uc_sigmask, SIGVTALRM);
-  } else {
-    sigset_t sm;
-    sigemptyset(&sm);
-    sigaddset(&sm, SIGVTALRM);
-    sigprocmask(SIG_BLOCK, &sm, NULL);
+/* Used to determine when we've recursively unlocked */
+static pthread_mutex_t interrupt_count_mutex;
+_Atomic int interrupt_disables = 0;
+
+void disable_interrupts() {
+  if (pthread_mutex_lock(&interrupt_mutex)) {
+    abort();
   }
-  interrupts_disabled = 1;
-  stats_start_timing(STATS_INT_DISABLE_TIME);
-  return !old;
+  interrupt_disables += 1;
 }
 
 void enable_interrupts() {
-  interrupts_disabled = 0;
-  stats_finish_timing(STATS_INT_DISABLE_TIME);
-  if (sig_context) {
-    sigdelset(&sig_context->uc_sigmask, SIGVTALRM);
-  } else {
-    sigset_t sm;
-    sigemptyset(&sm);
-    sigaddset(&sm, SIGVTALRM);
-    sigprocmask(SIG_UNBLOCK, &sm, NULL);
+  interrupt_disables -= 1;
+
+  if (interrupt_disables < 0) {
+    abort();
+  }
+
+  if (pthread_mutex_unlock(&interrupt_mutex)) {
+    abort();
   }
 }
 
 int interrupts_enabled() {
-  return !interrupts_disabled;
+  return (interrupt_disables == 0);
 }
 
 void set_output(int output, char value) {
@@ -156,15 +127,22 @@ void set_gpio(int output, char value) {
   }
 }
 
-void set_pwm(int output, float value) {}
+void set_pwm(int output, float value) {
+  (void)output;
+  (void)value;
+}
 
 void adc_gather() {}
 
 timeval_t last_tx = 0;
 size_t console_write(const void *buf, size_t len) {
-  if (curtime - last_tx < 200) {
+  if (curtime - last_tx < 50) {
     return 0;
   }
+  struct timespec wait = {
+    .tv_nsec = 1000000,
+  };
+  nanosleep(&wait, NULL);
   ssize_t written = -1;
   while ((written = write(STDOUT_FILENO, buf, len)) < 0)
     ;
@@ -175,17 +153,12 @@ size_t console_write(const void *buf, size_t len) {
   return 0;
 }
 
-char rx_buffer[128];
-int rx_amt = 0;
 size_t console_read(void *buf, size_t len) {
-  if (rx_amt == 0) {
+  ssize_t res = read(STDIN_FILENO, buf, len);
+  if (res < 0) {
     return 0;
   }
-
-  size_t amt = len < rx_amt ? len : rx_amt;
-  memcpy(buf, rx_buffer, amt);
-  rx_amt -= amt;
-  return amt;
+  return (size_t)res;
 }
 
 void platform_load_config() {}
@@ -211,66 +184,142 @@ void set_test_trigger_rpm(unsigned int rpm) {
   test_trigger_rpm = rpm;
 }
 
-static void hosted_platform_timer(int sig, siginfo_t *info, void *ucontext) {
-  /* - Increase "time"
-   * - Trigger appropriate interrupts
-   *     timer event
-   *     input event
-   *     dma buffer swap
-   *
-   * - Set outputs from buffer
-   */
+static struct timespec add_times(struct timespec a, struct timespec b) {
+  struct timespec ret = a;
+  ret.tv_nsec += b.tv_nsec;
+  ret.tv_sec += b.tv_sec;
+  if (ret.tv_nsec > 999999999) {
+    ret.tv_nsec -= 1000000000;
+    ret.tv_sec += 1;
+  }
+  return ret;
+}
 
-  signal_handler_entered(ucontext);
-  stats_increment_counter(STATS_INT_RATE);
-  stats_start_timing(STATS_INT_TOTAL_TIME);
+void clock_nanosleep_busywait(struct timespec until) {
+  struct timespec current;
 
-  if (!output_slots[0]) {
-    /* Not initialized */
-    signal_handler_exited();
+  do {
+    clock_gettime(CLOCK_MONOTONIC, &current);
+  } while (
+    (current.tv_sec < until.tv_sec) ||
+    ((current.tv_sec == until.tv_sec) && (current.tv_nsec < until.tv_nsec)));
+}
+
+typedef enum event_type {
+  TRIGGER0,
+  TRIGGER1,
+  OUTPUT_CHANGED,
+  SCHEDULED_EVENT,
+} event_type;
+
+struct event {
+  event_type type;
+  timeval_t time;
+  uint16_t values;
+};
+
+static void do_test_trigger(int interrupt_fd) {
+  static timeval_t last_trigger_time = 0;
+  static int trigger = 0;
+
+  if (!test_trigger_rpm) {
     return;
   }
 
-  int failing = 0; // (current_time() % 1000000) > 500000;
-  if (current_time() % 1000 == 0) {
-    // test_trigger_rpm += 1;
-    if (test_trigger_rpm > 9000) {
-      test_trigger_rpm = 800;
-    }
+  timeval_t time_between_teeth = time_from_rpm_diff(test_trigger_rpm, 30);
+  timeval_t curtime = current_time();
+  if (time_diff(curtime, last_trigger_time) < time_between_teeth) {
+    return;
   }
-  if (test_trigger_rpm && !failing) {
-    timeval_t time_between = time_from_rpm_diff(test_trigger_rpm, 30);
-    static uint32_t trigger_count = 0;
-    if (curtime >= test_trigger_last + time_between) {
-      test_trigger_last = curtime;
-      struct decoder_event ev = { .trigger = 0, .time = curtime };
-      decoder_update_scheduling(&ev, 1);
-      trigger_count++;
+  last_trigger_time = curtime;
 
-      if ((config.decoder.type == TOYOTA_24_1_CAS) &&
-          (trigger_count >= config.decoder.num_triggers)) {
-        trigger_count = 0;
-        struct decoder_event ev = { .trigger = 1, .time = curtime };
-        decoder_update_scheduling(&ev, 1);
+  struct event ev = { .type = TRIGGER0, .time = curtime };
+  if (write(interrupt_fd, &ev, sizeof(ev)) < 0) {
+    perror("write");
+    exit(3);
+  }
+
+  trigger++;
+  if (trigger == 24) {
+    struct event ev = { .type = TRIGGER1, .time = curtime };
+    if (write(interrupt_fd, &ev, sizeof(ev)) < 0) {
+      perror("write");
+      exit(4);
+    }
+    trigger = 0;
+  }
+}
+
+void *platform_interrupt_thread(void *_interrupt_fd) {
+  int *interrupt_fd = (int *)_interrupt_fd;
+
+  do {
+    struct event msg;
+
+    ssize_t rsize = read(*interrupt_fd, &msg, sizeof(msg));
+    if (rsize < 0) {
+      if (errno == EINTR) {
+        continue;
       }
+      perror("read");
+      exit(1);
     }
+
+    char output[64];
+    switch (msg.type) {
+    case TRIGGER0:
+      sprintf(output, "# TRIGGER0 %lu\n", (unsigned long)msg.time);
+      write(STDERR_FILENO, output, strlen(output));
+      decoder_update_scheduling(
+        &(struct decoder_event){ .trigger = 0, .time = msg.time }, 1);
+      break;
+    case TRIGGER1:
+      sprintf(output, "# TRIGGER1 %lu\n", (unsigned long)msg.time);
+      write(STDERR_FILENO, output, strlen(output));
+      decoder_update_scheduling(
+        &(struct decoder_event){ .trigger = 1, .time = msg.time }, 1);
+      break;
+    case SCHEDULED_EVENT:
+      if (eventtimer_enable) {
+        scheduler_callback_timer_execute();
+      }
+      break;
+    default:
+      break;
+    }
+
+  } while (1);
+}
+
+static void do_output_slots() {
+  static uint16_t old_outputs = 0;
+  static uint16_t old_fifo_on_mask = 0;
+  static uint16_t old_fifo_off_mask = 0;
+
+  if (!output_slots[0]) {
+    return;
   }
 
-  static uint16_t old_outputs = 0;
-  curtime++;
   cur_slot++;
   if (cur_slot == max_slots) {
     cur_buffer = (cur_buffer + 1) % 2;
     cur_slot = 0;
-    stats_start_timing(STATS_INT_BUFFERSWAP_TIME);
     scheduler_buffer_swap();
-    stats_finish_timing(STATS_INT_BUFFERSWAP_TIME);
   }
 
-  cur_outputs |= output_slots[cur_buffer][cur_slot].on_mask;
-  cur_outputs &= ~output_slots[cur_buffer][cur_slot].off_mask;
+  int read_slot = (cur_slot + 1) % max_slots;
+  int read_buffer = (read_slot == 0) ? !cur_buffer : cur_buffer;
+
+  cur_outputs |= old_fifo_on_mask;
+  cur_outputs &= ~old_fifo_off_mask;
+
+  old_fifo_on_mask = output_slots[read_buffer][read_slot].on_mask;
+  old_fifo_off_mask = output_slots[read_buffer][read_slot].off_mask;
 
   if (cur_outputs != old_outputs) {
+    char output[64];
+    sprintf(output, "# OUTPUTS %lu %2x\n", (long unsigned)curtime, cur_outputs);
+    write(STDERR_FILENO, output, strlen(output));
     console_record_event((struct logged_event){
       .time = curtime,
       .value = cur_outputs,
@@ -278,82 +327,116 @@ static void hosted_platform_timer(int sig, siginfo_t *info, void *ucontext) {
     });
     old_outputs = cur_outputs;
   }
+}
+/* Thread that busywaits to increment the primary timebase.  This loop is also
+ * responsible for triggering event timer, buffer swap, and trigger events
+ */
 
-  /* poll for command input */
-  struct pollfd pfds[] = {
-    { .fd = STDIN_FILENO, .events = POLLIN },
+void *platform_timebase_thread(void *_interrupt_fd) {
+  int *interrupt_fd = (int *)_interrupt_fd;
+  struct timespec current_time;
+  struct timespec tick_increment = {
+    .tv_nsec = 250,
   };
-  if (!rx_amt && poll(pfds, 1, 0)) {
-    ssize_t r = read(STDIN_FILENO, rx_buffer, 127);
-    if (r > 0) {
-      rx_amt = r;
+
+  if (clock_gettime(CLOCK_MONOTONIC, &current_time)) {
+    perror("clock_gettime");
+  }
+
+  do {
+    struct timespec next_tick = add_times(current_time, tick_increment);
+    clock_nanosleep_busywait(next_tick);
+    current_time = next_tick;
+
+    if (!output_slots[0]) {
+      continue;
+    }
+
+    curtime += 1;
+
+    do_output_slots();
+
+    if ((curtime % 10000) == 0) {
+      run_tasks();
+    }
+    do_test_trigger(*interrupt_fd);
+
+    if (eventtimer_enable && (eventtimer_time == curtime)) {
+      struct event event = { .type = SCHEDULED_EVENT };
+      if (write(*interrupt_fd, &event, sizeof(event)) < 0) {
+        perror("write");
+        exit(2);
+      }
+    }
+
+  } while (1);
+}
+
+static int interrupt_pipes[2];
+
+void platform_init() {
+
+  /* Initalize mutexes */
+  pthread_mutexattr_t im_attr;
+  pthread_mutexattr_init(&im_attr);
+  pthread_mutexattr_settype(&im_attr, PTHREAD_MUTEX_RECURSIVE);
+  pthread_mutex_init(&interrupt_mutex, &im_attr);
+
+  pthread_mutexattr_t imc_attr;
+  pthread_mutexattr_init(&imc_attr);
+  pthread_mutexattr_settype(&imc_attr, PTHREAD_MUTEX_ERRORCHECK);
+  pthread_mutex_init(&interrupt_count_mutex, &imc_attr);
+
+  /* Set stdin nonblock */
+  fcntl(STDIN_FILENO, F_SETFL, fcntl(STDIN_FILENO, F_GETFL, 0) | O_NONBLOCK);
+
+  pipe(interrupt_pipes);
+
+  pthread_t timebase;
+  pthread_attr_t timebase_attr;
+  pthread_attr_init(&timebase_attr);
+  pthread_attr_setinheritsched(&timebase_attr, PTHREAD_EXPLICIT_SCHED);
+  pthread_attr_setschedpolicy(&timebase_attr, SCHED_RR);
+  struct sched_param timebase_param = {
+    .sched_priority = 1,
+  };
+  pthread_attr_setschedparam(&timebase_attr, &timebase_param);
+  if (pthread_create(&timebase,
+                     &timebase_attr,
+                     platform_timebase_thread,
+                     &interrupt_pipes[1])) {
+    perror("pthread_create");
+    /* Try without realtime sched */
+    if (pthread_create(
+          &timebase, NULL, platform_timebase_thread, &interrupt_pipes[1])) {
+      perror("pthread_create");
+      exit(EXIT_FAILURE);
     }
   }
 
-  if (eventtimer_enable && (eventtimer_time + 1 == curtime)) {
-    scheduler_callback_timer_execute();
+  pthread_t interrupts;
+  pthread_attr_t interrupts_attr;
+  pthread_attr_init(&interrupts_attr);
+  pthread_attr_setinheritsched(&interrupts_attr, PTHREAD_EXPLICIT_SCHED);
+  pthread_attr_setschedpolicy(&interrupts_attr, SCHED_RR);
+  struct sched_param interrupts_param = {
+    .sched_priority = 2,
+  };
+  pthread_attr_setschedparam(&interrupts_attr, &interrupts_param);
+  if (pthread_create(&interrupts,
+                     &interrupts_attr,
+                     platform_interrupt_thread,
+                     &interrupt_pipes[0])) {
+    perror("pthread_create");
+    /* Try without realtime sched */
+    if (pthread_create(
+          &interrupts, NULL, platform_interrupt_thread, &interrupt_pipes[0])) {
+      perror("pthread_create");
+      exit(EXIT_FAILURE);
+    }
   }
 
   sensors_process(SENSOR_ADC);
   sensors_process(SENSOR_FREQ);
-
-  if ((curtime % 10000) == 0) {
-    run_tasks();
-  }
-
-  stats_finish_timing(STATS_INT_TOTAL_TIME);
-  signal_handler_exited();
-}
-
-void platform_init() {
-
-  /* Set up signal handling */
-  sigemptyset(&smask);
-  struct sigaction sa = {
-    .sa_sigaction = hosted_platform_timer,
-    .sa_mask = smask,
-  };
-  sigaction(SIGVTALRM, &sa, NULL);
-
-#ifdef SUPPORTS_POSIX_TIMERS
-  struct sigevent sev = {
-    .sigev_notify = SIGEV_SIGNAL,
-    .sigev_signo = SIGVTALRM,
-  };
-
-  timer_t timer;
-  if (timer_create(CLOCK_MONOTONIC, &sev, &timer) == -1) {
-    perror("timer_create");
-  }
-  struct itimerspec interval = {
-    .it_interval = {
-      .tv_sec = 0,
-      .tv_nsec = 10000,
-    },
-    .it_value = {
-      .tv_sec = 0,
-      .tv_nsec = 10000,
-    },
-  };
-  timer_settime(timer, 0, &interval, NULL);
-#else
-  /* Use interval timer */
-  struct itimerval t = {
-    .it_interval =
-      (struct timeval){
-        .tv_sec = 0,
-        .tv_usec = 1,
-      },
-    .it_value =
-      (struct timeval){
-        .tv_sec = 0,
-        .tv_usec = 1,
-      },
-  };
-  setitimer(ITIMER_VIRTUAL, &t, NULL);
-#endif
-  stats_init(1000000000);
-
-  /* Set stdin nonblock */
-  fcntl(STDIN_FILENO, F_SETFL, fcntl(STDIN_FILENO, F_GETFL, 0) | O_NONBLOCK);
+  sensors_process(SENSOR_CONST);
 }

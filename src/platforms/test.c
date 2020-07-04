@@ -14,7 +14,7 @@
 
 static timeval_t curtime = 0;
 static timeval_t cureventtime = 0;
-static int int_on = 1;
+static int int_disables = 0;
 static int output_states[16] = { 0 };
 static int gpio_states[16] = { 0 };
 static int current_buffer = 0;
@@ -25,7 +25,10 @@ void platform_disable_event_logging() {}
 
 void platform_reset_into_bootloader() {}
 
-void set_pwm(int pin, float val) {}
+void set_pwm(int pin, float val) {
+  (void)pin;
+  (void)val;
+}
 
 void check_platform_reset() {
   curtime = 0;
@@ -33,14 +36,13 @@ void check_platform_reset() {
   initialize_scheduler();
 }
 
-int disable_interrupts() {
-  int old = int_on;
-  int_on = 0;
-  return old;
+void disable_interrupts() {
+  int_disables += 1;
 }
 
 void enable_interrupts() {
-  int_on = 1;
+  int_disables -= 1;
+  ck_assert(int_disables >= 0);
 }
 
 timeval_t current_time() {
@@ -80,7 +82,7 @@ void disable_event_timer() {
 }
 
 int interrupts_enabled() {
-  return int_on;
+  return int_disables == 0;
 }
 
 void set_output(int output, char value) {
@@ -99,27 +101,38 @@ int get_gpio(int output) {
   return gpio_states[output];
 }
 
-void adc_gather(void *_adc) {}
+void adc_gather(void *_adc) {
+  (void)_adc;
+}
 
 int current_output_buffer() {
   return current_buffer;
 }
 
 timeval_t init_output_thread(uint32_t *b0, uint32_t *b1, uint32_t len) {
+  (void)b0;
+  (void)b1;
+  (void)len;
   return 0;
 }
 
-void set_test_trigger_rpm(unsigned int rpm) {}
+void set_test_trigger_rpm(unsigned int rpm) {
+  (void)rpm;
+}
 
 void platform_save_config() {}
 
 void platform_load_config() {}
 
 size_t console_read(void *ptr, size_t max) {
+  (void)ptr;
+  (void)max;
   return 0;
 }
 
 size_t console_write(const void *ptr, size_t max) {
+  (void)ptr;
+  (void)max;
   return 0;
 }
 

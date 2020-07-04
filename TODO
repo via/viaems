@@ -1,4 +1,6 @@
 - Detect overlapping output schedules on same pin
+- Validate that buffer swap occurs before its too late
+- Don't handle callbacks upon scheduling, this makes recursion possible
 
 + Basic tasks
     + Fan control
