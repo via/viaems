@@ -778,7 +778,7 @@ static void console_set_freq(const struct console_config_node *self
 
 static struct {
   int enabled;
-  struct logged_event events[128];
+  struct logged_event events[32];
   int read;
   int write;
 } event_log;
