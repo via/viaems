@@ -1213,7 +1213,7 @@ void dma2_stream1_isr(void) {
   stats_finish_timing(STATS_INT_TOTAL_TIME);
 }
 
-int interrupt_disables = 0;
+volatile int interrupt_disables = 0;
 void enable_interrupts() {
   stats_finish_timing(STATS_INT_DISABLE_TIME);
   interrupt_disables -= 1;
