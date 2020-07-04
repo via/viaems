@@ -16,7 +16,7 @@ static struct output_buffer {
   struct output_slot {
     uint16_t on_mask;  /* On little endian arch, most-significant */
     uint16_t off_mask; /* are last in struct */
-  } __attribute__((packed)) __attribute((aligned(8))) slots[OUTPUT_BUFFER_LEN];
+  } __attribute__((packed)) slots[OUTPUT_BUFFER_LEN];
 } output_buffers[2];
 
 #define MAX_CALLBACKS 32
@@ -561,7 +561,6 @@ int schedule_callback(struct timed_callback *tcb, timeval_t time) {
 }
 
 void scheduler_callback_timer_execute() {
-  size_t n_runs = 0;
   while (n_callbacks && time_before(callbacks[0]->time, current_time())) {
     clear_event_timer();
     struct timed_callback *cb = callbacks[0];
@@ -574,7 +573,6 @@ void scheduler_callback_timer_execute() {
     } else {
       set_event_timer(callbacks[0]->time);
     }
-    n_runs += 1;
   }
 }
 
