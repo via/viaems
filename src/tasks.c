@@ -2,8 +2,8 @@
 #include "config.h"
 #include "decoder.h"
 #include "platform.h"
-#include "util.h"
 #include "stats.h"
+#include "util.h"
 
 static void handle_fuel_pump() {
   static timeval_t last_valid = 0;

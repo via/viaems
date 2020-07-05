@@ -15,30 +15,31 @@ static struct output_buffer {
   struct output_slot {
     uint16_t on_mask;  /* On little endian arch, most-significant */
     uint16_t off_mask; /* are last in struct */
-  } __attribute__((packed)) slots[OUTPUT_BUFFER_LEN];
+  } __attribute__((packed)) __attribute__((aligned(4)))
+  slots[OUTPUT_BUFFER_LEN];
 } output_buffers[2];
 
 #define MAX_CALLBACKS 32
 struct timed_callback *callbacks[MAX_CALLBACKS] = { 0 };
 static int n_callbacks = 0;
 
+/*
+ * For this check to be valid, output buffer swaps *must* have executed in time
+ */
 static int sched_entry_has_fired(struct sched_entry *en) {
   assert(en);
 
   int ret = 0;
-  int ints_on = disable_interrupts();
+  disable_interrupts();
 
-  if (en->buffer && 
-      time_before(en->buffer->start, current_time()) &&
+  if (en->buffer && time_before(en->buffer->start, current_time()) &&
       time_in_range(en->time, en->buffer->start, current_time())) {
     ret = 1;
   }
   if (en->fired) {
     ret = 1;
   }
-  if (ints_on) {
-    enable_interrupts();
-  }
+  enable_interrupts();
   return ret;
 }
 
@@ -176,7 +177,7 @@ static void sched_entry_off(struct sched_entry *en) {
 }
 
 void deschedule_event(struct output_event *ev) {
-  int ints_en = disable_interrupts();
+  disable_interrupts();
 
   if (ev->start.fired) {
     enable_interrupts();
@@ -191,9 +192,7 @@ void deschedule_event(struct output_event *ev) {
     sched_entry_off(&ev->start);
     sched_entry_off(&ev->stop);
   }
-  if (ints_en) {
-    enable_interrupts();
-  }
+  enable_interrupts();
 }
 
 void invalidate_scheduled_events(struct output_event *evs, int n) {
@@ -224,8 +223,8 @@ static void reschedule_end(struct sched_entry *s,
   if (success) {
     success = fired_if_failed(s, sched_entry_disable(s, old));
     if (!success) {
-      /* if we failed to disable the old time, remove the stale enable of the new
-       * time */
+      /* if we failed to disable the old time, remove the stale enable of the
+       * new time */
       sched_entry_disable(s, new);
       sched_entry_update(s, old);
     } else {
@@ -238,7 +237,9 @@ static void reschedule_end(struct sched_entry *s,
    * anyway, or its before, and we must live with a longer-than-desired event */
 }
 
-static void schedule_output_safely_backwards(struct output_event *ev, timeval_t newstart, timeval_t newstop) {
+static void schedule_output_safely_backwards(struct output_event *ev,
+                                             timeval_t newstart,
+                                             timeval_t newstop) {
   timeval_t oldstart = ev->start.time;
   timeval_t oldstop = ev->stop.time;
   int success;
@@ -278,7 +279,9 @@ static void schedule_output_safely_backwards(struct output_event *ev, timeval_t 
   }
 }
 
-static void schedule_output_safely_forwards(struct output_event *ev, timeval_t newstart, timeval_t newstop) {
+static void schedule_output_safely_forwards(struct output_event *ev,
+                                            timeval_t newstart,
+                                            timeval_t newstop) {
   timeval_t oldstart = ev->start.time;
   timeval_t oldstop = ev->stop.time;
   int success;
@@ -286,7 +289,7 @@ static void schedule_output_safely_forwards(struct output_event *ev, timeval_t n
   /*  Moving an event forwards has three possible scenarios:
    *  1) New event starts after old ends, no overlap
    *  2) New event ends before old event ends, partial overlap
-   *  3) New event ends before old event ends, full overlap 
+   *  3) New event ends before old event ends, full overlap
    */
   if (time_in_range(newstart, oldstart, oldstop)) {
     /* Case (2) or (3), it is safe to schedule the new start, since failing
@@ -321,8 +324,8 @@ static void schedule_output_safely_forwards(struct output_event *ev, timeval_t n
  * that the start and stop times occur at least after curtime
  */
 static void schedule_output_event_safely(struct output_event *ev,
-                                  timeval_t newstart,
-                                  timeval_t newstop) {
+                                         timeval_t newstart,
+                                         timeval_t newstop) {
 
   stats_start_timing(STATS_SCHED_SINGLE_TIME);
 
@@ -332,7 +335,7 @@ static void schedule_output_event_safely(struct output_event *ev,
   ev->stop.val = ev->inverted ? 1 : 0;
 
   if (!ev->start.scheduled && !ev->stop.scheduled) {
-    int ints_on = disable_interrupts();
+    disable_interrupts();
     if (sched_entry_enable(&ev->stop, newstop)) {
       sched_entry_update(&ev->stop, newstop);
       if (sched_entry_enable(&ev->start, newstart)) {
@@ -344,14 +347,12 @@ static void schedule_output_event_safely(struct output_event *ev,
         sched_entry_off(&ev->stop);
       }
     }
-    if (ints_on) {
-      enable_interrupts();
-    }
+    enable_interrupts();
     stats_finish_timing(STATS_SCHED_SINGLE_TIME);
     return;
   }
 
-  int ints_on = disable_interrupts();
+  disable_interrupts();
   if (ev->start.time == newstart) {
     reschedule_end(&ev->stop, ev->stop.time, newstop);
   } else if (time_before(newstart, ev->start.time)) {
@@ -360,9 +361,7 @@ static void schedule_output_event_safely(struct output_event *ev,
     schedule_output_safely_forwards(ev, newstart, newstop);
   }
 
-  if (ints_on) {
-    enable_interrupts();
-  }
+  enable_interrupts();
   stats_finish_timing(STATS_SCHED_SINGLE_TIME);
 }
 
@@ -540,7 +539,7 @@ static void callback_insert(struct timed_callback *tcb) {
 
 int schedule_callback(struct timed_callback *tcb, timeval_t time) {
 
-  int ints_on = disable_interrupts();
+  disable_interrupts();
   if (tcb->scheduled) {
     callback_remove(tcb);
   }
@@ -556,9 +555,7 @@ int schedule_callback(struct timed_callback *tcb, timeval_t time) {
       scheduler_callback_timer_execute();
     }
   }
-  if (ints_on) {
-    enable_interrupts();
-  }
+  enable_interrupts();
 
   return 0;
 }
@@ -580,10 +577,11 @@ void scheduler_callback_timer_execute() {
 }
 
 void scheduler_buffer_swap() {
+  disable_interrupts();
+
   int newbuf = (current_output_buffer() + 1) % 2;
   struct output_buffer *obuf = &output_buffers[newbuf];
 
-  disable_interrupts();
   struct output_event *oev;
   int i;
   for (i = 0; i < MAX_EVENTS; ++i) {

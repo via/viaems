@@ -301,7 +301,7 @@ Node | Meaning
 # Compiling
 Requires:
 - Complete arm toolchain with hardware fpu support.
-- BSD Make (bmake or pmake)
+- GNU make
 - check (for unit tests)
 
 Before trying to compile, make sure to bring in the libopencm3 submodule:
@@ -311,21 +311,16 @@ git submodule update --init
 
 To run the unit tests:
 ```
-cd src/
-bmake clean
-bmake check
+make PLATFORM=test check
 ```
 
 To build an ELF binary for the stm32f4:
 
 ```
-cd libopencm3
 make
-cd ../src/
-bmake clean
-bmake
 ```
-`tfi` is the resultant executable that can be loaded.  
+`obj/stm32f4/viaems` is the resultant executable that can be loaded.  
+
 
 # Programming
 You can use gdb to load, especially for development, but dfu is supported.  Connect the stm32f4 via
@@ -334,7 +329,7 @@ brought up by holding BOOT1 high, or for any already-programmed ViaEMS chip, the
 `get bootloader` command will reboot it into DFU mode. Either way, there is a
 make target:
 ```
-bmake program`
+make program
 ```
 that will load the binary.
 
@@ -342,12 +337,19 @@ that will load the binary.
 # Simulation
 The platform interface is also implemented for a Linux host machine.
 ```
-bmake PLATFORM=hosted
-```
-This will build `tfi` as a Linux executable that will use stdin/stdout as the
-console.  The test trigger that is enabled by default will provide enough inputs
-to verify some basic functionality.  Full integration testing using this
-simulation mode is planned.
+make PLATFORM=hosted run
+``` 
+This will build `viaems` as a Linux executable that will use stdin/stdout as
+the console, and event/trigger updates will be sent to stderr .  The test
+trigger that is enabled by default will provide enough inputs to verify some
+basic functionality.  Full integration testing using this simulation mode is
+planned.
+
+The hosted implementation uses threads to simulate interrupt handling and the
+timers/DMA.  It attempts to schedule these two threads with realtime priority.
+If you experience difficulty keeping sync due to expired triggers (due to
+scheduling latency), make sure the threads have permissions to be realtime, or
+otherwise constrain it to a single cpu.
 
 # Hardware
 The current primary hardware platform is an ST Micro STM32F407VGT
