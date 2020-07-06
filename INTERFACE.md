@@ -36,6 +36,26 @@ Each leaf in the structure map can be used in subsequent operations as a path.
 It is planned for the leaf entries to contain information about schema and
 options, but for now an empty map is sufficient to represent a leaf entry.
 
+
+Types:
+{
+  "_id": "DecoderConfig",
+  "_fields": {
+    "type":{ "_type": "string", "choices": ["cam24+1", "tfi"]},
+    "offset":{ "_type": "float"},
+    "trigger_max_rpm_change": {"_type": "float"},
+  }
+
+  {"_id": "TableConfig",
+    "_fields": {
+      "title": {"_type": "string"},
+      "num_axis": {"_type": "int"},
+      "data": {"_type": "list"},
+    }
+  }
+   
+
+
 Example:
 -> {"method": "structure": "id": 5}
 <- {"type": "response", "id": 5, "success": true, "value":
