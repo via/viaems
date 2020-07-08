@@ -234,7 +234,7 @@ static void console_process_request(int len) {
   CborParser parser;
   CborValue value;
   CborError err;
-  int req_id;
+  int req_id = -1;
 
   uint8_t response[4096];
   CborEncoder encoder;
@@ -258,14 +258,9 @@ static void console_process_request(int len) {
   }
 
   CborValue request_id_value;
-  err = cbor_value_map_find_value(&value, "id", &request_id_value);
-  if (err) {
-    req_id = -1;
-  } else {
+  if (!cbor_value_map_find_value(&value, "id", &request_id_value)) {
     if (cbor_value_is_integer(&request_id_value)) {
-      if (cbor_value_get_int(&request_id_value, &req_id) != CborNoError) {
-        req_id = -1;
-      }
+      cbor_value_get_int(&request_id_value, &req_id);
     }
   }
   if (cbor_encode_text_stringz(&response_map, "id")) {
@@ -277,7 +272,7 @@ static void console_process_request(int len) {
 
   CborValue request_method_value;
   err = cbor_value_map_find_value(&value, "method", &request_method_value);
-  if (err) {
+  if (cbor_value_get_type(&request_method_value) == CborInvalidType) {
     report_cbor_parsing_error(&response_map, "request has no 'method'", err);
   } else {
     bool match;
