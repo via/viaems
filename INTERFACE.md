@@ -30,6 +30,9 @@ dependent on the request type.
    }
 
 To EMS:
+{"method": "ping": "id": int}
+{"type": "response", "id": int, "success": bool, "value": "pong}
+
 {"method": "structure": "id": int}
 Returns the toplevel structure of the EMS configuration in the form of a map.
 Each leaf in the structure map can be used in subsequent operations as a path.

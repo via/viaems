@@ -9,67 +9,42 @@
 #include <string.h>
 #include <strings.h>
 
-#include "console.h"
 #include "calculations.h"
 #include "config.h"
+#include "console.h"
 #include "decoder.h"
 #include "platform.h"
 #include "sensors.h"
 #include "stats.h"
 
-
 static struct console console;
-static struct console_node decoder = {
-  .id = "decoder",
-  .fields = {
-    {.id = "type", .choices = {"cam24+1", "tfi", NULL}, .description = "decoder type"},
-    {.id = "offset", .float_ptr=&config.decoder.offset, .description="decoder offset angle from trigger tooth"},
-  }
-};
-
-static struct console_node console_output_elements[] = {
-  {.fields = {
-    {.id="inverted", .uint32_ptr=&config.events[0].inverted},
-    {.id="angle", .float_ptr=&config.events[0].angle},
-             },
-  },
-};
-
-static struct console_node outputs = {
-  .id = "outputs",
-  .is_list = 1,
-  .list_size = 24,
-  .elements = console_output_elements,
-};
-
 
 #define CONSOLE_NODES_MAX 32
-static struct console_node console_nodes[CONSOLE_NODES_MAX] = {0};
+static struct console_node console_nodes[CONSOLE_NODES_MAX] = { 0 };
 
 void console_add_config(struct console_node *node) {
   for (int i = 0; i < CONSOLE_NODES_MAX; i++) {
     if (!console_nodes[i].id) {
       /* This node is unused, set it */
-//      console_nodes[i] = *node;
+      //      console_nodes[i] = *node;
       memcpy(&console_nodes[i], node, sizeof(struct console_node));
       return;
     }
   }
 }
 
-
 uint32_t console_current_time;
 
 #define MAX_CONSOLE_FEED_NODES 128
 struct console_feed_node console_feed_nodes[MAX_CONSOLE_FEED_NODES] = {
-  {.id="cputime", .uint32_ptr=&console_current_time},
+  { .id = "cputime", .uint32_ptr = &console_current_time },
 };
 
 void console_add_feed_node(struct console_feed_node *node) {
   for (int i = 0; i < MAX_CONSOLE_FEED_NODES; i++) {
     if (!console_feed_nodes[i].id) {
       /* This node is unused, set it */
-//      console_nodes[i] = *node;
+      //      console_nodes[i] = *node;
       memcpy(&console_feed_nodes[i], node, sizeof(struct console_feed_node));
       return;
     }
@@ -81,17 +56,30 @@ void console_add_feed_node(struct console_feed_node *node) {
 static const char *git_describe = GIT_DESCRIBE;
 #endif
 
-void console_record_event(struct logged_event ev) {
-}
+void console_record_event(struct logged_event ev) {}
 
-console_init() {
-}
+void console_init() {}
+
 int console_parse_request(char *dest, char *line) {
   (void)dest;
   (void)line;
-
+  return 0;
 }
 
+void console_describe_type(CborEncoder *enc, const char *type) {
+  cbor_encode_text_stringz(enc, "type");
+  cbor_encode_text_stringz(enc, type);
+}
+
+void console_describe_choices(CborEncoder *enc, const char **choices) {
+  cbor_encode_text_stringz(enc, "choices");
+  CborEncoder list_encoder;
+  cbor_encoder_create_array(enc, &list_encoder, CborIndefiniteLength);
+  for (const char *i = choices[0]; i != NULL; i++) {
+    cbor_encode_text_stringz(&list_encoder, i);
+  }
+  cbor_encoder_close_container(enc, &list_encoder);
+}
 
 static size_t console_feed_line_keys(uint8_t *dest, size_t bsize) {
   CborEncoder encoder;
@@ -104,7 +92,8 @@ static size_t console_feed_line_keys(uint8_t *dest, size_t bsize) {
 
   cbor_encode_text_stringz(&top_encoder, "keys");
   CborEncoder key_list_encoder;
-  cbor_encoder_create_array(&top_encoder, &key_list_encoder, CborIndefiniteLength);
+  cbor_encoder_create_array(
+    &top_encoder, &key_list_encoder, CborIndefiniteLength);
   for (int i = 0; i < MAX_CONSOLE_FEED_NODES; i++) {
     const struct console_feed_node *node = &console_feed_nodes[i];
     if (!node->id) {
@@ -130,7 +119,8 @@ static size_t console_feed_line(uint8_t *dest, size_t bsize) {
 
   cbor_encode_text_stringz(&top_encoder, "values");
   CborEncoder value_list_encoder;
-  cbor_encoder_create_array(&top_encoder, &value_list_encoder, CborIndefiniteLength);
+  cbor_encoder_create_array(
+    &top_encoder, &value_list_encoder, CborIndefiniteLength);
   for (int i = 0; i < MAX_CONSOLE_FEED_NODES; i++) {
     const struct console_feed_node *node = &console_feed_nodes[i];
     if (!node->id) {
@@ -149,126 +139,186 @@ static size_t console_feed_line(uint8_t *dest, size_t bsize) {
   return cbor_encoder_get_buffer_size(&encoder, dest);
 }
 
-struct {
-  struct {
-    int in_progress;
-    size_t max;
-    const char *src;
-    char *ptr;
-  } rx, tx;
-} console_state = {
-  .tx = { .src = console.txbuffer, .in_progress = 0 },
-  .rx = { .src = console.rxbuffer, .in_progress = 0 },
-};
+int console_write_full(const char *buf, size_t len) {
+  size_t remaining = len;
+  const char *ptr = buf;
+  while (remaining) {
+    ssize_t written = console_write(ptr, remaining);
+    if (written > 0) {
+      remaining -= written;
+      ptr += written;
+    }
+  }
+  return 1;
+}
 
-int console_read_full(char *buf, size_t max) {
-  if (console_state.rx.in_progress) {
-    size_t r = console_state.rx.max - 1 -
-               (size_t)(console_state.rx.ptr - console_state.rx.src);
-    if (r == 0) {
-      console_state.rx.in_progress = 0;
+static uint8_t rx_buffer[4096];
+static uint8_t *rx_buffer_ptr = rx_buffer;
+
+static void console_shift_rx_buffer(size_t amt) {
+  memmove(&rx_buffer[0], &rx_buffer[amt], (rx_buffer_ptr - rx_buffer));
+  rx_buffer_ptr -= amt;
+}
+
+static size_t console_try_read() {
+  size_t remaining = sizeof(rx_buffer) - (rx_buffer_ptr - rx_buffer);
+  size_t read_amt;
+  if ((read_amt = console_read(rx_buffer_ptr, remaining)) == 0) {
+    return 0;
+  }
+  rx_buffer_ptr += read_amt;
+
+  size_t len = rx_buffer_ptr - rx_buffer;
+  CborParser parser;
+  CborValue value;
+  
+  /* We want to determine if we have a valid cbor object in buffer.  If the
+   * buffer doesn't start with a map, it is not valid, and we want to advance
+   * byte-by-byte until we find a start of map */
+  do {
+    if (cbor_parser_init(rx_buffer, len, 0, &parser, &value) == CborNoError) {
+      if (cbor_value_is_map(&value)) {
+        break;
+      }
+    }
+    console_shift_rx_buffer(1);
+
+    /* We've exhausted the buffer */
+    if (rx_buffer_ptr == rx_buffer) {
       return 0;
     }
-    r = console_read(console_state.rx.ptr, r);
-    if (r) {
-      console_state.rx.ptr += r;
-      if (memchr(console_state.rx.src,
-                 '\r',
-                 (uint16_t)(console_state.rx.ptr - console_state.rx.src)) ||
-          memchr(console_state.rx.src,
-                 '\n',
-                 (uint16_t)(console_state.rx.ptr - console_state.rx.src))) {
-        console_state.rx.in_progress = 0;
-        return 1;
-      }
-    }
-  } else {
-    console_state.rx.in_progress = 1;
-    console_state.rx.max = max;
-    console_state.rx.src = buf;
-    console_state.rx.ptr = buf;
+  } while(1);
 
-    memset(buf, 0, max);
+  /* Maybe we have a valid object. if so, return.
+   * If we don't, it could be that we haven't read enough. We will read until
+   * the end of the buffer, but if its maxed out, reset everything
+   */
+  if (cbor_value_validate_basic(&value) == CborNoError) {
+    cbor_value_advance(&value);
+    const uint8_t *next = cbor_value_get_next_byte(&value);
+    return (next - rx_buffer);
+  }
+
+  if (len == sizeof(rx_buffer)) {
+    rx_buffer_ptr = rx_buffer;
   }
   return 0;
 }
 
-int console_write_full(char *buf, size_t max) {
-  if (console_state.tx.in_progress) {
-    size_t r = console_state.tx.max -
-               (size_t)(console_state.tx.ptr - console_state.tx.src);
-    r = console_write(console_state.tx.ptr, r);
-    if (r) {
-      console_state.tx.ptr += r;
-      if (console_state.tx.max ==
-          (uint16_t)(console_state.tx.ptr - console_state.tx.src)) {
-        console_state.tx.in_progress = 0;
-        return 1;
-      }
-    }
-  } else {
-    console_state.tx.in_progress = 1;
-    console_state.tx.max = max;
-    console_state.tx.src = buf;
-    console_state.tx.ptr = buf;
-  }
-  return 0;
+static void report_success(CborEncoder *enc, bool success) {
+  cbor_encode_text_stringz(enc, "success");
+  cbor_encode_boolean(enc, success);
 }
 
-static void console_process_rx() {
-  char *out = console.txbuffer;
-  char *in = strtok(console.rxbuffer, "\r\n");
-  char *response = out + 2; /* Allow for status character */
-  strcpy(response, "");
-
-  if (!in) {
-    /* Allow just raw \n's in the case of hosted mode */
-    in = strtok(console.rxbuffer, "\n");
-  }
-  int success = console_parse_request(response, in);
-  strcat(response, "\r\n");
-
-  out[0] = success ? '*' : '-';
-  out[1] = ' ';
-  console_write_full(out, strlen(out));
+static void report_cbor_parsing_error(CborEncoder *enc, const char *msg, CborError err) {
+  char txtbuf[256];
+  snprintf(txtbuf, sizeof(txtbuf), "%s: %s", msg, cbor_error_string(err));
+  cbor_encode_text_stringz(enc, "error");
+  cbor_encode_text_stringz(enc, txtbuf);
+  report_success(enc, false);
 }
 
-void console_process() {
+static void report_parsing_error(CborEncoder *enc, const char *msg) {
+  cbor_encode_text_stringz(enc, "error");
+  cbor_encode_text_stringz(enc, msg);
+  report_success(enc, false);
+}
 
-  static int pending_request = 0;
-  stats_start_timing(STATS_CONSOLE_TIME);
-  if (!pending_request &&
-      console_read_full(console.rxbuffer, CONSOLE_BUFFER_SIZE)) {
-    pending_request = 1;
+static void console_request_ping(CborEncoder *enc) {
+  cbor_encode_text_stringz(enc, "response");
+  cbor_encode_text_stringz(enc, "pong");
+  report_success(enc, true);
+}
+
+static void console_process_request(int len) {
+  CborParser parser;
+  CborValue value;
+  CborError err;
+  int req_id;
+
+  uint8_t response[4096];
+  CborEncoder encoder;
+  CborEncoder response_map;
+
+  cbor_encoder_init(&encoder, response, sizeof(response), 0);
+
+  if (cbor_encoder_create_map(&encoder, &response_map, CborIndefiniteLength) != CborNoError) {
+    return;
   }
-
-  /* We don't ever want to interrupt a feedline */
-  if (pending_request && !console_state.tx.in_progress) {
-    console_process_rx();
-    pending_request = 0;
+  if (cbor_encode_text_stringz(&response_map, "type")) {
+    return;
   }
-
-  /* We're still sending packets for a tx line, keep doing just that */
-  if (console_state.tx.in_progress) {
-    console_write_full(console.txbuffer, 0);
-    stats_finish_timing(STATS_CONSOLE_TIME);
+  if (cbor_encode_text_stringz(&response_map, "response")) {
     return;
   }
 
-  console.txbuffer[0] = '\0';
-  static int count = 0;
-  if (count == 0) {
-    size_t len = console_feed_line_keys((uint8_t*)console.txbuffer, CONSOLE_BUFFER_SIZE);
-    console_write_full(console.txbuffer, len);
-  } else {
-    size_t len = console_feed_line((uint8_t*)console.txbuffer, CONSOLE_BUFFER_SIZE);
-    console_write_full(console.txbuffer, len);
-  }
-  count++;
-  if (count == 100) {
-    count = 0;
+  err = cbor_parser_init(rx_buffer, len, 0, &parser, &value);
+  if (err) {
+    return;
   }
 
+  CborValue request_id_value;
+  err = cbor_value_map_find_value(&value, "id", &request_id_value);
+  if (err) {
+    req_id = -1;
+  } else {
+    if (cbor_value_is_integer(&request_id_value)) {
+      if (cbor_value_get_int(&request_id_value, &req_id) != CborNoError) {
+        req_id = -1;
+      }
+    }
+  }
+  if (cbor_encode_text_stringz(&response_map, "id")) {
+    return;
+  }
+  if (cbor_encode_int(&response_map, req_id)) {
+    return;
+  }
+
+  CborValue request_method_value;
+  err = cbor_value_map_find_value(&value, "method", &request_method_value);
+  if (err) {
+    report_cbor_parsing_error(&response_map, "request has no 'method'", err);
+  } else {
+    bool match;
+    cbor_value_text_string_equals(&request_method_value, "ping", &match);
+    if (match) {
+      console_request_ping(&response_map);
+    }
+  }
+
+  if (cbor_encoder_close_container(&encoder, &response_map)) {
+    return;
+  }
+
+  size_t write_size = cbor_encoder_get_buffer_size(&encoder, response);
+  console_write_full(response, write_size);
+}
+
+void console_process() {
+  static timeval_t last_desc_time = 0;
+
+  size_t read_size;
+  if ((read_size = console_try_read())) {
+    /* Parse a request from the client */
+    console_process_request(read_size);
+    console_shift_rx_buffer(read_size);
+    
+  }
+    
+  /* Has it been 100ms since the last description? */
+  if (time_diff(current_time(), last_desc_time) > time_from_us(100000)) {
+    /* If so, print a description message */
+    size_t len =
+      console_feed_line_keys((uint8_t *)console.txbuffer, CONSOLE_BUFFER_SIZE);
+    console_write_full(console.txbuffer, len);
+    last_desc_time = current_time();
+  } else {
+    /* Otherwise a feed message */
+    size_t len =
+      console_feed_line((uint8_t *)console.txbuffer, CONSOLE_BUFFER_SIZE);
+    console_write_full(console.txbuffer, len);
+  }
   stats_finish_timing(STATS_CONSOLE_TIME);
 }
 

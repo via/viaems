@@ -27,19 +27,22 @@ struct logged_event {
 };
 
 typedef void (*console_field_get)(CborEncoder *encoder, void *ptr);
-typedef void (*console_field_describe)(CborEncoder *encoder);
+typedef void (*console_field_describe)(CborEncoder *encoder, void *ptr);
 
 struct console_node;
 struct console_field {
   const char *id;
   const char *description;
+
+  /* Fixed types */
   const uint32_t *uint32_ptr;
   const float *float_ptr;
   const struct console_node *node_ptr;
-  console_field_get get;
 
-  /* string-type specific choices */
-  const char *choices[8];
+  /* Custom types */
+  void *ptr;
+  console_field_get get;
+  console_field_describe describe;
 };
 
 struct console_node {
@@ -64,6 +67,9 @@ struct console_feed_node {
 void console_init();
 void console_add_feed_node(struct console_feed_node *);
 void console_add_config(struct console_node *);
+
+void console_describe_choices(CborEncoder *, const char *choices[]);
+void console_describe_type(CborEncoder *, const char *type);
 
 void console_process();
 

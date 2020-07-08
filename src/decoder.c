@@ -1,10 +1,10 @@
 #include "decoder.h"
 #include "config.h"
+#include "console.h"
 #include "platform.h"
 #include "scheduler.h"
 #include "stats.h"
 #include "util.h"
-#include "console.h"
 
 #include <assert.h>
 #include <stdlib.h>
@@ -187,14 +187,55 @@ void tfi_pip_decoder(struct decoder *d) {
   stats_finish_timing(STATS_DECODE_TIME);
 }
 
+static void console_describe_decoder_types(CborEncoder *enc, void *ptr) {
+  (void)ptr;
+  console_describe_type(enc, "string");
+  console_describe_choices(enc, (const char *[]){ "cam24+1", "tfi", NULL });
+}
+
+static void console_get_decoder_type(CborEncoder *enc, void *ptr) {
+  (void)ptr;
+
+  const char *type;
+  switch (config.decoder.type) {
+  case TOYOTA_24_1_CAS:
+    type = "cam24+1";
+    break;
+  case FORD_TFI:
+    type = "tfi";
+    break;
+  default:
+    type = "unknown";
+    break;
+  }
+
+  cbor_encode_text_stringz(enc, type);
+}
+
 static struct console_feed_node decoder_feed_nodes[] = {
-  {.id="rpm", .uint32_ptr=&config.decoder.rpm},
-  {.id="sync", .uint32_ptr=&config.decoder.valid},
-  {.id="rpm_variance", .float_ptr=&config.decoder.trigger_cur_rpm_change},
-  {.id="t0_count", .uint32_ptr=&config.decoder.t0_count},
-  {.id="t1_count", .uint32_ptr=&config.decoder.t1_count},
+  { .id = "rpm", .uint32_ptr = &config.decoder.rpm },
+  { .id = "sync", .uint32_ptr = &config.decoder.valid },
+  { .id = "rpm_variance", .float_ptr = &config.decoder.trigger_cur_rpm_change },
+  { .id = "t0_count", .uint32_ptr = &config.decoder.t0_count },
+  { .id = "t1_count", .uint32_ptr = &config.decoder.t1_count },
 };
-  
+
+static struct console_node decoder_console_node = {
+  .id = "decoder",
+  .fields = { {
+                .id = "type",
+                .description = "decoder wheel type",
+                .get = console_get_decoder_type,
+                .describe = console_describe_decoder_types,
+              },
+              { .id = "offset",
+                .description = "angle from tdc to trigger wheel sync",
+                .float_ptr = &config.decoder.offset },
+              { .id = "max_variance",
+                .description = "max allowed tooth-to-tooth time change",
+                .float_ptr = &config.decoder.trigger_cur_rpm_change } },
+};
+
 void decoder_init(struct decoder *d) {
   d->last_t0 = 0;
   d->last_t1 = 0;
@@ -229,6 +270,7 @@ void decoder_init(struct decoder *d) {
 
   expire_event.callback = handle_decoder_expire;
 
+  console_add_config(&decoder_console_node);
   int n_nodes = sizeof(decoder_feed_nodes) / sizeof(struct console_feed_node);
   for (int i = 0; i < n_nodes; i++) {
     console_add_feed_node(&decoder_feed_nodes[i]);
