@@ -75,8 +75,8 @@ void console_describe_choices(CborEncoder *enc, const char **choices) {
   cbor_encode_text_stringz(enc, "choices");
   CborEncoder list_encoder;
   cbor_encoder_create_array(enc, &list_encoder, CborIndefiniteLength);
-  for (const char *i = choices[0]; i != NULL; i++) {
-    cbor_encode_text_stringz(&list_encoder, i);
+  for (const char **i = &choices[0]; *i != NULL; i++) {
+    cbor_encode_text_stringz(&list_encoder, *i);
   }
   cbor_encoder_close_container(enc, &list_encoder);
 }
@@ -230,6 +230,62 @@ static void console_request_ping(CborEncoder *enc) {
   report_success(enc, true);
 }
 
+static void describe_config_field(CborEncoder *enc, const struct console_field *field) {
+
+  CborEncoder field_map;
+  cbor_encode_text_stringz(enc, field->id);
+  cbor_encoder_create_map(enc, &field_map, CborIndefiniteLength);
+
+  cbor_encode_text_stringz(&field_map, "description");
+  cbor_encode_text_stringz(&field_map, field->description);
+
+  if (field->uint32_ptr) {
+    cbor_encode_text_stringz(&field_map, "type");
+    cbor_encode_text_stringz(&field_map, "int");
+  } else if (field->float_ptr) {
+    cbor_encode_text_stringz(&field_map, "type");
+    cbor_encode_text_stringz(&field_map, "float");
+  } else if (field->node_ptr) {
+    /* Do something */
+  } else if (field->describe) {
+    field->describe(&field_map, field->ptr);
+  }
+
+  cbor_encoder_close_container(enc, &field_map);
+}
+
+static void describe_config_node(CborEncoder *enc, const struct console_node *node) {
+  cbor_encode_text_stringz(enc, node->id);
+  if (node->is_list) {
+    /* Recurse through elements */
+    cbor_encode_text_stringz(enc, "a list");
+  } else {
+    /* Show fields */
+    CborEncoder field_encoder;
+    cbor_encoder_create_map(enc, &field_encoder, CborIndefiniteLength);
+    for (const struct console_field *field = node->fields; field->id != NULL; field++) {
+      describe_config_field(&field_encoder, field);
+    }
+    cbor_encoder_close_container(enc, &field_encoder);
+  }
+
+}
+
+static void console_request_structure(CborEncoder *enc) {
+  CborEncoder desc;
+
+  cbor_encode_text_stringz(enc, "response");
+  cbor_encoder_create_map(enc, &desc, CborIndefiniteLength);
+  
+  /* Iterate through toplevel config nodes */
+  for (const struct console_node *node = console_nodes; node->id != NULL; node++) {
+    describe_config_node(&desc, node);
+  }
+
+  cbor_encoder_close_container(enc, &desc);
+  report_success(enc, true);
+}
+
 static void console_process_request(int len) {
   CborParser parser;
   CborValue value;
@@ -279,6 +335,11 @@ static void console_process_request(int len) {
     cbor_value_text_string_equals(&request_method_value, "ping", &match);
     if (match) {
       console_request_ping(&response_map);
+    }
+
+    cbor_value_text_string_equals(&request_method_value, "structure", &match);
+    if (match) {
+      console_request_structure(&response_map);
     }
   }
 

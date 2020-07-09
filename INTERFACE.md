@@ -64,7 +64,10 @@ Example:
 <- {"type": "response", "id": 5, "success": true, "value":
      {"config": 
        "outputs": [{}, {}, {}, {}],
-       "decoder": {},
+       "decoder": {
+         "type": {"_type": "string", "choices": [], "description": "dfasdf},
+         "offset": {"_type": "int", "description": "dfasdf},
+       },
        "freq": [{}, {}, {}, {}],
        "sensors": {"iat": {}, "clt": {}},
        "tables": {"ve": {}, "commanded_lambda": {}},
