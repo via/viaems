@@ -9,6 +9,7 @@
 #include <string.h>
 #include <strings.h>
 
+
 #define OUTPUT_BUFFER_LEN (512)
 static struct output_buffer {
   timeval_t start;
@@ -619,6 +620,37 @@ void scheduler_buffer_swap() {
   enable_interrupts();
 }
 
+static struct console_node console_output_list_nodes[MAX_EVENTS];
+
+static struct console_node console_node_outputs = {
+  .id = "outputs",
+  .is_list = 1,
+  .list_size = MAX_EVENTS,
+  .elements = &console_output_list_nodes[0],
+};
+
+static void console_describe_output_types(CborEncoder *enc, void *ptr) {
+  console_describe_type(enc, "string");
+  console_describe_choices(enc, (const char *[]){ "none", "ignition", "fuel", NULL});
+}
+
+static void setup_console_nodes() {
+  for (int i = 0; i < MAX_EVENTS; i++) {
+    struct console_node node = (struct console_node){
+      .type = "output",
+      .fields = {
+        {.id="inverted", .uint32_ptr=&config.events[i].inverted},
+        {.id="angle", .float_ptr=&config.events[i].angle},
+        {.id="pin", .uint32_ptr=&config.events[i].pin},
+        {.id="type", .describe=console_describe_output_types},
+      },
+    };
+    memmove(&console_output_list_nodes[i], &node, sizeof(node));
+  }
+
+  console_add_config(&console_node_outputs);
+}
+
 void initialize_scheduler() {
   memset(&output_buffers, 0, sizeof(output_buffers));
 
@@ -629,6 +661,8 @@ void initialize_scheduler() {
   output_buffers[1].start = output_buffers[0].start + OUTPUT_BUFFER_LEN;
 
   n_callbacks = 0;
+
+  setup_console_nodes();
 }
 
 #ifdef UNITTEST

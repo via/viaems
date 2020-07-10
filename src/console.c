@@ -67,7 +67,7 @@ int console_parse_request(char *dest, char *line) {
 }
 
 void console_describe_type(CborEncoder *enc, const char *type) {
-  cbor_encode_text_stringz(enc, "type");
+  cbor_encode_text_stringz(enc, "_type");
   cbor_encode_text_stringz(enc, type);
 }
 
@@ -236,8 +236,10 @@ static void describe_config_field(CborEncoder *enc, const struct console_field *
   cbor_encode_text_stringz(enc, field->id);
   cbor_encoder_create_map(enc, &field_map, CborIndefiniteLength);
 
-  cbor_encode_text_stringz(&field_map, "description");
-  cbor_encode_text_stringz(&field_map, field->description);
+  if (field->description) {
+    cbor_encode_text_stringz(&field_map, "description");
+    cbor_encode_text_stringz(&field_map, field->description);
+  }
 
   if (field->uint32_ptr) {
     cbor_encode_text_stringz(&field_map, "type");
@@ -255,16 +257,28 @@ static void describe_config_field(CborEncoder *enc, const struct console_field *
 }
 
 static void describe_config_node(CborEncoder *enc, const struct console_node *node) {
-  cbor_encode_text_stringz(enc, node->id);
+  if (node->id) {
+    cbor_encode_text_stringz(enc, node->id);
+  }
   if (node->is_list) {
     /* Recurse through elements */
-    cbor_encode_text_stringz(enc, "a list");
+    CborEncoder list_enc;
+    cbor_encoder_create_array(enc, &list_enc, node->list_size);
+    for (unsigned int i = 0; i < node->list_size; i++) {
+      describe_config_node(&list_enc, &node->elements[i]);
+    }
+    cbor_encoder_close_container(enc, &list_enc);
   } else {
-    /* Show fields */
+      /* Show fields */
     CborEncoder field_encoder;
     cbor_encoder_create_map(enc, &field_encoder, CborIndefiniteLength);
-    for (const struct console_field *field = node->fields; field->id != NULL; field++) {
-      describe_config_field(&field_encoder, field);
+    if (node->type) {
+      /* But summarize with a type if we have one */
+      console_describe_type(&field_encoder, node->type);  
+    } else {
+      for (const struct console_field *field = node->fields; field->id != NULL; field++) {
+        describe_config_field(&field_encoder, field);
+      }
     }
     cbor_encoder_close_container(enc, &field_encoder);
   }

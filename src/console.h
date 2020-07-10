@@ -47,6 +47,7 @@ struct console_field {
 
 struct console_node {
   const char *id;
+  const char *type;
 
   /* If node is a list, it contains a list of other console_nodes */
   int is_list;

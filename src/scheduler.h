@@ -15,11 +15,11 @@ struct sched_entry {
   timeval_t time;
 
   /* Otherwise an output change */
-  unsigned char pin;
-  unsigned char val;
+  uint32_t pin;
+  uint32_t val;
 
-  volatile unsigned char fired;
-  volatile unsigned char scheduled; /* current time is valid */
+  volatile uint32_t fired;
+  volatile uint32_t scheduled; /* current time is valid */
   struct output_buffer *buffer;
 };
 
@@ -35,14 +35,14 @@ struct timed_callback {
   void (*callback)(void *);
   void *data;
   timeval_t time;
-  int scheduled;
+  uint32_t scheduled;
 };
 
 struct output_event {
   event_type_t type;
   degrees_t angle;
-  unsigned char pin;
-  unsigned int inverted;
+  uint32_t pin;
+  uint32_t inverted;
 
   struct sched_entry start;
   struct sched_entry stop;
