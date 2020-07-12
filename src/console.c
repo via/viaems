@@ -169,14 +169,16 @@ static void console_shift_rx_buffer(size_t amt) {
 
 static size_t console_try_read() {
   size_t remaining = sizeof(rx_buffer) - (rx_buffer_ptr - rx_buffer);
-  size_t read_amt;
-  if ((read_amt = console_read(rx_buffer_ptr, remaining)) == 0) {
-    return 0;
-  }
+
+  size_t read_amt = console_read(rx_buffer_ptr, remaining);
 
   rx_buffer_ptr += read_amt;
 
   size_t len = rx_buffer_ptr - rx_buffer;
+  if (len == 0) {
+    return 0;
+  }
+
   CborParser parser;
   CborValue value;
   
