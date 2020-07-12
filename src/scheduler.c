@@ -620,6 +620,7 @@ void scheduler_buffer_swap() {
   enable_interrupts();
 }
 
+#if 0
 static struct console_node console_output_list_nodes[MAX_EVENTS];
 
 static struct console_node console_node_outputs = {
@@ -651,6 +652,7 @@ static void setup_console_nodes() {
   console_add_config(&console_node_outputs);
 }
 
+#endif
 void initialize_scheduler() {
   memset(&output_buffers, 0, sizeof(output_buffers));
 
@@ -662,7 +664,7 @@ void initialize_scheduler() {
 
   n_callbacks = 0;
 
-  setup_console_nodes();
+//  setup_console_nodes();
 }
 
 #ifdef UNITTEST

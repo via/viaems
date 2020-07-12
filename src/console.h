@@ -26,36 +26,27 @@ struct logged_event {
   uint16_t value;
 };
 
-typedef void (*console_field_get)(CborEncoder *encoder, void *ptr);
-typedef void (*console_field_describe)(CborEncoder *encoder, void *ptr);
-
 struct console_node;
-struct console_field {
-  const char *id;
-  const char *description;
 
-  /* Fixed types */
-  const uint32_t *uint32_ptr;
-  const float *float_ptr;
-  const struct console_node *node_ptr;
-
-  /* Custom types */
-  void *ptr;
-  console_field_get get;
-  console_field_describe describe;
-};
+typedef void (*console_node_get)(CborEncoder *encoder, const struct console_node *node, CborValue *path);
+typedef void (*console_node_describe)(CborEncoder *encoder, const struct console_node *node);
 
 struct console_node {
   const char *id;
-  const char *type;
+  const char *description;
 
-  /* If node is a list, it contains a list of other console_nodes */
-  int is_list;
-  const struct console_node *elements;
-  unsigned int list_size;
+  /* Leaf types */
+  const uint32_t *uint32_ptr;
+  const float *float_ptr;
 
-  /* Otherwise, just a list of fields */
-  const struct console_field fields[32];
+  /* Custom types */
+  void *ptr;
+  console_node_get get;
+  console_node_describe describe;
+
+  /* Container type */
+  const struct console_node *children;
+
 };
 
 struct console_feed_node {
@@ -70,7 +61,9 @@ void console_add_feed_node(struct console_feed_node *);
 void console_add_config(struct console_node *);
 
 void console_describe_choices(CborEncoder *, const char *choices[]);
+void console_describe_description(CborEncoder *, const char *desc);
 void console_describe_type(CborEncoder *, const char *type);
+void console_describe_node(CborEncoder *, const struct console_node *node);
 
 void console_process();
 
@@ -82,3 +75,4 @@ TCase *setup_console_tests();
 #endif
 
 #endif
+
