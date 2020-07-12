@@ -620,14 +620,88 @@ void scheduler_buffer_swap() {
   enable_interrupts();
 }
 
-#if 0
-static struct console_node console_output_list_nodes[MAX_EVENTS];
+static void console_describe_outputs(CborEncoder *enc, const struct console_node *node) {
+  (void)node;
+
+  CborEncoder array_encoder;
+  cbor_encoder_create_array(enc, &array_encoder, MAX_EVENTS);
+  for (int i = 0; i < MAX_EVENTS; i++) {
+    CborEncoder output_encoder;
+    cbor_encoder_create_map(&array_encoder, &output_encoder, 1);
+    console_describe_type(&output_encoder, "output");
+    cbor_encoder_close_container(&array_encoder, &output_encoder);
+  }
+  cbor_encoder_close_container(enc, &array_encoder);
+}
+
+static void console_get_output_type(CborEncoder *enc, const struct console_node *node, CborValue *path) {
+  (void)path;
+
+  const struct output_event *oev = node->ptr;
+  switch (oev->type) {
+    case DISABLED_EVENT:
+      cbor_encode_text_stringz(enc, "disabled");
+      break;
+    case FUEL_EVENT:
+      cbor_encode_text_stringz(enc, "fuel");
+      break;
+    case IGNITION_EVENT:
+      cbor_encode_text_stringz(enc, "ignition");
+      break;
+    default:
+      cbor_encode_text_stringz(enc, "what");
+  }
+}
+
+static void console_get_output(CborEncoder *enc, struct output_event *oev, CborValue *path) {
+  struct console_node oev_fields[] = {
+        {.id="inverted", .uint32_ptr=&oev->inverted},
+        {.id="angle", .float_ptr=&oev->angle},
+        {.id="pin", .uint32_ptr=&oev->pin},
+        {.id="type", .get=console_get_output_type, .ptr=oev},
+        {0},
+  };
+  struct console_node oev_node = {
+    .children = &oev_fields[0],
+  };
+
+  get_config_node(enc, &oev_node, path);
+}
+
+static void console_get_output_list(CborEncoder *enc, const struct console_node *node, CborValue *path) {
+  CborError err;
+
+  /* Do we have an array index in the path? */
+  if (!cbor_value_at_end(path) && cbor_value_is_integer(path)) {
+    int index;
+    err = cbor_value_get_int(path, &index);
+    if (err) {
+      report_cbor_parsing_error(enc, "unable to parse index", err);
+      return;
+    }
+    cbor_value_advance(path);
+
+    if ((index < 0) || (index >= MAX_EVENTS)) {
+      report_parsing_error(enc, "index out of range", err);
+      return;
+    }
+    console_get_output(enc, &config.events[index], path);
+    return;
+  } else {
+    CborEncoder array_encoder;
+    cbor_encoder_create_array(enc, &array_encoder, MAX_EVENTS);
+    for (int i = 0; i < MAX_EVENTS; i++) {
+      console_get_output(&array_encoder, &config.events[i], path);
+    }
+    cbor_encoder_close_container(enc, &array_encoder);
+  }
+
+}
 
 static struct console_node console_node_outputs = {
   .id = "outputs",
-  .is_list = 1,
-  .list_size = MAX_EVENTS,
-  .elements = &console_output_list_nodes[0],
+  .describe = console_describe_outputs,
+  .get = console_get_output_list,
 };
 
 static void console_describe_output_types(CborEncoder *enc, void *ptr) {
@@ -635,24 +709,6 @@ static void console_describe_output_types(CborEncoder *enc, void *ptr) {
   console_describe_choices(enc, (const char *[]){ "none", "ignition", "fuel", NULL});
 }
 
-static void setup_console_nodes() {
-  for (int i = 0; i < MAX_EVENTS; i++) {
-    struct console_node node = (struct console_node){
-      .type = "output",
-      .fields = {
-        {.id="inverted", .uint32_ptr=&config.events[i].inverted},
-        {.id="angle", .float_ptr=&config.events[i].angle},
-        {.id="pin", .uint32_ptr=&config.events[i].pin},
-        {.id="type", .describe=console_describe_output_types},
-      },
-    };
-    memmove(&console_output_list_nodes[i], &node, sizeof(node));
-  }
-
-  console_add_config(&console_node_outputs);
-}
-
-#endif
 void initialize_scheduler() {
   memset(&output_buffers, 0, sizeof(output_buffers));
 
@@ -664,7 +720,7 @@ void initialize_scheduler() {
 
   n_callbacks = 0;
 
-//  setup_console_nodes();
+  console_add_config(&console_node_outputs);
 }
 
 #ifdef UNITTEST

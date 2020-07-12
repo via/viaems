@@ -218,7 +218,7 @@ static void report_success(CborEncoder *enc, bool success) {
   cbor_encode_boolean(enc, success);
 }
 
-static void report_cbor_parsing_error(CborEncoder *enc, const char *msg, CborError err) {
+void report_cbor_parsing_error(CborEncoder *enc, const char *msg, CborError err) {
   char txtbuf[256];
   snprintf(txtbuf, sizeof(txtbuf), "%s: %s", msg, cbor_error_string(err));
   cbor_encode_text_stringz(enc, "error");
@@ -226,7 +226,7 @@ static void report_cbor_parsing_error(CborEncoder *enc, const char *msg, CborErr
   report_success(enc, false);
 }
 
-static void report_parsing_error(CborEncoder *enc, const char *msg) {
+void report_parsing_error(CborEncoder *enc, const char *msg) {
   cbor_encode_text_stringz(enc, "error");
   cbor_encode_text_stringz(enc, msg);
   report_success(enc, false);
@@ -291,7 +291,7 @@ static void console_request_structure(CborEncoder *enc) {
   report_success(enc, true);
 }
 
-static bool get_config_node(CborEncoder *enc, const struct console_node *node, CborValue *path) {
+bool get_config_node(CborEncoder *enc, const struct console_node *node, CborValue *path) {
   CborError err;
 
   if (node->get) {
