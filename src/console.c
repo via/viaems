@@ -70,7 +70,9 @@ static const char *git_describe = GIT_DESCRIBE;
 
 void console_record_event(struct logged_event ev) {}
 
-void console_init() {}
+void console_init() {
+  sensor_setup_console();
+}
 
 int console_parse_request(char *dest, char *line) {
   (void)dest;
