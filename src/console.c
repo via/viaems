@@ -29,7 +29,7 @@ static struct console_node console_config = {
 void console_add_config(struct console_node *node) {
   for (int i = 0; i < CONSOLE_NODES_MAX; i++) {
     if (!console_nodes[i].id) {
-      memcpy(&console_nodes[i], node, sizeof(struct console_node));
+      console_nodes[i] = *node;
       return;
     }
   }
@@ -45,9 +45,7 @@ struct console_feed_node console_feed_nodes[MAX_CONSOLE_FEED_NODES] = {
 void console_add_feed_node(struct console_feed_node *node) {
   for (int i = 0; i < MAX_CONSOLE_FEED_NODES; i++) {
     if (!console_feed_nodes[i].id) {
-      /* This node is unused, set it */
-      //      console_nodes[i] = *node;
-      memcpy(&console_feed_nodes[i], node, sizeof(struct console_feed_node));
+       console_feed_nodes[i] = *node;
       return;
     }
   }
