@@ -30,6 +30,7 @@ struct console_node;
 
 typedef void (*console_node_get)(CborEncoder *encoder, const struct console_node *node, CborValue *path);
 typedef void (*console_node_describe)(CborEncoder *encoder, const struct console_node *node);
+typedef void (*console_type_describe)(CborEncoder *encoder);
 
 struct console_node {
   const char *id;
@@ -64,6 +65,8 @@ void console_describe_choices(CborEncoder *, const char *choices[]);
 void console_describe_description(CborEncoder *, const char *desc);
 void console_describe_type(CborEncoder *, const char *type);
 void console_describe_node(CborEncoder *, const struct console_node *node);
+
+void console_register_type(const char *type, console_type_describe describe_fn);
 
 void console_process();
 

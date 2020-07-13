@@ -51,6 +51,18 @@ void console_add_feed_node(struct console_feed_node *node) {
   }
 }
 
+#define MAX_TYPES 8
+static console_type_describe console_type_describe_fns[MAX_TYPES];
+
+void console_register_type(const char *type, console_type_describe describe_fn) {
+  for (int i = 0; i < MAX_TYPES; i++) {
+    if (!console_type_describe_fns[i]) {
+      console_type_describe_fns[i] = describe_fn = describe_fn;
+      return;
+    }
+  }
+}
+
 #ifndef GIT_DESCRIBE
 #define GIT_DESCRIBE "unknown"
 static const char *git_describe = GIT_DESCRIBE;
@@ -254,7 +266,7 @@ static void describe_primitive_config_node(CborEncoder *enc, const struct consol
   cbor_encoder_close_container(enc, &map_encoder);
 }
 
-static void describe_config_node(CborEncoder *enc, const struct console_node *node) {
+void describe_config_node(CborEncoder *enc, const struct console_node *node) {
   cbor_encode_text_stringz(enc, node->id);
 
   if (node->describe) {
@@ -284,6 +296,11 @@ static void console_request_structure(CborEncoder *enc) {
   CborEncoder types;
   cbor_encode_text_stringz(&response, "types");
   cbor_encoder_create_map(&response, &types, CborIndefiniteLength);
+  for (int i = 0; i < MAX_TYPES; i++) {
+    if (console_type_describe_fns[i]) {
+      console_type_describe_fns[i](&types);
+    }
+  }
   
   cbor_encoder_close_container(&response, &types);
 

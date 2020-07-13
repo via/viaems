@@ -620,6 +620,31 @@ void scheduler_buffer_swap() {
   enable_interrupts();
 }
 
+static void console_describe_output_types(CborEncoder *enc, const struct console_node *ptr) {
+  CborEncoder type_enc;
+  cbor_encoder_create_map(enc, &type_enc, 2);
+  console_describe_type(&type_enc, "string");
+  console_describe_choices(&type_enc, (const char *[]){ "none", "ignition", "fuel", NULL});
+  cbor_encoder_close_container(enc, &type_enc);
+}
+
+static void console_describe_type_output(CborEncoder *enc) {
+  struct output_event oev;
+  struct console_node oev_fields[] = {
+        {.id="inverted", .uint32_ptr=&oev.inverted},
+        {.id="angle", .float_ptr=&oev.angle},
+        {.id="pin", .uint32_ptr=&oev.pin},
+        {.id="type", .describe=console_describe_output_types},
+        {0},
+  };
+  struct console_node oev_node = {
+    .id = "output",
+    .children = &oev_fields[0],
+  };
+
+  describe_config_node(enc, &oev_node);
+}
+
 static void console_describe_outputs(CborEncoder *enc, const struct console_node *node) {
   (void)node;
 
@@ -704,11 +729,6 @@ static struct console_node console_node_outputs = {
   .get = console_get_output_list,
 };
 
-static void console_describe_output_types(CborEncoder *enc, void *ptr) {
-  console_describe_type(enc, "string");
-  console_describe_choices(enc, (const char *[]){ "none", "ignition", "fuel", NULL});
-}
-
 void initialize_scheduler() {
   memset(&output_buffers, 0, sizeof(output_buffers));
 
@@ -721,6 +741,7 @@ void initialize_scheduler() {
   n_callbacks = 0;
 
   console_add_config(&console_node_outputs);
+  console_register_type("output", console_describe_type_output);
 }
 
 #ifdef UNITTEST
