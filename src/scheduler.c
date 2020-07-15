@@ -9,7 +9,6 @@
 #include <string.h>
 #include <strings.h>
 
-
 #define OUTPUT_BUFFER_LEN (512)
 static struct output_buffer {
   timeval_t start;
@@ -620,22 +619,24 @@ void scheduler_buffer_swap() {
   enable_interrupts();
 }
 
-static void console_describe_output_types(CborEncoder *enc, const struct console_node *ptr) {
+static void console_describe_output_types(CborEncoder *enc,
+                                          const struct console_node *ptr) {
   CborEncoder type_enc;
   cbor_encoder_create_map(enc, &type_enc, 2);
   console_describe_type(&type_enc, "string");
-  console_describe_choices(&type_enc, (const char *[]){ "none", "ignition", "fuel", NULL});
+  console_describe_choices(
+    &type_enc, (const char *[]){ "none", "ignition", "fuel", NULL });
   cbor_encoder_close_container(enc, &type_enc);
 }
 
 static void console_describe_type_output(CborEncoder *enc) {
   struct output_event oev;
   struct console_node oev_fields[] = {
-        {.id="inverted", .uint32_ptr=&oev.inverted},
-        {.id="angle", .float_ptr=&oev.angle},
-        {.id="pin", .uint32_ptr=&oev.pin},
-        {.id="type", .describe=console_describe_output_types},
-        {0},
+    { .id = "inverted", .uint32_ptr = &oev.inverted },
+    { .id = "angle", .float_ptr = &oev.angle },
+    { .id = "pin", .uint32_ptr = &oev.pin },
+    { .id = "type", .describe = console_describe_output_types },
+    { 0 },
   };
   struct console_node oev_node = {
     .id = "output",
@@ -645,7 +646,8 @@ static void console_describe_type_output(CborEncoder *enc) {
   describe_config_node(enc, &oev_node);
 }
 
-static void console_describe_outputs(CborEncoder *enc, const struct console_node *node) {
+static void console_describe_outputs(CborEncoder *enc,
+                                     const struct console_node *node) {
   (void)node;
 
   CborEncoder array_encoder;
@@ -659,32 +661,36 @@ static void console_describe_outputs(CborEncoder *enc, const struct console_node
   cbor_encoder_close_container(enc, &array_encoder);
 }
 
-static void console_get_output_type(CborEncoder *enc, const struct console_node *node, CborValue *path) {
+static void console_get_output_type(CborEncoder *enc,
+                                    const struct console_node *node,
+                                    CborValue *path) {
   (void)path;
 
   const struct output_event *oev = node->ptr;
   switch (oev->type) {
-    case DISABLED_EVENT:
-      cbor_encode_text_stringz(enc, "disabled");
-      break;
-    case FUEL_EVENT:
-      cbor_encode_text_stringz(enc, "fuel");
-      break;
-    case IGNITION_EVENT:
-      cbor_encode_text_stringz(enc, "ignition");
-      break;
-    default:
-      cbor_encode_text_stringz(enc, "what");
+  case DISABLED_EVENT:
+    cbor_encode_text_stringz(enc, "disabled");
+    break;
+  case FUEL_EVENT:
+    cbor_encode_text_stringz(enc, "fuel");
+    break;
+  case IGNITION_EVENT:
+    cbor_encode_text_stringz(enc, "ignition");
+    break;
+  default:
+    cbor_encode_text_stringz(enc, "what");
   }
 }
 
-static void console_get_output(CborEncoder *enc, struct output_event *oev, CborValue *path) {
+static void console_get_output(CborEncoder *enc,
+                               struct output_event *oev,
+                               CborValue *path) {
   struct console_node oev_fields[] = {
-        {.id="inverted", .uint32_ptr=&oev->inverted},
-        {.id="angle", .float_ptr=&oev->angle},
-        {.id="pin", .uint32_ptr=&oev->pin},
-        {.id="type", .get=console_get_output_type, .ptr=oev},
-        {0},
+    { .id = "inverted", .uint32_ptr = &oev->inverted },
+    { .id = "angle", .float_ptr = &oev->angle },
+    { .id = "pin", .uint32_ptr = &oev->pin },
+    { .id = "type", .get = console_get_output_type, .ptr = oev },
+    { 0 },
   };
   struct console_node oev_node = {
     .children = &oev_fields[0],
@@ -693,7 +699,9 @@ static void console_get_output(CborEncoder *enc, struct output_event *oev, CborV
   get_config_node(enc, &oev_node, path);
 }
 
-static void console_get_output_list(CborEncoder *enc, const struct console_node *node, CborValue *path) {
+static void console_get_output_list(CborEncoder *enc,
+                                    const struct console_node *node,
+                                    CborValue *path) {
   CborError err;
 
   /* Do we have an array index in the path? */
@@ -720,7 +728,6 @@ static void console_get_output_list(CborEncoder *enc, const struct console_node 
     }
     cbor_encoder_close_container(enc, &array_encoder);
   }
-
 }
 
 static struct console_node console_node_outputs = {

@@ -28,8 +28,11 @@ struct logged_event {
 
 struct console_node;
 
-typedef void (*console_node_get)(CborEncoder *encoder, const struct console_node *node, CborValue *path);
-typedef void (*console_node_describe)(CborEncoder *encoder, const struct console_node *node);
+typedef void (*console_node_get)(CborEncoder *encoder,
+                                 const struct console_node *node,
+                                 CborValue *path);
+typedef void (*console_node_describe)(CborEncoder *encoder,
+                                      const struct console_node *node);
 typedef void (*console_type_describe)(CborEncoder *encoder);
 
 struct console_node {
@@ -47,7 +50,6 @@ struct console_node {
 
   /* Container type */
   const struct console_node *children;
-
 };
 
 struct console_feed_node {
@@ -78,4 +80,3 @@ TCase *setup_console_tests();
 #endif
 
 #endif
-

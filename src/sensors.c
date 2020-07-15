@@ -159,46 +159,76 @@ uint32_t sensor_fault_status() {
   return faults;
 }
 
-static const char *sensor_name(sensor_input_type type) {
-  switch (type) {
-    case SENSOR_MAP: return "map";
-    case SENSOR_IAT: return "iat";
-    case SENSOR_CLT: return "clt";
-    case SENSOR_BRV: return "brv";
-    case SENSOR_TPS: return "tps";
-    case SENSOR_AAP: return "aap";
-    case SENSOR_FRT: return "frt";
-    case SENSOR_EGO: return "ego";
-    default: return "invalid";
-  }
+static void sensor_console_describe(CborEncoder *enc,
+                                    const struct console_node *node) {
+
+  CborEncoder type_encoder;
+  cbor_encoder_create_map(enc, &type_encoder, 1);
+  console_describe_type(&type_encoder, "sensor");
+  cbor_encoder_close_container(enc, &type_encoder);
 }
 
-static void sensor_console_describe(CborEncoder *enc, const struct console_node *node) {
-
-  CborEncoder map_encoder;
-  cbor_encoder_create_map(enc, &map_encoder, NUM_SENSORS);
-  for (int i = 0; i < NUM_SENSORS; i++) {
-    CborEncoder type_encoder;
-
-    cbor_encode_text_stringz(&map_encoder, sensor_name((sensor_input_type)i));
-    cbor_encoder_create_map(&map_encoder, &type_encoder, 1);
-    console_describe_type(&type_encoder, "sensor");
-    cbor_encoder_close_container(&map_encoder, &type_encoder);
-  }
-  cbor_encoder_close_container(enc, &map_encoder);
+static const struct console_node get_sensor_console_node(const struct sensor_input *input) {
+  const struct console_node retval = {
+    .children = {
+      {.id = "pin", .uint32_ptr = &input->pin},
+      {.id = "range-min", .uint32_ptr = &input->range.min},
+      {.id = "range-max", .uint32_ptr = &input->range.max},
+      {.id = "lag", .float_ptr = &input->lag},
+    },
+  };
 }
 
-static void sensor_console_get(CborEncoder *enc, const struct console_node *node, CborValue *path) {
+static void sensor_console_get(CborEncoder *enc,
+                               const struct console_node *node,
+                               CborValue *path) {
+  const struct console_node cn = get_sensor_console_node(node->ptr);
+  describe_console_node(enc, &cn);
 }
+
+static const struct console_node sensor_nodes[] = {
+  { .id = "map",
+    .ptr = &config.sensors[SENSOR_MAP],
+    .describe = sensor_console_describe,
+    .get = sensor_console_get },
+  { .id = "iat",
+    .ptr = &config.sensors[SENSOR_IAT],
+    .describe = sensor_console_describe,
+    .get = sensor_console_get },
+  { .id = "clt",
+    .ptr = &config.sensors[SENSOR_CLT],
+    .describe = sensor_console_describe,
+    .get = sensor_console_get },
+  { .id = "brv",
+    .ptr = &config.sensors[SENSOR_BRV],
+    .describe = sensor_console_describe,
+    .get = sensor_console_get },
+  { .id = "tps",
+    .ptr = &config.sensors[SENSOR_TPS],
+    .describe = sensor_console_describe,
+    .get = sensor_console_get },
+  { .id = "aap",
+    .ptr = &config.sensors[SENSOR_AAP],
+    .describe = sensor_console_describe,
+    .get = sensor_console_get },
+  { .id = "frt",
+    .ptr = &config.sensors[SENSOR_FRT],
+    .describe = sensor_console_describe,
+    .get = sensor_console_get },
+  { .id = "ego",
+    .ptr = &config.sensors[SENSOR_EGO],
+    .describe = sensor_console_describe,
+    .get = sensor_console_get },
+  { 0 }
+};
 
 static struct console_node sensor_console_node = {
   .id = "sensors",
-  .describe = sensor_console_describe,
-  .get = sensor_console_get,
+  .children = sensor_nodes,
 };
 
 void sensor_setup_console() {
- console_add_config(&sensor_console_node);
+  console_add_config(&sensor_console_node);
 }
 
 #ifdef UNITTEST

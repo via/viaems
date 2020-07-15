@@ -45,7 +45,7 @@ struct console_feed_node console_feed_nodes[MAX_CONSOLE_FEED_NODES] = {
 void console_add_feed_node(struct console_feed_node *node) {
   for (int i = 0; i < MAX_CONSOLE_FEED_NODES; i++) {
     if (!console_feed_nodes[i].id) {
-       console_feed_nodes[i] = *node;
+      console_feed_nodes[i] = *node;
       return;
     }
   }
@@ -54,7 +54,8 @@ void console_add_feed_node(struct console_feed_node *node) {
 #define MAX_TYPES 8
 static console_type_describe console_type_describe_fns[MAX_TYPES];
 
-void console_register_type(const char *type, console_type_describe describe_fn) {
+void console_register_type(const char *type,
+                           console_type_describe describe_fn) {
   for (int i = 0; i < MAX_TYPES; i++) {
     if (!console_type_describe_fns[i]) {
       console_type_describe_fns[i] = describe_fn = describe_fn;
@@ -193,7 +194,7 @@ static size_t console_try_read() {
 
   CborParser parser;
   CborValue value;
-  
+
   /* We want to determine if we have a valid cbor object in buffer.  If the
    * buffer doesn't start with a map, it is not valid, and we want to advance
    * byte-by-byte until we find a start of map */
@@ -209,7 +210,7 @@ static size_t console_try_read() {
     if (rx_buffer_ptr == rx_buffer) {
       return 0;
     }
-  } while(1);
+  } while (1);
 
   /* Maybe we have a valid object. if so, return.
    * If we don't, it could be that we haven't read enough. We will read until
@@ -232,7 +233,9 @@ static void report_success(CborEncoder *enc, bool success) {
   cbor_encode_boolean(enc, success);
 }
 
-void report_cbor_parsing_error(CborEncoder *enc, const char *msg, CborError err) {
+void report_cbor_parsing_error(CborEncoder *enc,
+                               const char *msg,
+                               CborError err) {
   char txtbuf[256];
   snprintf(txtbuf, sizeof(txtbuf), "%s: %s", msg, cbor_error_string(err));
   cbor_encode_text_stringz(enc, "error");
@@ -252,7 +255,8 @@ static void console_request_ping(CborEncoder *enc) {
   report_success(enc, true);
 }
 
-static void describe_primitive_config_node(CborEncoder *enc, const struct console_node *node) {
+static void describe_primitive_config_node(CborEncoder *enc,
+                                           const struct console_node *node) {
   CborEncoder map_encoder;
   cbor_encoder_create_map(enc, &map_encoder, CborIndefiniteLength);
   if (node->description) {
@@ -278,7 +282,8 @@ void describe_config_node(CborEncoder *enc, const struct console_node *node) {
     /* Recurse to children */
     CborEncoder child_encoder;
     cbor_encoder_create_map(enc, &child_encoder, CborIndefiniteLength);
-    for (const struct console_node *child = node->children; child->id != NULL; child++) {
+    for (const struct console_node *child = node->children; child->id != NULL;
+         child++) {
       describe_config_node(&child_encoder, child);
     }
     cbor_encoder_close_container(enc, &child_encoder);
@@ -303,14 +308,16 @@ static void console_request_structure(CborEncoder *enc) {
       console_type_describe_fns[i](&types);
     }
   }
-  
+
   cbor_encoder_close_container(&response, &types);
 
   cbor_encoder_close_container(enc, &response);
   report_success(enc, true);
 }
 
-bool get_config_node(CborEncoder *enc, const struct console_node *node, CborValue *path) {
+bool get_config_node(CborEncoder *enc,
+                     const struct console_node *node,
+                     CborValue *path) {
   CborError err;
 
   if (node->get) {
@@ -318,9 +325,11 @@ bool get_config_node(CborEncoder *enc, const struct console_node *node, CborValu
     node->get(enc, node, path);
   } else if (!cbor_value_at_end(path)) {
     /* We have a path we need to descend down */
-    for (const struct console_node *child = node->children; child->id != NULL; child++) {
+    for (const struct console_node *child = node->children; child->id != NULL;
+         child++) {
       bool match;
-      if ((err = cbor_value_text_string_equals(path, child->id, &match)) != CborNoError) {
+      if ((err = cbor_value_text_string_equals(path, child->id, &match)) !=
+          CborNoError) {
         cbor_encode_null(enc);
         return false;
       }
@@ -335,7 +344,8 @@ bool get_config_node(CborEncoder *enc, const struct console_node *node, CborValu
   } else if (node->children) {
     CborEncoder child_encoder;
     cbor_encoder_create_map(enc, &child_encoder, CborIndefiniteLength);
-    for (const struct console_node *child = node->children; child->id != NULL; child++) {
+    for (const struct console_node *child = node->children; child->id != NULL;
+         child++) {
       cbor_encode_text_stringz(&child_encoder, child->id);
       get_config_node(&child_encoder, child, path);
     }
@@ -374,7 +384,6 @@ static void console_request_get(CborEncoder *enc, CborValue *value) {
   }
 }
 
-
 static void console_process_request(int len) {
   CborParser parser;
   CborValue value;
@@ -387,7 +396,8 @@ static void console_process_request(int len) {
 
   cbor_encoder_init(&encoder, response, sizeof(response), 0);
 
-  if (cbor_encoder_create_map(&encoder, &response_map, CborIndefiniteLength) != CborNoError) {
+  if (cbor_encoder_create_map(&encoder, &response_map, CborIndefiniteLength) !=
+      CborNoError) {
     return;
   }
   if (cbor_encode_text_stringz(&response_map, "type")) {
@@ -430,7 +440,7 @@ static void console_process_request(int len) {
     if (match) {
       console_request_structure(&response_map);
     }
-    
+
     cbor_value_text_string_equals(&request_method_value, "get", &match);
     if (match) {
       console_request_get(&response_map, &value);
@@ -453,9 +463,8 @@ void console_process() {
     /* Parse a request from the client */
     console_process_request(read_size);
     console_shift_rx_buffer(read_size);
-    
   }
-    
+
   /* Has it been 100ms since the last description? */
   if (time_diff(current_time(), last_desc_time) > time_from_us(100000)) {
     /* If so, print a description message */
