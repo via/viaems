@@ -240,14 +240,21 @@ static bool console_path_match(CborValue *path, const char *id) {
   return is_match;
 }
 
+static bool console_field_check_skip(const struct console_request_context *ctx, const char *id) {
+  if (ctx->is_completed) {
+    return true;
+  }
+  if (ctx->is_filtered && !console_path_match(ctx->path, id)) {
+    return true;
+  }
+  return false;
+}
+
 void render_uint32_field(struct console_request_context *ctx, const char *id, const char *description, uint32_t *ptr) {
   switch (ctx->type) {
     case CONSOLE_GET:
-      if (ctx->is_completed) {
-        return;
-      }
-      if (ctx->is_filtered && !console_path_match(ctx->path, id)) {
-        return;
+      if (console_field_check_skip(ctx, id)) {
+        break;
       }
       if (!ctx->is_filtered) {
         cbor_encode_text_stringz(ctx->response, id);
@@ -276,11 +283,8 @@ void render_float_field(struct console_request_context *ctx, const char *id, con
 
   switch (ctx->type) {
     case CONSOLE_GET:
-      if (ctx->is_completed) {
-        return;
-      }
-      if (ctx->is_filtered && !console_path_match(ctx->path, id)) {
-        return;
+      if (console_field_check_skip(ctx, id)) {
+        break;
       }
       if (!ctx->is_filtered) {
         cbor_encode_text_stringz(ctx->response, id);
@@ -309,11 +313,8 @@ void render_map_field(struct console_request_context *ctx, const char *id, conso
   switch (ctx->type) {
     case CONSOLE_GET:
       {
-        if (ctx->is_completed) {
-          return;
-        }
-        if (ctx->is_filtered && !console_path_match(ctx->path, id)) {
-            return;
+        if (console_field_check_skip(ctx, id)) {
+          break;
         }
         if (!ctx->is_filtered) {
           cbor_encode_text_stringz(ctx->response, id);
@@ -360,16 +361,13 @@ void render_custom_field(struct console_request_context *ctx, const char *id, co
   switch (ctx->type) {
     case CONSOLE_GET:
       {
-        if (ctx->is_completed) {
-          return;
-        }
-        if (ctx->is_filtered && !console_path_match(ctx->path, id)) {
-            return;
+        if (console_field_check_skip(ctx, id)) {
+          break;
         }
         if (!ctx->is_filtered) {
           cbor_encode_text_stringz(ctx->response, id);
-          rend(ctx, ptr);
         }
+        rend(ctx, ptr);
       }
       break;
     case CONSOLE_DESCRIBE: 
