@@ -159,77 +159,67 @@ uint32_t sensor_fault_status() {
   return faults;
 }
 
+struct sensor_input *sensor_input_from_type(sensor_input_type t) {
+  return &config.sensors[t];
+}
+
+static const char *sensor_name_from_type(sensor_input_type t) {
+  switch (t) {
+  case SENSOR_MAP:
+    return "map";
+  case SENSOR_IAT:
+    return "iat";
+  case SENSOR_CLT:
+    return "clt";
+  case SENSOR_BRV:
+    return "brv";
+  case SENSOR_TPS:
+    return "tps";
+  case SENSOR_AAP:
+    return "aap";
+  case SENSOR_FRT:
+    return "frt";
+  case SENSOR_EGO:
+    return "ego";
+  default:
+    return "invalid";
+  }
+}
+
+#if 0
+
 static void sensor_console_describe(CborEncoder *enc,
                                     const struct console_node *node) {
 
-  CborEncoder type_encoder;
-  cbor_encoder_create_map(enc, &type_encoder, 1);
-  console_describe_type(&type_encoder, "sensor");
-  cbor_encoder_close_container(enc, &type_encoder);
+  CborEncoder map_encoder;
+  cbor_encoder_create_map(enc, &map_encoder, NUM_SENSORS);
+  for (int i = 0; i < NUM_SENSORS; i++) {
+    cbor_encode_text_stringz(&map_encoder, sensor_name_from_type(i));
+
+    CborEncoder type_encoder;
+    cbor_encoder_create_map(&map_encoder, &type_encoder, 1);
+    console_describe_type(&type_encoder, "sensor");
+    cbor_encoder_close_container(&map_encoder, &type_encoder);
+  }
+  cbor_encoder_close_container(enc, &map_encoder);
 }
 
-static const struct console_node get_sensor_console_node(const struct sensor_input *input) {
-  const struct console_node retval = {
-    .children = {
-      {.id = "pin", .uint32_ptr = &input->pin},
-      {.id = "range-min", .uint32_ptr = &input->range.min},
-      {.id = "range-max", .uint32_ptr = &input->range.max},
-      {.id = "lag", .float_ptr = &input->lag},
-    },
-  };
+
+static void bleh(struct console_node_descent_context *ctx) {
+  register_uint32_field(ctx, "pin", "adc sensor input pin", &input->pin);
+  register_float_field(ctx, "lag", "lag filter coefficient (0-1)", &input->lag);
+  register_custom_field(ctx, "bleh", custom_field_handler, NULL);
+  register_list_field(ctx, "outputs", 24, console_output_ctor);
 }
 
-static void sensor_console_get(CborEncoder *enc,
-                               const struct console_node *node,
-                               CborValue *path) {
-  const struct console_node cn = get_sensor_console_node(node->ptr);
-  describe_console_node(enc, &cn);
+static void decoder_console_ctor(struct console_node_descent_context *ctx) {
+  register_float_field(ctx,
+                       "offset",
+                       "trigger wheel offset angle from TDC",
+                       &config.decoder.offset);
+  register_custom_field(ctx, "type", decoder_type_console_handler, NULL);
 }
-
-static const struct console_node sensor_nodes[] = {
-  { .id = "map",
-    .ptr = &config.sensors[SENSOR_MAP],
-    .describe = sensor_console_describe,
-    .get = sensor_console_get },
-  { .id = "iat",
-    .ptr = &config.sensors[SENSOR_IAT],
-    .describe = sensor_console_describe,
-    .get = sensor_console_get },
-  { .id = "clt",
-    .ptr = &config.sensors[SENSOR_CLT],
-    .describe = sensor_console_describe,
-    .get = sensor_console_get },
-  { .id = "brv",
-    .ptr = &config.sensors[SENSOR_BRV],
-    .describe = sensor_console_describe,
-    .get = sensor_console_get },
-  { .id = "tps",
-    .ptr = &config.sensors[SENSOR_TPS],
-    .describe = sensor_console_describe,
-    .get = sensor_console_get },
-  { .id = "aap",
-    .ptr = &config.sensors[SENSOR_AAP],
-    .describe = sensor_console_describe,
-    .get = sensor_console_get },
-  { .id = "frt",
-    .ptr = &config.sensors[SENSOR_FRT],
-    .describe = sensor_console_describe,
-    .get = sensor_console_get },
-  { .id = "ego",
-    .ptr = &config.sensors[SENSOR_EGO],
-    .describe = sensor_console_describe,
-    .get = sensor_console_get },
-  { 0 }
-};
-
-static struct console_node sensor_console_node = {
-  .id = "sensors",
-  .children = sensor_nodes,
-};
-
-void sensor_setup_console() {
-  console_add_config(&sensor_console_node);
-}
+#endif
 
 #ifdef UNITTEST
 #include <check.h>

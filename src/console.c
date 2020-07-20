@@ -19,22 +19,6 @@
 
 static struct console console;
 
-#define CONSOLE_NODES_MAX 32
-static struct console_node console_nodes[CONSOLE_NODES_MAX] = { 0 };
-static struct console_node console_config = {
-  .id = "config",
-  .children = &console_nodes[0],
-};
-
-void console_add_config(struct console_node *node) {
-  for (int i = 0; i < CONSOLE_NODES_MAX; i++) {
-    if (!console_nodes[i].id) {
-      console_nodes[i] = *node;
-      return;
-    }
-  }
-}
-
 uint32_t console_current_time;
 
 #define MAX_CONSOLE_FEED_NODES 128
@@ -72,13 +56,6 @@ static const char *git_describe = GIT_DESCRIBE;
 void console_record_event(struct logged_event ev) {}
 
 void console_init() {
-  sensor_setup_console();
-}
-
-int console_parse_request(char *dest, char *line) {
-  (void)dest;
-  (void)line;
-  return 0;
 }
 
 void console_describe_type(CborEncoder *enc, const char *type) {
@@ -255,51 +232,155 @@ static void console_request_ping(CborEncoder *enc) {
   report_success(enc, true);
 }
 
-static void describe_primitive_config_node(CborEncoder *enc,
-                                           const struct console_node *node) {
-  CborEncoder map_encoder;
-  cbor_encoder_create_map(enc, &map_encoder, CborIndefiniteLength);
-  if (node->description) {
-    cbor_encode_text_stringz(&map_encoder, "description");
-    cbor_encode_text_stringz(&map_encoder, node->description);
+static bool console_path_match(CborValue *path, const char *id) {
+  bool is_match = false;
+  if (cbor_value_text_string_equals(path, id, &is_match) != CborNoError) {
+    is_match = false;
   }
-  if (node->uint32_ptr) {
-    console_describe_type(&map_encoder, "uint32");
-  }
-  if (node->float_ptr) {
-    console_describe_type(&map_encoder, "float");
-  }
-  cbor_encoder_close_container(enc, &map_encoder);
+  return is_match;
 }
 
-void describe_config_node(CborEncoder *enc, const struct console_node *node) {
-  cbor_encode_text_stringz(enc, node->id);
-
-  if (node->describe) {
-    /* Describe function override takes precedence */
-    node->describe(enc, node);
-  } else if (node->children) {
-    /* Recurse to children */
-    CborEncoder child_encoder;
-    cbor_encoder_create_map(enc, &child_encoder, CborIndefiniteLength);
-    for (const struct console_node *child = node->children; child->id != NULL;
-         child++) {
-      describe_config_node(&child_encoder, child);
-    }
-    cbor_encoder_close_container(enc, &child_encoder);
-  } else {
-    describe_primitive_config_node(enc, node);
+void render_uint32_field(struct console_request_context *ctx, const char *id, const char *description, uint32_t *ptr) {
+  switch (ctx->type) {
+    case CONSOLE_GET:
+      if (ctx->is_completed) {
+        return;
+      }
+      if (ctx->is_filtered && !console_path_match(ctx->path, id)) {
+        return;
+      }
+      if (!ctx->is_filtered) {
+        cbor_encode_text_stringz(ctx->response, id);
+      }
+      cbor_encode_int(ctx->response, *ptr);
+      if (ctx->is_filtered) {
+        ctx->is_completed = true;
+      }
+      break;
+    case CONSOLE_DESCRIBE:
+      {
+      cbor_encode_text_stringz(ctx->response, id);
+      CborEncoder desc;
+      cbor_encoder_create_map(ctx->response, &desc, 2);
+      console_describe_type(&desc, "uint32");
+      console_describe_description(&desc, description);
+      cbor_encoder_close_container(ctx->response, &desc);
+      break;
+      }
+    default:
+      break;
   }
+}
+
+void render_float_field(struct console_request_context *ctx, const char *id, const char *description, float *ptr) {
+
+  switch (ctx->type) {
+    case CONSOLE_GET:
+      if (ctx->is_completed) {
+        return;
+      }
+      if (ctx->is_filtered && !console_path_match(ctx->path, id)) {
+        return;
+      }
+      if (!ctx->is_filtered) {
+        cbor_encode_text_stringz(ctx->response, id);
+      }
+      cbor_encode_float(ctx->response, *ptr);
+      if (ctx->is_filtered) {
+        ctx->is_completed = true;
+      }
+      break;
+    case CONSOLE_DESCRIBE:
+      {
+      cbor_encode_text_stringz(ctx->response, id);
+      CborEncoder desc;
+      cbor_encoder_create_map(ctx->response, &desc, 2);
+      console_describe_type(&desc, "float");
+      console_describe_description(&desc, description);
+      cbor_encoder_close_container(ctx->response, &desc);
+      break;
+      }
+    default:
+      break;
+  }
+}
+
+void render_custom_field(struct console_request_context *ctx, const char *id, console_renderer rend, void *ptr) {
+  switch (ctx->type) {
+    case CONSOLE_GET:
+      {
+        if (ctx->is_completed) {
+          return;
+        }
+        if (ctx->is_filtered && !console_path_match(ctx->path, id)) {
+            return;
+        }
+        if (!ctx->is_filtered) {
+          cbor_encode_text_stringz(ctx->response, id);
+        } else {
+          cbor_value_advance(ctx->path);
+        }
+
+        if (cbor_value_at_end(ctx->path)) {
+          struct console_request_context deeper_ctx = *ctx;
+          CborEncoder map;
+          cbor_encoder_create_map(ctx->response, &map, CborIndefiniteLength);
+
+          deeper_ctx.is_filtered = false;
+          deeper_ctx.response = &map;
+          rend(&deeper_ctx, ptr);
+          cbor_encoder_close_container(ctx->response, &map);
+          if (ctx->is_filtered) {
+            ctx->is_completed = true;
+          }
+        } else {
+          rend(ctx, ptr);
+          if (!ctx->is_completed) {
+            cbor_encode_null(ctx->response);
+            ctx->is_completed = true;
+          }
+        }
+      }
+      break;
+    case CONSOLE_DESCRIBE: 
+      {
+        cbor_encode_text_stringz(ctx->response, id);
+        struct console_request_context deeper_ctx = *ctx;
+        CborEncoder map;
+        cbor_encoder_create_map(ctx->response, &map, CborIndefiniteLength);
+        deeper_ctx.response = &map;
+        rend(&deeper_ctx, ptr);
+        cbor_encoder_close_container(ctx->response, &map);
+        break;
+      }
+  }
+}
+
+
+static void decoder_console_renderer(struct console_request_context *ctx, void *ptr) {
+  (void)ptr;
+
+  render_uint32_field(ctx, "rpm_window_size", "averaging window (N teeth)", &config.decoder.rpm_window_size);
+  render_float_field(ctx, "offset", "offset past TDC for sync pulse", &config.decoder.offset);
+}
+
+void console_toplevel_request(struct console_request_context *ctx, void *ptr) {
+  if (ctx->type == CONSOLE_GET) {
+    ctx->is_filtered = !cbor_value_at_end(ctx->path);
+  }
+  render_custom_field(ctx, "decoder", decoder_console_renderer, ptr);
 }
 
 static void console_request_structure(CborEncoder *enc) {
-  CborEncoder response;
 
-  cbor_encode_text_stringz(enc, "response");
-  cbor_encoder_create_map(enc, &response, 1);
+  struct console_request_context ctx = {
+    .type = CONSOLE_DESCRIBE,
+    .response = enc,
+    .is_filtered = false,
+  };
+  render_custom_field(&ctx, "response", console_toplevel_request, NULL);
 
-  describe_config_node(&response, &console_config);
-
+#if 0
   CborEncoder types;
   cbor_encode_text_stringz(&response, "types");
   cbor_encoder_create_map(&response, &types, CborIndefiniteLength);
@@ -310,52 +391,9 @@ static void console_request_structure(CborEncoder *enc) {
   }
 
   cbor_encoder_close_container(&response, &types);
+#endif
 
-  cbor_encoder_close_container(enc, &response);
   report_success(enc, true);
-}
-
-bool get_config_node(CborEncoder *enc,
-                     const struct console_node *node,
-                     CborValue *path) {
-  CborError err;
-
-  if (node->get) {
-    /* Get function override takes precedence */
-    node->get(enc, node, path);
-  } else if (!cbor_value_at_end(path)) {
-    /* We have a path we need to descend down */
-    for (const struct console_node *child = node->children; child->id != NULL;
-         child++) {
-      bool match;
-      if ((err = cbor_value_text_string_equals(path, child->id, &match)) !=
-          CborNoError) {
-        cbor_encode_null(enc);
-        return false;
-      }
-      if (match) {
-        cbor_value_advance(path);
-        return get_config_node(enc, child, path);
-      }
-    }
-    /* If we're still here we did not find a match */
-    cbor_encode_null(enc);
-    return false;
-  } else if (node->children) {
-    CborEncoder child_encoder;
-    cbor_encoder_create_map(enc, &child_encoder, CborIndefiniteLength);
-    for (const struct console_node *child = node->children; child->id != NULL;
-         child++) {
-      cbor_encode_text_stringz(&child_encoder, child->id);
-      get_config_node(&child_encoder, child, path);
-    }
-    cbor_encoder_close_container(enc, &child_encoder);
-  } else if (node->uint32_ptr) {
-    cbor_encode_int(enc, *node->uint32_ptr);
-  } else if (node->float_ptr) {
-    cbor_encode_float(enc, *node->float_ptr);
-  }
-  return true;
 }
 
 static void console_request_get(CborEncoder *enc, CborValue *value) {
@@ -377,11 +415,13 @@ static void console_request_get(CborEncoder *enc, CborValue *value) {
     return;
   }
 
-  cbor_encode_text_stringz(enc, "response");
-  if (!get_config_node(enc, &console_config, &pathlist)) {
-    report_parsing_error(enc, "unable to complete request");
-    return;
-  }
+  struct console_request_context ctx = {
+    .type = CONSOLE_GET,
+    .response = enc,
+    .path = &pathlist,
+    .is_filtered = false,
+  };
+  render_custom_field(&ctx, "response", console_toplevel_request, NULL);
 }
 
 static void console_process_request(int len) {

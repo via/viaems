@@ -618,6 +618,7 @@ void scheduler_buffer_swap() {
   }
   enable_interrupts();
 }
+#if 0
 
 static void console_describe_output_types(CborEncoder *enc,
                                           const struct console_node *ptr) {
@@ -735,6 +736,7 @@ static struct console_node console_node_outputs = {
   .describe = console_describe_outputs,
   .get = console_get_output_list,
 };
+#endif 
 
 void initialize_scheduler() {
   memset(&output_buffers, 0, sizeof(output_buffers));
@@ -747,8 +749,8 @@ void initialize_scheduler() {
 
   n_callbacks = 0;
 
-  console_add_config(&console_node_outputs);
-  console_register_type("output", console_describe_type_output);
+//  console_add_config(&console_node_outputs);
+//  console_register_type("output", console_describe_type_output);
 }
 
 #ifdef UNITTEST

@@ -26,31 +26,28 @@ struct logged_event {
   uint16_t value;
 };
 
-struct console_node;
-
-typedef void (*console_node_get)(CborEncoder *encoder,
-                                 const struct console_node *node,
-                                 CborValue *path);
-typedef void (*console_node_describe)(CborEncoder *encoder,
-                                      const struct console_node *node);
 typedef void (*console_type_describe)(CborEncoder *encoder);
 
-struct console_node {
-  const char *id;
-  const char *description;
+typedef enum {
+  CONSOLE_GET,
+  CONSOLE_SET,
+  CONSOLE_DESCRIBE,
+} console_request_type;
 
-  /* Leaf types */
-  const uint32_t *uint32_ptr;
-  const float *float_ptr;
 
-  /* Custom types */
-  void *ptr;
-  console_node_get get;
-  console_node_describe describe;
+struct console_request_context
+{ console_request_type type;
+  CborEncoder *response;
+  CborValue * path; 
 
-  /* Container type */
-  const struct console_node *children;
+  bool is_filtered;
+  bool is_completed;
 };
+
+typedef void (*console_renderer)(struct console_request_context *ctx, void *ptr);
+void render_uint32_field(struct console_request_context *ctx, const char *id, const char *description, uint32_t *ptr);
+void render_float_field(struct console_request_context *ctx, const char *id, const char *description, float *ptr);
+void render_custom_field(struct console_request_context *ctx, const char *id, console_renderer ctor, void *ptr);
 
 struct console_feed_node {
   const char *id;
@@ -61,12 +58,10 @@ struct console_feed_node {
 
 void console_init();
 void console_add_feed_node(struct console_feed_node *);
-void console_add_config(struct console_node *);
 
 void console_describe_choices(CborEncoder *, const char *choices[]);
 void console_describe_description(CborEncoder *, const char *desc);
 void console_describe_type(CborEncoder *, const char *type);
-void console_describe_node(CborEncoder *, const struct console_node *node);
 
 void console_register_type(const char *type, console_type_describe describe_fn);
 

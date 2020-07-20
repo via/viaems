@@ -187,6 +187,7 @@ void tfi_pip_decoder(struct decoder *d) {
   stats_finish_timing(STATS_DECODE_TIME);
 }
 
+#if 0
 static void console_describe_decoder_types(CborEncoder *enc,
                                            const struct console_node *node) {
   CborEncoder description;
@@ -248,6 +249,7 @@ static struct console_node decoder_console_node = {
   .id = "decoder",
   .children = &decoder_console_children,
 };
+#endif
 
 void decoder_init(struct decoder *d) {
   d->last_t0 = 0;
@@ -283,11 +285,13 @@ void decoder_init(struct decoder *d) {
 
   expire_event.callback = handle_decoder_expire;
 
+#if 0
   console_add_config(&decoder_console_node);
   int n_nodes = sizeof(decoder_feed_nodes) / sizeof(struct console_feed_node);
   for (int i = 0; i < n_nodes; i++) {
     console_add_feed_node(&decoder_feed_nodes[i]);
   }
+#endif
 }
 
 /* When decoder has new information, reschedule everything */

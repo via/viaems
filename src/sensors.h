@@ -103,6 +103,8 @@ struct freq_input {
 void sensors_process(sensor_source source);
 uint32_t sensor_fault_status();
 
+struct sensor_input *sensor_input_from_type(sensor_input_type type);
+
 #ifdef UNITTEST
 #include <check.h>
 TCase *setup_sensor_tests();
