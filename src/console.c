@@ -305,7 +305,7 @@ void render_float_field(struct console_request_context *ctx, const char *id, con
   }
 }
 
-void render_custom_field(struct console_request_context *ctx, const char *id, console_renderer rend, void *ptr) {
+void render_map_field(struct console_request_context *ctx, const char *id, console_renderer rend, void *ptr) {
   switch (ctx->type) {
     case CONSOLE_GET:
       {
@@ -356,19 +356,65 @@ void render_custom_field(struct console_request_context *ctx, const char *id, co
   }
 }
 
+void render_custom_field(struct console_request_context *ctx, const char *id, console_renderer rend, void *ptr) {
+  switch (ctx->type) {
+    case CONSOLE_GET:
+      {
+        if (ctx->is_completed) {
+          return;
+        }
+        if (ctx->is_filtered && !console_path_match(ctx->path, id)) {
+            return;
+        }
+        if (!ctx->is_filtered) {
+          cbor_encode_text_stringz(ctx->response, id);
+          rend(ctx, ptr);
+        }
+      }
+      break;
+    case CONSOLE_DESCRIBE: 
+      {
+
+        cbor_encode_text_stringz(ctx->response, id);
+        rend(ctx, ptr);
+        break;
+      }
+  }
+}
+
+
+static void decoder_console_type_renderer(struct console_request_context *ctx, void *ptr) {
+  (void)ptr;
+
+  switch (ctx->type) {
+    case CONSOLE_GET:
+      cbor_encode_text_stringz(ctx->response, "blah");
+      return;
+    case CONSOLE_DESCRIBE: 
+      {
+        CborEncoder map;
+        cbor_encoder_create_map(ctx->response, &map, 1);
+        console_describe_description(&map, "bleh");
+        cbor_encoder_close_container(ctx->response, &map);
+      }
+      return;
+  }
+}
 
 static void decoder_console_renderer(struct console_request_context *ctx, void *ptr) {
   (void)ptr;
 
   render_uint32_field(ctx, "rpm_window_size", "averaging window (N teeth)", &config.decoder.rpm_window_size);
   render_float_field(ctx, "offset", "offset past TDC for sync pulse", &config.decoder.offset);
+
+  render_custom_field(ctx, "type", decoder_console_type_renderer, NULL);
 }
 
 void console_toplevel_request(struct console_request_context *ctx, void *ptr) {
   if (ctx->type == CONSOLE_GET) {
     ctx->is_filtered = !cbor_value_at_end(ctx->path);
   }
-  render_custom_field(ctx, "decoder", decoder_console_renderer, ptr);
+  render_map_field(ctx, "decoder", decoder_console_renderer, ptr);
 }
 
 static void console_request_structure(CborEncoder *enc) {
@@ -378,7 +424,7 @@ static void console_request_structure(CborEncoder *enc) {
     .response = enc,
     .is_filtered = false,
   };
-  render_custom_field(&ctx, "response", console_toplevel_request, NULL);
+  render_map_field(&ctx, "response", console_toplevel_request, NULL);
 
 #if 0
   CborEncoder types;
@@ -421,7 +467,7 @@ static void console_request_get(CborEncoder *enc, CborValue *value) {
     .path = &pathlist,
     .is_filtered = false,
   };
-  render_custom_field(&ctx, "response", console_toplevel_request, NULL);
+  render_map_field(&ctx, "response", console_toplevel_request, NULL);
 }
 
 static void console_process_request(int len) {
