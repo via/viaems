@@ -34,20 +34,29 @@ typedef enum {
   CONSOLE_DESCRIBE,
 } console_request_type;
 
-
-struct console_request_context
-{ console_request_type type;
+struct console_request_context {
+  console_request_type type;
   CborEncoder *response;
-  CborValue * path; 
+  CborValue *path;
 
   bool is_filtered;
   bool is_completed;
 };
 
-typedef void (*console_renderer)(struct console_request_context *ctx, void *ptr);
-void render_uint32_field(struct console_request_context *ctx, const char *id, const char *description, uint32_t *ptr);
-void render_float_field(struct console_request_context *ctx, const char *id, const char *description, float *ptr);
-void render_custom_field(struct console_request_context *ctx, const char *id, console_renderer ctor, void *ptr);
+typedef void (*console_renderer)(struct console_request_context *ctx,
+                                 void *ptr);
+void render_uint32_field(struct console_request_context *ctx,
+                         const char *id,
+                         const char *description,
+                         uint32_t *ptr);
+void render_float_field(struct console_request_context *ctx,
+                        const char *id,
+                        const char *description,
+                        float *ptr);
+void render_custom_field(struct console_request_context *ctx,
+                         const char *id,
+                         console_renderer ctor,
+                         void *ptr);
 
 struct console_feed_node {
   const char *id;
