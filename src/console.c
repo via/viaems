@@ -213,7 +213,10 @@ void report_cbor_parsing_error(CborEncoder *enc,
                                const char *msg,
                                CborError err) {
   char txtbuf[256];
-  snprintf(txtbuf, sizeof(txtbuf), "%s: %s", msg, cbor_error_string(err));
+  strncat(txtbuf, sizeof(txtbuf), msg);
+  strncat(txtbuf, sizeof(txtbuf), ": ");
+  strncat(txtbuf, sizeof(txtbuf), cbor_error_string(err));
+
   cbor_encode_text_stringz(enc, "error");
   cbor_encode_text_stringz(enc, txtbuf);
   report_success(enc, false);
