@@ -54,7 +54,8 @@ format:
 	clang-format -i src/*.c src/*.h src/platforms/*.c
 
 lint:
-	clang-tidy src/*.c -- -I . -D TICKRATE=1000000
+	clang-tidy src/*.c -- ${CFLAGS}
+	#-I . -D TICKRATE=1000000
 
 clean:
 	-rm ${OBJDIR}/*

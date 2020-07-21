@@ -43,7 +43,7 @@ struct thermistor_config {
 };
 
 struct sensor_input {
-  int pin;
+  uint32_t pin;
   sensor_source source;
   sensor_method method;
 

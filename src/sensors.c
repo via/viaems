@@ -212,8 +212,8 @@ static void render_sensor_source_field(struct console_request_context *ctx,
   case CONSOLE_DESCRIBE: {
     CborEncoder map;
     cbor_encoder_create_map(ctx->response, &map, 3);
-    console_describe_type(&map, "string");
-    console_describe_description(&map, "sensor source");
+    render_type_field(&map, "string");
+    render_description_field(&map, "sensor source");
     console_describe_choices(
       &map,
       (const char *[]){
@@ -247,8 +247,8 @@ static void render_sensor_method_field(struct console_request_context *ctx,
   case CONSOLE_DESCRIBE: {
     CborEncoder map;
     cbor_encoder_create_map(ctx->response, &map, 3);
-    console_describe_type(&map, "string");
-    console_describe_description(&map, "sensor processing method");
+    render_type_field(&map, "string");
+    render_description_field(&map, "sensor processing method");
     console_describe_choices(
       &map,
       (const char *[]){ "linear", "linear-window", "table", "therm", NULL });
@@ -258,11 +258,10 @@ static void render_sensor_method_field(struct console_request_context *ctx,
   }
 }
 
-void render_sensor_input_field(struct console_request_context *ctx,
-                                          void *ptr) {
+void render_sensor_input_field(struct console_request_context *ctx, void *ptr) {
 
   if (ctx->type == CONSOLE_STRUCTURE) {
-    console_describe_type(ctx->response, "sensor");
+    render_type_field(ctx->response, "sensor");
     return;
   }
 
@@ -290,13 +289,31 @@ void render_sensor_input_field(struct console_request_context *ctx,
                      "therm-bias",
                      "thermistor resistor bias value (ohms)",
                      &input->params.therm.bias);
-  render_uint32_field(ctx, "fault-min", "Lower bound for raw sensor input", &input->fault_config.min);
-  render_uint32_field(ctx, "fault-max", "Upper bound for raw sensor input", &input->fault_config.max);
-  render_float_field(ctx, "fault-value", "Value to assume in fault condition", &input->fault_config.fault_value);
+  render_uint32_field(ctx,
+                      "fault-min",
+                      "Lower bound for raw sensor input",
+                      &input->fault_config.min);
+  render_uint32_field(ctx,
+                      "fault-max",
+                      "Upper bound for raw sensor input",
+                      &input->fault_config.max);
+  render_float_field(ctx,
+                     "fault-value",
+                     "Value to assume in fault condition",
+                     &input->fault_config.fault_value);
 
-  render_uint32_field(ctx, "window-capture-width", "Crank degrees in window to average samples over", &input->window.capture_width);
-  render_uint32_field(ctx, "window-total-width", "Crank degrees per window", &input->window.total_width);
-  render_uint32_field(ctx, "window-offset", "Crank degree into window to start averagine", &input->window.total_width);
+  render_uint32_field(ctx,
+                      "window-capture-width",
+                      "Crank degrees in window to average samples over",
+                      &input->window.capture_width);
+  render_uint32_field(ctx,
+                      "window-total-width",
+                      "Crank degrees per window",
+                      &input->window.total_width);
+  render_uint32_field(ctx,
+                      "window-offset",
+                      "Crank degree into window to start averagine",
+                      &input->window.total_width);
 }
 
 void sensor_console_renderer(struct console_request_context *ctx, void *ptr) {

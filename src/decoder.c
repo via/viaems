@@ -187,40 +187,6 @@ void tfi_pip_decoder(struct decoder *d) {
   stats_finish_timing(STATS_DECODE_TIME);
 }
 
-#if 0
-static void console_describe_decoder_types(CborEncoder *enc,
-                                           const struct console_node *node) {
-  CborEncoder description;
-  cbor_encoder_create_map(enc, &description, CborIndefiniteLength);
-  console_describe_type(&description, "string");
-  console_describe_description(&description, node->description);
-  console_describe_choices(&description,
-                           (const char *[]){ "cam24+1", "tfi", NULL });
-  cbor_encoder_close_container(enc, &description);
-}
-
-static void console_get_decoder_type(CborEncoder *enc,
-                                     const struct console_node *node,
-                                     CborValue *path) {
-  (void)node;
-  (void)path;
-
-  const char *type;
-  switch (config.decoder.type) {
-  case TOYOTA_24_1_CAS:
-    type = "cam24+1";
-    break;
-  case FORD_TFI:
-    type = "tfi";
-    break;
-  default:
-    type = "unknown";
-    break;
-  }
-
-  cbor_encode_text_stringz(enc, type);
-}
-
 static struct console_feed_node decoder_feed_nodes[] = {
   { .id = "rpm", .uint32_ptr = &config.decoder.rpm },
   { .id = "sync", .uint32_ptr = &config.decoder.valid },
@@ -229,27 +195,6 @@ static struct console_feed_node decoder_feed_nodes[] = {
   { .id = "t1_count", .uint32_ptr = &config.decoder.t1_count },
 };
 
-static struct console_node decoder_console_children[] = {
-  {
-    .id = "type",
-    .description = "decoder wheel type",
-    .get = console_get_decoder_type,
-    .describe = console_describe_decoder_types,
-  },
-  { .id = "offset",
-    .description = "angle from tdc to trigger wheel sync",
-    .float_ptr = &config.decoder.offset },
-  { .id = "max_variance",
-    .description = "max allowed tooth-to-tooth time change",
-    .float_ptr = &config.decoder.trigger_cur_rpm_change },
-  { 0 },
-};
-
-static struct console_node decoder_console_node = {
-  .id = "decoder",
-  .children = &decoder_console_children,
-};
-#endif
 
 void decoder_init(struct decoder *d) {
   d->last_t0 = 0;
@@ -285,13 +230,10 @@ void decoder_init(struct decoder *d) {
 
   expire_event.callback = handle_decoder_expire;
 
-#if 0
-  console_add_config(&decoder_console_node);
   int n_nodes = sizeof(decoder_feed_nodes) / sizeof(struct console_feed_node);
   for (int i = 0; i < n_nodes; i++) {
     console_add_feed_node(&decoder_feed_nodes[i]);
   }
-#endif
 }
 
 /* When decoder has new information, reschedule everything */

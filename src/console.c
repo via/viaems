@@ -35,19 +35,6 @@ void console_add_feed_node(struct console_feed_node *node) {
   }
 }
 
-#define MAX_TYPES 8
-static console_type_describe console_type_describe_fns[MAX_TYPES];
-
-void console_register_type(const char *type,
-                           console_type_describe describe_fn) {
-  for (int i = 0; i < MAX_TYPES; i++) {
-    if (!console_type_describe_fns[i]) {
-      console_type_describe_fns[i] = describe_fn = describe_fn;
-      return;
-    }
-  }
-}
-
 #ifndef GIT_DESCRIBE
 #define GIT_DESCRIBE "unknown"
 static const char *git_describe = GIT_DESCRIBE;
@@ -57,12 +44,12 @@ void console_record_event(struct logged_event ev) {}
 
 void console_init() {}
 
-void console_describe_type(CborEncoder *enc, const char *type) {
+void render_type_field(CborEncoder *enc, const char *type) {
   cbor_encode_text_stringz(enc, "_type");
   cbor_encode_text_stringz(enc, type);
 }
 
-void console_describe_description(CborEncoder *enc, const char *description) {
+void render_description_field(CborEncoder *enc, const char *description) {
   cbor_encode_text_stringz(enc, "description");
   cbor_encode_text_stringz(enc, description);
 }
@@ -213,9 +200,9 @@ void report_cbor_parsing_error(CborEncoder *enc,
                                const char *msg,
                                CborError err) {
   char txtbuf[256];
-  strncat(txtbuf, sizeof(txtbuf), msg);
-  strncat(txtbuf, sizeof(txtbuf), ": ");
-  strncat(txtbuf, sizeof(txtbuf), cbor_error_string(err));
+  strncat(txtbuf, msg, sizeof(txtbuf) - 1);
+  strncat(txtbuf, ": ", sizeof(txtbuf) - 1);
+  strncat(txtbuf, cbor_error_string(err), sizeof(txtbuf) - 1);
 
   cbor_encode_text_stringz(enc, "error");
   cbor_encode_text_stringz(enc, txtbuf);
@@ -275,8 +262,8 @@ void render_uint32_field(struct console_request_context *ctx,
     cbor_encode_text_stringz(ctx->response, id);
     CborEncoder desc;
     cbor_encoder_create_map(ctx->response, &desc, 2);
-    console_describe_type(&desc, "uint32");
-    console_describe_description(&desc, description);
+    render_type_field(&desc, "uint32");
+    render_description_field(&desc, description);
     cbor_encoder_close_container(ctx->response, &desc);
     break;
   }
@@ -308,8 +295,8 @@ void render_float_field(struct console_request_context *ctx,
     cbor_encode_text_stringz(ctx->response, id);
     CborEncoder desc;
     cbor_encoder_create_map(ctx->response, &desc, 2);
-    console_describe_type(&desc, "float");
-    console_describe_description(&desc, description);
+    render_type_field(&desc, "float");
+    render_description_field(&desc, description);
     cbor_encoder_close_container(ctx->response, &desc);
     break;
   }
@@ -410,8 +397,8 @@ static void decoder_console_type_renderer(struct console_request_context *ctx,
   case CONSOLE_DESCRIBE: {
     CborEncoder map;
     cbor_encoder_create_map(ctx->response, &map, 3);
-    console_describe_type(&map, "string");
-    console_describe_description(&map, "decoder wheel type");
+    render_type_field(&map, "string");
+    render_description_field(&map, "decoder wheel type");
     console_describe_choices(&map, (const char *[]){ "cam24+1", "tfi", NULL });
     cbor_encoder_close_container(ctx->response, &map);
   }
@@ -443,7 +430,8 @@ void console_toplevel_request(struct console_request_context *ctx, void *ptr) {
 
 void console_toplevel_types(struct console_request_context *ctx, void *ptr) {
 
-  render_map_field(ctx, "sensor", render_sensor_input_field, &config.sensors[0]);
+  render_map_field(
+    ctx, "sensor", render_sensor_input_field, &config.sensors[0]);
 }
 
 static void console_request_structure(CborEncoder *enc) {

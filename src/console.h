@@ -26,8 +26,6 @@ struct logged_event {
   uint16_t value;
 };
 
-typedef void (*console_type_describe)(CborEncoder *encoder);
-
 typedef enum {
   CONSOLE_GET,
   CONSOLE_SET,
@@ -74,10 +72,8 @@ void console_init();
 void console_add_feed_node(struct console_feed_node *);
 
 void console_describe_choices(CborEncoder *, const char *choices[]);
-void console_describe_description(CborEncoder *, const char *desc);
-void console_describe_type(CborEncoder *, const char *type);
-
-void console_register_type(const char *type, console_type_describe describe_fn);
+void render_description_field(CborEncoder *, const char *desc);
+void render_type_field(CborEncoder *, const char *type);
 
 void console_process();
 
