@@ -102,6 +102,7 @@ struct freq_input {
 void sensors_process(sensor_source source);
 uint32_t sensor_fault_status();
 
+void render_sensor_input_field(struct console_request_context *ctx, void *ptr);
 void sensor_console_renderer(struct console_request_context *ctx, void *ptr);
 struct sensor_input *sensor_input_from_type(sensor_input_type type);
 

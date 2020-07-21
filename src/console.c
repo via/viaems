@@ -267,7 +267,8 @@ void render_uint32_field(struct console_request_context *ctx,
       ctx->is_completed = true;
     }
     break;
-  case CONSOLE_DESCRIBE: {
+  case CONSOLE_DESCRIBE:
+  case CONSOLE_STRUCTURE: {
     cbor_encode_text_stringz(ctx->response, id);
     CborEncoder desc;
     cbor_encoder_create_map(ctx->response, &desc, 2);
@@ -299,6 +300,7 @@ void render_float_field(struct console_request_context *ctx,
       ctx->is_completed = true;
     }
     break;
+  case CONSOLE_STRUCTURE:
   case CONSOLE_DESCRIBE: {
     cbor_encode_text_stringz(ctx->response, id);
     CborEncoder desc;
@@ -348,6 +350,7 @@ void render_map_field(struct console_request_context *ctx,
       }
     }
   } break;
+  case CONSOLE_STRUCTURE:
   case CONSOLE_DESCRIBE: {
     cbor_encode_text_stringz(ctx->response, id);
     struct console_request_context deeper_ctx = *ctx;
@@ -375,6 +378,7 @@ void render_custom_field(struct console_request_context *ctx,
     }
     rend(ctx, ptr);
   } break;
+  case CONSOLE_STRUCTURE:
   case CONSOLE_DESCRIBE: {
 
     cbor_encode_text_stringz(ctx->response, id);
@@ -391,14 +395,15 @@ static void decoder_console_type_renderer(struct console_request_context *ctx,
   switch (ctx->type) {
   case CONSOLE_GET:
     switch (config.decoder.type) {
-      case FORD_TFI:
-        cbor_encode_text_stringz(ctx->response, "tfi");
-        break;
-      case TOYOTA_24_1_CAS:
-        cbor_encode_text_stringz(ctx->response, "cam24+1");
-        break;
+    case FORD_TFI:
+      cbor_encode_text_stringz(ctx->response, "tfi");
+      break;
+    case TOYOTA_24_1_CAS:
+      cbor_encode_text_stringz(ctx->response, "cam24+1");
+      break;
     }
     return;
+  case CONSOLE_STRUCTURE:
   case CONSOLE_DESCRIBE: {
     CborEncoder map;
     cbor_encoder_create_map(ctx->response, &map, 3);
@@ -433,27 +438,26 @@ void console_toplevel_request(struct console_request_context *ctx, void *ptr) {
   render_map_field(ctx, "sensors", sensor_console_renderer, ptr);
 }
 
+void console_toplevel_types(struct console_request_context *ctx, void *ptr) {
+
+  render_map_field(ctx, "sensor", render_sensor_input_field, &config.sensors[0]);
+}
+
 static void console_request_structure(CborEncoder *enc) {
 
-  struct console_request_context ctx = {
+  struct console_request_context structure_ctx = {
+    .type = CONSOLE_STRUCTURE,
+    .response = enc,
+    .is_filtered = false,
+  };
+  render_map_field(&structure_ctx, "response", console_toplevel_request, NULL);
+
+  struct console_request_context type_ctx = {
     .type = CONSOLE_DESCRIBE,
     .response = enc,
     .is_filtered = false,
   };
-  render_map_field(&ctx, "response", console_toplevel_request, NULL);
-
-#if 0
-  CborEncoder types;
-  cbor_encode_text_stringz(&response, "types");
-  cbor_encoder_create_map(&response, &types, CborIndefiniteLength);
-  for (int i = 0; i < MAX_TYPES; i++) {
-    if (console_type_describe_fns[i]) {
-      console_type_describe_fns[i](&types);
-    }
-  }
-
-  cbor_encoder_close_container(&response, &types);
-#endif
+  render_map_field(&type_ctx, "types", console_toplevel_types, NULL);
 
   report_success(enc, true);
 }

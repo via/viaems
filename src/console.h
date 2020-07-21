@@ -32,6 +32,7 @@ typedef enum {
   CONSOLE_GET,
   CONSOLE_SET,
   CONSOLE_DESCRIBE,
+  CONSOLE_STRUCTURE,
 } console_request_type;
 
 struct console_request_context {
