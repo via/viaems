@@ -21,7 +21,6 @@ typedef enum {
   SENSOR_ADC,
   SENSOR_FREQ,
   SENSOR_DIGITAL,
-  SENSOR_PWM,
   SENSOR_CONST,
 } sensor_source;
 
@@ -103,6 +102,7 @@ struct freq_input {
 void sensors_process(sensor_source source);
 uint32_t sensor_fault_status();
 
+void sensor_console_renderer(struct console_request_context *ctx, void *ptr);
 struct sensor_input *sensor_input_from_type(sensor_input_type type);
 
 #ifdef UNITTEST

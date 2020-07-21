@@ -390,12 +390,21 @@ static void decoder_console_type_renderer(struct console_request_context *ctx,
 
   switch (ctx->type) {
   case CONSOLE_GET:
-    cbor_encode_text_stringz(ctx->response, "blah");
+    switch (config.decoder.type) {
+      case FORD_TFI:
+        cbor_encode_text_stringz(ctx->response, "tfi");
+        break;
+      case TOYOTA_24_1_CAS:
+        cbor_encode_text_stringz(ctx->response, "cam24+1");
+        break;
+    }
     return;
   case CONSOLE_DESCRIBE: {
     CborEncoder map;
-    cbor_encoder_create_map(ctx->response, &map, 1);
-    console_describe_description(&map, "bleh");
+    cbor_encoder_create_map(ctx->response, &map, 3);
+    console_describe_type(&map, "string");
+    console_describe_description(&map, "decoder wheel type");
+    console_describe_choices(&map, (const char *[]){ "cam24+1", "tfi", NULL });
     cbor_encoder_close_container(ctx->response, &map);
   }
     return;
@@ -421,6 +430,7 @@ void console_toplevel_request(struct console_request_context *ctx, void *ptr) {
     ctx->is_filtered = !cbor_value_at_end(ctx->path);
   }
   render_map_field(ctx, "decoder", decoder_console_renderer, ptr);
+  render_map_field(ctx, "sensors", sensor_console_renderer, ptr);
 }
 
 static void console_request_structure(CborEncoder *enc) {

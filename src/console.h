@@ -53,6 +53,10 @@ void render_float_field(struct console_request_context *ctx,
                         const char *id,
                         const char *description,
                         float *ptr);
+void render_map_field(struct console_request_context *ctx,
+                      const char *id,
+                      console_renderer rend,
+                      void *ptr);
 void render_custom_field(struct console_request_context *ctx,
                          const char *id,
                          console_renderer ctor,

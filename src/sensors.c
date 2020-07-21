@@ -186,40 +186,88 @@ static const char *sensor_name_from_type(sensor_input_type t) {
   }
 }
 
-#if 0
-
-static void sensor_console_describe(CborEncoder *enc,
-                                    const struct console_node *node) {
-
-  CborEncoder map_encoder;
-  cbor_encoder_create_map(enc, &map_encoder, NUM_SENSORS);
-  for (int i = 0; i < NUM_SENSORS; i++) {
-    cbor_encode_text_stringz(&map_encoder, sensor_name_from_type(i));
-
-    CborEncoder type_encoder;
-    cbor_encoder_create_map(&map_encoder, &type_encoder, 1);
-    console_describe_type(&type_encoder, "sensor");
-    cbor_encoder_close_container(&map_encoder, &type_encoder);
+static void render_sensor_source_field(struct console_request_context *ctx, void *ptr) {
+  sensor_source *src = ptr;
+  switch (ctx->type) {
+  case CONSOLE_GET:
+    switch (*src) {
+      case SENSOR_NONE:
+        cbor_encode_text_stringz(ctx->response, "none"); 
+        break;
+      case SENSOR_ADC:
+        cbor_encode_text_stringz(ctx->response, "adc");
+        break;
+      case SENSOR_FREQ:
+        cbor_encode_text_stringz(ctx->response, "freq");
+        break;
+      case SENSOR_DIGITAL:
+        cbor_encode_text_stringz(ctx->response, "digital");
+        break;
+      case SENSOR_CONST:
+        cbor_encode_text_stringz(ctx->response, "const");
+        break;
+    }
+    return;
+  case CONSOLE_DESCRIBE: 
+    {
+    CborEncoder map;
+    cbor_encoder_create_map(ctx->response, &map, 3);
+    console_describe_type(&map, "string");
+    console_describe_description(&map, "sensor source");
+    console_describe_choices(&map, (const char *[]){ "none", "adc", "freq", "digital", "pwm", "const", NULL});
+    cbor_encoder_close_container(ctx->response, &map);
+    }
+    return;
   }
-  cbor_encoder_close_container(enc, &map_encoder);
 }
 
-
-static void bleh(struct console_node_descent_context *ctx) {
-  register_uint32_field(ctx, "pin", "adc sensor input pin", &input->pin);
-  register_float_field(ctx, "lag", "lag filter coefficient (0-1)", &input->lag);
-  register_custom_field(ctx, "bleh", custom_field_handler, NULL);
-  register_list_field(ctx, "outputs", 24, console_output_ctor);
+static void render_sensor_method_field(struct console_request_context *ctx, void *ptr) {
+  sensor_method *method = ptr;
+  switch (ctx->type) {
+  case CONSOLE_GET:
+    switch (*method) {
+      case METHOD_LINEAR:
+        cbor_encode_text_stringz(ctx->response, "linear"); 
+        break;
+      case METHOD_LINEAR_WINDOWED:
+        cbor_encode_text_stringz(ctx->response, "linear-window");
+        break;
+      case METHOD_TABLE:
+        cbor_encode_text_stringz(ctx->response, "table");
+        break;
+      case METHOD_THERM:
+        cbor_encode_text_stringz(ctx->response, "therm");
+        break;
+    }
+    return;
+  case CONSOLE_DESCRIBE: 
+    {
+    CborEncoder map;
+    cbor_encoder_create_map(ctx->response, &map, 3);
+    console_describe_type(&map, "string");
+    console_describe_description(&map, "sensor processing method");
+    console_describe_choices(&map, (const char *[]){ "linear", "linear-window", "table", "therm", NULL});
+    cbor_encoder_close_container(ctx->response, &map);
+    return;
+    }
+  }
 }
 
-static void decoder_console_ctor(struct console_node_descent_context *ctx) {
-  register_float_field(ctx,
-                       "offset",
-                       "trigger wheel offset angle from TDC",
-                       &config.decoder.offset);
-  register_custom_field(ctx, "type", decoder_type_console_handler, NULL);
+static void sensor_console_input_renderer(struct console_request_context *ctx, void *ptr) {
+
+  struct sensor_input *input = ptr;
+
+  render_uint32_field(ctx, "pin", "adc sensor input pin", &input->pin);
+  render_float_field(ctx, "lag", "lag filter coefficient (0-1)", &input->lag);
+  render_custom_field(ctx, "source", render_sensor_source_field, &input->source);
+  render_custom_field(ctx, "method", render_sensor_method_field, &input->method);
 }
-#endif
+
+void sensor_console_renderer(struct console_request_context *ctx, void *ptr) {
+  for (sensor_input_type i = 0; i < NUM_SENSORS; i++) {
+    render_map_field(ctx, sensor_name_from_type(i), sensor_console_input_renderer, &config.sensors[i]);
+  }
+}
 
 #ifdef UNITTEST
 #include <check.h>
