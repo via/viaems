@@ -24,6 +24,28 @@ uint32_t console_current_time;
 #define MAX_CONSOLE_FEED_NODES 128
 struct console_feed_node console_feed_nodes[MAX_CONSOLE_FEED_NODES] = {
   { .id = "cputime", .uint32_ptr = &console_current_time },
+
+  /* Fueling */
+  {.id = "ve", .float_ptr = &calculated_values.ve},
+  {.id = "lambda", .float_ptr = &calculated_values.lambda},
+  {.id = "fuel_pulsewidth_us", .uint32_ptr = &calculated_values.fueling_us},
+  {.id = "temp_enrich_percent", .float_ptr = &calculated_values.ete},
+  {.id = "injector_dead_time", .float_ptr = &calculated_values.idt},
+  {.id = "accel_enrich_percent", .float_ptr = &calculated_values.tipin},
+
+  /* Ignition */
+  {.id = "advance", .float_ptr = &calculated_values.timing_advance},
+  {.id = "dwell", .uint32_ptr = &calculated_values.dwell_us},
+
+  {.id = "sensor_map", .float_ptr = &config.sensors[SENSOR_MAP].processed_value},
+  {.id = "sensor_iat", .float_ptr = &config.sensors[SENSOR_IAT].processed_value},
+  {.id = "sensor_clt", .float_ptr = &config.sensors[SENSOR_CLT].processed_value},
+  {.id = "sensor_brv", .float_ptr = &config.sensors[SENSOR_BRV].processed_value},
+  {.id = "sensor_tps", .float_ptr = &config.sensors[SENSOR_TPS].processed_value},
+  {.id = "sensor_aap", .float_ptr = &config.sensors[SENSOR_AAP].processed_value},
+  {.id = "sensor_frt", .float_ptr = &config.sensors[SENSOR_FRT].processed_value},
+  {.id = "sensor_ego", .float_ptr = &config.sensors[SENSOR_EGO].processed_value},
+
 };
 
 void console_add_feed_node(struct console_feed_node *node) {
