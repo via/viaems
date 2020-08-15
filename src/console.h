@@ -37,6 +37,7 @@ struct console_request_context {
   console_request_type type;
   CborEncoder *response;
   CborValue *path;
+  int array_index;
 
   bool is_filtered;
   bool is_completed;
@@ -53,6 +54,14 @@ void render_float_field(struct console_request_context *ctx,
                         const char *description,
                         float *ptr);
 void render_map_field(struct console_request_context *ctx,
+                      const char *id,
+                      console_renderer rend,
+                      void *ptr);
+void render_array_index_field(struct console_request_context *ctx,
+                      int index,
+                      console_renderer rend,
+                      void *ptr);
+void render_array_field(struct console_request_context *ctx,
                       const char *id,
                       console_renderer rend,
                       void *ptr);

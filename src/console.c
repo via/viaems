@@ -243,7 +243,7 @@ static void console_request_ping(CborEncoder *enc) {
   report_success(enc, true);
 }
 
-static bool console_path_match(CborValue *path, const char *id) {
+static bool console_path_match_str(CborValue *path, const char *id) {
   bool is_match = false;
   if (cbor_value_text_string_equals(path, id, &is_match) != CborNoError) {
     is_match = false;
@@ -251,12 +251,23 @@ static bool console_path_match(CborValue *path, const char *id) {
   return is_match;
 }
 
+static bool console_path_match_int(CborValue *path, int index) {
+  if (!cbor_value_is_integer(path)) {
+    return false;
+  }
+  int path_int;
+  if (cbor_value_get_int_checked(path, &path_int) != CborNoError) {
+    return false;
+  }
+  return (path_int == index);
+}
+
 static bool console_field_check_skip(const struct console_request_context *ctx,
                                      const char *id) {
   if (ctx->is_completed) {
     return true;
   }
-  if (ctx->is_filtered && !console_path_match(ctx->path, id)) {
+  if (ctx->is_filtered && !console_path_match_str(ctx->path, id)) {
     return true;
   }
   return false;
@@ -376,10 +387,10 @@ void render_map_field(struct console_request_context *ctx,
   }
 }
 
-void render_custom_field(struct console_request_context *ctx,
-                         const char *id,
-                         console_renderer rend,
-                         void *ptr) {
+void render_array_field(struct console_request_context *ctx,
+                      const char *id,
+                      console_renderer rend,
+                      void *ptr) {
   switch (ctx->type) {
   case CONSOLE_GET: {
     if (console_field_check_skip(ctx, id)) {
@@ -387,16 +398,109 @@ void render_custom_field(struct console_request_context *ctx,
     }
     if (!ctx->is_filtered) {
       cbor_encode_text_stringz(ctx->response, id);
+    } else {
+      cbor_value_advance(ctx->path);
     }
-    rend(ctx, ptr);
+
+    if (cbor_value_at_end(ctx->path)) {
+      struct console_request_context deeper_ctx = *ctx;
+      CborEncoder array;
+      cbor_encoder_create_array(ctx->response, &array, CborIndefiniteLength);
+
+      deeper_ctx.is_filtered = false;
+      deeper_ctx.response = &array;
+      rend(&deeper_ctx, ptr);
+      cbor_encoder_close_container(ctx->response, &array);
+      if (ctx->is_filtered) {
+        ctx->is_completed = true;
+      }
+    } else {
+      rend(ctx, ptr);
+      if (!ctx->is_completed) {
+        cbor_encode_null(ctx->response);
+        ctx->is_completed = true;
+      }
+    }
   } break;
   case CONSOLE_STRUCTURE:
   case CONSOLE_DESCRIBE: {
+    cbor_encode_text_stringz(ctx->response, id);
+    struct console_request_context deeper_ctx = *ctx;
+    CborEncoder array;
+    cbor_encoder_create_array(ctx->response, &array, CborIndefiniteLength);
+    deeper_ctx.response = &array;
+    rend(&deeper_ctx, ptr);
+    cbor_encoder_close_container(ctx->response, &array);
+    break;
+  }
+  }
+}
+
+void render_array_index_field(struct console_request_context *ctx,
+                      int index,
+                      console_renderer rend,
+                      void *ptr) {
+  switch (ctx->type) {
+  case CONSOLE_GET:
+    if (ctx->is_completed) {
+      break;
+    }
+    if (ctx->is_filtered && !console_path_match_int(ctx->path, index)) {
+      break;
+    }
+    if (ctx->is_filtered) {
+      cbor_value_advance(ctx->path);
+    }
+    if (cbor_value_at_end(ctx->path)) {
+      struct console_request_context deeper_ctx = *ctx;
+      CborEncoder map;
+      cbor_encoder_create_map(ctx->response, &map, CborIndefiniteLength);
+
+      deeper_ctx.is_filtered = false;
+      deeper_ctx.response = &map;
+      rend(&deeper_ctx, ptr);
+      cbor_encoder_close_container(ctx->response, &map);
+      if (ctx->is_filtered) {
+        ctx->is_completed = true;
+      }
+    } else {
+      rend(ctx, ptr);
+    }
+    break;
+  case CONSOLE_STRUCTURE:
+  case CONSOLE_DESCRIBE: {
+    struct console_request_context deeper_ctx = *ctx;
+    CborEncoder map;
+    cbor_encoder_create_map(ctx->response, &map, CborIndefiniteLength);
+    deeper_ctx.response = &map;
+    rend(&deeper_ctx, ptr);
+    cbor_encoder_close_container(ctx->response, &map);
+  }
+  default:
+    break;
+  }
+}
+
+void render_custom_field(struct console_request_context *ctx,
+                         const char *id,
+                         console_renderer rend,
+                         void *ptr) {
+  switch (ctx->type) {
+  case CONSOLE_GET: 
+    if (console_field_check_skip(ctx, id)) {
+      break;
+    }
+    if (!ctx->is_filtered) {
+      cbor_encode_text_stringz(ctx->response, id);
+    }
+    rend(ctx, ptr);
+  break;
+  case CONSOLE_STRUCTURE:
+  case CONSOLE_DESCRIBE:
 
     cbor_encode_text_stringz(ctx->response, id);
     rend(ctx, ptr);
     break;
-  }
   }
 }
 
@@ -428,6 +532,18 @@ static void decoder_console_type_renderer(struct console_request_context *ctx,
   }
 }
 
+static void output_console_renderer(struct console_request_context *ctx, void *ptr) {
+  const struct output_event *ev = ptr;
+  render_uint32_field(ctx, "pin", "pin", &ev->pin);
+}
+
+static void output_array_console_renderer(struct console_request_context *ctx, void *ptr) {
+  render_array_index_field(ctx, 0, output_console_renderer, &config.events[0]);
+  render_array_index_field(ctx, 1, output_console_renderer, &config.events[1]);
+  render_array_index_field(ctx, 2, output_console_renderer, &config.events[2]);
+  render_array_index_field(ctx, 3, output_console_renderer, &config.events[3]);
+}
+
 static void decoder_console_renderer(struct console_request_context *ctx,
                                      void *ptr) {
   (void)ptr;
@@ -448,6 +564,7 @@ void console_toplevel_request(struct console_request_context *ctx, void *ptr) {
   }
   render_map_field(ctx, "decoder", decoder_console_renderer, ptr);
   render_map_field(ctx, "sensors", sensor_console_renderer, ptr);
+  render_array_field(ctx, "outputs", output_array_console_renderer, ptr);
 }
 
 void console_toplevel_types(struct console_request_context *ctx, void *ptr) {
