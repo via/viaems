@@ -195,7 +195,6 @@ static struct console_feed_node decoder_feed_nodes[] = {
   { .id = "t1_count", .uint32_ptr = &config.decoder.t1_count },
 };
 
-
 void decoder_init(struct decoder *d) {
   d->last_t0 = 0;
   d->last_t1 = 0;

@@ -26,25 +26,33 @@ struct console_feed_node console_feed_nodes[MAX_CONSOLE_FEED_NODES] = {
   { .id = "cputime", .uint32_ptr = &console_current_time },
 
   /* Fueling */
-  {.id = "ve", .float_ptr = &calculated_values.ve},
-  {.id = "lambda", .float_ptr = &calculated_values.lambda},
-  {.id = "fuel_pulsewidth_us", .uint32_ptr = &calculated_values.fueling_us},
-  {.id = "temp_enrich_percent", .float_ptr = &calculated_values.ete},
-  {.id = "injector_dead_time", .float_ptr = &calculated_values.idt},
-  {.id = "accel_enrich_percent", .float_ptr = &calculated_values.tipin},
+  { .id = "ve", .float_ptr = &calculated_values.ve },
+  { .id = "lambda", .float_ptr = &calculated_values.lambda },
+  { .id = "fuel_pulsewidth_us", .uint32_ptr = &calculated_values.fueling_us },
+  { .id = "temp_enrich_percent", .float_ptr = &calculated_values.ete },
+  { .id = "injector_dead_time", .float_ptr = &calculated_values.idt },
+  { .id = "accel_enrich_percent", .float_ptr = &calculated_values.tipin },
 
   /* Ignition */
-  {.id = "advance", .float_ptr = &calculated_values.timing_advance},
-  {.id = "dwell", .uint32_ptr = &calculated_values.dwell_us},
+  { .id = "advance", .float_ptr = &calculated_values.timing_advance },
+  { .id = "dwell", .uint32_ptr = &calculated_values.dwell_us },
 
-  {.id = "sensor_map", .float_ptr = &config.sensors[SENSOR_MAP].processed_value},
-  {.id = "sensor_iat", .float_ptr = &config.sensors[SENSOR_IAT].processed_value},
-  {.id = "sensor_clt", .float_ptr = &config.sensors[SENSOR_CLT].processed_value},
-  {.id = "sensor_brv", .float_ptr = &config.sensors[SENSOR_BRV].processed_value},
-  {.id = "sensor_tps", .float_ptr = &config.sensors[SENSOR_TPS].processed_value},
-  {.id = "sensor_aap", .float_ptr = &config.sensors[SENSOR_AAP].processed_value},
-  {.id = "sensor_frt", .float_ptr = &config.sensors[SENSOR_FRT].processed_value},
-  {.id = "sensor_ego", .float_ptr = &config.sensors[SENSOR_EGO].processed_value},
+  { .id = "sensor_map",
+    .float_ptr = &config.sensors[SENSOR_MAP].processed_value },
+  { .id = "sensor_iat",
+    .float_ptr = &config.sensors[SENSOR_IAT].processed_value },
+  { .id = "sensor_clt",
+    .float_ptr = &config.sensors[SENSOR_CLT].processed_value },
+  { .id = "sensor_brv",
+    .float_ptr = &config.sensors[SENSOR_BRV].processed_value },
+  { .id = "sensor_tps",
+    .float_ptr = &config.sensors[SENSOR_TPS].processed_value },
+  { .id = "sensor_aap",
+    .float_ptr = &config.sensors[SENSOR_AAP].processed_value },
+  { .id = "sensor_frt",
+    .float_ptr = &config.sensors[SENSOR_FRT].processed_value },
+  { .id = "sensor_ego",
+    .float_ptr = &config.sensors[SENSOR_EGO].processed_value },
 
 };
 
@@ -263,8 +271,8 @@ static bool console_path_match_int(CborValue *path, int index) {
 }
 
 void render_uint32_object(struct console_request_context *ctx,
-                         const char *description,
-                         uint32_t *ptr) {
+                          const char *description,
+                          uint32_t *ptr) {
   switch (ctx->type) {
   case CONSOLE_GET:
     cbor_encode_int(ctx->response, *ptr);
@@ -284,8 +292,8 @@ void render_uint32_object(struct console_request_context *ctx,
 }
 
 void render_float_object(struct console_request_context *ctx,
-                        const char *description,
-                        float *ptr) {
+                         const char *description,
+                         float *ptr) {
 
   switch (ctx->type) {
   case CONSOLE_GET:
@@ -399,21 +407,20 @@ void render_array_index_field(struct console_request_context *ctx,
     break;
   }
 }
-#endif 
+#endif
 
 void render_map_object(struct console_request_context *ctx,
                        console_renderer rend) {
-  
+
   struct console_request_context deeper_ctx = *ctx;
   deeper_ctx.is_completed = false;
   if ((ctx->type == CONSOLE_GET) || (ctx->type == CONSOLE_GET)) {
     deeper_ctx.is_filtered = !cbor_value_at_end(ctx->path);
   }
 
-
   bool wrapped = !deeper_ctx.is_filtered;
-  CborEncoder map;
 
+  CborEncoder map;
   if (wrapped) {
     cbor_encoder_create_map(ctx->response, &map, CborIndefiniteLength);
     deeper_ctx.response = &map;
@@ -426,28 +433,27 @@ void render_map_object(struct console_request_context *ctx,
 
   if (wrapped) {
     cbor_encoder_close_container(ctx->response, &map);
-  } 
+  }
 }
 
-bool render_map_field(struct console_request_context *ctx,
-                         const char *id) {
+bool render_map_field(struct console_request_context *ctx, const char *id) {
   switch (ctx->type) {
-    case CONSOLE_GET: 
-      /* Short circuit all future rendering if we've already matched a path */
-      if (ctx->is_completed) {
+  case CONSOLE_GET:
+    /* Short circuit all future rendering if we've already matched a path */
+    if (ctx->is_completed) {
+      return false;
+    }
+    if (ctx->is_filtered) {
+      /* If we're filtering, we need to match the path */
+      if (!console_path_match_str(ctx->path, id)) {
         return false;
       }
-      if (ctx->is_filtered) {
-        /* If we're filtering, we need to match the path */
-        if (!console_path_match_str(ctx->path, id)) {
-          return false;
-        }
-        cbor_value_advance(ctx->path);
-        ctx->is_completed = true;
-      } else {
-        cbor_encode_text_stringz(ctx->response, id);
-      }
-      return true;
+      cbor_value_advance(ctx->path);
+      ctx->is_completed = true;
+    } else {
+      cbor_encode_text_stringz(ctx->response, id);
+    }
+    return true;
   case CONSOLE_STRUCTURE:
   case CONSOLE_DESCRIBE:
 
@@ -457,7 +463,7 @@ bool render_map_field(struct console_request_context *ctx,
 }
 
 static void render_decoder_type_object(struct console_request_context *ctx,
-    trigger_type *type) {
+                                       trigger_type *type) {
 
   switch (ctx->type) {
   case CONSOLE_GET:
@@ -498,18 +504,17 @@ static void output_array_console_renderer(struct console_request_context *ctx, v
 #endif
 
 static void decoder_map_console_renderer(struct console_request_context *ctx,
-                                     void *ptr) {
+                                         void *ptr) {
   (void)ptr;
 
   if (render_map_field(ctx, "rpm_window_size")) {
-    render_uint32_object(ctx,
-                      "averaging window (N teeth)",
-                      &config.decoder.rpm_window_size);
+    render_uint32_object(
+      ctx, "averaging window (N teeth)", &config.decoder.rpm_window_size);
   }
 
   if (render_map_field(ctx, "offset")) {
     render_float_object(
-    ctx, "offset past TDC for sync pulse", &config.decoder.offset);
+      ctx, "offset past TDC for sync pulse", &config.decoder.offset);
   }
 
   if (render_map_field(ctx, "type")) {
@@ -525,7 +530,7 @@ void console_toplevel_request(struct console_request_context *ctx, void *ptr) {
 
 void console_toplevel_types(struct console_request_context *ctx, void *ptr) {
 
-  //render_map_field(
+  // render_map_field(
   //  ctx, "sensor", render_sensor_input_field, &config.sensors[0]);
 }
 
@@ -696,11 +701,11 @@ struct cbor_test_context {
 struct cbor_test_context test_ctx;
 
 static void init_console_tests() {
-  cbor_encoder_init(&test_ctx.top_encoder, test_ctx.buf, sizeof(test_ctx.buf), 0);
+  cbor_encoder_init(
+    &test_ctx.top_encoder, test_ctx.buf, sizeof(test_ctx.buf), 0);
 }
 
-static void deinit_console_tests() {
-}
+static void deinit_console_tests() {}
 
 static void render_path(const char *fmt, ...) {
   CborEncoder enc, array;
@@ -713,29 +718,37 @@ static void render_path(const char *fmt, ...) {
     uint32_t u;
     const char *s;
     switch (*i) {
-      case 'u':
-        u = va_arg(va_fmt, uint32_t);
-        cbor_encode_int(&array, u);
-        break;
-      case 's':
-        s = va_arg(va_fmt, const char *);
-        cbor_encode_text_stringz(&array, s);
-        break;
-      default:
-        cbor_encode_null(&array);
-        break;
+    case 'u':
+      u = va_arg(va_fmt, uint32_t);
+      cbor_encode_int(&array, u);
+      break;
+    case 's':
+      s = va_arg(va_fmt, const char *);
+      cbor_encode_text_stringz(&array, s);
+      break;
+    default:
+      cbor_encode_null(&array);
+      break;
     }
   }
   va_end(va_fmt);
   cbor_encoder_close_container(&enc, &array);
 
   CborValue top_value;
-  cbor_parser_init(test_ctx.pathbuf, sizeof(test_ctx.pathbuf), 0, &test_ctx.path_parser, &top_value);
+  cbor_parser_init(test_ctx.pathbuf,
+                   sizeof(test_ctx.pathbuf),
+                   0,
+                   &test_ctx.path_parser,
+                   &top_value);
   cbor_value_enter_container(&top_value, &test_ctx.path_value);
 }
 
 static void finish_writing() {
-  cbor_parser_init(test_ctx.buf, sizeof(test_ctx.buf), 0, &test_ctx.top_parser, &test_ctx.top_value);
+  cbor_parser_init(test_ctx.buf,
+                   sizeof(test_ctx.buf),
+                   0,
+                   &test_ctx.top_parser,
+                   &test_ctx.top_value);
 }
 
 START_TEST(test_render_uint32_field_get_filtered) {
@@ -753,10 +766,11 @@ START_TEST(test_render_uint32_field_get_filtered) {
 
   ck_assert(cbor_value_is_integer(&test_ctx.top_value));
   int result;
-  ck_assert(cbor_value_get_int_checked(&test_ctx.top_value, &result) == CborNoError);
+  ck_assert(cbor_value_get_int_checked(&test_ctx.top_value, &result) ==
+            CborNoError);
   ck_assert_int_eq(result, field);
-  
-} END_TEST
+}
+END_TEST
 
 START_TEST(test_render_uint32_field_get_full) {
   struct console_request_context ctx = {
@@ -770,19 +784,22 @@ START_TEST(test_render_uint32_field_get_full) {
   /* We expect ``` "test": 14 ``` with no enclosing map, as that is handled by
    * the map renderer */
   bool text_result;
-  ck_assert(cbor_value_text_string_equals(&test_ctx.top_value, "test", &text_result) == CborNoError);
+  ck_assert(cbor_value_text_string_equals(
+              &test_ctx.top_value, "test", &text_result) == CborNoError);
   ck_assert(text_result);
 
   ck_assert(cbor_value_advance(&test_ctx.top_value) == CborNoError);
   int int_result;
-  ck_assert(cbor_value_get_int_checked(&test_ctx.top_value, &int_result) == CborNoError);
+  ck_assert(cbor_value_get_int_checked(&test_ctx.top_value, &int_result) ==
+            CborNoError);
   ck_assert_int_eq(int_result, field);
-  
-} END_TEST
+}
+END_TEST
 
 TCase *setup_console_tests() {
   TCase *console_tests = tcase_create("console");
-  tcase_add_checked_fixture(console_tests, init_console_tests, deinit_console_tests);
+  tcase_add_checked_fixture(
+    console_tests, init_console_tests, deinit_console_tests);
   tcase_add_test(console_tests, test_render_uint32_field_get_filtered);
   tcase_add_test(console_tests, test_render_uint32_field_get_full);
   return console_tests;

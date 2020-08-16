@@ -47,17 +47,16 @@ typedef void (*console_renderer)(struct console_request_context *ctx,
                                  void *ptr);
 
 void render_uint32_object(struct console_request_context *ctx,
-                         const char *description,
-                         uint32_t *ptr);
+                          const char *description,
+                          uint32_t *ptr);
 void render_float_object(struct console_request_context *ctx,
-                        const char *description,
-                        float *ptr);
+                         const char *description,
+                         float *ptr);
 
 void render_map_object(struct console_request_context *ctx,
                        console_renderer map_renderer);
 
-bool render_map_field(struct console_request_context *ctx,
-                      const char *id);
+bool render_map_field(struct console_request_context *ctx, const char *id);
 
 #if 0
 void render_array_index_field(struct console_request_context *ctx,
