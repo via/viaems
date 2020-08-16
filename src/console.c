@@ -719,9 +719,111 @@ void console_process() {
 
 #ifdef UNITTEST
 #include <check.h>
+#include <stdarg.h>
+
+struct cbor_test_context {
+  char buf[16384];
+  CborEncoder top_encoder;
+  CborParser top_parser;
+  CborValue top_value;
+
+  char pathbuf[512];
+  CborParser path_parser;
+  CborValue path_value;
+};
+
+struct cbor_test_context test_ctx;
+
+static void init_console_tests() {
+  cbor_encoder_init(&test_ctx.top_encoder, test_ctx.buf, sizeof(test_ctx.buf), 0);
+}
+
+static void deinit_console_tests() {
+}
+
+static void render_path(const char *fmt, ...) {
+  CborEncoder enc, array;
+  cbor_encoder_init(&enc, test_ctx.pathbuf, sizeof(test_ctx.buf), 0);
+  cbor_encoder_create_array(&enc, &array, CborIndefiniteLength);
+  va_list va_fmt;
+  va_start(va_fmt, fmt);
+
+  for (const char *i = fmt; *i != 0; i++) {
+    uint32_t u;
+    const char *s;
+    switch (*i) {
+      case 'u':
+        u = va_arg(va_fmt, uint32_t);
+        cbor_encode_int(&array, u);
+        break;
+      case 's':
+        s = va_arg(va_fmt, const char *);
+        cbor_encode_text_stringz(&array, s);
+        break;
+      default:
+        cbor_encode_null(&array);
+        break;
+    }
+  }
+  va_end(va_fmt);
+  cbor_encoder_close_container(&enc, &array);
+
+  CborValue top_value;
+  cbor_parser_init(test_ctx.pathbuf, sizeof(test_ctx.pathbuf), 0, &test_ctx.path_parser, &top_value);
+  cbor_value_enter_container(&top_value, &test_ctx.path_value);
+}
+
+static void finish_writing() {
+  cbor_parser_init(test_ctx.buf, sizeof(test_ctx.buf), 0, &test_ctx.top_parser, &test_ctx.top_value);
+}
+
+START_TEST(test_render_uint32_field_get_filtered) {
+
+  render_path("s", "test");
+  struct console_request_context ctx = {
+    .type = CONSOLE_GET,
+    .response = &test_ctx.top_encoder,
+    .is_filtered = true,
+    .path = &test_ctx.path_value,
+  };
+  uint32_t field = 12;
+  render_uint32_field(&ctx, "test", "desc", &field);
+  finish_writing();
+
+  ck_assert(cbor_value_is_integer(&test_ctx.top_value));
+  int result;
+  ck_assert(cbor_value_get_int_checked(&test_ctx.top_value, &result) == CborNoError);
+  ck_assert_int_eq(result, field);
+  
+} END_TEST
+
+START_TEST(test_render_uint32_field_get_full) {
+  struct console_request_context ctx = {
+    .type = CONSOLE_GET,
+    .response = &test_ctx.top_encoder,
+  };
+  uint32_t field = 14;
+  render_uint32_field(&ctx, "test", "desc", &field);
+  finish_writing();
+
+  /* We expect ``` "test": 14 ``` with no enclosing map, as that is handled by
+   * the map renderer */
+  bool text_result;
+  ck_assert(cbor_value_text_string_equals(&test_ctx.top_value, "test", &text_result) == CborNoError);
+  ck_assert(text_result);
+
+  ck_assert(cbor_value_advance(&test_ctx.top_value) == CborNoError);
+  int int_result;
+  ck_assert(cbor_value_get_int_checked(&test_ctx.top_value, &int_result) == CborNoError);
+  ck_assert_int_eq(int_result, field);
+  
+} END_TEST
 
 TCase *setup_console_tests() {
   TCase *console_tests = tcase_create("console");
+  tcase_add_checked_fixture(console_tests, init_console_tests, deinit_console_tests);
+  tcase_add_test(console_tests, test_render_uint32_field_get_filtered);
+  tcase_add_test(console_tests, test_render_uint32_field_get_full);
   return console_tests;
 }
 
