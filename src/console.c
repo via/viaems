@@ -406,7 +406,10 @@ void render_map_object(struct console_request_context *ctx,
   
   struct console_request_context deeper_ctx = *ctx;
   deeper_ctx.is_completed = false;
-  deeper_ctx.is_filtered = !cbor_value_at_end(ctx->path);
+  if ((ctx->type == CONSOLE_GET) || (ctx->type == CONSOLE_GET)) {
+    deeper_ctx.is_filtered = !cbor_value_at_end(ctx->path);
+  }
+
 
   bool wrapped = !deeper_ctx.is_filtered;
   CborEncoder map;
@@ -453,13 +456,12 @@ bool render_map_field(struct console_request_context *ctx,
   }
 }
 
-static void decoder_console_type_renderer(struct console_request_context *ctx,
-                                          void *ptr) {
-  (void)ptr;
+static void render_decoder_type_object(struct console_request_context *ctx,
+    trigger_type *type) {
 
   switch (ctx->type) {
   case CONSOLE_GET:
-    switch (config.decoder.type) {
+    switch (*type) {
     case FORD_TFI:
       cbor_encode_text_stringz(ctx->response, "tfi");
       break;
@@ -510,7 +512,9 @@ static void decoder_map_console_renderer(struct console_request_context *ctx,
     ctx, "offset past TDC for sync pulse", &config.decoder.offset);
   }
 
-//  render_custom_field(ctx, "type", decoder_console_type_renderer, NULL);
+  if (render_map_field(ctx, "type")) {
+    render_decoder_type_object(ctx, &config.decoder.type);
+  }
 }
 
 void console_toplevel_request(struct console_request_context *ctx, void *ptr) {
