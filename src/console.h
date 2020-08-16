@@ -45,18 +45,21 @@ struct console_request_context {
 
 typedef void (*console_renderer)(struct console_request_context *ctx,
                                  void *ptr);
-void render_uint32_field(struct console_request_context *ctx,
-                         const char *id,
+
+void render_uint32_object(struct console_request_context *ctx,
                          const char *description,
                          uint32_t *ptr);
-void render_float_field(struct console_request_context *ctx,
-                        const char *id,
+void render_float_object(struct console_request_context *ctx,
                         const char *description,
                         float *ptr);
-void render_map_field(struct console_request_context *ctx,
-                      const char *id,
-                      console_renderer rend,
-                      void *ptr);
+
+void render_map_object(struct console_request_context *ctx,
+                       console_renderer map_renderer);
+
+bool render_map_field(struct console_request_context *ctx,
+                      const char *id);
+
+#if 0
 void render_array_index_field(struct console_request_context *ctx,
                       int index,
                       console_renderer rend,
@@ -65,6 +68,7 @@ void render_array_field(struct console_request_context *ctx,
                       const char *id,
                       console_renderer rend,
                       void *ptr);
+#endif
 void render_custom_field(struct console_request_context *ctx,
                          const char *id,
                          console_renderer ctor,

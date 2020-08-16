@@ -186,6 +186,7 @@ static const char *sensor_name_from_type(sensor_input_type t) {
   }
 }
 
+#if 0
 static void render_sensor_source_field(struct console_request_context *ctx,
                                        void *ptr) {
   sensor_source *src = ptr;
@@ -324,6 +325,7 @@ void sensor_console_renderer(struct console_request_context *ctx, void *ptr) {
                      &config.sensors[i]);
   }
 }
+#endif
 
 #ifdef UNITTEST
 #include <check.h>
