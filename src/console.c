@@ -557,30 +557,14 @@ static void console_request_structure(CborEncoder *enc) {
   report_success(enc, true);
 }
 
-static void console_request_get(CborEncoder *enc, CborValue *value) {
-  CborValue path;
-  CborValue pathlist;
+static void console_request_get(CborEncoder *enc, CborValue *pathlist) {
   CborError err;
-  err = cbor_value_map_find_value(value, "path", &path);
-  if (err) {
-    report_cbor_parsing_error(enc, "request has no 'path'", err);
-    return;
-  }
-  if (!cbor_value_is_array(&path)) {
-    report_parsing_error(enc, "request 'path' not an array");
-    return;
-  }
-  err = cbor_value_enter_container(&path, &pathlist);
-  if (err) {
-    report_cbor_parsing_error(enc, "could not read 'path'", err);
-    return;
-  }
 
   struct console_request_context ctx = {
     .type = CONSOLE_GET,
     .response = enc,
-    .path = &pathlist,
-    .is_filtered = !cbor_value_at_end(&pathlist),
+    .path = pathlist,
+    .is_filtered = !cbor_value_at_end(pathlist),
   };
   cbor_encode_text_stringz(enc, "response");
   render_map_object(&ctx, console_toplevel_request);
@@ -643,9 +627,15 @@ static void console_process_request(int len) {
       console_request_structure(&response_map);
     }
 
+    CborValue path, pathlist;
+    err = cbor_value_map_find_value(&value, "path", &path);
+    if (cbor_value_is_array(&path)) {
+      cbor_value_enter_container(&path, &pathlist);
+    }
+
     cbor_value_text_string_equals(&request_method_value, "get", &match);
     if (match) {
-      console_request_get(&response_map, &value);
+      console_request_get(&response_map, &pathlist);
     }
   }
 
@@ -709,7 +699,7 @@ static void deinit_console_tests() {}
 
 static void render_path(const char *fmt, ...) {
   CborEncoder enc, array;
-  cbor_encoder_init(&enc, test_ctx.pathbuf, sizeof(test_ctx.buf), 0);
+  cbor_encoder_init(&enc, test_ctx.pathbuf, sizeof(test_ctx.pathbuf), 0);
   cbor_encoder_create_array(&enc, &array, CborIndefiniteLength);
   va_list va_fmt;
   va_start(va_fmt, fmt);
@@ -751,20 +741,16 @@ static void finish_writing() {
                    &test_ctx.top_value);
 }
 
-START_TEST(test_render_uint32_field_get_filtered) {
-
-  render_path("s", "test");
+START_TEST(test_render_uint32_object_get) {
   struct console_request_context ctx = {
     .type = CONSOLE_GET,
     .response = &test_ctx.top_encoder,
-    .is_filtered = true,
-    .path = &test_ctx.path_value,
   };
+
   uint32_t field = 12;
-  render_uint32_field(&ctx, "test", "desc", &field);
+  render_uint32_object(&ctx, "desc", &field);
   finish_writing();
 
-  ck_assert(cbor_value_is_integer(&test_ctx.top_value));
   int result;
   ck_assert(cbor_value_get_int_checked(&test_ctx.top_value, &result) ==
             CborNoError);
@@ -772,36 +758,96 @@ START_TEST(test_render_uint32_field_get_filtered) {
 }
 END_TEST
 
-START_TEST(test_render_uint32_field_get_full) {
+START_TEST(test_render_float_object_get) {
   struct console_request_context ctx = {
     .type = CONSOLE_GET,
     .response = &test_ctx.top_encoder,
   };
-  uint32_t field = 14;
-  render_uint32_field(&ctx, "test", "desc", &field);
+
+  float field = 3.2f;
+  render_float_object(&ctx, "desc", &field);
   finish_writing();
 
-  /* We expect ``` "test": 14 ``` with no enclosing map, as that is handled by
-   * the map renderer */
-  bool text_result;
-  ck_assert(cbor_value_text_string_equals(
-              &test_ctx.top_value, "test", &text_result) == CborNoError);
-  ck_assert(text_result);
-
-  ck_assert(cbor_value_advance(&test_ctx.top_value) == CborNoError);
-  int int_result;
-  ck_assert(cbor_value_get_int_checked(&test_ctx.top_value, &int_result) ==
+  float result;
+  ck_assert(cbor_value_get_float(&test_ctx.top_value, &result) ==
             CborNoError);
-  ck_assert_int_eq(int_result, field);
+  ck_assert_float_eq(result, field);
 }
 END_TEST
+
+START_TEST(test_smoke_console_request_structure) {
+
+  CborEncoder structure_enc;
+  cbor_encoder_create_map(&test_ctx.top_encoder, &structure_enc, 1);
+  console_request_structure(&structure_enc);
+  cbor_encoder_close_container(&test_ctx.top_encoder, &structure_enc);
+  finish_writing();
+
+  ck_assert(cbor_value_validate_basic(&test_ctx.top_value) == CborNoError);
+  ck_assert(cbor_value_is_map(&test_ctx.top_value));
+
+  /* Test that decoder has an offset field with a type and description */
+  CborValue response_value;
+  ck_assert(cbor_value_map_find_value(&test_ctx.top_value, "response", &response_value) == CborNoError);
+  ck_assert(cbor_value_is_map(&response_value));
+
+  CborValue decoder_value;
+  ck_assert(cbor_value_map_find_value(&response_value, "decoder", &decoder_value) == CborNoError);
+  ck_assert(cbor_value_is_map(&decoder_value));
+
+  CborValue offset_value;
+  ck_assert(cbor_value_map_find_value(&decoder_value, "offset", &offset_value) == CborNoError);
+  ck_assert(cbor_value_is_map(&offset_value));
+
+  CborValue type_value, description_value;
+  ck_assert(cbor_value_map_find_value(&offset_value, "_type", &type_value) == CborNoError);
+  ck_assert(cbor_value_map_find_value(&offset_value, "description", &description_value) == CborNoError);
+
+  ck_assert(cbor_value_is_text_string(&type_value));
+  ck_assert(cbor_value_is_text_string(&description_value));
+
+} END_TEST
+
+START_TEST(test_smoke_console_request_get_full) {
+
+  render_path("");
+
+  CborEncoder get_enc;
+  cbor_encoder_create_map(&test_ctx.top_encoder, &get_enc, 1);
+  console_request_get(&get_enc, &test_ctx.path_value);
+  cbor_encoder_close_container(&test_ctx.top_encoder, &get_enc);
+  finish_writing();
+
+  ck_assert(cbor_value_validate_basic(&test_ctx.top_value) == CborNoError);
+  ck_assert(cbor_value_is_map(&test_ctx.top_value));
+
+  /* Test that decoder has an offset field with a type and description */
+  CborValue response_value;
+  ck_assert(cbor_value_map_find_value(&test_ctx.top_value, "response", &response_value) == CborNoError);
+  ck_assert(cbor_value_is_map(&response_value));
+
+  CborValue decoder_value;
+  ck_assert(cbor_value_map_find_value(&response_value, "decoder", &decoder_value) == CborNoError);
+  ck_assert(cbor_value_is_map(&decoder_value));
+
+  CborValue offset_value;
+  ck_assert(cbor_value_map_find_value(&decoder_value, "offset", &offset_value) == CborNoError);
+  ck_assert(cbor_value_is_float(&offset_value));
+} END_TEST
 
 TCase *setup_console_tests() {
   TCase *console_tests = tcase_create("console");
   tcase_add_checked_fixture(
     console_tests, init_console_tests, deinit_console_tests);
-  tcase_add_test(console_tests, test_render_uint32_field_get_filtered);
-  tcase_add_test(console_tests, test_render_uint32_field_get_full);
+  /* Object primitives */
+  tcase_add_test(console_tests, test_render_uint32_object_get);
+  tcase_add_test(console_tests, test_render_float_object_get);
+
+  /* Containers */
+
+  /* Real access / integration tests */
+  tcase_add_test(console_tests, test_smoke_console_request_structure);
+  tcase_add_test(console_tests, test_smoke_console_request_get_full);
   return console_tests;
 }
 

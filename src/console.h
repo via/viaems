@@ -37,7 +37,6 @@ struct console_request_context {
   console_request_type type;
   CborEncoder *response;
   CborValue *path;
-  int array_index;
 
   bool is_filtered;
   bool is_completed;
