@@ -270,6 +270,15 @@ static bool console_path_match_int(CborValue *path, int index) {
   return (path_int == index);
 }
 
+void render_map_uint32_field(struct console_request_context *ctx,
+    const char *id,
+    const char *description,
+    uint32_t *ptr) {
+  if (render_map_field(ctx, id)) {
+    render_uint32_object(ctx, description, ptr);
+  }
+}
+
 void render_uint32_object(struct console_request_context *ctx,
                           const char *description,
                           uint32_t *ptr) {
@@ -288,6 +297,15 @@ void render_uint32_object(struct console_request_context *ctx,
   }
   default:
     break;
+  }
+}
+
+void render_map_float_field(struct console_request_context *ctx,
+    const char *id,
+    const char *description,
+    float *ptr) {
+  if (render_map_field(ctx, id)) {
+    render_float_object(ctx, description, ptr);
   }
 }
 
@@ -410,7 +428,8 @@ void render_array_index_field(struct console_request_context *ctx,
 #endif
 
 void render_map_object(struct console_request_context *ctx,
-                       console_renderer rend) {
+                       console_renderer rend,
+                       void *ptr) {
 
   struct console_request_context deeper_ctx = *ctx;
   deeper_ctx.is_completed = false;
@@ -426,7 +445,7 @@ void render_map_object(struct console_request_context *ctx,
     deeper_ctx.response = &map;
   }
 
-  rend(&deeper_ctx, NULL);
+  rend(&deeper_ctx, ptr);
   if (deeper_ctx.is_filtered && !deeper_ctx.is_completed) {
     cbor_encode_null(deeper_ctx.response);
   }
@@ -524,7 +543,10 @@ static void decoder_map_console_renderer(struct console_request_context *ctx,
 
 void console_toplevel_request(struct console_request_context *ctx, void *ptr) {
   if (render_map_field(ctx, "decoder")) {
-    render_map_object(ctx, decoder_map_console_renderer);
+    render_map_object(ctx, decoder_map_console_renderer, NULL);
+  }
+  if (render_map_field(ctx, "sensors")) {
+    render_map_object(ctx, sensor_console_renderer, NULL);
   }
 }
 
@@ -542,7 +564,7 @@ static void console_request_structure(CborEncoder *enc) {
     .is_filtered = false,
   };
   if (render_map_field(&structure_ctx, "response")) {
-    render_map_object(&structure_ctx, console_toplevel_request);
+    render_map_object(&structure_ctx, console_toplevel_request, NULL);
   }
 
   struct console_request_context type_ctx = {
@@ -551,7 +573,7 @@ static void console_request_structure(CborEncoder *enc) {
     .is_filtered = false,
   };
   if (render_map_field(&type_ctx, "types")) {
-    render_map_object(&type_ctx, console_toplevel_types);
+    render_map_object(&type_ctx, console_toplevel_types, NULL);
   }
 
   report_success(enc, true);
@@ -567,7 +589,7 @@ static void console_request_get(CborEncoder *enc, CborValue *pathlist) {
     .is_filtered = !cbor_value_at_end(pathlist),
   };
   cbor_encode_text_stringz(enc, "response");
-  render_map_object(&ctx, console_toplevel_request);
+  render_map_object(&ctx, console_toplevel_request, NULL);
 }
 
 static void console_process_request(int len) {

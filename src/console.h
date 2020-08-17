@@ -52,8 +52,19 @@ void render_float_object(struct console_request_context *ctx,
                          const char *description,
                          float *ptr);
 
+void render_map_uint32_field(struct console_request_context *ctx,
+    const char *id,
+    const char *description,
+    uint32_t *ptr);
+
+void render_map_float_field(struct console_request_context *ctx,
+    const char *id,
+    const char *description,
+    float *ptr);
+
 void render_map_object(struct console_request_context *ctx,
-                       console_renderer map_renderer);
+                       console_renderer map_renderer,
+                       void *ptr);
 
 bool render_map_field(struct console_request_context *ctx, const char *id);
 
