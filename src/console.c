@@ -270,11 +270,11 @@ static bool console_path_match_int(CborValue *path, int index) {
   return (path_int == index);
 }
 
-void render_map_uint32_field(struct console_request_context *ctx,
+void render_uint32_map_field(struct console_request_context *ctx,
     const char *id,
     const char *description,
     uint32_t *ptr) {
-  if (render_map_field(ctx, id)) {
+  if (descend_map_field(ctx, id)) {
     render_uint32_object(ctx, description, ptr);
   }
 }
@@ -300,11 +300,11 @@ void render_uint32_object(struct console_request_context *ctx,
   }
 }
 
-void render_map_float_field(struct console_request_context *ctx,
+void render_float_map_field(struct console_request_context *ctx,
     const char *id,
     const char *description,
     float *ptr) {
-  if (render_map_field(ctx, id)) {
+  if (descend_map_field(ctx, id)) {
     render_float_object(ctx, description, ptr);
   }
 }
@@ -328,6 +328,15 @@ void render_float_object(struct console_request_context *ctx,
   }
   default:
     break;
+  }
+}
+
+void render_map_map_field(struct console_request_context *ctx,
+    const char *id,
+    console_renderer rend,
+    void *ptr) {
+  if (descend_map_field(ctx, id)) {
+    render_map_object(ctx, rend, ptr);
   }
 }
 
@@ -455,7 +464,7 @@ void render_map_object(struct console_request_context *ctx,
   }
 }
 
-bool render_map_field(struct console_request_context *ctx, const char *id) {
+bool descend_map_field(struct console_request_context *ctx, const char *id) {
   switch (ctx->type) {
   case CONSOLE_GET:
     /* Short circuit all future rendering if we've already matched a path */
@@ -526,28 +535,20 @@ static void decoder_map_console_renderer(struct console_request_context *ctx,
                                          void *ptr) {
   (void)ptr;
 
-  if (render_map_field(ctx, "rpm_window_size")) {
-    render_uint32_object(
-      ctx, "averaging window (N teeth)", &config.decoder.rpm_window_size);
-  }
+  render_uint32_map_field(
+      ctx, "rpm_window_size", "averaging window (N teeth)", &config.decoder.rpm_window_size);
 
-  if (render_map_field(ctx, "offset")) {
-    render_float_object(
-      ctx, "offset past TDC for sync pulse", &config.decoder.offset);
-  }
+    render_float_map_field(ctx, "offset",
+      "offset past TDC for sync pulse", &config.decoder.offset);
 
-  if (render_map_field(ctx, "type")) {
+  if (descend_map_field(ctx, "type")) {
     render_decoder_type_object(ctx, &config.decoder.type);
   }
 }
 
 void console_toplevel_request(struct console_request_context *ctx, void *ptr) {
-  if (render_map_field(ctx, "decoder")) {
-    render_map_object(ctx, decoder_map_console_renderer, NULL);
-  }
-  if (render_map_field(ctx, "sensors")) {
-    render_map_object(ctx, sensor_console_renderer, NULL);
-  }
+  render_map_map_field(ctx, "decoder", decoder_map_console_renderer, NULL);
+  render_map_map_field(ctx, "sensors", sensor_console_renderer, NULL);
 }
 
 void console_toplevel_types(struct console_request_context *ctx, void *ptr) {
@@ -563,18 +564,14 @@ static void console_request_structure(CborEncoder *enc) {
     .response = enc,
     .is_filtered = false,
   };
-  if (render_map_field(&structure_ctx, "response")) {
-    render_map_object(&structure_ctx, console_toplevel_request, NULL);
-  }
+  render_map_map_field(&structure_ctx, "response", console_toplevel_request, NULL);
 
   struct console_request_context type_ctx = {
     .type = CONSOLE_DESCRIBE,
     .response = enc,
     .is_filtered = false,
   };
-  if (render_map_field(&type_ctx, "types")) {
-    render_map_object(&type_ctx, console_toplevel_types, NULL);
-  }
+  render_map_map_field(&type_ctx, "types", console_toplevel_types, NULL);
 
   report_success(enc, true);
 }

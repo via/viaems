@@ -45,6 +45,24 @@ struct console_request_context {
 typedef void (*console_renderer)(struct console_request_context *ctx,
                                  void *ptr);
 
+
+/* High level rendering helpers */
+void render_uint32_map_field(struct console_request_context *ctx,
+    const char *id,
+    const char *description,
+    uint32_t *ptr);
+
+void render_float_map_field(struct console_request_context *ctx,
+    const char *id,
+    const char *description,
+    float *ptr);
+
+void render_map_map_field(struct console_request_context *ctx,
+    const char *id,
+    console_renderer map_renderer,
+    void *ptr);
+
+/* Low level object rendering */
 void render_uint32_object(struct console_request_context *ctx,
                           const char *description,
                           uint32_t *ptr);
@@ -52,21 +70,11 @@ void render_float_object(struct console_request_context *ctx,
                          const char *description,
                          float *ptr);
 
-void render_map_uint32_field(struct console_request_context *ctx,
-    const char *id,
-    const char *description,
-    uint32_t *ptr);
-
-void render_map_float_field(struct console_request_context *ctx,
-    const char *id,
-    const char *description,
-    float *ptr);
-
 void render_map_object(struct console_request_context *ctx,
                        console_renderer map_renderer,
                        void *ptr);
 
-bool render_map_field(struct console_request_context *ctx, const char *id);
+bool descend_map_field(struct console_request_context *ctx, const char *id);
 
 #if 0
 void render_array_index_field(struct console_request_context *ctx,
@@ -77,11 +85,12 @@ void render_array_field(struct console_request_context *ctx,
                       const char *id,
                       console_renderer rend,
                       void *ptr);
-#endif
 void render_custom_field(struct console_request_context *ctx,
                          const char *id,
                          console_renderer ctor,
                          void *ptr);
+
+#endif
 
 struct console_feed_node {
   const char *id;
