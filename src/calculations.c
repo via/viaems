@@ -28,11 +28,11 @@ int boost_cut() {
           config.boost_control.overboost);
 }
 
-int ignition_cut() {
+bool ignition_cut() {
   return rpm_limit() || fuel_overduty() || boost_cut();
 }
 
-int fuel_cut() {
+bool fuel_cut() {
   return ignition_cut();
 }
 

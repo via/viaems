@@ -17,9 +17,7 @@
 #include "sensors.h"
 #include "stats.h"
 
-static struct console console;
-
-uint32_t console_current_time;
+static uint32_t console_current_time;
 
 #define MAX_CONSOLE_FEED_NODES 128
 struct console_feed_node console_feed_nodes[MAX_CONSOLE_FEED_NODES] = {
@@ -152,9 +150,9 @@ static size_t console_feed_line(uint8_t *dest, size_t bsize) {
   return cbor_encoder_get_buffer_size(&encoder, dest);
 }
 
-int console_write_full(const char *buf, size_t len) {
+int console_write_full(const uint8_t *buf, size_t len) {
   size_t remaining = len;
-  const char *ptr = buf;
+  const uint8_t *ptr = buf;
   while (remaining) {
     ssize_t written = console_write(ptr, remaining);
     if (written > 0) {
@@ -369,6 +367,7 @@ bool descend_array_field(struct console_request_context *ctx, int index) {
   case CONSOLE_DESCRIBE:
     return true;
   }
+  return false;
 }
 
 void render_array_object(struct console_request_context *ctx,
@@ -468,6 +467,7 @@ bool descend_map_field(struct console_request_context *ctx, const char *id) {
     cbor_encode_text_stringz(ctx->response, id);
     return true;
   }
+  return false;
 }
 
 static void render_decoder_type_object(struct console_request_context *ctx,
@@ -498,7 +498,9 @@ static void render_decoder_type_object(struct console_request_context *ctx,
 }
 
 static void render_output_type_object(struct console_request_context *ctx,
-                                      event_type_t *type) {
+                                      void *_type) {
+
+  event_type_t *type = _type;
 
   switch (ctx->type) {
   case CONSOLE_GET:
@@ -534,7 +536,8 @@ static void output_console_renderer(struct console_request_context *ctx,
     render_type_field(ctx->response, "output");
     return;
   }
-  const struct output_event *ev = ptr;
+
+  struct output_event *ev = ptr;
   render_uint32_map_field(ctx, "pin", "pin", &ev->pin);
   render_uint32_map_field(ctx, "inverted", "inverted", &ev->inverted);
   render_float_map_field(
@@ -544,6 +547,7 @@ static void output_console_renderer(struct console_request_context *ctx,
 
 static void output_array_console_renderer(struct console_request_context *ctx,
                                           void *ptr) {
+  (void)ptr;
   for (int i = 0; i < MAX_EVENTS; i++) {
     render_map_array_field(ctx, i, output_console_renderer, &config.events[i]);
   }
@@ -567,12 +571,14 @@ static void decoder_map_console_renderer(struct console_request_context *ctx,
 }
 
 void console_toplevel_request(struct console_request_context *ctx, void *ptr) {
+  (void)ptr;
   render_map_map_field(ctx, "decoder", decoder_map_console_renderer, NULL);
   render_map_map_field(ctx, "sensors", sensor_console_renderer, NULL);
   render_array_map_field(ctx, "outputs", output_array_console_renderer, NULL);
 }
 
 void console_toplevel_types(struct console_request_context *ctx, void *ptr) {
+  (void)ptr;
   render_map_map_field(
     ctx, "sensor", render_sensor_input_field, &config.sensors[0]);
   render_map_map_field(
@@ -600,8 +606,6 @@ static void console_request_structure(CborEncoder *enc) {
 }
 
 static void console_request_get(CborEncoder *enc, CborValue *pathlist) {
-  CborError err;
-
   struct console_request_context ctx = {
     .type = CONSOLE_GET,
     .response = enc,
@@ -691,6 +695,7 @@ static void console_process_request(int len) {
 
 void console_process() {
   static timeval_t last_desc_time = 0;
+  uint8_t txbuffer[4096];
 
   size_t read_size;
   if ((read_size = console_try_read())) {
@@ -702,15 +707,13 @@ void console_process() {
   /* Has it been 100ms since the last description? */
   if (time_diff(current_time(), last_desc_time) > time_from_us(100000)) {
     /* If so, print a description message */
-    size_t len =
-      console_feed_line_keys((uint8_t *)console.txbuffer, CONSOLE_BUFFER_SIZE);
-    console_write_full(console.txbuffer, len);
+    size_t write_size = console_feed_line_keys(txbuffer, sizeof(txbuffer));
+    console_write_full(txbuffer, write_size);
     last_desc_time = current_time();
   } else {
     /* Otherwise a feed message */
-    size_t len =
-      console_feed_line((uint8_t *)console.txbuffer, CONSOLE_BUFFER_SIZE);
-    console_write_full(console.txbuffer, len);
+    size_t write_size = console_feed_line(txbuffer, sizeof(txbuffer));
+    console_write_full(txbuffer, write_size);
   }
   stats_finish_timing(STATS_CONSOLE_TIME);
 }

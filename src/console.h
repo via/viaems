@@ -5,15 +5,6 @@
 
 #include "platform.h"
 
-#define CONSOLE_BUFFER_SIZE 3072
-
-struct console {
-  /* Internal */
-  volatile unsigned int needs_processing;
-  char txbuffer[CONSOLE_BUFFER_SIZE];
-  char rxbuffer[CONSOLE_BUFFER_SIZE];
-};
-
 struct logged_event {
   timeval_t time;
   enum {
