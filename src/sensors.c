@@ -190,6 +190,7 @@ static void render_sensor_source_field(struct console_request_context *ctx,
                                        void *ptr) {
   sensor_source *src = ptr;
   switch (ctx->type) {
+  case CONSOLE_SET:
   case CONSOLE_GET:
     switch (*src) {
     case SENSOR_NONE:
@@ -229,6 +230,7 @@ static void render_sensor_method_field(struct console_request_context *ctx,
                                        void *ptr) {
   sensor_method *method = ptr;
   switch (ctx->type) {
+  case CONSOLE_SET:
   case CONSOLE_GET:
     switch (*method) {
     case METHOD_LINEAR:

@@ -514,6 +514,7 @@ static void render_decoder_type_object(struct console_request_context *ctx,
                                        trigger_type *type) {
 
   switch (ctx->type) {
+  case CONSOLE_SET:
   case CONSOLE_GET:
     switch (*type) {
     case FORD_TFI:
@@ -543,6 +544,7 @@ static void render_output_type_object(struct console_request_context *ctx,
   event_type_t *type = _type;
 
   switch (ctx->type) {
+  case CONSOLE_SET:
   case CONSOLE_GET:
     switch (*type) {
     case DISABLED_EVENT:
