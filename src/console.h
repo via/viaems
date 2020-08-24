@@ -28,6 +28,7 @@ struct console_request_context {
   console_request_type type;
   CborEncoder *response;
   CborValue *path;
+  CborValue *value;
 
   bool is_filtered;
   bool is_completed;
@@ -82,8 +83,8 @@ void render_array_object(struct console_request_context *ctx,
                          console_renderer array_renderer,
                          void *ptr);
 
-bool descend_map_field(struct console_request_context *ctx, const char *id);
-bool descend_array_field(struct console_request_context *ctx, int index);
+bool descend_map_field(struct console_request_context *ctx, struct console_request_context *deeper, const char *id);
+bool descend_array_field(struct console_request_context *ctx, struct console_request_context *deeper, int index);
 
 struct console_feed_node {
   const char *id;
