@@ -1,8 +1,8 @@
 #ifndef _CALCULATIONS_H
 #define _CALCULATIONS_H
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 struct fueling_config {
   float injector_cc_per_minute;

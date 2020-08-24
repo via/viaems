@@ -364,7 +364,9 @@ void render_custom_map_field(struct console_request_context *ctx,
   }
 }
 
-bool descend_array_field(struct console_request_context *ctx, struct console_request_context *deeper_ctx, int index) {
+bool descend_array_field(struct console_request_context *ctx,
+                         struct console_request_context *deeper_ctx,
+                         int index) {
 
   *deeper_ctx = *ctx;
 
@@ -464,7 +466,9 @@ void render_map_object(struct console_request_context *ctx,
   ctx->response = outer;
 }
 
-bool descend_map_field(struct console_request_context *ctx, struct console_request_context *deeper_ctx, const char *id) {
+bool descend_map_field(struct console_request_context *ctx,
+                       struct console_request_context *deeper_ctx,
+                       const char *id) {
 
   if (ctx->is_completed) {
     return false;
@@ -480,7 +484,8 @@ bool descend_map_field(struct console_request_context *ctx, struct console_reque
         return false;
       }
       CborValue newvalue;
-      if (cbor_value_map_find_value(&ctx->value, id, &newvalue) != CborNoError) {
+      if (cbor_value_map_find_value(&ctx->value, id, &newvalue) !=
+          CborNoError) {
         return false;
       }
       deeper_ctx->value = newvalue;
@@ -659,7 +664,9 @@ static void console_request_get(CborEncoder *enc, CborValue *pathlist) {
   render_map_object(&ctx, console_toplevel_request, NULL);
 }
 
-static void console_request_set(CborEncoder *enc, CborValue *pathlist, CborValue *value) {
+static void console_request_set(CborEncoder *enc,
+                                CborValue *pathlist,
+                                CborValue *value) {
   struct console_request_context ctx = {
     .type = CONSOLE_SET,
     .response = enc,
@@ -870,8 +877,7 @@ START_TEST(test_render_uint32_object_get) {
   finish_writing();
 
   int result;
-  ck_assert(cbor_value_get_int(&test_ctx.top_value, &result) ==
-            CborNoError);
+  ck_assert(cbor_value_get_int(&test_ctx.top_value, &result) == CborNoError);
   ck_assert_int_eq(result, field);
 }
 END_TEST
@@ -888,8 +894,7 @@ START_TEST(test_render_uint32_object_get_large) {
   finish_writing();
 
   uint32_t result;
-  ck_assert(cbor_value_get_int(&test_ctx.top_value, &result) ==
-            CborNoError);
+  ck_assert(cbor_value_get_int(&test_ctx.top_value, &result) == CborNoError);
   ck_assert_int_eq(result, field);
 }
 END_TEST
