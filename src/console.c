@@ -497,10 +497,45 @@ static void render_decoder_type_object(struct console_request_context *ctx,
   }
 }
 
+static void render_output_type_object(struct console_request_context *ctx,
+                                      event_type_t *type) {
+
+  switch (ctx->type) {
+  case CONSOLE_GET:
+    switch (*type) {
+    case DISABLED_EVENT:
+      cbor_encode_text_stringz(ctx->response, "disabled");
+      break;
+    case FUEL_EVENT:
+      cbor_encode_text_stringz(ctx->response, "fuel");
+      break;
+    case IGNITION_EVENT:
+      cbor_encode_text_stringz(ctx->response, "ignition");
+      break;
+    }
+    return;
+  case CONSOLE_STRUCTURE:
+  case CONSOLE_DESCRIBE: {
+    CborEncoder map;
+    cbor_encoder_create_map(ctx->response, &map, 3);
+    render_type_field(&map, "string");
+    render_description_field(&map, "output type");
+    console_describe_choices(
+      &map, (const char *[]){ "disabled", "fuel", "ignition", NULL });
+    cbor_encoder_close_container(ctx->response, &map);
+  }
+    return;
+  }
+}
+
 static void output_console_renderer(struct console_request_context *ctx,
                                     void *ptr) {
   const struct output_event *ev = ptr;
   render_uint32_map_field(ctx, "pin", "pin", &ev->pin);
+  render_uint32_map_field(ctx, "inverted", "inverted", &ev->inverted);
+  render_float_map_field(
+    ctx, "angle", "angle past TDC to trigger event", &ev->angle);
+  render_custom_map_field(ctx, "type", render_output_type_object, &ev->type);
 }
 
 static void output_array_console_renderer(struct console_request_context *ctx,
