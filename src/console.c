@@ -530,6 +530,10 @@ static void render_output_type_object(struct console_request_context *ctx,
 
 static void output_console_renderer(struct console_request_context *ctx,
                                     void *ptr) {
+  if (ctx->type == CONSOLE_STRUCTURE) {
+    render_type_field(ctx->response, "output");
+    return;
+  }
   const struct output_event *ev = ptr;
   render_uint32_map_field(ctx, "pin", "pin", &ev->pin);
   render_uint32_map_field(ctx, "inverted", "inverted", &ev->inverted);
@@ -569,9 +573,10 @@ void console_toplevel_request(struct console_request_context *ctx, void *ptr) {
 }
 
 void console_toplevel_types(struct console_request_context *ctx, void *ptr) {
-
-  // render_map_field(
-  //  ctx, "sensor", render_sensor_input_field, &config.sensors[0]);
+  render_map_map_field(
+    ctx, "sensor", render_sensor_input_field, &config.sensors[0]);
+  render_map_map_field(
+    ctx, "output", output_console_renderer, &config.events[1]);
 }
 
 static void console_request_structure(CborEncoder *enc) {
