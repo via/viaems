@@ -186,7 +186,6 @@ static const char *sensor_name_from_type(sensor_input_type t) {
   }
 }
 
-#if 0
 static void render_sensor_source_field(struct console_request_context *ctx,
                                        void *ptr) {
   sensor_source *src = ptr;
@@ -259,7 +258,6 @@ static void render_sensor_method_field(struct console_request_context *ctx,
   }
 }
 
-#endif
 void render_sensor_input_field(struct console_request_context *ctx, void *ptr) {
 
   if (ctx->type == CONSOLE_STRUCTURE) {
@@ -271,12 +269,10 @@ void render_sensor_input_field(struct console_request_context *ctx, void *ptr) {
 
   render_uint32_map_field(ctx, "pin", "adc sensor input pin", &input->pin);
   render_float_map_field(ctx, "lag", "lag filter coefficient (0-1)", &input->lag);
-#if 0
-  render_custom_field(
+  render_custom_map_field(
     ctx, "source", render_sensor_source_field, &input->source);
-  render_custom_field(
+  render_custom_map_field(
     ctx, "method", render_sensor_method_field, &input->method);
-#endif
 
   render_float_map_field(
     ctx, "range-min", "min for linear mapping", &input->params.range.min);

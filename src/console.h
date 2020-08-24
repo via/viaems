@@ -62,6 +62,19 @@ void render_map_map_field(struct console_request_context *ctx,
     console_renderer map_renderer,
     void *ptr);
 
+void render_custom_map_field(struct console_request_context *ctx,
+    const char *id,
+    console_renderer field_renderer,
+    void *ptr);
+
+void render_array_map_field(struct console_request_context *ctx,
+    const char *id,
+    console_renderer array_renderer,
+    void *ptr);
+
+void render_map_array_field(struct console_request_context *ctx, int index,
+    console_renderer map_renderer, void *ptr);
+
 /* Low level object rendering */
 void render_uint32_object(struct console_request_context *ctx,
                           const char *description,
@@ -73,24 +86,11 @@ void render_float_object(struct console_request_context *ctx,
 void render_map_object(struct console_request_context *ctx,
                        console_renderer map_renderer,
                        void *ptr);
+void render_array_object(struct console_request_context *ctx,
+    console_renderer array_renderer, void *ptr);
 
 bool descend_map_field(struct console_request_context *ctx, const char *id);
-
-#if 0
-void render_array_index_field(struct console_request_context *ctx,
-                      int index,
-                      console_renderer rend,
-                      void *ptr);
-void render_array_field(struct console_request_context *ctx,
-                      const char *id,
-                      console_renderer rend,
-                      void *ptr);
-void render_custom_field(struct console_request_context *ctx,
-                         const char *id,
-                         console_renderer ctor,
-                         void *ptr);
-
-#endif
+bool descend_array_field(struct console_request_context *ctx, int index);
 
 struct console_feed_node {
   const char *id;
