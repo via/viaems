@@ -268,7 +268,8 @@ void render_sensor_input_field(struct console_request_context *ctx, void *ptr) {
   struct sensor_input *input = ptr;
 
   render_uint32_map_field(ctx, "pin", "adc sensor input pin", &input->pin);
-  render_float_map_field(ctx, "lag", "lag filter coefficient (0-1)", &input->lag);
+  render_float_map_field(
+    ctx, "lag", "lag filter coefficient (0-1)", &input->lag);
   render_custom_map_field(
     ctx, "source", render_sensor_source_field, &input->source);
   render_custom_map_field(
@@ -279,46 +280,52 @@ void render_sensor_input_field(struct console_request_context *ctx, void *ptr) {
   render_float_map_field(
     ctx, "range-max", "max for linear mapping", &input->params.range.max);
   render_float_map_field(ctx,
-                     "fixed-value",
-                     "value to hold for const input",
-                     &input->params.fixed_value);
-  render_float_map_field(ctx, "therm-a", "thermistor A", &input->params.therm.a);
-  render_float_map_field(ctx, "therm-b", "thermistor B", &input->params.therm.b);
-  render_float_map_field(ctx, "therm-c", "thermistor C", &input->params.therm.c);
+                         "fixed-value",
+                         "value to hold for const input",
+                         &input->params.fixed_value);
+  render_float_map_field(
+    ctx, "therm-a", "thermistor A", &input->params.therm.a);
+  render_float_map_field(
+    ctx, "therm-b", "thermistor B", &input->params.therm.b);
+  render_float_map_field(
+    ctx, "therm-c", "thermistor C", &input->params.therm.c);
   render_float_map_field(ctx,
-                     "therm-bias",
-                     "thermistor resistor bias value (ohms)",
-                     &input->params.therm.bias);
+                         "therm-bias",
+                         "thermistor resistor bias value (ohms)",
+                         &input->params.therm.bias);
   render_uint32_map_field(ctx,
-                      "fault-min",
-                      "Lower bound for raw sensor input",
-                      &input->fault_config.min);
+                          "fault-min",
+                          "Lower bound for raw sensor input",
+                          &input->fault_config.min);
   render_uint32_map_field(ctx,
-                      "fault-max",
-                      "Upper bound for raw sensor input",
-                      &input->fault_config.max);
+                          "fault-max",
+                          "Upper bound for raw sensor input",
+                          &input->fault_config.max);
   render_float_map_field(ctx,
-                     "fault-value",
-                     "Value to assume in fault condition",
-                     &input->fault_config.fault_value);
+                         "fault-value",
+                         "Value to assume in fault condition",
+                         &input->fault_config.fault_value);
 
   render_uint32_map_field(ctx,
-                      "window-capture-width",
-                      "Crank degrees in window to average samples over",
-                      &input->window.capture_width);
+                          "window-capture-width",
+                          "Crank degrees in window to average samples over",
+                          &input->window.capture_width);
   render_uint32_map_field(ctx,
-                      "window-total-width",
-                      "Crank degrees per window",
-                      &input->window.total_width);
+                          "window-total-width",
+                          "Crank degrees per window",
+                          &input->window.total_width);
   render_uint32_map_field(ctx,
-                      "window-offset",
-                      "Crank degree into window to start averagine",
-                      &input->window.total_width);
+                          "window-offset",
+                          "Crank degree into window to start averagine",
+                          &input->window.total_width);
 }
 
 void sensor_console_renderer(struct console_request_context *ctx, void *ptr) {
   for (sensor_input_type i = 0; i < NUM_SENSORS; i++) {
-    render_map_map_field(ctx, sensor_name_from_type(i), render_sensor_input_field, &config.sensors[i]);
+    render_map_map_field(ctx,
+                         sensor_name_from_type(i),
+                         render_sensor_input_field,
+                         &config.sensors[i]);
   }
 }
 

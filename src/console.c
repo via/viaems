@@ -271,9 +271,9 @@ static bool console_path_match_int(CborValue *path, int index) {
 }
 
 void render_uint32_map_field(struct console_request_context *ctx,
-    const char *id,
-    const char *description,
-    uint32_t *ptr) {
+                             const char *id,
+                             const char *description,
+                             uint32_t *ptr) {
   if (descend_map_field(ctx, id)) {
     render_uint32_object(ctx, description, ptr);
   }
@@ -301,9 +301,9 @@ void render_uint32_object(struct console_request_context *ctx,
 }
 
 void render_float_map_field(struct console_request_context *ctx,
-    const char *id,
-    const char *description,
-    float *ptr) {
+                            const char *id,
+                            const char *description,
+                            float *ptr) {
   if (descend_map_field(ctx, id)) {
     render_float_object(ctx, description, ptr);
   }
@@ -332,18 +332,18 @@ void render_float_object(struct console_request_context *ctx,
 }
 
 void render_map_map_field(struct console_request_context *ctx,
-    const char *id,
-    console_renderer rend,
-    void *ptr) {
+                          const char *id,
+                          console_renderer rend,
+                          void *ptr) {
   if (descend_map_field(ctx, id)) {
     render_map_object(ctx, rend, ptr);
   }
 }
 
 void render_custom_map_field(struct console_request_context *ctx,
-    const char *id,
-    console_renderer rend,
-    void *ptr) {
+                             const char *id,
+                             console_renderer rend,
+                             void *ptr) {
   if (descend_map_field(ctx, id)) {
     rend(ctx, ptr);
   }
@@ -371,7 +371,9 @@ bool descend_array_field(struct console_request_context *ctx, int index) {
   }
 }
 
-void render_array_object(struct console_request_context *ctx, console_renderer rend, void *ptr) {
+void render_array_object(struct console_request_context *ctx,
+                         console_renderer rend,
+                         void *ptr) {
   struct console_request_context deeper_ctx = *ctx;
   deeper_ctx.is_completed = false;
   if (ctx->type == CONSOLE_GET) {
@@ -396,13 +398,19 @@ void render_array_object(struct console_request_context *ctx, console_renderer r
   }
 }
 
-void render_map_array_field(struct console_request_context *ctx, int index, console_renderer rend, void *ptr) {
+void render_map_array_field(struct console_request_context *ctx,
+                            int index,
+                            console_renderer rend,
+                            void *ptr) {
   if (descend_array_field(ctx, index)) {
     render_map_object(ctx, rend, ptr);
   }
 }
 
-void render_array_map_field(struct console_request_context *ctx, const char *id, console_renderer rend, void *ptr) {
+void render_array_map_field(struct console_request_context *ctx,
+                            const char *id,
+                            console_renderer rend,
+                            void *ptr) {
   if (descend_map_field(ctx, id)) {
     render_array_object(ctx, rend, ptr);
   }
@@ -489,12 +497,14 @@ static void render_decoder_type_object(struct console_request_context *ctx,
   }
 }
 
-static void output_console_renderer(struct console_request_context *ctx, void *ptr) {
+static void output_console_renderer(struct console_request_context *ctx,
+                                    void *ptr) {
   const struct output_event *ev = ptr;
   render_uint32_map_field(ctx, "pin", "pin", &ev->pin);
 }
 
-static void output_array_console_renderer(struct console_request_context *ctx, void *ptr) {
+static void output_array_console_renderer(struct console_request_context *ctx,
+                                          void *ptr) {
   for (int i = 0; i < MAX_EVENTS; i++) {
     render_map_array_field(ctx, i, output_console_renderer, &config.events[i]);
   }
@@ -504,11 +514,13 @@ static void decoder_map_console_renderer(struct console_request_context *ctx,
                                          void *ptr) {
   (void)ptr;
 
-  render_uint32_map_field(
-      ctx, "rpm_window_size", "averaging window (N teeth)", &config.decoder.rpm_window_size);
+  render_uint32_map_field(ctx,
+                          "rpm_window_size",
+                          "averaging window (N teeth)",
+                          &config.decoder.rpm_window_size);
 
-    render_float_map_field(ctx, "offset",
-      "offset past TDC for sync pulse", &config.decoder.offset);
+  render_float_map_field(
+    ctx, "offset", "offset past TDC for sync pulse", &config.decoder.offset);
 
   if (descend_map_field(ctx, "type")) {
     render_decoder_type_object(ctx, &config.decoder.type);
@@ -534,7 +546,8 @@ static void console_request_structure(CborEncoder *enc) {
     .response = enc,
     .is_filtered = false,
   };
-  render_map_map_field(&structure_ctx, "response", console_toplevel_request, NULL);
+  render_map_map_field(
+    &structure_ctx, "response", console_toplevel_request, NULL);
 
   struct console_request_context type_ctx = {
     .type = CONSOLE_DESCRIBE,
@@ -758,8 +771,7 @@ START_TEST(test_render_float_object_get) {
   finish_writing();
 
   float result;
-  ck_assert(cbor_value_get_float(&test_ctx.top_value, &result) ==
-            CborNoError);
+  ck_assert(cbor_value_get_float(&test_ctx.top_value, &result) == CborNoError);
   ck_assert_float_eq(result, field);
 }
 END_TEST
@@ -777,25 +789,30 @@ START_TEST(test_smoke_console_request_structure) {
 
   /* Test that decoder has an offset field with a type and description */
   CborValue response_value;
-  ck_assert(cbor_value_map_find_value(&test_ctx.top_value, "response", &response_value) == CborNoError);
+  ck_assert(cbor_value_map_find_value(
+              &test_ctx.top_value, "response", &response_value) == CborNoError);
   ck_assert(cbor_value_is_map(&response_value));
 
   CborValue decoder_value;
-  ck_assert(cbor_value_map_find_value(&response_value, "decoder", &decoder_value) == CborNoError);
+  ck_assert(cbor_value_map_find_value(
+              &response_value, "decoder", &decoder_value) == CborNoError);
   ck_assert(cbor_value_is_map(&decoder_value));
 
   CborValue offset_value;
-  ck_assert(cbor_value_map_find_value(&decoder_value, "offset", &offset_value) == CborNoError);
+  ck_assert(cbor_value_map_find_value(
+              &decoder_value, "offset", &offset_value) == CborNoError);
   ck_assert(cbor_value_is_map(&offset_value));
 
   CborValue type_value, description_value;
-  ck_assert(cbor_value_map_find_value(&offset_value, "_type", &type_value) == CborNoError);
-  ck_assert(cbor_value_map_find_value(&offset_value, "description", &description_value) == CborNoError);
+  ck_assert(cbor_value_map_find_value(&offset_value, "_type", &type_value) ==
+            CborNoError);
+  ck_assert(cbor_value_map_find_value(
+              &offset_value, "description", &description_value) == CborNoError);
 
   ck_assert(cbor_value_is_text_string(&type_value));
   ck_assert(cbor_value_is_text_string(&description_value));
-
-} END_TEST
+}
+END_TEST
 
 START_TEST(test_smoke_console_request_get_full) {
 
@@ -812,17 +829,21 @@ START_TEST(test_smoke_console_request_get_full) {
 
   /* Test that decoder has an offset field with a type and description */
   CborValue response_value;
-  ck_assert(cbor_value_map_find_value(&test_ctx.top_value, "response", &response_value) == CborNoError);
+  ck_assert(cbor_value_map_find_value(
+              &test_ctx.top_value, "response", &response_value) == CborNoError);
   ck_assert(cbor_value_is_map(&response_value));
 
   CborValue decoder_value;
-  ck_assert(cbor_value_map_find_value(&response_value, "decoder", &decoder_value) == CborNoError);
+  ck_assert(cbor_value_map_find_value(
+              &response_value, "decoder", &decoder_value) == CborNoError);
   ck_assert(cbor_value_is_map(&decoder_value));
 
   CborValue offset_value;
-  ck_assert(cbor_value_map_find_value(&decoder_value, "offset", &offset_value) == CborNoError);
+  ck_assert(cbor_value_map_find_value(
+              &decoder_value, "offset", &offset_value) == CborNoError);
   ck_assert(cbor_value_is_float(&offset_value));
-} END_TEST
+}
+END_TEST
 
 TCase *setup_console_tests() {
   TCase *console_tests = tcase_create("console");

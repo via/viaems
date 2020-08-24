@@ -45,35 +45,36 @@ struct console_request_context {
 typedef void (*console_renderer)(struct console_request_context *ctx,
                                  void *ptr);
 
-
 /* High level rendering helpers */
 void render_uint32_map_field(struct console_request_context *ctx,
-    const char *id,
-    const char *description,
-    uint32_t *ptr);
+                             const char *id,
+                             const char *description,
+                             uint32_t *ptr);
 
 void render_float_map_field(struct console_request_context *ctx,
-    const char *id,
-    const char *description,
-    float *ptr);
+                            const char *id,
+                            const char *description,
+                            float *ptr);
 
 void render_map_map_field(struct console_request_context *ctx,
-    const char *id,
-    console_renderer map_renderer,
-    void *ptr);
+                          const char *id,
+                          console_renderer map_renderer,
+                          void *ptr);
 
 void render_custom_map_field(struct console_request_context *ctx,
-    const char *id,
-    console_renderer field_renderer,
-    void *ptr);
+                             const char *id,
+                             console_renderer field_renderer,
+                             void *ptr);
 
 void render_array_map_field(struct console_request_context *ctx,
-    const char *id,
-    console_renderer array_renderer,
-    void *ptr);
+                            const char *id,
+                            console_renderer array_renderer,
+                            void *ptr);
 
-void render_map_array_field(struct console_request_context *ctx, int index,
-    console_renderer map_renderer, void *ptr);
+void render_map_array_field(struct console_request_context *ctx,
+                            int index,
+                            console_renderer map_renderer,
+                            void *ptr);
 
 /* Low level object rendering */
 void render_uint32_object(struct console_request_context *ctx,
@@ -87,7 +88,8 @@ void render_map_object(struct console_request_context *ctx,
                        console_renderer map_renderer,
                        void *ptr);
 void render_array_object(struct console_request_context *ctx,
-    console_renderer array_renderer, void *ptr);
+                         console_renderer array_renderer,
+                         void *ptr);
 
 bool descend_map_field(struct console_request_context *ctx, const char *id);
 bool descend_array_field(struct console_request_context *ctx, int index);
