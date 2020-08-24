@@ -54,7 +54,7 @@ format:
 	clang-format -i src/*.c src/*.h src/platforms/*.c
 
 lint:
-	clang-tidy PLATFORM=hosted src/*.c -- ${CFLAGS}
+	clang-tidy src/*.c -- ${CFLAGS}
 	#-I . -D TICKRATE=1000000
 
 clean:
