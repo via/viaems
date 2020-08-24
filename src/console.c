@@ -94,6 +94,14 @@ void console_describe_choices(CborEncoder *enc, const char **choices) {
   cbor_encoder_close_container(enc, &list_encoder);
 }
 
+bool console_string_matches(CborValue *val, const char *str) {
+  bool match;
+  if (cbor_value_text_string_equals(val, str, &match) != CborNoError) {
+    return false;
+  }
+  return match;
+}
+
 static size_t console_feed_line_keys(uint8_t *dest, size_t bsize) {
   CborEncoder encoder;
   cbor_encoder_init(&encoder, dest, bsize, 0);
@@ -325,6 +333,11 @@ void render_float_object(struct console_request_context *ctx,
   case CONSOLE_SET:
     if (cbor_value_is_float(&ctx->value)) {
       cbor_value_get_float(&ctx->value, ptr);
+    } else if (cbor_value_is_double(&ctx->value)) {
+      /* Support doubles for ease of use */
+      double val;
+      cbor_value_get_double(&ctx->value, &val);
+      *ptr = val;
     }
     /* Fall through */
   case CONSOLE_GET:
@@ -367,16 +380,31 @@ void render_custom_map_field(struct console_request_context *ctx,
 bool descend_array_field(struct console_request_context *ctx,
                          struct console_request_context *deeper_ctx,
                          int index) {
+  if (ctx->is_completed) {
+    return false;
+  }
 
   *deeper_ctx = *ctx;
 
   switch (ctx->type) {
   case CONSOLE_SET:
+    if (!ctx->is_filtered) {
+      if (!cbor_value_is_array(&ctx->value)) {
+        return false;
+      }
+      CborValue newvalue;
+      cbor_value_enter_container(&ctx->value, &newvalue);
+      for (int i = 0; i < index; i++) {
+        if (cbor_value_at_end(&newvalue)) {
+          return false;
+        }
+        cbor_value_advance(&newvalue);
+      }
+      deeper_ctx->value = newvalue;
+    }
+    /* intentional fallthrough */
   case CONSOLE_GET:
     /* Short circuit all future rendering if we've already matched a path */
-    if (ctx->is_completed) {
-      return false;
-    }
     if (ctx->is_filtered) {
       /* If we're filtering, we need to match the path */
       if (!console_path_match_int(deeper_ctx->path, index)) {
@@ -520,6 +548,12 @@ static void render_decoder_type_object(struct console_request_context *ctx,
 
   switch (ctx->type) {
   case CONSOLE_SET:
+    if (console_string_matches(&ctx->value, "tfi")) {
+      *type = FORD_TFI;
+    } else if (console_string_matches(&ctx->value, "cam24+1")) {
+      *type = TOYOTA_24_1_CAS;
+    }
+    /* Intentional Fallthrough */
   case CONSOLE_GET:
     switch (*type) {
     case FORD_TFI:
@@ -550,6 +584,14 @@ static void render_output_type_object(struct console_request_context *ctx,
 
   switch (ctx->type) {
   case CONSOLE_SET:
+    if (console_string_matches(&ctx->value, "disabled")) {
+      *type = DISABLED_EVENT;
+    } else if (console_string_matches(&ctx->value, "fuel")) {
+      *type = FUEL_EVENT;
+    } else if (console_string_matches(&ctx->value, "ignition")) {
+      *type = IGNITION_EVENT;
+    }
+    /* Intentional Fallthrough */
   case CONSOLE_GET:
     switch (*type) {
     case DISABLED_EVENT:

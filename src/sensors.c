@@ -191,6 +191,18 @@ static void render_sensor_source_field(struct console_request_context *ctx,
   sensor_source *src = ptr;
   switch (ctx->type) {
   case CONSOLE_SET:
+    if (console_string_matches(&ctx->value, "none")) {
+      *src = SENSOR_NONE;
+    } else if (console_string_matches(&ctx->value, "adc")) {
+      *src = SENSOR_ADC;
+    } else if (console_string_matches(&ctx->value, "freq")) {
+      *src = SENSOR_FREQ;
+    } else if (console_string_matches(&ctx->value, "digital")) {
+      *src = SENSOR_DIGITAL;
+    } else if (console_string_matches(&ctx->value, "const")) {
+      *src = SENSOR_CONST;
+    }
+    /* Intentional Fallthrough */
   case CONSOLE_GET:
     switch (*src) {
     case SENSOR_NONE:
@@ -231,6 +243,16 @@ static void render_sensor_method_field(struct console_request_context *ctx,
   sensor_method *method = ptr;
   switch (ctx->type) {
   case CONSOLE_SET:
+    if (console_string_matches(&ctx->value, "linear")) {
+      *method = METHOD_LINEAR;
+    } else if (console_string_matches(&ctx->value, "linear-window")) {
+      *method = METHOD_LINEAR_WINDOWED;
+    } else if (console_string_matches(&ctx->value, "table")) {
+      *method = METHOD_TABLE;
+    } else if (console_string_matches(&ctx->value, "therm")) {
+      *method = METHOD_THERM;
+    }
+    /* Intentional Fallthrough */
   case CONSOLE_GET:
     switch (*method) {
     case METHOD_LINEAR:

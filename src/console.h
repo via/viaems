@@ -90,6 +90,8 @@ bool descend_array_field(struct console_request_context *ctx,
                          struct console_request_context *deeper,
                          int index);
 
+bool console_string_matches(CborValue *value, const char *str);
+
 struct console_feed_node {
   const char *id;
   const char *description;
