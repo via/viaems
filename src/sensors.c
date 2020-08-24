@@ -209,6 +209,7 @@ static void render_sensor_source_field(struct console_request_context *ctx,
       break;
     }
     return;
+  case CONSOLE_STRUCTURE:
   case CONSOLE_DESCRIBE: {
     CborEncoder map;
     cbor_encoder_create_map(ctx->response, &map, 3);
@@ -244,6 +245,7 @@ static void render_sensor_method_field(struct console_request_context *ctx,
       break;
     }
     return;
+  case CONSOLE_STRUCTURE:
   case CONSOLE_DESCRIBE: {
     CborEncoder map;
     cbor_encoder_create_map(ctx->response, &map, 3);
@@ -321,6 +323,7 @@ void render_sensor_input_field(struct console_request_context *ctx, void *ptr) {
 }
 
 void sensor_console_renderer(struct console_request_context *ctx, void *ptr) {
+  (void)ptr;
   for (sensor_input_type i = 0; i < NUM_SENSORS; i++) {
     render_map_map_field(ctx,
                          sensor_name_from_type(i),

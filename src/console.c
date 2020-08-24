@@ -68,7 +68,9 @@ void console_add_feed_node(struct console_feed_node *node) {
 static const char *git_describe = GIT_DESCRIBE;
 #endif
 
-void console_record_event(struct logged_event ev) {}
+void console_record_event(struct logged_event ev) {
+  (void)ev;
+}
 
 void console_init() {}
 
@@ -228,9 +230,10 @@ void report_cbor_parsing_error(CborEncoder *enc,
                                const char *msg,
                                CborError err) {
   char txtbuf[256];
-  strncat(txtbuf, msg, sizeof(txtbuf) - 1);
-  strncat(txtbuf, ": ", sizeof(txtbuf) - 1);
-  strncat(txtbuf, cbor_error_string(err), sizeof(txtbuf) - 1);
+  char *txtptr = txtbuf;
+  txtptr = strncat(txtptr, msg, sizeof(txtbuf) - 1);
+  txtptr = strncat(txtptr, ": ", sizeof(txtbuf) - strlen(txtbuf) - 1);
+  strncat(txtptr, cbor_error_string(err), sizeof(txtbuf) - strlen(txtbuf) - 1);
 
   cbor_encode_text_stringz(enc, "error");
   cbor_encode_text_stringz(enc, txtbuf);
@@ -674,14 +677,20 @@ static void console_process_request(int len) {
     }
 
     CborValue path, pathlist;
-    err = cbor_value_map_find_value(&value, "path", &path);
+    cbor_value_map_find_value(&value, "path", &path);
+    bool path_is_present = false;
     if (cbor_value_is_array(&path)) {
       cbor_value_enter_container(&path, &pathlist);
+      path_is_present = true;
     }
 
     cbor_value_text_string_equals(&request_method_value, "get", &match);
     if (match) {
-      console_request_get(&response_map, &pathlist);
+      if (path_is_present) {
+        console_request_get(&response_map, &pathlist);
+      } else {
+        /* TODO: give an error */
+      }
     }
   }
 
