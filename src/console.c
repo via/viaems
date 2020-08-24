@@ -156,7 +156,7 @@ int console_write_full(const uint8_t *buf, size_t len) {
   size_t remaining = len;
   const uint8_t *ptr = buf;
   while (remaining) {
-    ssize_t written = console_write(ptr, remaining);
+    size_t written = console_write(ptr, remaining);
     if (written > 0) {
       remaining -= written;
       ptr += written;
@@ -803,12 +803,12 @@ void console_process() {
 #include <stdarg.h>
 
 struct cbor_test_context {
-  char buf[16384];
+  uint8_t buf[16384];
   CborEncoder top_encoder;
   CborParser top_parser;
   CborValue top_value;
 
-  char pathbuf[512];
+  uint8_t pathbuf[512];
   CborParser path_parser;
   CborValue path_value;
 };
@@ -893,9 +893,9 @@ START_TEST(test_render_uint32_object_get_large) {
   render_uint32_object(&ctx, "desc", &field);
   finish_writing();
 
-  uint32_t result;
+  int result;
   ck_assert(cbor_value_get_int(&test_ctx.top_value, &result) == CborNoError);
-  ck_assert_int_eq(result, field);
+  ck_assert_int_eq((uint32_t)result, field);
 }
 END_TEST
 
