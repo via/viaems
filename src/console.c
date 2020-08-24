@@ -286,8 +286,8 @@ void render_uint32_object(struct console_request_context *ctx,
                           uint32_t *ptr) {
   switch (ctx->type) {
   case CONSOLE_SET:
-    if (cbor_value_is_integer(ctx->value)) {
-      cbor_value_get_int_checked(ctx->value, (int *)ptr);
+    if (cbor_value_is_integer(&ctx->value)) {
+      cbor_value_get_int_checked(&ctx->value, (int *)ptr);
     }
     /* Fall through */
   case CONSOLE_GET:
@@ -323,8 +323,8 @@ void render_float_object(struct console_request_context *ctx,
 
   switch (ctx->type) {
   case CONSOLE_SET:
-    if (cbor_value_is_float(ctx->value)) {
-      cbor_value_get_float(ctx->value, ptr);
+    if (cbor_value_is_float(&ctx->value)) {
+      cbor_value_get_float(&ctx->value, ptr);
     }
     /* Fall through */
   case CONSOLE_GET:
@@ -466,16 +466,28 @@ void render_map_object(struct console_request_context *ctx,
 
 bool descend_map_field(struct console_request_context *ctx, struct console_request_context *deeper_ctx, const char *id) {
 
+  if (ctx->is_completed) {
+    return false;
+  }
+
   *deeper_ctx = *ctx;
 
   switch (ctx->type) {
   case CONSOLE_SET:
     /* If unfiltered, start descending into the value object */
+    if (!ctx->is_filtered) {
+      if (!cbor_value_is_map(&ctx->value)) {
+        return false;
+      }
+      CborValue newvalue;
+      if (cbor_value_map_find_value(&ctx->value, id, &newvalue) != CborNoError) {
+        return false;
+      }
+      deeper_ctx->value = newvalue;
+    }
+    /* Intentional fallthrough */
   case CONSOLE_GET:
     /* Short circuit all future rendering if we've already matched a path */
-    if (ctx->is_completed) {
-      return false;
-    }
     if (ctx->is_filtered) {
       /* If we're filtering, we need to match the path */
       if (!console_path_match_str(deeper_ctx->path, id)) {
@@ -645,6 +657,18 @@ static void console_request_get(CborEncoder *enc, CborValue *pathlist) {
   render_map_object(&ctx, console_toplevel_request, NULL);
 }
 
+static void console_request_set(CborEncoder *enc, CborValue *pathlist, CborValue *value) {
+  struct console_request_context ctx = {
+    .type = CONSOLE_SET,
+    .response = enc,
+    .path = pathlist,
+    .is_filtered = !cbor_value_at_end(pathlist),
+    .value = *value,
+  };
+  cbor_encode_text_stringz(enc, "response");
+  render_map_object(&ctx, console_toplevel_request, NULL);
+}
+
 static void console_process_request(int len) {
   CborParser parser;
   CborValue value;
@@ -710,10 +734,22 @@ static void console_process_request(int len) {
       path_is_present = true;
     }
 
+    CborValue set_value;
+    cbor_value_map_find_value(&value, "value", &set_value);
+
     cbor_value_text_string_equals(&request_method_value, "get", &match);
     if (match) {
       if (path_is_present) {
         console_request_get(&response_map, &pathlist);
+      } else {
+        /* TODO: give an error */
+      }
+    }
+
+    cbor_value_text_string_equals(&request_method_value, "set", &match);
+    if (match) {
+      if (path_is_present) {
+        console_request_set(&response_map, &pathlist, &set_value);
       } else {
         /* TODO: give an error */
       }
