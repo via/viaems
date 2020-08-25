@@ -690,6 +690,7 @@ static void console_request_get(CborEncoder *enc, CborValue *pathlist) {
   };
   cbor_encode_text_stringz(enc, "response");
   render_map_object(&ctx, console_toplevel_request, NULL);
+  report_success(enc, true);
 }
 
 static void console_request_set(CborEncoder *enc,
@@ -704,93 +705,97 @@ static void console_request_set(CborEncoder *enc,
   };
   cbor_encode_text_stringz(enc, "response");
   render_map_object(&ctx, console_toplevel_request, NULL);
+  report_success(enc, true);
 }
 
-static void console_process_request(int len) {
+static void console_process_request(CborValue *request, CborEncoder *response) {
+  cbor_encode_text_stringz(response, "type");
+  cbor_encode_text_stringz(response, "response");
+
+  int req_id = -1;
+  CborValue request_id_value;
+  if (!cbor_value_map_find_value(request, "id", &request_id_value)) {
+    if (cbor_value_is_integer(&request_id_value)) {
+      cbor_value_get_int(&request_id_value, &req_id);
+    }
+  }
+
+  cbor_encode_text_stringz(response, "id");
+  cbor_encode_int(response, req_id);
+
+  CborValue request_method_value;
+  cbor_value_map_find_value(request, "method", &request_method_value);
+  if (cbor_value_get_type(&request_method_value) == CborInvalidType) {
+    report_parsing_error(response, "request has no 'method'");
+    report_success(response, false);
+    return;
+  } else {
+    bool match;
+    cbor_value_text_string_equals(&request_method_value, "ping", &match);
+    if (match) {
+      console_request_ping(response);
+      return;
+    }
+
+    cbor_value_text_string_equals(&request_method_value, "structure", &match);
+    if (match) {
+      console_request_structure(response);
+      return;
+    }
+
+    CborValue path, pathlist;
+    cbor_value_map_find_value(request, "path", &path);
+    if (cbor_value_is_array(&path)) {
+      cbor_value_enter_container(&path, &pathlist);
+    } else {
+      report_parsing_error(response, "no 'path' provided'");
+      return;
+    }
+
+    cbor_value_text_string_equals(&request_method_value, "get", &match);
+    if (match) {
+      console_request_get(response, &pathlist);
+      return;
+    }
+
+    CborValue set_value;
+    cbor_value_map_find_value(request, "value", &set_value);
+    if (cbor_value_get_type(&set_value) == CborInvalidType) {
+      report_parsing_error(response, "invalid 'value' provided");
+      return;
+    }
+
+    cbor_value_text_string_equals(&request_method_value, "set", &match);
+    if (match) {
+      console_request_set(response, &pathlist, &set_value);
+      return;
+    }
+  }
+
+}
+
+static void console_process_request_raw(int len) {
   CborParser parser;
   CborValue value;
   CborError err;
-  int req_id = -1;
 
   uint8_t response[4096];
   CborEncoder encoder;
-  CborEncoder response_map;
 
   cbor_encoder_init(&encoder, response, sizeof(response), 0);
-
-  if (cbor_encoder_create_map(&encoder, &response_map, CborIndefiniteLength) !=
-      CborNoError) {
-    return;
-  }
-  if (cbor_encode_text_stringz(&response_map, "type")) {
-    return;
-  }
-  if (cbor_encode_text_stringz(&response_map, "response")) {
-    return;
-  }
 
   err = cbor_parser_init(rx_buffer, len, 0, &parser, &value);
   if (err) {
     return;
   }
 
-  CborValue request_id_value;
-  if (!cbor_value_map_find_value(&value, "id", &request_id_value)) {
-    if (cbor_value_is_integer(&request_id_value)) {
-      cbor_value_get_int(&request_id_value, &req_id);
-    }
-  }
-  if (cbor_encode_text_stringz(&response_map, "id")) {
-    return;
-  }
-  if (cbor_encode_int(&response_map, req_id)) {
+  CborEncoder response_map;
+  if (cbor_encoder_create_map(&encoder, &response_map, CborIndefiniteLength) !=
+      CborNoError) {
     return;
   }
 
-  CborValue request_method_value;
-  cbor_value_map_find_value(&value, "method", &request_method_value);
-  if (cbor_value_get_type(&request_method_value) == CborInvalidType) {
-    report_parsing_error(&response_map, "request has no 'method'");
-  } else {
-    bool match;
-    cbor_value_text_string_equals(&request_method_value, "ping", &match);
-    if (match) {
-      console_request_ping(&response_map);
-    }
-
-    cbor_value_text_string_equals(&request_method_value, "structure", &match);
-    if (match) {
-      console_request_structure(&response_map);
-    }
-
-    CborValue path, pathlist;
-    cbor_value_map_find_value(&value, "path", &path);
-    if (cbor_value_is_array(&path)) {
-      cbor_value_enter_container(&path, &pathlist);
-    } else {
-      report_parsing_error(&response_map, "no 'path' provided'");
-      return;
-    }
-
-    cbor_value_text_string_equals(&request_method_value, "get", &match);
-    if (match) {
-      console_request_get(&response_map, &pathlist);
-      report_success(&response_map, true);
-    }
-
-    CborValue set_value;
-    cbor_value_map_find_value(&value, "value", &set_value);
-    if (cbor_value_get_type(&set_value) == CborInvalidType) {
-      report_parsing_error(&response_map, "invalid 'value' provided");
-      return;
-    }
-
-    cbor_value_text_string_equals(&request_method_value, "set", &match);
-    if (match) {
-      console_request_set(&response_map, &pathlist, &set_value);
-      report_success(&response_map, true);
-    }
-  }
+  console_process_request(&value, &response_map);
 
   if (cbor_encoder_close_container(&encoder, &response_map)) {
     return;
@@ -807,7 +812,7 @@ void console_process() {
   size_t read_size;
   if ((read_size = console_try_read())) {
     /* Parse a request from the client */
-    console_process_request(read_size);
+    console_process_request_raw(read_size);
     console_shift_rx_buffer(read_size);
   }
 
