@@ -9,3 +9,6 @@ LDFLAGS+= -lrt
 
 run: ${OBJDIR}/viaems
 	${OBJDIR}/viaems
+
+integration: ${OBJDIR}/viaems
+	python3 scripts/interface-integration-tests.py

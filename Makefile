@@ -55,7 +55,6 @@ format:
 
 lint:
 	clang-tidy src/*.c -- ${CFLAGS}
-	#-I . -D TICKRATE=1000000
 
 clean:
 	-rm ${OBJDIR}/*
