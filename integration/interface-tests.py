@@ -10,6 +10,9 @@ class ViaemsWrapper:
                 stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                 stderr=subprocess.DEVNULL)
 
+    def kill(self):
+        self.process.kill()
+
     def send(self, payload):
         binary = cbor.dumps(payload)
         self.process.stdin.write(binary)
@@ -48,6 +51,18 @@ class ViaemsWrapper:
         result = self.recv_until_id(id)
         return result
 
+    def set(self, path, value):
+        id = random.randint(0, 1024)
+        self.send({
+            "id": id,
+            "type": "request",
+            "method": "set",
+            "path": path,
+            "value": value,
+            })
+        result = self.recv_until_id(id)
+        return result
+
 def _leaves_have_types(obj):
     if type(obj) == dict:
         if '_type' in obj:
@@ -71,9 +86,14 @@ def _leaves_have_descriptions(obj):
 
 class ViaemsInterfaceTests(unittest.TestCase):
 
+    def setUp(self):
+        self.conn = ViaemsWrapper("obj/hosted/viaems")
+
+    def tearDown(self):
+        self.conn.kill()
+
     def test_structure_full(self):
-        v = ViaemsWrapper("obj/hosted/viaems")
-        result = v.structure()
+        result = self.conn.structure()
         assert(result['success'])
         assert("response" in result)
 
@@ -89,7 +109,7 @@ class ViaemsInterfaceTests(unittest.TestCase):
 
     def test_structure_types(self):
         v = ViaemsWrapper("obj/hosted/viaems")
-        result = v.structure()
+        result = self.conn.structure()
         assert(result['success'])
         assert("types" in result)
 
@@ -102,7 +122,7 @@ class ViaemsInterfaceTests(unittest.TestCase):
 
     def test_get_full(self):
         v = ViaemsWrapper("obj/hosted/viaems")
-        result = v.get(path=[])
+        result = self.conn.get(path=[])
         assert(result['success'])
 
         outputs = result['response']['outputs']
@@ -114,9 +134,9 @@ class ViaemsInterfaceTests(unittest.TestCase):
         assert(type(sensors['map']['method']) == str)
         assert(type(sensors['map']['range-min']) == float)
 
-    def test_all_subpaths(self):
+    def test_get_all_subpaths(self):
         v = ViaemsWrapper("obj/hosted/viaems")
-        full = v.get(path=[])['response']
+        full = self.conn.get(path=[])['response']
 
         def compare_subpaths(conn, master, current_path=[]):
             current = conn.get(path=current_path)['response']
@@ -129,6 +149,77 @@ class ViaemsInterfaceTests(unittest.TestCase):
                     compare_subpaths(conn, v, current_path + [int(i)])
 
         compare_subpaths(v, full)
+
+    def test_set_map_floats(self):
+        v = ViaemsWrapper("obj/hosted/viaems")
+
+        result = self.conn.set(path=[], value={"decoder": {"offset": 60.0}})
+        assert(result['success'])
+        assert(result['response']['decoder']['offset'] == 60.0)
+        assert(self.conn.get(path=["decoder", "offset"])['response'] == 60.0)
+
+    def test_set_map_float_via_path(self):
+        v = ViaemsWrapper("obj/hosted/viaems")
+
+        result = self.conn.set(path=["decoder", "offset"], value=60.0)
+        assert(result['success'])
+        assert(result['response'] == 60.0)
+        assert(self.conn.get(path=["decoder", "offset"])['response'] == 60.0)
+
+    def test_set_map_multiple_floats(self):
+        v = ViaemsWrapper("obj/hosted/viaems")
+        result = self.conn.set(path=[], value={
+            "sensors": {
+                "iat": {
+                    "range-max": 25.0
+                    },
+                "map": {
+                    "range-max": 26.0
+                    }
+                }
+            })
+        assert(result['success'])
+        assert(result['response']['sensors']['iat']["range-max"] == 25.0)
+        assert(result['response']['sensors']['map']["range-max"] == 26.0)
+        assert(self.conn.get(path=["sensors", "iat", "range-max"])['response'] == 25.0)
+        assert(self.conn.get(path=["sensors", "map", "range-max"])['response'] == 26.0)
+
+    def test_set_array_float(self):
+        v = ViaemsWrapper("obj/hosted/viaems")
+        result = self.conn.set(path=[], value={
+            "outputs": [
+                {
+                    "pin": 10,
+                },
+                {
+                    "pin": 11,
+                }
+            ]})
+        assert(result['success'])
+        assert(result['response']['outputs'][0]["pin"] == 10)
+        assert(result['response']['outputs'][1]["pin"] == 11)
+
+    def test_set_array_float_by_path(self):
+        v = ViaemsWrapper("obj/hosted/viaems")
+        result = self.conn.set(path=["outputs", 1, "pin"], value=12)
+        assert(result['success'])
+        assert(result['response'] == 12)
+    
+    def test_set_sensor_map(self):
+        v = ViaemsWrapper("obj/hosted/viaems")
+        result = self.conn.set(path=["sensors", "iat"], value={
+            "method": "linear-window",
+            "source": "const",
+            "pin": 5,
+            "range-min": 12.0,
+            })
+        assert(result['success'])
+        assert(self.conn.get(path=["sensors", "iat", "range-min"])['response'] == 12.0)
+        assert(self.conn.get(path=["sensors", "iat", "method"])['response'] == "linear-window")
+        assert(self.conn.get(path=["sensors", "iat", "source"])['response'] == "const")
+        assert(self.conn.get(path=["sensors", "iat", "pin"])['response'] == 5)
+
+
 
 if __name__ == "__main__":
     unittest.main()
