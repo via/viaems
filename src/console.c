@@ -628,8 +628,7 @@ static void output_array_console_renderer(struct console_request_context *ctx,
   }
 }
 
-static void render_decoder(struct console_request_context *ctx,
-                                         void *ptr) {
+static void render_decoder(struct console_request_context *ctx, void *ptr) {
   (void)ptr;
 
   render_uint32_map_field(ctx,
@@ -668,7 +667,6 @@ static const char *sensor_name_from_type(sensor_input_type t) {
     return "invalid";
   }
 }
-
 
 static void render_sensor_source_field(struct console_request_context *ctx,
                                        void *ptr) {
@@ -768,7 +766,8 @@ static void render_sensor_method_field(struct console_request_context *ctx,
   }
 }
 
-static void render_sensor_map_field(struct console_request_context *ctx, void *ptr) {
+static void render_sensor_map_field(struct console_request_context *ctx,
+                                    void *ptr) {
 
   if (ctx->type == CONSOLE_STRUCTURE) {
     render_type_field(ctx->response, "sensor");
@@ -965,7 +964,6 @@ static void console_process_request(CborValue *request, CborEncoder *response) {
       return;
     }
   }
-
 }
 
 static void console_process_request_raw(int len) {
@@ -1197,7 +1195,6 @@ START_TEST(test_smoke_console_request_get_full) {
               &test_ctx.top_value, "response", &response_value) == CborNoError);
   ck_assert(cbor_value_is_map(&response_value));
 
-  
   CborValue decoder_value;
   ck_assert(cbor_value_map_find_value(
               &response_value, "decoder", &decoder_value) == CborNoError);
