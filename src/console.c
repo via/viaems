@@ -628,7 +628,7 @@ static void output_array_console_renderer(struct console_request_context *ctx,
   }
 }
 
-static void decoder_map_console_renderer(struct console_request_context *ctx,
+static void render_decoder(struct console_request_context *ctx,
                                          void *ptr) {
   (void)ptr;
 
@@ -646,17 +646,211 @@ static void decoder_map_console_renderer(struct console_request_context *ctx,
   }
 }
 
+static const char *sensor_name_from_type(sensor_input_type t) {
+  switch (t) {
+  case SENSOR_MAP:
+    return "map";
+  case SENSOR_IAT:
+    return "iat";
+  case SENSOR_CLT:
+    return "clt";
+  case SENSOR_BRV:
+    return "brv";
+  case SENSOR_TPS:
+    return "tps";
+  case SENSOR_AAP:
+    return "aap";
+  case SENSOR_FRT:
+    return "frt";
+  case SENSOR_EGO:
+    return "ego";
+  default:
+    return "invalid";
+  }
+}
+
+
+static void render_sensor_source_field(struct console_request_context *ctx,
+                                       void *ptr) {
+  sensor_source *src = ptr;
+  switch (ctx->type) {
+  case CONSOLE_SET:
+    if (console_string_matches(&ctx->value, "none")) {
+      *src = SENSOR_NONE;
+    } else if (console_string_matches(&ctx->value, "adc")) {
+      *src = SENSOR_ADC;
+    } else if (console_string_matches(&ctx->value, "freq")) {
+      *src = SENSOR_FREQ;
+    } else if (console_string_matches(&ctx->value, "digital")) {
+      *src = SENSOR_DIGITAL;
+    } else if (console_string_matches(&ctx->value, "const")) {
+      *src = SENSOR_CONST;
+    }
+    /* Intentional Fallthrough */
+  case CONSOLE_GET:
+    switch (*src) {
+    case SENSOR_NONE:
+      cbor_encode_text_stringz(ctx->response, "none");
+      break;
+    case SENSOR_ADC:
+      cbor_encode_text_stringz(ctx->response, "adc");
+      break;
+    case SENSOR_FREQ:
+      cbor_encode_text_stringz(ctx->response, "freq");
+      break;
+    case SENSOR_DIGITAL:
+      cbor_encode_text_stringz(ctx->response, "digital");
+      break;
+    case SENSOR_CONST:
+      cbor_encode_text_stringz(ctx->response, "const");
+      break;
+    }
+    return;
+  case CONSOLE_STRUCTURE:
+  case CONSOLE_DESCRIBE: {
+    CborEncoder map;
+    cbor_encoder_create_map(ctx->response, &map, 3);
+    render_type_field(&map, "string");
+    render_description_field(&map, "sensor source");
+    console_describe_choices(
+      &map,
+      (const char *[]){
+        "none", "adc", "freq", "digital", "pwm", "const", NULL });
+    cbor_encoder_close_container(ctx->response, &map);
+  }
+    return;
+  }
+}
+
+static void render_sensor_method_field(struct console_request_context *ctx,
+                                       void *ptr) {
+  sensor_method *method = ptr;
+  switch (ctx->type) {
+  case CONSOLE_SET:
+    if (console_string_matches(&ctx->value, "linear")) {
+      *method = METHOD_LINEAR;
+    } else if (console_string_matches(&ctx->value, "linear-window")) {
+      *method = METHOD_LINEAR_WINDOWED;
+    } else if (console_string_matches(&ctx->value, "table")) {
+      *method = METHOD_TABLE;
+    } else if (console_string_matches(&ctx->value, "therm")) {
+      *method = METHOD_THERM;
+    }
+    /* Intentional Fallthrough */
+  case CONSOLE_GET:
+    switch (*method) {
+    case METHOD_LINEAR:
+      cbor_encode_text_stringz(ctx->response, "linear");
+      break;
+    case METHOD_LINEAR_WINDOWED:
+      cbor_encode_text_stringz(ctx->response, "linear-window");
+      break;
+    case METHOD_TABLE:
+      cbor_encode_text_stringz(ctx->response, "table");
+      break;
+    case METHOD_THERM:
+      cbor_encode_text_stringz(ctx->response, "therm");
+      break;
+    }
+    return;
+  case CONSOLE_STRUCTURE:
+  case CONSOLE_DESCRIBE: {
+    CborEncoder map;
+    cbor_encoder_create_map(ctx->response, &map, 3);
+    render_type_field(&map, "string");
+    render_description_field(&map, "sensor processing method");
+    console_describe_choices(
+      &map,
+      (const char *[]){ "linear", "linear-window", "table", "therm", NULL });
+    cbor_encoder_close_container(ctx->response, &map);
+    return;
+  }
+  }
+}
+
+static void render_sensor_map_field(struct console_request_context *ctx, void *ptr) {
+
+  if (ctx->type == CONSOLE_STRUCTURE) {
+    render_type_field(ctx->response, "sensor");
+    return;
+  }
+
+  struct sensor_input *input = ptr;
+
+  render_uint32_map_field(ctx, "pin", "adc sensor input pin", &input->pin);
+  render_float_map_field(
+    ctx, "lag", "lag filter coefficient (0-1)", &input->lag);
+  render_custom_map_field(
+    ctx, "source", render_sensor_source_field, &input->source);
+  render_custom_map_field(
+    ctx, "method", render_sensor_method_field, &input->method);
+
+  render_float_map_field(
+    ctx, "range-min", "min for linear mapping", &input->params.range.min);
+  render_float_map_field(
+    ctx, "range-max", "max for linear mapping", &input->params.range.max);
+  render_float_map_field(ctx,
+                         "fixed-value",
+                         "value to hold for const input",
+                         &input->params.fixed_value);
+  render_float_map_field(
+    ctx, "therm-a", "thermistor A", &input->params.therm.a);
+  render_float_map_field(
+    ctx, "therm-b", "thermistor B", &input->params.therm.b);
+  render_float_map_field(
+    ctx, "therm-c", "thermistor C", &input->params.therm.c);
+  render_float_map_field(ctx,
+                         "therm-bias",
+                         "thermistor resistor bias value (ohms)",
+                         &input->params.therm.bias);
+  render_uint32_map_field(ctx,
+                          "fault-min",
+                          "Lower bound for raw sensor input",
+                          &input->fault_config.min);
+  render_uint32_map_field(ctx,
+                          "fault-max",
+                          "Upper bound for raw sensor input",
+                          &input->fault_config.max);
+  render_float_map_field(ctx,
+                         "fault-value",
+                         "Value to assume in fault condition",
+                         &input->fault_config.fault_value);
+
+  render_uint32_map_field(ctx,
+                          "window-capture-width",
+                          "Crank degrees in window to average samples over",
+                          &input->window.capture_width);
+  render_uint32_map_field(ctx,
+                          "window-total-width",
+                          "Crank degrees per window",
+                          &input->window.total_width);
+  render_uint32_map_field(ctx,
+                          "window-offset",
+                          "Crank degree into window to start averagine",
+                          &input->window.total_width);
+}
+
+void render_sensors(struct console_request_context *ctx, void *ptr) {
+  (void)ptr;
+  for (sensor_input_type i = 0; i < NUM_SENSORS; i++) {
+    render_map_map_field(ctx,
+                         sensor_name_from_type(i),
+                         render_sensor_map_field,
+                         &config.sensors[i]);
+  }
+}
+
 void console_toplevel_request(struct console_request_context *ctx, void *ptr) {
   (void)ptr;
-  render_map_map_field(ctx, "decoder", decoder_map_console_renderer, NULL);
-  render_map_map_field(ctx, "sensors", sensor_console_renderer, NULL);
+  render_map_map_field(ctx, "decoder", render_decoder, NULL);
+  render_map_map_field(ctx, "sensors", render_sensors, NULL);
   render_array_map_field(ctx, "outputs", output_array_console_renderer, NULL);
 }
 
 void console_toplevel_types(struct console_request_context *ctx, void *ptr) {
   (void)ptr;
   render_map_map_field(
-    ctx, "sensor", render_sensor_input_field, &config.sensors[0]);
+    ctx, "sensor", render_sensor_map_field, &config.sensors[0]);
   render_map_map_field(
     ctx, "output", output_console_renderer, &config.events[1]);
 }
