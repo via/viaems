@@ -29,8 +29,6 @@ struct config {
 
   /* Tables */
   struct table *timing;
-  struct table *iat_timing_adjust;
-  struct table *clt_timing_adjust;
   struct table *ve;
   struct table *commanded_lambda;
   struct table *injector_pw_compensation;
@@ -51,17 +49,6 @@ struct config {
 };
 
 extern struct config config;
-
-/* Externally make-available tables for console */
-extern struct table timing_vs_rpm_and_map;
-extern struct table lambda_vs_rpm_and_map;
-extern struct table ve_vs_rpm_and_map;
-extern struct table injector_dead_time;
-extern struct table enrich_vs_temp_and_map;
-extern struct table tipin_vs_tpsrate_and_tps;
-extern struct table tipin_duration_vs_rpm;
-extern struct table boost_control_pwm;
-extern struct table dwell_ms_vs_brv;
 
 int config_valid();
 

@@ -57,6 +57,15 @@ void render_custom_map_field(struct console_request_context *ctx,
                              const char *id,
                              console_renderer field_renderer,
                              void *ptr);
+struct console_enum_mapping {
+  int e;
+  const char *s;
+};
+void render_enum_map_field(struct console_request_context *ctx,
+                           const char *id,
+                           const char *desc,
+                           struct console_enum_mapping *mapping,
+                           void *ptr);
 
 void render_array_map_field(struct console_request_context *ctx,
                             const char *id,
@@ -79,6 +88,11 @@ void render_float_object(struct console_request_context *ctx,
 void render_map_object(struct console_request_context *ctx,
                        console_renderer map_renderer,
                        void *ptr);
+void render_enum_object(struct console_request_context *ctx,
+                        const char *desc,
+                        struct console_enum_mapping *mapping,
+                        void *ptr);
+
 void render_array_object(struct console_request_context *ctx,
                          console_renderer array_renderer,
                          void *ptr);
