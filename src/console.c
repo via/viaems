@@ -15,8 +15,12 @@
 #include "decoder.h"
 #include "platform.h"
 #include "sensors.h"
+#include "metrics.h"
 
 static uint32_t console_current_time;
+
+static struct timer_metric process_timer;
+static struct counter_metric feed_line_counter;
 
 #define MAX_CONSOLE_FEED_NODES 128
 struct console_feed_node console_feed_nodes[MAX_CONSOLE_FEED_NODES] = {
@@ -71,7 +75,10 @@ void console_record_event(struct logged_event ev) {
   (void)ev;
 }
 
-void console_init() {}
+void console_init() {
+  register_timer_metric(&process_timer, "console_process");
+  register_counter_metric(&feed_line_counter, "console_feed_lines");
+}
 
 void render_type_field(CborEncoder *enc, const char *type) {
   cbor_encode_text_stringz(enc, "_type");
@@ -146,7 +153,27 @@ static size_t console_feed_line_keys(uint8_t *dest, size_t bsize) {
   return cbor_encoder_get_buffer_size(&encoder, dest);
 }
 
+static size_t console_metrics_line(uint8_t *dest, size_t bsize) {
+  CborEncoder encoder;
+  cbor_encoder_init(&encoder, dest, bsize, 0);
+
+  CborEncoder top_encoder;
+  cbor_encoder_create_map(&encoder, &top_encoder, 2);
+  cbor_encode_text_stringz(&top_encoder, "type");
+  cbor_encode_text_stringz(&top_encoder, "metrics");
+
+  struct console_request_context ctx = {
+    .type = CONSOLE_GET,
+    .response = &top_encoder,
+    .is_filtered = false,
+  };
+  render_map_map_field(&ctx, "metrics", render_metrics, NULL);
+  cbor_encoder_close_container(&encoder, &top_encoder);
+  return cbor_encoder_get_buffer_size(&encoder, dest);
+}
+
 static size_t console_feed_line(uint8_t *dest, size_t bsize) {
+  metric_count(&feed_line_counter, 1);
   CborEncoder encoder;
 
   console_current_time = current_time();
@@ -1177,8 +1204,11 @@ static void console_process_request_raw(int len) {
   console_write_full(response, write_size);
 }
 
+
 void console_process() {
   static timeval_t last_desc_time = 0;
+  static timeval_t last_metrics_time = 0;
+  timeval_t start_time = current_time();
   uint8_t txbuffer[16384];
 
   size_t read_size;
@@ -1199,6 +1229,14 @@ void console_process() {
     size_t write_size = console_feed_line(txbuffer, sizeof(txbuffer));
     console_write_full(txbuffer, write_size);
   }
+  /* Has it been 1s since the last metrics? */
+  if (time_diff(current_time(), last_metrics_time) > time_from_us(1000000)) {
+    /* If so, emit metrics */
+    size_t write_size = console_metrics_line(txbuffer, sizeof(txbuffer));
+    console_write_full(txbuffer, write_size);
+    last_metrics_time = current_time();
+  }
+  metric_time(&process_timer, current_time() - start_time);
 }
 
 #ifdef UNITTEST

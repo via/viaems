@@ -13,6 +13,7 @@ struct counter_metric {
 struct timer_metric {
   const char *name;
   uint64_t total_cycles;
+  uint32_t reports;
   uint32_t min;
   uint32_t max;
 };
