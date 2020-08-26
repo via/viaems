@@ -21,7 +21,6 @@ typedef enum {
   SENSOR_ADC,
   SENSOR_FREQ,
   SENSOR_DIGITAL,
-  SENSOR_PWM,
   SENSOR_CONST,
 } sensor_source;
 
@@ -44,7 +43,7 @@ struct thermistor_config {
 };
 
 struct sensor_input {
-  int pin;
+  uint32_t pin;
   sensor_source source;
   sensor_method method;
 
@@ -102,6 +101,8 @@ struct freq_input {
 
 void sensors_process(sensor_source source);
 uint32_t sensor_fault_status();
+
+struct sensor_input *sensor_input_from_type(sensor_input_type type);
 
 #ifdef UNITTEST
 #include <check.h>

@@ -614,7 +614,6 @@ void scheduler_buffer_swap() {
   }
   enable_interrupts();
 }
-
 void initialize_scheduler() {
   memset(&output_buffers, 0, sizeof(output_buffers));
 

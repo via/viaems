@@ -1,6 +1,8 @@
 - Detect overlapping output schedules on same pin
 - Validate that buffer swap occurs before its too late
 - Don't handle callbacks upon scheduling, this makes recursion possible
+- Replace asserts with something that doesn't use printf (remove -NDEBUG)
+- Document interface better
 
 + Basic tasks
     + Fan control

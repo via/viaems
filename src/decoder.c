@@ -1,5 +1,6 @@
 #include "decoder.h"
 #include "config.h"
+#include "console.h"
 #include "platform.h"
 #include "scheduler.h"
 #include "util.h"
@@ -183,6 +184,14 @@ void tfi_pip_decoder(struct decoder *d) {
   }
 }
 
+static struct console_feed_node decoder_feed_nodes[] = {
+  { .id = "rpm", .uint32_ptr = &config.decoder.rpm },
+  { .id = "sync", .uint32_ptr = &config.decoder.valid },
+  { .id = "rpm_variance", .float_ptr = &config.decoder.trigger_cur_rpm_change },
+  { .id = "t0_count", .uint32_ptr = &config.decoder.t0_count },
+  { .id = "t1_count", .uint32_ptr = &config.decoder.t1_count },
+};
+
 void decoder_init(struct decoder *d) {
   d->last_t0 = 0;
   d->last_t1 = 0;
@@ -216,6 +225,11 @@ void decoder_init(struct decoder *d) {
   d->expiration = 0;
 
   expire_event.callback = handle_decoder_expire;
+
+  int n_nodes = sizeof(decoder_feed_nodes) / sizeof(struct console_feed_node);
+  for (int i = 0; i < n_nodes; i++) {
+    console_add_feed_node(&decoder_feed_nodes[i]);
+  }
 }
 
 /* When decoder has new information, reschedule everything */
