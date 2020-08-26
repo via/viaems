@@ -116,7 +116,6 @@ struct console_feed_node {
 void console_init();
 void console_add_feed_node(struct console_feed_node *);
 
-void console_describe_choices(CborEncoder *, const char *choices[]);
 void render_description_field(CborEncoder *, const char *desc);
 void render_type_field(CborEncoder *, const char *type);
 

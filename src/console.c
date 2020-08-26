@@ -84,16 +84,6 @@ void render_description_field(CborEncoder *enc, const char *description) {
   cbor_encode_text_stringz(enc, description);
 }
 
-void console_describe_choices(CborEncoder *enc, const char **choices) {
-  cbor_encode_text_stringz(enc, "choices");
-  CborEncoder list_encoder;
-  cbor_encoder_create_array(enc, &list_encoder, CborIndefiniteLength);
-  for (const char **i = &choices[0]; *i != NULL; i++) {
-    cbor_encode_text_stringz(&list_encoder, *i);
-  }
-  cbor_encoder_close_container(enc, &list_encoder);
-}
-
 static void report_success(CborEncoder *enc, bool success) {
   cbor_encode_text_stringz(enc, "success");
   cbor_encode_boolean(enc, success);
@@ -722,40 +712,6 @@ static void render_tables(struct console_request_context *ctx, void *ptr) {
     ctx, "tipin-time", render_table_object, config.tipin_enrich_duration);
 }
 
-static void render_decoder_type_object(struct console_request_context *ctx,
-                                       trigger_type *type) {
-
-  switch (ctx->type) {
-  case CONSOLE_SET:
-    if (console_string_matches(&ctx->value, "tfi")) {
-      *type = FORD_TFI;
-    } else if (console_string_matches(&ctx->value, "cam24+1")) {
-      *type = TOYOTA_24_1_CAS;
-    }
-    /* Intentional Fallthrough */
-  case CONSOLE_GET:
-    switch (*type) {
-    case FORD_TFI:
-      cbor_encode_text_stringz(ctx->response, "tfi");
-      break;
-    case TOYOTA_24_1_CAS:
-      cbor_encode_text_stringz(ctx->response, "cam24+1");
-      break;
-    }
-    return;
-  case CONSOLE_STRUCTURE:
-  case CONSOLE_DESCRIBE: {
-    CborEncoder map;
-    cbor_encoder_create_map(ctx->response, &map, 3);
-    render_type_field(&map, "string");
-    render_description_field(&map, "decoder wheel type");
-    console_describe_choices(&map, (const char *[]){ "cam24+1", "tfi", NULL });
-    cbor_encoder_close_container(ctx->response, &map);
-  }
-    return;
-  }
-}
-
 static void render_decoder(struct console_request_context *ctx, void *ptr) {
   (void)ptr;
 
@@ -767,52 +723,13 @@ static void render_decoder(struct console_request_context *ctx, void *ptr) {
   render_float_map_field(
     ctx, "offset", "offset past TDC for sync pulse", &config.decoder.offset);
 
-  struct console_request_context deeper;
-  if (descend_map_field(ctx, &deeper, "type")) {
-    render_decoder_type_object(&deeper, &config.decoder.type);
-  }
-}
-
-static void render_output_type_object(struct console_request_context *ctx,
-                                      void *_type) {
-
-  event_type_t *type = _type;
-
-  switch (ctx->type) {
-  case CONSOLE_SET:
-    if (console_string_matches(&ctx->value, "disabled")) {
-      *type = DISABLED_EVENT;
-    } else if (console_string_matches(&ctx->value, "fuel")) {
-      *type = FUEL_EVENT;
-    } else if (console_string_matches(&ctx->value, "ignition")) {
-      *type = IGNITION_EVENT;
-    }
-    /* Intentional Fallthrough */
-  case CONSOLE_GET:
-    switch (*type) {
-    case DISABLED_EVENT:
-      cbor_encode_text_stringz(ctx->response, "disabled");
-      break;
-    case FUEL_EVENT:
-      cbor_encode_text_stringz(ctx->response, "fuel");
-      break;
-    case IGNITION_EVENT:
-      cbor_encode_text_stringz(ctx->response, "ignition");
-      break;
-    }
-    return;
-  case CONSOLE_STRUCTURE:
-  case CONSOLE_DESCRIBE: {
-    CborEncoder map;
-    cbor_encoder_create_map(ctx->response, &map, 3);
-    render_type_field(&map, "string");
-    render_description_field(&map, "output type");
-    console_describe_choices(
-      &map, (const char *[]){ "disabled", "fuel", "ignition", NULL });
-    cbor_encoder_close_container(ctx->response, &map);
-  }
-    return;
-  }
+  render_enum_map_field(
+    ctx,
+    "type",
+    "decoder wheel type",
+    (struct console_enum_mapping[]){
+      { FORD_TFI, "tfi" }, { TOYOTA_24_1_CAS, "cam24+1" }, { 0, NULL } },
+    &config.decoder.type);
 }
 
 static void output_console_renderer(struct console_request_context *ctx,
@@ -827,7 +744,15 @@ static void output_console_renderer(struct console_request_context *ctx,
   render_uint32_map_field(ctx, "inverted", "inverted", &ev->inverted);
   render_float_map_field(
     ctx, "angle", "angle past TDC to trigger event", &ev->angle);
-  render_custom_map_field(ctx, "type", render_output_type_object, &ev->type);
+  render_enum_map_field(
+    ctx,
+    "type",
+    "output type",
+    (struct console_enum_mapping[]){ { DISABLED_EVENT, "disabled" },
+                                     { FUEL_EVENT, "fuel" },
+                                     { IGNITION_EVENT, "ignition" },
+                                     { 0, NULL } },
+    &ev->type);
 }
 
 static void render_outputs(struct console_request_context *ctx, void *ptr) {
@@ -860,104 +785,6 @@ static const char *sensor_name_from_type(sensor_input_type t) {
   }
 }
 
-static void render_sensor_source_field(struct console_request_context *ctx,
-                                       void *ptr) {
-  sensor_source *src = ptr;
-  switch (ctx->type) {
-  case CONSOLE_SET:
-    if (console_string_matches(&ctx->value, "none")) {
-      *src = SENSOR_NONE;
-    } else if (console_string_matches(&ctx->value, "adc")) {
-      *src = SENSOR_ADC;
-    } else if (console_string_matches(&ctx->value, "freq")) {
-      *src = SENSOR_FREQ;
-    } else if (console_string_matches(&ctx->value, "digital")) {
-      *src = SENSOR_DIGITAL;
-    } else if (console_string_matches(&ctx->value, "const")) {
-      *src = SENSOR_CONST;
-    }
-    /* Intentional Fallthrough */
-  case CONSOLE_GET:
-    switch (*src) {
-    case SENSOR_NONE:
-      cbor_encode_text_stringz(ctx->response, "none");
-      break;
-    case SENSOR_ADC:
-      cbor_encode_text_stringz(ctx->response, "adc");
-      break;
-    case SENSOR_FREQ:
-      cbor_encode_text_stringz(ctx->response, "freq");
-      break;
-    case SENSOR_DIGITAL:
-      cbor_encode_text_stringz(ctx->response, "digital");
-      break;
-    case SENSOR_CONST:
-      cbor_encode_text_stringz(ctx->response, "const");
-      break;
-    }
-    return;
-  case CONSOLE_STRUCTURE:
-  case CONSOLE_DESCRIBE: {
-    CborEncoder map;
-    cbor_encoder_create_map(ctx->response, &map, 3);
-    render_type_field(&map, "string");
-    render_description_field(&map, "sensor source");
-    console_describe_choices(
-      &map,
-      (const char *[]){
-        "none", "adc", "freq", "digital", "pwm", "const", NULL });
-    cbor_encoder_close_container(ctx->response, &map);
-  }
-    return;
-  }
-}
-
-static void render_sensor_method_field(struct console_request_context *ctx,
-                                       void *ptr) {
-  sensor_method *method = ptr;
-  switch (ctx->type) {
-  case CONSOLE_SET:
-    if (console_string_matches(&ctx->value, "linear")) {
-      *method = METHOD_LINEAR;
-    } else if (console_string_matches(&ctx->value, "linear-window")) {
-      *method = METHOD_LINEAR_WINDOWED;
-    } else if (console_string_matches(&ctx->value, "table")) {
-      *method = METHOD_TABLE;
-    } else if (console_string_matches(&ctx->value, "therm")) {
-      *method = METHOD_THERM;
-    }
-    /* Intentional Fallthrough */
-  case CONSOLE_GET:
-    switch (*method) {
-    case METHOD_LINEAR:
-      cbor_encode_text_stringz(ctx->response, "linear");
-      break;
-    case METHOD_LINEAR_WINDOWED:
-      cbor_encode_text_stringz(ctx->response, "linear-window");
-      break;
-    case METHOD_TABLE:
-      cbor_encode_text_stringz(ctx->response, "table");
-      break;
-    case METHOD_THERM:
-      cbor_encode_text_stringz(ctx->response, "therm");
-      break;
-    }
-    return;
-  case CONSOLE_STRUCTURE:
-  case CONSOLE_DESCRIBE: {
-    CborEncoder map;
-    cbor_encoder_create_map(ctx->response, &map, 3);
-    render_type_field(&map, "string");
-    render_description_field(&map, "sensor processing method");
-    console_describe_choices(
-      &map,
-      (const char *[]){ "linear", "linear-window", "table", "therm", NULL });
-    cbor_encoder_close_container(ctx->response, &map);
-    return;
-  }
-  }
-}
-
 static void render_sensor_object(struct console_request_context *ctx,
                                  void *ptr) {
 
@@ -971,10 +798,27 @@ static void render_sensor_object(struct console_request_context *ctx,
   render_uint32_map_field(ctx, "pin", "adc sensor input pin", &input->pin);
   render_float_map_field(
     ctx, "lag", "lag filter coefficient (0-1)", &input->lag);
-  render_custom_map_field(
-    ctx, "source", render_sensor_source_field, &input->source);
-  render_custom_map_field(
-    ctx, "method", render_sensor_method_field, &input->method);
+  render_enum_map_field(
+    ctx,
+    "source",
+    "sensor data source",
+    (struct console_enum_mapping[]){ { SENSOR_NONE, "none" },
+                                     { SENSOR_ADC, "adc" },
+                                     { SENSOR_FREQ, "freq" },
+                                     { SENSOR_DIGITAL, "digital" },
+                                     { SENSOR_CONST, "const" },
+                                     { 0, NULL } },
+    &input->source);
+  render_enum_map_field(ctx,
+                        "method",
+                        "sensor processing method",
+                        (struct console_enum_mapping[]){
+                          { METHOD_LINEAR, "linear" },
+                          { METHOD_LINEAR_WINDOWED, "linear-window" },
+                          { METHOD_TABLE, "table" },
+                          { METHOD_THERM, "therm" },
+                          { 0, NULL } },
+                        &input->method);
 
   render_float_map_field(
     ctx, "range-min", "min for linear mapping", &input->params.range.min);
