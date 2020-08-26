@@ -636,10 +636,23 @@ static void render_table_axis_values(struct console_request_context *ctx,
   }
 }
 
+static void render_table_axis_description(struct console_request_context *ctx, void *ptr) {
+  (void)ptr;
+  CborEncoder desc;
+  cbor_encoder_create_map(ctx->response, &desc, 3);
+  render_type_field(&desc, "[float]");
+  render_description_field(&desc, "list of axis values");
+  cbor_encode_text_stringz(&desc, "len");
+  cbor_encode_int(&desc, MAX_AXIS_SIZE);
+  cbor_encoder_close_container(ctx->response, &desc);
+}
+
 static void render_table_axis(struct console_request_context *ctx, void *_t) {
   struct table_axis *axis = _t;
   render_custom_map_field(ctx, "name", render_table_axis_name, axis);
-  if (ctx->type != CONSOLE_DESCRIBE) {
+  if (ctx->type == CONSOLE_DESCRIBE) {
+    render_custom_map_field(ctx, "values", render_table_axis_description, NULL);
+  } else {
     render_array_map_field(ctx, "values", render_table_axis_values, axis);
   }
 }
@@ -659,6 +672,17 @@ static void render_table_second_axis_data(struct console_request_context *ctx,
       render_float_object(&deeper, "axis value", &t->data.two[ntc->i][j]);
     }
   }
+}
+
+static void render_table_data_description(struct console_request_context *ctx, void *ptr) {
+  (void)ptr;
+  CborEncoder desc;
+  cbor_encoder_create_map(ctx->response, &desc, 3);
+  render_type_field(&desc, "[[float]]");
+  render_description_field(&desc, "list of lists of table values");
+  cbor_encode_text_stringz(&desc, "len");
+  cbor_encode_int(&desc, MAX_AXIS_SIZE);
+  cbor_encoder_close_container(ctx->response, &desc);
 }
 
 static void render_table_data(struct console_request_context *ctx, void *_t) {
@@ -688,8 +712,10 @@ static void render_table_object(struct console_request_context *ctx, void *_t) {
   render_map_map_field(ctx, "horizontal-axis", render_table_axis, &t->axis[0]);
   render_map_map_field(ctx, "vertical-axis", render_table_axis, &t->axis[1]);
 
-  if (ctx->type != CONSOLE_DESCRIBE) {
+  if ((ctx->type != CONSOLE_DESCRIBE)) {
     render_array_map_field(ctx, "data", render_table_data, t);
+  } else {
+    render_custom_map_field(ctx, "data", render_table_data_description, NULL);
   }
 }
 
