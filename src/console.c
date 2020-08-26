@@ -9,7 +9,6 @@
 #include "decoder.h"
 #include "platform.h"
 #include "sensors.h"
-#include "stats.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -601,21 +600,6 @@ static void console_set_dwell_type(const struct console_config_node *self,
   }
 }
 
-static void console_get_stats(const struct console_config_node *self
-                              __attribute((unused)),
-                              char *dest,
-                              char *remaining __attribute__((unused))) {
-
-  const struct stats_entry *e;
-  for (e = &stats_entries[0]; e != &stats_entries[STATS_LAST]; ++e) {
-    dest += sprintf(dest,
-                    "  %s min/avg/max (uS) = %u/%u/%u\r\n",
-                    e->name,
-                    (unsigned int)e->min,
-                    (unsigned int)e->avg,
-                    (unsigned int)e->max);
-  }
-}
 
 static void console_get_events(const struct console_config_node *self
                                __attribute__((unused)),
@@ -1169,7 +1153,6 @@ static struct console_config_node console_config_nodes[] = {
 
   /* Misc commands */
   { .name = "flash", .set = console_save_to_flash },
-  { .name = "stats", .get = console_get_stats },
   { .name = "bootloader", .get = console_bootloader },
   { .name = "version", .get = console_get_version },
 
@@ -1421,7 +1404,6 @@ static int console_output_events() {
 void console_process() {
 
   static int pending_request = 0;
-  stats_start_timing(STATS_CONSOLE_TIME);
   if (!pending_request &&
       console_read_full(console.rxbuffer, CONSOLE_BUFFER_SIZE)) {
     pending_request = 1;
@@ -1436,7 +1418,6 @@ void console_process() {
   /* We're still sending packets for a tx line, keep doing just that */
   if (console_state.tx.in_progress) {
     console_write_full(console.txbuffer, 0);
-    stats_finish_timing(STATS_CONSOLE_TIME);
     return;
   }
 
@@ -1446,7 +1427,6 @@ void console_process() {
     console_write_full(console.txbuffer, strlen(console.txbuffer));
   }
 
-  stats_finish_timing(STATS_CONSOLE_TIME);
 }
 
 #ifdef UNITTEST

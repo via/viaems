@@ -14,7 +14,6 @@
 #include "console.h"
 #include "platform.h"
 #include "scheduler.h"
-#include "stats.h"
 
 static _Atomic timeval_t curtime;
 

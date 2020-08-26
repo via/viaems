@@ -2,7 +2,6 @@
 #include "config.h"
 #include "platform.h"
 #include "scheduler.h"
-#include "stats.h"
 #include "util.h"
 
 #include <assert.h>
@@ -162,7 +161,6 @@ void cam_nplusone_decoder(struct decoder *d) {
 }
 
 void tfi_pip_decoder(struct decoder *d) {
-  stats_start_timing(STATS_DECODE_TIME);
   timeval_t t0;
   decoder_state oldstate = d->state;
 
@@ -183,7 +181,6 @@ void tfi_pip_decoder(struct decoder *d) {
       invalidate_decoder();
     }
   }
-  stats_finish_timing(STATS_DECODE_TIME);
 }
 
 void decoder_init(struct decoder *d) {
@@ -224,7 +221,6 @@ void decoder_init(struct decoder *d) {
 /* When decoder has new information, reschedule everything */
 void decoder_update_scheduling(struct decoder_event *events,
                                unsigned int count) {
-  stats_start_timing(STATS_SCHEDULE_LATENCY);
 
   /* TODO Right now this is a thin wrapper for the new decoder interface.
    * Convert the decode() functions to work directly off `decoder_event` structs
@@ -247,13 +243,10 @@ void decoder_update_scheduling(struct decoder_event *events,
   if (config.decoder.valid) {
     calculate_ignition();
     calculate_fueling();
-    stats_start_timing(STATS_SCHED_TOTAL_TIME);
     for (unsigned int e = 0; e < config.num_events; ++e) {
       schedule_event(&config.events[e]);
     }
-    stats_finish_timing(STATS_SCHED_TOTAL_TIME);
   }
-  stats_finish_timing(STATS_SCHEDULE_LATENCY);
 }
 
 degrees_t current_angle() {

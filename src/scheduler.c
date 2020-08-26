@@ -2,7 +2,6 @@
 #include "config.h"
 #include "decoder.h"
 #include "platform.h"
-#include "stats.h"
 #include "util.h"
 
 #include <assert.h>
@@ -327,7 +326,6 @@ static void schedule_output_event_safely(struct output_event *ev,
                                          timeval_t newstart,
                                          timeval_t newstop) {
 
-  stats_start_timing(STATS_SCHED_SINGLE_TIME);
 
   ev->start.pin = ev->pin;
   ev->start.val = ev->inverted ? 0 : 1;
@@ -348,7 +346,6 @@ static void schedule_output_event_safely(struct output_event *ev,
       }
     }
     enable_interrupts();
-    stats_finish_timing(STATS_SCHED_SINGLE_TIME);
     return;
   }
 
@@ -362,7 +359,6 @@ static void schedule_output_event_safely(struct output_event *ev,
   }
 
   enable_interrupts();
-  stats_finish_timing(STATS_SCHED_SINGLE_TIME);
 }
 
 static int schedule_ignition_event(struct output_event *ev,
