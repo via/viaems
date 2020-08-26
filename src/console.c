@@ -1031,6 +1031,32 @@ void render_ignition(struct console_request_context *ctx, void *ptr) {
                          &config.ignition.dwell_us);
 }
 
+void render_boost_control(struct console_request_context *ctx, void *ptr) {
+  (void)ptr;
+  render_uint32_map_field(ctx, "pin", "GPIO pin for boost control output", &config.boost_control.pin);
+  render_float_map_field(ctx, "threshold", "Boost low threshold to enable boost control", &config.boost_control.threshhold_kpa);
+  render_float_map_field(ctx, "overboost", "High threshold for boost cut (kpa)", &config.boost_control.overboost);
+  render_map_map_field(ctx, "pwm", render_table_object, config.boost_control.pwm_duty_vs_rpm);
+}
+
+void render_cel(struct console_request_context *ctx, void *ptr) {
+  (void)ptr;
+  render_uint32_map_field(ctx, "pin", "GPIO pin for CEL output", &config.cel.pin);
+  render_float_map_field(ctx, "lean-boost-kpa", "Boost low threshold for lean boost warning", &config.cel.lean_boost_kpa);
+  render_float_map_field(ctx, "lean-boost-ego", "EGO high threshold for lean boost warning", &config.cel.lean_boost_ego);
+}
+
+void render_freq_object(struct console_request_context *ctx, void *ptr) {
+  struct freq_input *f = ptr;
+}
+
+void render_freq_list(struct console_request_context *ctx, void *ptr) {
+  for (int i = 0; i < 4; i++) {
+    render_map_array_field(ctx, i, render_freq_object, &config.freq_inputs[i]);
+  }
+}
+
+
 void console_toplevel_request(struct console_request_context *ctx, void *ptr) {
   (void)ptr;
   render_map_map_field(ctx, "decoder", render_decoder, NULL);
@@ -1039,6 +1065,9 @@ void console_toplevel_request(struct console_request_context *ctx, void *ptr) {
   render_map_map_field(ctx, "fueling", render_fueling, NULL);
   render_map_map_field(ctx, "ignition", render_ignition, NULL);
   render_map_map_field(ctx, "tables", render_tables, NULL);
+  render_map_map_field(ctx, "boost-control", render_boost_control, NULL);
+  render_map_map_field(ctx, "check-engine-light", render_cel, NULL);
+  render_array_map_field(ctx, "freq", render_freq_list, NULL);
 }
 
 void console_toplevel_types(struct console_request_context *ctx, void *ptr) {
@@ -1196,7 +1225,7 @@ static void console_process_request_raw(int len) {
 
 void console_process() {
   static timeval_t last_desc_time = 0;
-  uint8_t txbuffer[4096];
+  uint8_t txbuffer[16384];
 
   size_t read_size;
   if ((read_size = console_try_read())) {
