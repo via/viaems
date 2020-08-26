@@ -14,6 +14,7 @@ OBJS += calculations.o \
 				table.o \
 				tasks.o \
 				util.o \
+				metrics.o \
 				viaems.o
 
 DEPS = $(wildcard ${OBJDIR}/*.d)
