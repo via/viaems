@@ -1136,6 +1136,7 @@ void render_freq_object(struct console_request_context *ctx, void *ptr) {
 }
 
 void render_freq_list(struct console_request_context *ctx, void *ptr) {
+  (void)ptr;
   for (int i = 0; i < 4; i++) {
     render_map_array_field(ctx, i, render_freq_object, &config.freq_inputs[i]);
   }
