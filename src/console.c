@@ -636,7 +636,8 @@ static void render_table_axis_values(struct console_request_context *ctx,
   }
 }
 
-static void render_table_axis_description(struct console_request_context *ctx, void *ptr) {
+static void render_table_axis_description(struct console_request_context *ctx,
+                                          void *ptr) {
   (void)ptr;
   CborEncoder desc;
   cbor_encoder_create_map(ctx->response, &desc, 3);
@@ -674,7 +675,8 @@ static void render_table_second_axis_data(struct console_request_context *ctx,
   }
 }
 
-static void render_table_data_description(struct console_request_context *ctx, void *ptr) {
+static void render_table_data_description(struct console_request_context *ctx,
+                                          void *ptr) {
   (void)ptr;
   CborEncoder desc;
   cbor_encoder_create_map(ctx->response, &desc, 3);
