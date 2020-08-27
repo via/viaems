@@ -269,13 +269,13 @@ void *platform_interrupt_thread(void *_interrupt_fd) {
     switch (msg.type) {
     case TRIGGER0:
       sprintf(output, "# TRIGGER0 %lu\n", (unsigned long)msg.time);
-      //      write(STDERR_FILENO, output, strlen(output));
+      write(STDERR_FILENO, output, strlen(output));
       decoder_update_scheduling(
         &(struct decoder_event){ .trigger = 0, .time = msg.time }, 1);
       break;
     case TRIGGER1:
       sprintf(output, "# TRIGGER1 %lu\n", (unsigned long)msg.time);
-      //      write(STDERR_FILENO, output, strlen(output));
+      write(STDERR_FILENO, output, strlen(output));
       decoder_update_scheduling(
         &(struct decoder_event){ .trigger = 1, .time = msg.time }, 1);
       break;
@@ -319,7 +319,7 @@ static void do_output_slots() {
   if (cur_outputs != old_outputs) {
     char output[64];
     sprintf(output, "# OUTPUTS %lu %2x\n", (long unsigned)curtime, cur_outputs);
-    // write(STDERR_FILENO, output, strlen(output));
+    write(STDERR_FILENO, output, strlen(output));
     console_record_event((struct logged_event){
       .time = curtime,
       .value = cur_outputs,

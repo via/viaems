@@ -20,7 +20,6 @@ int main() {
 
   assert(config_valid());
 
-  set_test_trigger_rpm(2500);
   sensors_process(SENSOR_CONST);
   while (1) {
     stats_increment_counter(STATS_MAINLOOP_RATE);
