@@ -197,6 +197,7 @@ static uint8_t rx_buffer[4096];
 static uint8_t *rx_buffer_ptr = rx_buffer;
 
 static void console_shift_rx_buffer(size_t amt) {
+
   memmove(&rx_buffer[0], &rx_buffer[amt], (rx_buffer_ptr - rx_buffer - amt));
   rx_buffer_ptr -= amt;
 }
@@ -237,14 +238,17 @@ static size_t console_try_read() {
    * If we don't, it could be that we haven't read enough. We will read until
    * the end of the buffer, but if its maxed out, reset everything
    */
-  if (cbor_value_validate_basic(&value) == CborNoError) {
+  switch (cbor_value_validate_basic(&value)) {
+  case CborNoError: {
     cbor_value_advance(&value);
     const uint8_t *next = cbor_value_get_next_byte(&value);
     return (next - rx_buffer);
   }
-
-  if (len == sizeof(rx_buffer)) {
+  case CborErrorAdvancePastEOF:
+    break;
+  default:
     rx_buffer_ptr = rx_buffer;
+    break;
   }
   return 0;
 }
