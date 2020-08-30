@@ -35,21 +35,21 @@ struct console_feed_node console_feed_nodes[MAX_CONSOLE_FEED_NODES] = {
   { .id = "advance", .float_ptr = &calculated_values.timing_advance },
   { .id = "dwell", .uint32_ptr = &calculated_values.dwell_us },
 
-  { .id = "sensor_map",
+  { .id = "sensor.map",
     .float_ptr = &config.sensors[SENSOR_MAP].processed_value },
-  { .id = "sensor_iat",
+  { .id = "sensor.iat",
     .float_ptr = &config.sensors[SENSOR_IAT].processed_value },
-  { .id = "sensor_clt",
+  { .id = "sensor.clt",
     .float_ptr = &config.sensors[SENSOR_CLT].processed_value },
-  { .id = "sensor_brv",
+  { .id = "sensor.brv",
     .float_ptr = &config.sensors[SENSOR_BRV].processed_value },
-  { .id = "sensor_tps",
+  { .id = "sensor.tps",
     .float_ptr = &config.sensors[SENSOR_TPS].processed_value },
-  { .id = "sensor_aap",
+  { .id = "sensor.aap",
     .float_ptr = &config.sensors[SENSOR_AAP].processed_value },
-  { .id = "sensor_frt",
+  { .id = "sensor.frt",
     .float_ptr = &config.sensors[SENSOR_FRT].processed_value },
-  { .id = "sensor_ego",
+  { .id = "sensor.ego",
     .float_ptr = &config.sensors[SENSOR_EGO].processed_value },
 
 };
@@ -197,7 +197,7 @@ static uint8_t rx_buffer[4096];
 static uint8_t *rx_buffer_ptr = rx_buffer;
 
 static void console_shift_rx_buffer(size_t amt) {
-  memmove(&rx_buffer[0], &rx_buffer[amt], (rx_buffer_ptr - rx_buffer));
+  memmove(&rx_buffer[0], &rx_buffer[amt], (rx_buffer_ptr - rx_buffer - amt));
   rx_buffer_ptr -= amt;
 }
 
