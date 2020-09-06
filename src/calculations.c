@@ -57,12 +57,14 @@ void calculate_ignition() {
   }
 }
 
-static float air_density(float iat_celsius, float atmos_kpa) {
-  const float kelvin_offset = 273.15;
+/* Compute air density from temperature, returns g/cm^3 */
+static float air_density(float iat_celsius) {
+  const float kelvin_offset = 273.15f;
   float temp_factor = kelvin_offset / (iat_celsius + kelvin_offset);
-  return (atmos_kpa / 100) * config.fueling.density_of_air_stp * temp_factor;
+  return config.fueling.density_of_air_stp * temp_factor;
 }
 
+/* Compute fuel density from temperature, returns g/cm^3 */
 static float fuel_density(float fuel_celsius) {
   const float beta = 950.0; /* Gasoline 10^-6/K */
   float delta_temp = fuel_celsius - 15.0f;
@@ -70,13 +72,13 @@ static float fuel_density(float fuel_celsius) {
 }
 
 /* Returns mass of air injested into a cylinder */
-static float calculate_airmass(float ve, float map, float aap, float iat) {
+static float calculate_airmass(float ve, float map, float iat) {
 
   float injested_air_volume_per_cycle =
-    (ve / 100.0f) * (map / aap) * config.fueling.cylinder_cc;
+    (ve / 100.0f) * map  * config.fueling.cylinder_cc;
 
   float injested_air_mass_per_cycle =
-    injested_air_volume_per_cycle * air_density(iat, aap);
+    injested_air_volume_per_cycle * air_density(iat);
 
   return injested_air_mass_per_cycle;
 }
@@ -136,7 +138,6 @@ void calculate_fueling() {
   float iat = config.sensors[SENSOR_IAT].processed_value;
   float brv = config.sensors[SENSOR_BRV].processed_value;
   float map = config.sensors[SENSOR_MAP].processed_value;
-  float aap = config.sensors[SENSOR_AAP].processed_value;
   float frt = config.sensors[SENSOR_FRT].processed_value;
   float clt = config.sensors[SENSOR_CLT].processed_value;
 
@@ -144,8 +145,7 @@ void calculate_fueling() {
   float tpsrate = config.sensors[SENSOR_TPS].derivative.value;
 
   if (config.ve) {
-    float load = map / aap * 100.0f;
-    ve = interpolate_table_twoaxis(config.ve, config.decoder.rpm, load);
+    ve = interpolate_table_twoaxis(config.ve, config.decoder.rpm, map);
   } else {
     ve = 100.0;
   }
@@ -178,7 +178,7 @@ void calculate_fueling() {
   calculated_values.tipin =
     calculate_tipin_enrichment(tps, tpsrate, config.decoder.rpm);
 
-  calculated_values.airmass_per_cycle = calculate_airmass(ve, map, aap, iat);
+  calculated_values.airmass_per_cycle = calculate_airmass(ve, map, iat);
 
   float fuel_vol_at_stoich =
     calculate_fuel_volume(calculated_values.airmass_per_cycle, frt);
@@ -206,11 +206,8 @@ void calculate_fueling() {
 #include <stdlib.h>
 
 START_TEST(check_air_density) {
-
-  /* Confirm STP */
-  ck_assert_float_eq_tol(air_density(0.0, 100), 1.2754e-3, 0.000001);
-
-  ck_assert_float_eq_tol(air_density(20, 101.325), 1.2041e-3, 0.000001);
+  ck_assert_float_eq_tol(air_density(0), 1.2922e-3, 0.000001);
+  ck_assert_float_eq_tol(air_density(30), 1.1644e-3, 0.000001);
 }
 END_TEST
 
@@ -223,19 +220,15 @@ END_TEST
 START_TEST(check_calculate_airmass) {
 
   /* Airmass for perfect VE, full map, 0 C*/
-  float airmass = calculate_airmass(100, 100, 100, 0);
+  float airmass = calculate_airmass(100, 100, 0);
 
   /* 70 MAP should be 70% of previous airmass */
   ck_assert_float_eq_tol(
-    calculate_airmass(100, 70, 100, 0), 0.7 * airmass, 0.001);
+    calculate_airmass(100, 70, 0), 0.7 * airmass, 0.001);
 
   /* 80 VE should be 80% of first airmass */
   ck_assert_float_eq_tol(
-    calculate_airmass(80, 100, 100, 0), 0.8 * airmass, 0.001);
-
-  /* 70 MAP when aap is 70 as well should be the same as 70 %*/
-  ck_assert_float_eq_tol(
-    calculate_airmass(100, 70, 70, 0), 0.7 * airmass, 0.001);
+    calculate_airmass(80, 100, 0), 0.8 * airmass, 0.001);
 }
 END_TEST
 
