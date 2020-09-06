@@ -71,11 +71,11 @@ static float fuel_density(float fuel_celsius) {
   return config.fueling.density_of_fuel - (delta_temp * beta / 1000000.0f);
 }
 
-/* Returns mass of air injested into a cylinder */
+/* Returns mass (g) of air injested into a cylinder */
 static float calculate_airmass(float ve, float map, float iat) {
 
   float injested_air_volume_per_cycle =
-    (ve / 100.0f) * map  * config.fueling.cylinder_cc;
+    (ve / 100.0f) * (map / 100.0f)  * config.fueling.cylinder_cc;
 
   float injested_air_mass_per_cycle =
     injested_air_volume_per_cycle * air_density(iat);
@@ -220,7 +220,10 @@ END_TEST
 START_TEST(check_calculate_airmass) {
 
   /* Airmass for perfect VE, full map, 0 C*/
+  config.sensors[SENSOR_IAT].processed_value = 0.0f;
+  config.fueling.cylinder_cc = 500;
   float airmass = calculate_airmass(100, 100, 0);
+  ck_assert_float_eq_tol(airmass, 0.646100, 0.001);
 
   /* 70 MAP should be 70% of previous airmass */
   ck_assert_float_eq_tol(
