@@ -39,7 +39,7 @@ static void handle_boost_control() {
     duty = interpolate_table_oneaxis(config.boost_control.pwm_duty_vs_rpm,
                                      config.decoder.rpm);
   }
-  set_pwm(config.boost_control.pin, duty / 100.0f);
+  set_pwm(config.boost_control.pin, duty);
 }
 
 static void handle_idle_control() {}

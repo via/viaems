@@ -408,13 +408,13 @@ static void platform_init_pwm() {
   timer_enable_counter(TIM3);
 }
 
-void set_pwm(int output, float value) {
+void set_pwm(int output, float percent) {
   if (value < 0.0f) {
     value = 0.0f;
-  } else if (value > 1.0f) {
-    value = 1.0f;
+  } else if (value > 100.0f) {
+    value = 100.0f;
   }
-  int ival = value * 65535;
+  int ival = (value / 100.0f) * 65535;
   switch (output) {
   case 1:
     return timer_set_oc_value(TIM3, TIM_OC1, ival);
