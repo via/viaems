@@ -411,8 +411,8 @@ static void platform_init_pwm() {
 void set_pwm(int output, float value) {
   if (value < 0.0f) {
     value = 0.0f;
-  } else if (value > 100.0f) {
-    value = 100.0f;
+  } else if (value > 1.0f) {
+    value = 1.0f;
   }
   int ival = value * 65535;
   switch (output) {
