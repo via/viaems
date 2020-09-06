@@ -2,6 +2,7 @@
 - Switch build system to a GNU makefile at the toplevel
 - New hosted mode that can run at realtime speed
 - Fix bug in air density temperature correction and boost PWM logic
+- **Boost duty is now a percent**
 
 ### 1.2.0 (2020 May 30)
 Introduces a breaking change for the trigger inputs. They are now configured in
