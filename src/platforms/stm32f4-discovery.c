@@ -409,12 +409,12 @@ static void platform_init_pwm() {
 }
 
 void set_pwm(int output, float percent) {
-  if (value < 0.0f) {
-    value = 0.0f;
-  } else if (value > 100.0f) {
-    value = 100.0f;
+  if (percent < 0.0f) {
+    percent = 0.0f;
+  } else if (percent > 100.0f) {
+    percent = 100.0f;
   }
-  int ival = (value / 100.0f) * 65535;
+  int ival = (percent / 100.0f) * 65535;
   switch (output) {
   case 1:
     return timer_set_oc_value(TIM3, TIM_OC1, ival);
