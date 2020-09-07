@@ -35,7 +35,7 @@ void set_output(int output, char value);
 int get_output(int output);
 void set_gpio(int output, char value);
 int get_gpio(int output);
-void set_pwm(int output, float value);
+void set_pwm(int output, float percent);
 
 size_t console_read(void *buf, size_t max);
 size_t console_write(const void *buf, size_t count);

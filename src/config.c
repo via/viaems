@@ -185,7 +185,7 @@ struct table boost_control_pwm __attribute__((section(".configdata"))) = {
     },
   },
   .data = {
-    .one = {0.5, 0.5, 0.5, 0.5, 0.5, 0.5},
+    .one = {50, 50, 50, 50, 50, 50},
   },
 };
 
@@ -270,7 +270,7 @@ struct config config __attribute__((section(".configdata"))) = {
     .injections_per_cycle = 2, /* All batched */
     .fuel_pump_pin = 0,
     .density_of_fuel = 0.755, /* g/cm^3 at 15C */
-    .density_of_air_stp = 1.2754e-3, /* g/cm^3 */
+    .density_of_air_stp = 1.2922e-3, /* g/cm^3 at 0C */
     .crank_enrich_config = {
       .crank_rpm = 400,
       .cutoff_temperature = 20.0,
