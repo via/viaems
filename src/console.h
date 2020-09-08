@@ -20,14 +20,16 @@ struct logged_event {
     EVENT_GPIO,
     EVENT_TRIGGER0,
     EVENT_TRIGGER1,
+    EVENT_TOOTHTIMES,
   } type;
   uint16_t value;
+  timeval_t teeth_times[24];
 };
 
 void console_init();
 void console_process();
 
-void console_record_event(struct logged_event);
+void console_record_event(struct logged_event *);
 
 #ifdef UNITTEST
 #include <check.h>

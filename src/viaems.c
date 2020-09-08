@@ -18,6 +18,8 @@ int main() {
   platform_init(0, NULL);
   initialize_scheduler();
 
+  set_test_trigger_rpm(2500);
+
   assert(config_valid());
 
   sensors_process(SENSOR_CONST);

@@ -781,7 +781,7 @@ static struct {
   struct logged_event events[32];
   int read;
   int write;
-} event_log;
+} event_log = {.enabled = 1};
 
 static struct logged_event platform_get_logged_event() {
   if (!event_log.enabled || (event_log.read == event_log.write)) {
@@ -793,7 +793,7 @@ static struct logged_event platform_get_logged_event() {
   return ret;
 }
 
-void console_record_event(struct logged_event ev) {
+void console_record_event(struct logged_event *ev) {
   if (!event_log.enabled) {
     return;
   }
@@ -803,7 +803,7 @@ void console_record_event(struct logged_event ev) {
     return;
   }
 
-  event_log.events[event_log.write] = ev;
+  event_log.events[event_log.write] = *ev;
   event_log.write = (event_log.write + 1) % size;
 }
 
@@ -1389,7 +1389,7 @@ static int console_output_events() {
   while ((ev.type != EVENT_NONE) && (num_ev != 16)) {
     num_ev++;
 
-    char tempbuf[32];
+    char tempbuf[512];
     switch (ev.type) {
     case EVENT_OUTPUT:
       sprintf(
@@ -1403,6 +1403,15 @@ static int console_output_events() {
       break;
     case EVENT_TRIGGER1:
       sprintf(tempbuf, "# TRIGGER1 %lu\r\n", (unsigned long)ev.time);
+      break;
+    case EVENT_TOOTHTIMES:
+      strcpy(tempbuf, "# TEETH ");
+      for (int i = 0; i < 24; i++) {
+        char t[16];
+        sprintf(t, "%lu ", (unsigned long)ev.teeth_times[i]);
+        strcat(tempbuf, t);
+      }
+      strcat(tempbuf, "\r\n");
       break;
     default:
       break;

@@ -134,6 +134,16 @@ static void sync_update(struct decoder *d) {
     }
   }
   d->triggers_since_last_sync = 0;
+
+  struct logged_event ev = {
+    .time = current_time(),
+    .type = EVENT_TOOTHTIMES,
+  };
+
+  for (int i = 0; i < 24; i++) {
+    ev.teeth_times[i] = d->times[i];
+  }
+  console_record_event(&ev);
 }
 
 void cam_nplusone_decoder(struct decoder *d) {
@@ -237,10 +247,6 @@ void decoder_update_scheduling(struct decoder_event *events,
       config.decoder.last_t1 = ev->time;
       config.decoder.needs_decoding_t1 = 1;
     }
-    console_record_event((struct logged_event){
-      .type = ev->trigger == 0 ? EVENT_TRIGGER0 : EVENT_TRIGGER1,
-      .time = ev->time,
-    });
     config.decoder.decode(&config.decoder);
   }
 

@@ -469,11 +469,12 @@ void platform_disable_event_logging() {
 
 static void show_scheduled_outputs() {
   uint32_t flag_changes = exti_get_flag_status(0xFF);
-  console_record_event((struct logged_event){
+  struct logged_event ev = {
     .type = EVENT_OUTPUT,
     .time = current_time(),
     .value = gpio_port_read(GPIOD),
-  });
+  };
+  console_record_event(&ev);
   exti_reset_request(flag_changes);
   __asm__("dsb");
   __asm__("isb");
