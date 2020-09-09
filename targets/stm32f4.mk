@@ -13,7 +13,7 @@ CFLAGS+= -D TICKRATE=4000000
 CFLAGS+= -I${OPENCM3_DIR}/include -DSTM32F4 -O3
 CFLAGS+= -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mthumb -mcpu=cortex-m4
 
-LDFLAGS+= -lc -lnosys -L ${OBJDIR} -l:${CM3_LIB} 
+LDFLAGS+= -lc -lnosys -L ${OBJDIR} -l:${CM3_LIB}
 LDFLAGS+= -T src/platforms/stm32f4-discovery.ld -nostartfiles
 
 ${OBJDIR}/libssp.a:
