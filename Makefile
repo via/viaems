@@ -19,7 +19,7 @@ OBJS += calculations.o \
 				table.o \
 				tasks.o \
 				util.o \
-				viaems.o
+				benchmark.o
 
 DEPS = $(wildcard ${OBJDIR}/*.d)
 -include $(DEPS)
