@@ -58,6 +58,23 @@ static void do_schedule_backward_ignition_event_bench() {
   console_write(outbuf, strlen(outbuf));
 }
 
+static void do_sensor_adc_calcs() {
+  char outbuf[1024];
+
+  for (int i = 0; i < NUM_SENSORS; i++) {
+    config.sensors[i].raw_value = 2048;
+  }
+  timeval_t start = current_time();
+  for (int i = 0; i < BENCH_RUNS; i++) {
+    sensors_process(SENSOR_ADC);
+  }
+  timeval_t end = current_time();
+
+  uint64_t res = (end - start) * 250;
+  sprintf(outbuf, "process_sensor(adc): %lu ns\r\n", (timeval_t)(res / BENCH_RUNS));
+  console_write(outbuf, strlen(outbuf));
+}
+
 int main() {
   platform_load_config();
   decoder_init(&config.decoder);
@@ -80,5 +97,6 @@ int main() {
   do_fuel_calculation_bench();
   do_schedule_ignition_event_bench();
   do_schedule_backward_ignition_event_bench();
+  do_sensor_adc_calcs();
   return 0;
 }
