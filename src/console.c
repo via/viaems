@@ -57,7 +57,7 @@ const struct console_feed_node console_feed_nodes[] = {
   { .id = "rpm_variance", .float_ptr = &config.decoder.trigger_cur_rpm_change },
   { .id = "t0_count", .uint32_ptr = &config.decoder.t0_count },
   { .id = "t1_count", .uint32_ptr = &config.decoder.t1_count },
-  { NULL },
+  { 0 },
 };
 
 #ifndef GIT_DESCRIBE
@@ -133,7 +133,8 @@ static size_t console_feed_line_keys(uint8_t *dest, size_t bsize) {
   cbor_encoder_create_array(
     &top_encoder, &key_list_encoder, CborIndefiniteLength);
   for (const struct console_feed_node *node = &console_feed_nodes[0];
-      node->id != NULL; node++) {
+       node->id != NULL;
+       node++) {
     cbor_encode_text_stringz(&key_list_encoder, node->id);
   }
   cbor_encoder_close_container(&top_encoder, &key_list_encoder);
@@ -157,7 +158,8 @@ static size_t console_feed_line(uint8_t *dest, size_t bsize) {
   cbor_encoder_create_array(
     &top_encoder, &value_list_encoder, CborIndefiniteLength);
   for (const struct console_feed_node *node = &console_feed_nodes[0];
-      node->id != NULL; node++) {
+       node->id != NULL;
+       node++) {
     if (node->uint32_ptr) {
       cbor_encode_uint(&value_list_encoder, *node->uint32_ptr);
     } else if (node->float_ptr) {
@@ -896,7 +898,8 @@ static void render_sensors(struct console_request_context *ctx, void *ptr) {
   }
 }
 
-static void render_crank_enrich(struct console_request_context *ctx, void *ptr) {
+static void render_crank_enrich(struct console_request_context *ctx,
+                                void *ptr) {
   (void)ptr;
   render_float_map_field(ctx,
                          "crank-rpm",
@@ -952,7 +955,8 @@ static void render_ignition(struct console_request_context *ctx, void *ptr) {
                          &config.ignition.dwell_us);
 }
 
-static void render_boost_control(struct console_request_context *ctx, void *ptr) {
+static void render_boost_control(struct console_request_context *ctx,
+                                 void *ptr) {
   (void)ptr;
   render_uint32_map_field(
     ctx, "pin", "GPIO pin for boost control output", &config.boost_control.pin);
@@ -1009,7 +1013,8 @@ static void render_freq_list(struct console_request_context *ctx, void *ptr) {
   }
 }
 
-static void console_toplevel_request(struct console_request_context *ctx, void *ptr) {
+static void console_toplevel_request(struct console_request_context *ctx,
+                                     void *ptr) {
   (void)ptr;
   render_map_map_field(ctx, "decoder", render_decoder, NULL);
   render_map_map_field(ctx, "sensors", render_sensors, NULL);
@@ -1022,7 +1027,8 @@ static void console_toplevel_request(struct console_request_context *ctx, void *
   render_array_map_field(ctx, "freq", render_freq_list, NULL);
 }
 
-static void console_toplevel_types(struct console_request_context *ctx, void *ptr) {
+static void console_toplevel_types(struct console_request_context *ctx,
+                                   void *ptr) {
   (void)ptr;
   render_map_map_field(ctx, "sensor", render_sensor_object, &config.sensors[0]);
   render_map_map_field(
