@@ -34,6 +34,11 @@ struct console_request_context {
   bool is_completed;
 };
 
+struct console_enum_mapping {
+  int e;
+  const char *s;
+};
+
 typedef void (*console_renderer)(struct console_request_context *ctx,
                                  void *ptr);
 
@@ -57,10 +62,7 @@ void render_custom_map_field(struct console_request_context *ctx,
                              const char *id,
                              console_renderer field_renderer,
                              void *ptr);
-struct console_enum_mapping {
-  int e;
-  const char *s;
-};
+
 void render_enum_map_field(struct console_request_context *ctx,
                            const char *id,
                            const char *desc,
@@ -104,8 +106,6 @@ bool descend_array_field(struct console_request_context *ctx,
                          struct console_request_context *deeper,
                          int index);
 
-bool console_string_matches(CborValue *value, const char *str);
-
 struct console_feed_node {
   const char *id;
   const char *description;
@@ -114,7 +114,6 @@ struct console_feed_node {
 };
 
 void console_init();
-void console_add_feed_node(struct console_feed_node *);
 
 void render_description_field(CborEncoder *, const char *desc);
 void render_type_field(CborEncoder *, const char *type);
