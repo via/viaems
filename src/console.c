@@ -519,7 +519,7 @@ bool descend_map_field(struct console_request_context *ctx,
 void render_enum_map_field(struct console_request_context *ctx,
                            const char *id,
                            const char *desc,
-                           struct console_enum_mapping *mapping,
+                           const struct console_enum_mapping *mapping,
                            void *ptr) {
   struct console_request_context deeper;
   if (descend_map_field(ctx, &deeper, id)) {
@@ -529,22 +529,27 @@ void render_enum_map_field(struct console_request_context *ctx,
 
 void render_enum_object(struct console_request_context *ctx,
                         const char *desc,
-                        struct console_enum_mapping *mapping,
+                        const struct console_enum_mapping *mapping,
                         void *ptr) {
   int *type = ptr;
+  bool success = false;
   switch (ctx->type) {
   case CONSOLE_SET:
-    for (struct console_enum_mapping *m = mapping; m->s; m++) {
+    for (const struct console_enum_mapping *m = mapping; m->s; m++) {
       if (console_string_matches(&ctx->value, m->s)) {
         *type = m->e;
       }
     }
     /* Intentional Fallthrough */
   case CONSOLE_GET:
-    for (struct console_enum_mapping *m = mapping; m->s; m++) {
+    for (const struct console_enum_mapping *m = mapping; m->s; m++) {
       if (*type == m->e) {
+        success = true;
         cbor_encode_text_stringz(ctx->response, m->s);
       }
+    }
+    if (!success) {
+      cbor_encode_null(ctx->response);
     }
     return;
   case CONSOLE_STRUCTURE:
@@ -556,7 +561,7 @@ void render_enum_object(struct console_request_context *ctx,
     cbor_encode_text_stringz(&map, "choices");
     CborEncoder list_encoder;
     cbor_encoder_create_array(&map, &list_encoder, CborIndefiniteLength);
-    for (struct console_enum_mapping *m = mapping; m->s; m++) {
+    for (const struct console_enum_mapping *m = mapping; m->s; m++) {
       cbor_encode_text_stringz(&list_encoder, m->s);
     }
     cbor_encoder_close_container(&map, &list_encoder);
@@ -748,13 +753,15 @@ static void render_decoder(struct console_request_context *ctx, void *ptr) {
   render_float_map_field(
     ctx, "offset", "offset past TDC for sync pulse", &config.decoder.offset);
 
+  int type = config.decoder.type;
   render_enum_map_field(
     ctx,
     "type",
     "decoder wheel type",
     (struct console_enum_mapping[]){
       { FORD_TFI, "tfi" }, { TOYOTA_24_1_CAS, "cam24+1" }, { 0, NULL } },
-    &config.decoder.type);
+    &type);
+  config.decoder.type = type;
 }
 
 static void output_console_renderer(struct console_request_context *ctx,
@@ -769,6 +776,8 @@ static void output_console_renderer(struct console_request_context *ctx,
   render_uint32_map_field(ctx, "inverted", "inverted", &ev->inverted);
   render_float_map_field(
     ctx, "angle", "angle past TDC to trigger event", &ev->angle);
+
+  int type = ev->type;
   render_enum_map_field(
     ctx,
     "type",
@@ -777,7 +786,8 @@ static void output_console_renderer(struct console_request_context *ctx,
                                      { FUEL_EVENT, "fuel" },
                                      { IGNITION_EVENT, "ignition" },
                                      { 0, NULL } },
-    &ev->type);
+    &type);
+  ev->type = type;
 }
 
 static void render_outputs(struct console_request_context *ctx, void *ptr) {
@@ -823,6 +833,8 @@ static void render_sensor_object(struct console_request_context *ctx,
   render_uint32_map_field(ctx, "pin", "adc sensor input pin", &input->pin);
   render_float_map_field(
     ctx, "lag", "lag filter coefficient (0-1)", &input->lag);
+
+  int source = input->source;
   render_enum_map_field(
     ctx,
     "source",
@@ -833,7 +845,10 @@ static void render_sensor_object(struct console_request_context *ctx,
                                      { SENSOR_DIGITAL, "digital" },
                                      { SENSOR_CONST, "const" },
                                      { 0, NULL } },
-    &input->source);
+    &source);
+  input->source = source;
+
+  int method = input->method;
   render_enum_map_field(ctx,
                         "method",
                         "sensor processing method",
@@ -843,7 +858,8 @@ static void render_sensor_object(struct console_request_context *ctx,
                           { METHOD_TABLE, "table" },
                           { METHOD_THERM, "therm" },
                           { 0, NULL } },
-                        &input->method);
+                        &method);
+  input->method = method;
 
   render_float_map_field(
     ctx, "range-min", "min for linear mapping", &input->params.range.min);
@@ -988,22 +1004,29 @@ static void render_cel(struct console_request_context *ctx, void *ptr) {
 
 static void render_freq_object(struct console_request_context *ctx, void *ptr) {
   struct freq_input *f = ptr;
+
+  int edge = f->edge;
+  int type = f->type;
+
   render_enum_map_field(
     ctx,
     "edge",
     "type of edge to trigger",
-    (struct console_enum_mapping[]){ { RISING_EDGE, "rising" },
+    (const struct console_enum_mapping[]){ { RISING_EDGE, "rising" },
                                      { FALLING_EDGE, "falling" },
                                      { BOTH_EDGES, "both" },
                                      { 0, NULL } },
-    &f->edge);
+    &edge);
   render_enum_map_field(ctx,
                         "type",
                         "input interpretation",
-                        (struct console_enum_mapping[]){ { FREQ, "freq" },
+                        (const struct console_enum_mapping[]){ { FREQ, "freq" },
                                                          { TRIGGER, "trigger" },
                                                          { 0, NULL } },
-                        &f->type);
+                        &type);
+
+  f->edge = edge;
+  f->type = type;
 }
 
 static void render_freq_list(struct console_request_context *ctx, void *ptr) {

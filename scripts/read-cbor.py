@@ -4,9 +4,11 @@ import cbor
 import json
 
 while True:
-    data = cbor.load(sys.stdin.buffer)
     try:
+        data = cbor.load(sys.stdin.buffer)
         print(json.dumps(data))
-    except BlockingIOError:
+    except KeyboardInterrupt:
+        break
+    except:
         pass
        
