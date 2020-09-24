@@ -154,7 +154,8 @@ size_t console_write(const void *buf, size_t len) {
 }
 
 size_t console_read(void *buf, size_t len) {
-  ssize_t res = read(STDIN_FILENO, buf, len);
+  int s = len > 64 ? 64 : len;
+  ssize_t res = read(STDIN_FILENO, buf, s);
   if (res < 0) {
     return 0;
   }

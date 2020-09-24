@@ -187,23 +187,26 @@ static int console_write_full(const uint8_t *buf, size_t len) {
 }
 
 static uint8_t rx_buffer[4096];
-static uint8_t *rx_buffer_ptr = rx_buffer;
+static size_t rx_buffer_size = 0;
+static timeval_t rx_start_time = 0;
 
 static void console_shift_rx_buffer(size_t amt) {
-
-  memmove(&rx_buffer[0], &rx_buffer[amt], (rx_buffer_ptr - rx_buffer - amt));
-  rx_buffer_ptr -= amt;
+  assert(amt <= rx_buffer_size);
+  memmove(&rx_buffer[0], &rx_buffer[amt], (rx_buffer_size - amt));
+  rx_buffer_size -= amt;
 }
 
 static size_t console_try_read() {
-  size_t remaining = sizeof(rx_buffer) - (rx_buffer_ptr - rx_buffer);
+  size_t remaining = sizeof(rx_buffer) - rx_buffer_size;
 
-  size_t read_amt = console_read(rx_buffer_ptr, remaining);
+  if (rx_buffer_size == 0) {
+    rx_start_time = current_time();
+  }
 
-  rx_buffer_ptr += read_amt;
+  size_t read_amt = console_read(&rx_buffer[rx_buffer_size], remaining);
+  rx_buffer_size += read_amt;
 
-  size_t len = rx_buffer_ptr - rx_buffer;
-  if (len == 0) {
+  if (rx_buffer_size == 0) {
     return 0;
   }
 
@@ -214,33 +217,47 @@ static size_t console_try_read() {
    * buffer doesn't start with a map, it is not valid, and we want to advance
    * byte-by-byte until we find a start of map */
   do {
-    if (cbor_parser_init(rx_buffer, len, 0, &parser, &value) == CborNoError) {
+    if (cbor_parser_init(rx_buffer, rx_buffer_size, 0, &parser, &value) ==
+        CborNoError) {
       if (cbor_value_is_map(&value)) {
         break;
       }
     }
+    /* Reset timer since we have a new start */
     console_shift_rx_buffer(1);
+    rx_start_time = current_time();
 
     /* We've exhausted the buffer */
-    if (rx_buffer_ptr == rx_buffer) {
+    if (!rx_buffer_size) {
       return 0;
     }
   } while (1);
 
-  /* Maybe we have a valid object. if so, return.
-   * If we don't, it could be that we haven't read enough. We will read until
-   * the end of the buffer, but if its maxed out, reset everything
-   */
   switch (cbor_value_validate_basic(&value)) {
-  case CborNoError: {
+    /* If we have a valid object, return its length */
+  case CborNoError:
+  case CborErrorGarbageAtEnd: {
     cbor_value_advance(&value);
     const uint8_t *next = cbor_value_get_next_byte(&value);
     return (next - rx_buffer);
   }
+  /* If we have the start of a valid object (as per the cbor_value_is_map check
+   * above, but not enough to decode the whole object, return but do not reset
+   * unless 1s has passed. This is a balance between allowing time for messages
+   * to arrive but not locking up communications due to some garbage */
   case CborErrorAdvancePastEOF:
+  case CborErrorUnexpectedEOF:
+    if (current_time() - rx_start_time > time_from_us(1000000)) {
+      rx_buffer_size = 0;
+    }
+    /* Alternatively, if we've filled up, waiting longer will not work, reset */
+    if (rx_buffer_size == sizeof(rx_buffer)) {
+      rx_buffer_size = 0;
+    }
     break;
+  /* Assume garbage input, reset */
   default:
-    rx_buffer_ptr = rx_buffer;
+    rx_buffer_size = 0;
     break;
   }
   return 0;
@@ -1013,17 +1030,17 @@ static void render_freq_object(struct console_request_context *ctx, void *ptr) {
     "edge",
     "type of edge to trigger",
     (const struct console_enum_mapping[]){ { RISING_EDGE, "rising" },
-                                     { FALLING_EDGE, "falling" },
-                                     { BOTH_EDGES, "both" },
-                                     { 0, NULL } },
+                                           { FALLING_EDGE, "falling" },
+                                           { BOTH_EDGES, "both" },
+                                           { 0, NULL } },
     &edge);
-  render_enum_map_field(ctx,
-                        "type",
-                        "input interpretation",
-                        (const struct console_enum_mapping[]){ { FREQ, "freq" },
-                                                         { TRIGGER, "trigger" },
-                                                         { 0, NULL } },
-                        &type);
+  render_enum_map_field(
+    ctx,
+    "type",
+    "input interpretation",
+    (const struct console_enum_mapping[]){
+      { FREQ, "freq" }, { TRIGGER, "trigger" }, { 0, NULL } },
+    &type);
 
   f->edge = edge;
   f->type = type;

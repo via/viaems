@@ -9,6 +9,8 @@ while True:
         print(json.dumps(data))
     except KeyboardInterrupt:
         break
+    except EOFError:
+        break
     except:
         pass
        
