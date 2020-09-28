@@ -1166,6 +1166,9 @@ static struct console_config_node console_config_nodes[] = {
   { .name = "status.sensors.ego.fault",
     .val = &config.sensors[SENSOR_EGO].fault,
     .get = console_get_sensor_fault },
+  { .name = "status.sensors.frp",
+    .val = &config.sensors[SENSOR_FRP].processed_value,
+    .get = console_get_float },
 
   /* Misc commands */
   { .name = "flash", .set = console_save_to_flash },
