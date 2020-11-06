@@ -31,9 +31,9 @@ static void handle_boost_control() {
   if ((config.sensors[SENSOR_MAP].processed_value <
        config.boost_control.threshhold_kpa)) {
     if (config.sensors[SENSOR_TPS].processed_value > 90.0f) {
-      duty = 100.0;
+      duty = 100.0f;
     } else {
-      duty = 0.0;
+      duty = 0.0f;
     }
   } else {
     duty = interpolate_table_oneaxis(config.boost_control.pwm_duty_vs_rpm,

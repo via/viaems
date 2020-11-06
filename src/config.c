@@ -185,12 +185,12 @@ struct table boost_control_pwm __attribute__((section(".configdata"))) = {
     },
   },
   .data = {
-    .one = {0.5, 0.5, 0.5, 0.5, 0.5, 0.5},
+    .one = {50, 50, 50, 50, 50, 50},
   },
 };
 
 struct config config __attribute__((section(".configdata"))) = {
-  .num_events = 12,
+  .num_events = 9,
   .events = {
     {.type=IGNITION_EVENT, .angle=0, .pin=0},
     {.type=IGNITION_EVENT, .angle=120, .pin=1},
@@ -199,12 +199,9 @@ struct config config __attribute__((section(".configdata"))) = {
     {.type=IGNITION_EVENT, .angle=480, .pin=1},
     {.type=IGNITION_EVENT, .angle=600, .pin=2},
 
-    {.type=FUEL_EVENT, .angle=0, .pin=8},
-    {.type=FUEL_EVENT, .angle=120, .pin=9},
-    {.type=FUEL_EVENT, .angle=240, .pin=10},
-    {.type=FUEL_EVENT, .angle=360, .pin=8},
-    {.type=FUEL_EVENT, .angle=480, .pin=9},
-    {.type=FUEL_EVENT, .angle=600, .pin=10},
+    {.type=FUEL_EVENT, .angle=700, .pin=8},
+    {.type=FUEL_EVENT, .angle=460, .pin=9},
+    {.type=FUEL_EVENT, .angle=220, .pin=10},
   },
   .decoder = {
     .type = TOYOTA_24_1_CAS,
@@ -239,7 +236,7 @@ struct config config __attribute__((section(".configdata"))) = {
         .c=0.00000018474199456928,
       }}},
     [SENSOR_EGO] = {.pin=3, .source=SENSOR_ADC, .method=METHOD_LINEAR,
-      .params={.range={.min=0.68, .max=1.36}}},
+      .params={.range={.min=0.499, .max=1.309}}},
     [SENSOR_MAP] = {.pin=4, .source=SENSOR_ADC, .method=METHOD_LINEAR_WINDOWED,
       .params={.range={.min=12, .max=420}}, /* AEM 3.5 bar MAP sensor*/
       .fault_config={.min = 10, .max = 4050, .fault_value = 50.0},
@@ -267,10 +264,10 @@ struct config config __attribute__((section(".configdata"))) = {
     .injector_cc_per_minute = 1015,
     .cylinder_cc = 500,
     .fuel_stoich_ratio = 14.7,
-    .injections_per_cycle = 2, /* All batched */
+    .injections_per_cycle = 1, /* All batched */
     .fuel_pump_pin = 0,
     .density_of_fuel = 0.755, /* g/cm^3 at 15C */
-    .density_of_air_stp = 1.2754e-3, /* g/cm^3 */
+    .density_of_air_stp = 1.2922e-3, /* g/cm^3 at 0C */
     .crank_enrich_config = {
       .crank_rpm = 400,
       .cutoff_temperature = 20.0,
@@ -285,7 +282,7 @@ struct config config __attribute__((section(".configdata"))) = {
     .pwm_duty_vs_rpm = &boost_control_pwm,
     .threshhold_kpa = 130.0,
     .pin = 1,
-    .overboost = 200.0,
+    .overboost = 240.0,
   },
   .cel = {
     .pin = 2,

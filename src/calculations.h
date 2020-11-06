@@ -18,7 +18,7 @@ struct fueling_config {
   } crank_enrich_config;
 
   /* Constants */
-  float density_of_air_stp; /* g/cc at 0C 100 kpa */
+  float density_of_air_stp; /* g/cc at 0C */
   float density_of_fuel;    /* At 15 C */
 };
 
