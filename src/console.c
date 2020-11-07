@@ -71,8 +71,6 @@ void console_record_event(struct logged_event ev) {
   (void)ev;
 }
 
-void console_init() {}
-
 void render_type_field(CborEncoder *enc, const char *type) {
   cbor_encode_text_stringz(enc, "_type");
   cbor_encode_text_stringz(enc, type);

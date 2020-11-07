@@ -113,8 +113,6 @@ struct console_feed_node {
   const float *float_ptr;
 };
 
-void console_init();
-
 void render_description_field(CborEncoder *, const char *desc);
 void render_type_field(CborEncoder *, const char *type);
 
