@@ -343,3 +343,39 @@ Response:
 }
 ```
 
+### flash
+Save the active configuration into flash, such that it will survive a power
+cycle.
+
+**Currently this functionality should be not be used while the engine is running!**
+
+Example request:
+```
+{
+    "id": 2,
+    "method": "flash",
+}
+```
+
+Response:
+```
+{
+    "id": 2,
+    "success": true,
+}
+```
+
+### Bootloader
+Reboot the target, and enter DFU mode on startup.  In DFU mode, the device can
+have firmware loaded with the dfu protocol, such as with a `make program`.
+
+
+Example request:
+```
+{
+    "id": 2,
+    "method": "bootloader",
+}
+```
+
+There is no reliable response, as the device is rebooted.
