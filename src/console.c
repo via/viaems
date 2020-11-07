@@ -834,6 +834,8 @@ static const char *sensor_name_from_type(sensor_input_type t) {
     return "frt";
   case SENSOR_EGO:
     return "ego";
+  case SENSOR_FRP:
+    return "frp";
   default:
     return "invalid";
   }
@@ -1125,6 +1127,16 @@ static void console_request_set(CborEncoder *enc,
   report_success(enc, true);
 }
 
+static void console_request_flash(CborEncoder *response) {
+  platform_save_config();
+  report_success(response, true);
+}
+
+static void console_request_bootloader(CborEncoder *response) {
+  report_success(response, true);
+  platform_reset_into_bootloader(); 
+}
+
 static void console_process_request(CborValue *request, CborEncoder *response) {
   cbor_encode_text_stringz(response, "type");
   cbor_encode_text_stringz(response, "response");
@@ -1146,47 +1158,59 @@ static void console_process_request(CborValue *request, CborEncoder *response) {
     report_parsing_error(response, "request has no 'method'");
     report_success(response, false);
     return;
+  }
+
+  bool match;
+  cbor_value_text_string_equals(&request_method_value, "ping", &match);
+  if (match) {
+    console_request_ping(response);
+    return;
+  }
+
+  cbor_value_text_string_equals(&request_method_value, "structure", &match);
+  if (match) {
+    console_request_structure(response);
+    return;
+  }
+
+  cbor_value_text_string_equals(&request_method_value, "flash", &match);
+  if (match) {
+    console_request_flash(response);
+    return;
+  }
+
+  cbor_value_text_string_equals(&request_method_value, "bootloader", &match);
+  if (match) {
+    console_request_bootloader(response);
+    return;
+  }
+
+  CborValue path, pathlist;
+  cbor_value_map_find_value(request, "path", &path);
+  if (cbor_value_is_array(&path)) {
+    cbor_value_enter_container(&path, &pathlist);
   } else {
-    bool match;
-    cbor_value_text_string_equals(&request_method_value, "ping", &match);
-    if (match) {
-      console_request_ping(response);
-      return;
-    }
+    report_parsing_error(response, "no 'path' provided'");
+    return;
+  }
 
-    cbor_value_text_string_equals(&request_method_value, "structure", &match);
-    if (match) {
-      console_request_structure(response);
-      return;
-    }
+  cbor_value_text_string_equals(&request_method_value, "get", &match);
+  if (match) {
+    console_request_get(response, &pathlist);
+    return;
+  }
 
-    CborValue path, pathlist;
-    cbor_value_map_find_value(request, "path", &path);
-    if (cbor_value_is_array(&path)) {
-      cbor_value_enter_container(&path, &pathlist);
-    } else {
-      report_parsing_error(response, "no 'path' provided'");
-      return;
-    }
+  CborValue set_value;
+  cbor_value_map_find_value(request, "value", &set_value);
+  if (cbor_value_get_type(&set_value) == CborInvalidType) {
+    report_parsing_error(response, "invalid 'value' provided");
+    return;
+  }
 
-    cbor_value_text_string_equals(&request_method_value, "get", &match);
-    if (match) {
-      console_request_get(response, &pathlist);
-      return;
-    }
-
-    CborValue set_value;
-    cbor_value_map_find_value(request, "value", &set_value);
-    if (cbor_value_get_type(&set_value) == CborInvalidType) {
-      report_parsing_error(response, "invalid 'value' provided");
-      return;
-    }
-
-    cbor_value_text_string_equals(&request_method_value, "set", &match);
-    if (match) {
-      console_request_set(response, &pathlist, &set_value);
-      return;
-    }
+  cbor_value_text_string_equals(&request_method_value, "set", &match);
+  if (match) {
+    console_request_set(response, &pathlist, &set_value);
+    return;
   }
 }
 
