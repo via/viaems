@@ -247,7 +247,7 @@ response (trimmed for display):
                 ],
                 "description": "output type"
             }
-        },
+        }
     }
 }
 ```
@@ -262,8 +262,8 @@ response (trimmed for display):
   useful to individually describe.  These fields will also contain `len` field
   that indicates the maximum number of elements the list may have.
 - `[[float]]` indicates that a field is a two dimension list of values, or a
-  list of list of floats.  These fields will be squares with each axis
-  containing `len` values.
+  list of list of floats.  These fields contain a `len` field that indicates the
+  maximum number of elements can be a `len`x`len` square.
 
 
 ### Get
