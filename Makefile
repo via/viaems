@@ -58,3 +58,5 @@ lint:
 
 clean:
 	-rm ${OBJDIR}/*
+
+.PHONY: clean lint format integration
