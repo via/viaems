@@ -186,7 +186,7 @@ static int console_write_full(const uint8_t *buf, size_t len) {
   return 1;
 }
 
-static uint8_t rx_buffer[4096];
+static uint8_t rx_buffer[16384];
 static size_t rx_buffer_size = 0;
 static timeval_t rx_start_time = 0;
 
