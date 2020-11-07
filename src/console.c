@@ -647,6 +647,16 @@ static void render_table_axis_values(struct console_request_context *ctx,
                                      void *_a) {
 
   struct table_axis *axis = _a;
+  size_t len = axis->num;
+  if (ctx->type == CONSOLE_SET) {
+    if (cbor_value_get_array_length(&ctx->value, &len) != CborNoError) {
+      len = axis->num;
+    }
+    if (len > MAX_AXIS_SIZE) {
+      len = MAX_AXIS_SIZE;
+    }
+    axis->num = len;
+  }
   for (int i = 0; i < axis->num; i++) {
     struct console_request_context deeper;
     if (descend_array_field(ctx, &deeper, i)) {
