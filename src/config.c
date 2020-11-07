@@ -249,6 +249,9 @@ struct config config __attribute__((section(".configdata"))) = {
       .fault_config={.min = 200, .max = 3200, .fault_value = 25.0},
       .lag = 10.0},
     [SENSOR_FRT] = {.source=SENSOR_CONST, .params={.fixed_value = 15.0}},
+    [SENSOR_FRP] = {.pin=7, .source=SENSOR_ADC, .method=METHOD_LINEAR,
+      .params={.range={.min=-86, .max=862}}, /* AEM 3.5 bar MAP sensor*/
+    }
   },
   .timing = &timing_vs_rpm_and_map,
   .injector_pw_compensation = &injector_dead_time,

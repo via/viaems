@@ -50,6 +50,8 @@ const struct console_feed_node console_feed_nodes[] = {
     .float_ptr = &config.sensors[SENSOR_FRT].processed_value },
   { .id = "sensor.ego",
     .float_ptr = &config.sensors[SENSOR_EGO].processed_value },
+  { .id = "sensor.frp",
+    .float_ptr = &config.sensors[SENSOR_FRP].processed_value },
 
   /* Decoder */
   { .id = "rpm", .uint32_ptr = &config.decoder.rpm },
