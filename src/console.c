@@ -762,13 +762,14 @@ static void render_tables(struct console_request_context *ctx, void *ptr) {
 static void render_decoder(struct console_request_context *ctx, void *ptr) {
   (void)ptr;
 
-  render_uint32_map_field(ctx,
-                          "rpm_window_size",
-                          "averaging window (N teeth)",
-                          &config.decoder.rpm_window_size);
-
   render_float_map_field(
     ctx, "offset", "offset past TDC for sync pulse", &config.decoder.offset);
+
+  render_float_map_field(
+    ctx, "max-variance", "inter-tooth max time variation (0-1)", &config.decoder.trigger_max_rpm_change);
+
+  render_uint32_map_field(
+    ctx, "min-rpm", "minimum RPM for sync", &config.decoder.trigger_min_rpm);
 
   int type = config.decoder.type;
   render_enum_map_field(
@@ -964,7 +965,7 @@ static void render_fueling(struct console_request_context *ctx, void *ptr) {
                          "stoich ratio of fuel to air",
                          &config.fueling.fuel_stoich_ratio);
   render_uint32_map_field(ctx,
-                          "injectors-per-cycle",
+                          "injections-per-cycle",
                           "Number of times injectors fire per cycle (batching)",
                           &config.fueling.injections_per_cycle);
   render_uint32_map_field(ctx,
