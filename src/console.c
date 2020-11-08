@@ -57,6 +57,7 @@ const struct console_feed_node console_feed_nodes[] = {
   { .id = "rpm", .uint32_ptr = &config.decoder.rpm },
   { .id = "sync", .uint32_ptr = &config.decoder.valid },
   { .id = "rpm_variance", .float_ptr = &config.decoder.trigger_cur_rpm_change },
+  { .id = "last_trigger_angle", .float_ptr = &config.decoder.last_trigger_angle },
   { .id = "t0_count", .uint32_ptr = &config.decoder.t0_count },
   { .id = "t1_count", .uint32_ptr = &config.decoder.t1_count },
   { 0 },
@@ -67,8 +68,85 @@ const struct console_feed_node console_feed_nodes[] = {
 static const char *git_describe = GIT_DESCRIBE;
 #endif
 
+
+static struct {
+  bool enabled;
+  struct logged_event events[32];
+  volatile uint32_t read;
+  volatile uint32_t write;
+} event_log = { .enabled = true };
+
+static struct logged_event get_logged_event() {
+  if (!event_log.enabled || (event_log.read == event_log.write)) {
+    return (struct logged_event){ .type = EVENT_NONE };
+  }
+  struct logged_event ret = event_log.events[event_log.read];
+  event_log.read = (event_log.read + 1) %
+                   (sizeof(event_log.events) / sizeof(event_log.events[0]));
+  return ret;
+}
+
 void console_record_event(struct logged_event ev) {
-  (void)ev;
+  if (!event_log.enabled) {
+    return;
+  }
+
+  int size = (sizeof(event_log.events) / sizeof(event_log.events[0]));
+  if ((event_log.write + 1) % size == event_log.read) {
+    return;
+  }
+
+  event_log.events[event_log.write] = ev;
+  event_log.write = (event_log.write + 1) % size;
+}
+
+static size_t console_event_message(uint8_t *dest, size_t bsize, struct logged_event *ev) {
+  CborEncoder encoder;
+
+  cbor_encoder_init(&encoder, dest, bsize, 0);
+
+  CborEncoder top_encoder;
+  cbor_encoder_create_map(&encoder, &top_encoder, 3);
+  cbor_encode_text_stringz(&top_encoder, "type");
+  cbor_encode_text_stringz(&top_encoder, "event");
+
+  cbor_encode_text_stringz(&top_encoder, "time");
+  cbor_encode_int(&top_encoder, ev->time);
+
+  cbor_encode_text_stringz(&top_encoder, "event");
+
+  CborEncoder event_encoder;
+
+  switch (ev->type) {
+    case EVENT_OUTPUT:
+      cbor_encoder_create_map(&top_encoder, &event_encoder, 2);
+      cbor_encode_text_stringz(&event_encoder, "type");
+      cbor_encode_text_stringz(&event_encoder, "output");
+      cbor_encode_text_stringz(&event_encoder, "outputs");
+      cbor_encode_int(&event_encoder, ev->value);
+      cbor_encoder_close_container(&top_encoder, &event_encoder);
+      break;
+    case EVENT_GPIO:
+      cbor_encoder_create_map(&top_encoder, &event_encoder, 2);
+      cbor_encode_text_stringz(&event_encoder, "type");
+      cbor_encode_text_stringz(&event_encoder, "gpio");
+      cbor_encode_text_stringz(&event_encoder, "outputs");
+      cbor_encode_int(&event_encoder, ev->value);
+      cbor_encoder_close_container(&top_encoder, &event_encoder);
+      break;
+    case EVENT_TRIGGER:
+      cbor_encoder_create_map(&top_encoder, &event_encoder, 2);
+      cbor_encode_text_stringz(&event_encoder, "type");
+      cbor_encode_text_stringz(&event_encoder, "trigger");
+      cbor_encode_text_stringz(&event_encoder, "pin");
+      cbor_encode_int(&event_encoder, ev->value);
+      cbor_encoder_close_container(&top_encoder, &event_encoder);
+      break;
+    default:
+      break;
+  }
+  cbor_encoder_close_container(&encoder, &top_encoder);
+  return cbor_encoder_get_buffer_size(&encoder, dest);
 }
 
 void render_type_field(CborEncoder *enc, const char *type) {
@@ -1263,6 +1341,14 @@ void console_process() {
     /* Parse a request from the client */
     console_process_request_raw(read_size);
     console_shift_rx_buffer(read_size);
+  }
+
+  /* Process any outstanding event messages */
+  struct logged_event ev = get_logged_event();
+  while (ev.type != EVENT_NONE) {
+    size_t write_size = console_event_message(txbuffer, sizeof(txbuffer), &ev);
+    console_write_full(txbuffer, write_size);
+    ev = get_logged_event();
   }
 
   /* Has it been 100ms since the last description? */

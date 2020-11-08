@@ -239,7 +239,8 @@ void decoder_update_scheduling(struct decoder_event *events,
       config.decoder.needs_decoding_t1 = 1;
     }
     console_record_event((struct logged_event){
-      .type = ev->trigger == 0 ? EVENT_TRIGGER0 : EVENT_TRIGGER1,
+      .type = EVENT_TRIGGER,
+      .value = ev->trigger,
       .time = ev->time,
     });
     config.decoder.decode(&config.decoder);

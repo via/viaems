@@ -11,10 +11,9 @@ struct logged_event {
     EVENT_NONE,
     EVENT_OUTPUT,
     EVENT_GPIO,
-    EVENT_TRIGGER0,
-    EVENT_TRIGGER1,
+    EVENT_TRIGGER,
   } type;
-  uint16_t value;
+  uint32_t value;
 };
 
 typedef enum {
