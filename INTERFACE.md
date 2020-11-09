@@ -97,6 +97,31 @@ values as described by the `description` message type.  It is gauranteed that an
 }
 ```
 
+### Events
+This message type is produced in response to trigger events, or changes in
+scheduled outputs and gpios. All messages carry a timestamp and a value.  These
+messages are produced if event logging is enabled.
+
+```
+{
+    "type": "event",
+    "time": 1140000,
+    "event": {
+        "type": "output",
+        "outputs": 4
+    }
+}
+
+{
+    "type": "event",
+    "time": 1140000,
+    "event": {
+        "type": "trigger",
+        "pin": 0
+    }
+}
+```
+
 ## Client Requests
 All requests contain a `type` field of `request` and an optional `id` integer field, which can
 be used to line up responses to a given request.  Responses to a response are

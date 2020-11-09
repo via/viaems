@@ -70,11 +70,11 @@ static const char *git_describe = GIT_DESCRIBE;
 
 
 static struct {
-  bool enabled;
+  uint32_t enabled;
   struct logged_event events[32];
   volatile uint32_t read;
   volatile uint32_t write;
-} event_log = { .enabled = true };
+} event_log;
 
 static struct logged_event get_logged_event() {
   if (!event_log.enabled || (event_log.read == event_log.write)) {
@@ -1144,6 +1144,23 @@ static void render_freq_list(struct console_request_context *ctx, void *ptr) {
   }
 }
 
+static void render_test(struct console_request_context *ctx, void *ptr) {
+  (void)ptr;
+  render_uint32_map_field(
+    ctx, "event-logging", "Enable event logging", &event_log.enabled);
+
+  /* Workaround to support the getter/setters */
+  uint32_t old_rpm = get_test_trigger_rpm();
+  uint32_t rpm = old_rpm;
+  render_uint32_map_field(ctx,
+                         "test-trigger-rpm",
+                         "Test trigger output rpm (0 to disable)",
+                         &rpm);
+  if ((ctx->type == CONSOLE_SET) && (rpm != old_rpm)) {
+    set_test_trigger_rpm(rpm);
+  }
+}
+
 static void console_toplevel_request(struct console_request_context *ctx,
                                      void *ptr) {
   (void)ptr;
@@ -1156,6 +1173,7 @@ static void console_toplevel_request(struct console_request_context *ctx,
   render_map_map_field(ctx, "boost-control", render_boost_control, NULL);
   render_map_map_field(ctx, "check-engine-light", render_cel, NULL);
   render_array_map_field(ctx, "freq", render_freq_list, NULL);
+  render_map_map_field(ctx, "test", render_test, NULL);
 }
 
 static void console_toplevel_types(struct console_request_context *ctx,

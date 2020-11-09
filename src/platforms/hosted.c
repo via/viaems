@@ -181,8 +181,12 @@ int current_output_slot() {
   return cur_slot;
 }
 
-void set_test_trigger_rpm(unsigned int rpm) {
+void set_test_trigger_rpm(uint32_t rpm) {
   test_trigger_rpm = rpm;
+}
+
+uint32_t get_test_trigger_rpm() {
+  return test_trigger_rpm;
 }
 
 static struct timespec add_times(struct timespec a, struct timespec b) {
