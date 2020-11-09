@@ -17,10 +17,8 @@
 #include "sensors.h"
 #include "stats.h"
 
-static uint32_t console_current_time;
-
 const struct console_feed_node console_feed_nodes[] = {
-  { .id = "cputime", .uint32_ptr = &console_current_time },
+  { .id = "cputime", .uint32_fptr = current_time },
 
   /* Fueling */
   { .id = "ve", .float_ptr = &calculated_values.ve },
@@ -223,7 +221,6 @@ static size_t console_feed_line_keys(uint8_t *dest, size_t bsize) {
 static size_t console_feed_line(uint8_t *dest, size_t bsize) {
   CborEncoder encoder;
 
-  console_current_time = current_time();
   cbor_encoder_init(&encoder, dest, bsize, 0);
 
   CborEncoder top_encoder;
@@ -242,6 +239,10 @@ static size_t console_feed_line(uint8_t *dest, size_t bsize) {
       cbor_encode_uint(&value_list_encoder, *node->uint32_ptr);
     } else if (node->float_ptr) {
       cbor_encode_float(&value_list_encoder, *node->float_ptr);
+    } else if (node->uint32_fptr) {
+      cbor_encode_uint(&value_list_encoder, node->uint32_fptr());
+    } else if (node->float_fptr) {
+      cbor_encode_float(&value_list_encoder, node->float_fptr());
     } else {
       cbor_encode_text_stringz(&value_list_encoder, "invalid");
     }

@@ -109,7 +109,9 @@ struct console_feed_node {
   const char *id;
   const char *description;
   const uint32_t *uint32_ptr;
+  uint32_t (*uint32_fptr)();
   const float *float_ptr;
+  float (*float_fptr)();
 };
 
 void render_description_field(CborEncoder *, const char *desc);
