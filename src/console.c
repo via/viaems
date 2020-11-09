@@ -55,7 +55,8 @@ const struct console_feed_node console_feed_nodes[] = {
   { .id = "rpm", .uint32_ptr = &config.decoder.rpm },
   { .id = "sync", .uint32_ptr = &config.decoder.valid },
   { .id = "rpm_variance", .float_ptr = &config.decoder.trigger_cur_rpm_change },
-  { .id = "last_trigger_angle", .float_ptr = &config.decoder.last_trigger_angle },
+  { .id = "last_trigger_angle",
+    .float_ptr = &config.decoder.last_trigger_angle },
   { .id = "t0_count", .uint32_ptr = &config.decoder.t0_count },
   { .id = "t1_count", .uint32_ptr = &config.decoder.t1_count },
   { 0 },
@@ -65,7 +66,6 @@ const struct console_feed_node console_feed_nodes[] = {
 #define GIT_DESCRIBE "unknown"
 static const char *git_describe = GIT_DESCRIBE;
 #endif
-
 
 static struct {
   uint32_t enabled;
@@ -98,7 +98,9 @@ void console_record_event(struct logged_event ev) {
   event_log.write = (event_log.write + 1) % size;
 }
 
-static size_t console_event_message(uint8_t *dest, size_t bsize, struct logged_event *ev) {
+static size_t console_event_message(uint8_t *dest,
+                                    size_t bsize,
+                                    struct logged_event *ev) {
   CborEncoder encoder;
 
   cbor_encoder_init(&encoder, dest, bsize, 0);
@@ -116,32 +118,32 @@ static size_t console_event_message(uint8_t *dest, size_t bsize, struct logged_e
   CborEncoder event_encoder;
 
   switch (ev->type) {
-    case EVENT_OUTPUT:
-      cbor_encoder_create_map(&top_encoder, &event_encoder, 2);
-      cbor_encode_text_stringz(&event_encoder, "type");
-      cbor_encode_text_stringz(&event_encoder, "output");
-      cbor_encode_text_stringz(&event_encoder, "outputs");
-      cbor_encode_int(&event_encoder, ev->value);
-      cbor_encoder_close_container(&top_encoder, &event_encoder);
-      break;
-    case EVENT_GPIO:
-      cbor_encoder_create_map(&top_encoder, &event_encoder, 2);
-      cbor_encode_text_stringz(&event_encoder, "type");
-      cbor_encode_text_stringz(&event_encoder, "gpio");
-      cbor_encode_text_stringz(&event_encoder, "outputs");
-      cbor_encode_int(&event_encoder, ev->value);
-      cbor_encoder_close_container(&top_encoder, &event_encoder);
-      break;
-    case EVENT_TRIGGER:
-      cbor_encoder_create_map(&top_encoder, &event_encoder, 2);
-      cbor_encode_text_stringz(&event_encoder, "type");
-      cbor_encode_text_stringz(&event_encoder, "trigger");
-      cbor_encode_text_stringz(&event_encoder, "pin");
-      cbor_encode_int(&event_encoder, ev->value);
-      cbor_encoder_close_container(&top_encoder, &event_encoder);
-      break;
-    default:
-      break;
+  case EVENT_OUTPUT:
+    cbor_encoder_create_map(&top_encoder, &event_encoder, 2);
+    cbor_encode_text_stringz(&event_encoder, "type");
+    cbor_encode_text_stringz(&event_encoder, "output");
+    cbor_encode_text_stringz(&event_encoder, "outputs");
+    cbor_encode_int(&event_encoder, ev->value);
+    cbor_encoder_close_container(&top_encoder, &event_encoder);
+    break;
+  case EVENT_GPIO:
+    cbor_encoder_create_map(&top_encoder, &event_encoder, 2);
+    cbor_encode_text_stringz(&event_encoder, "type");
+    cbor_encode_text_stringz(&event_encoder, "gpio");
+    cbor_encode_text_stringz(&event_encoder, "outputs");
+    cbor_encode_int(&event_encoder, ev->value);
+    cbor_encoder_close_container(&top_encoder, &event_encoder);
+    break;
+  case EVENT_TRIGGER:
+    cbor_encoder_create_map(&top_encoder, &event_encoder, 2);
+    cbor_encode_text_stringz(&event_encoder, "type");
+    cbor_encode_text_stringz(&event_encoder, "trigger");
+    cbor_encode_text_stringz(&event_encoder, "pin");
+    cbor_encode_int(&event_encoder, ev->value);
+    cbor_encoder_close_container(&top_encoder, &event_encoder);
+    break;
+  default:
+    break;
   }
   cbor_encoder_close_container(&encoder, &top_encoder);
   return cbor_encoder_get_buffer_size(&encoder, dest);
@@ -854,8 +856,10 @@ static void render_decoder(struct console_request_context *ctx, void *ptr) {
   render_float_map_field(
     ctx, "offset", "offset past TDC for sync pulse", &config.decoder.offset);
 
-  render_float_map_field(
-    ctx, "max-variance", "inter-tooth max time variation (0-1)", &config.decoder.trigger_max_rpm_change);
+  render_float_map_field(ctx,
+                         "max-variance",
+                         "inter-tooth max time variation (0-1)",
+                         &config.decoder.trigger_max_rpm_change);
 
   render_uint32_map_field(
     ctx, "min-rpm", "minimum RPM for sync", &config.decoder.trigger_min_rpm);
@@ -1153,10 +1157,8 @@ static void render_test(struct console_request_context *ctx, void *ptr) {
   /* Workaround to support the getter/setters */
   uint32_t old_rpm = get_test_trigger_rpm();
   uint32_t rpm = old_rpm;
-  render_uint32_map_field(ctx,
-                         "test-trigger-rpm",
-                         "Test trigger output rpm (0 to disable)",
-                         &rpm);
+  render_uint32_map_field(
+    ctx, "test-trigger-rpm", "Test trigger output rpm (0 to disable)", &rpm);
   if ((ctx->type == CONSOLE_SET) && (rpm != old_rpm)) {
     set_test_trigger_rpm(rpm);
   }
@@ -1240,7 +1242,7 @@ static void console_request_flash(CborEncoder *response) {
 
 static void console_request_bootloader(CborEncoder *response) {
   report_success(response, true);
-  platform_reset_into_bootloader(); 
+  platform_reset_into_bootloader();
 }
 
 static void console_process_request(CborValue *request, CborEncoder *response) {

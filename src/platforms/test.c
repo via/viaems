@@ -120,6 +120,10 @@ void set_test_trigger_rpm(uint32_t rpm) {
   (void)rpm;
 }
 
+void get_test_trigger_rpm() {
+  return 0;
+}
+
 void platform_save_config() {}
 
 void platform_load_config() {}

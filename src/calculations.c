@@ -75,7 +75,7 @@ static float fuel_density(float fuel_celsius) {
 static float calculate_airmass(float ve, float map, float iat) {
 
   float injested_air_volume_per_cycle =
-    (ve / 100.0f) * (map / 100.0f)  * config.fueling.cylinder_cc;
+    (ve / 100.0f) * (map / 100.0f) * config.fueling.cylinder_cc;
 
   float injested_air_mass_per_cycle =
     injested_air_volume_per_cycle * air_density(iat);
@@ -226,12 +226,10 @@ START_TEST(check_calculate_airmass) {
   ck_assert_float_eq_tol(airmass, 0.646100, 0.001);
 
   /* 70 MAP should be 70% of previous airmass */
-  ck_assert_float_eq_tol(
-    calculate_airmass(100, 70, 0), 0.7 * airmass, 0.001);
+  ck_assert_float_eq_tol(calculate_airmass(100, 70, 0), 0.7 * airmass, 0.001);
 
   /* 80 VE should be 80% of first airmass */
-  ck_assert_float_eq_tol(
-    calculate_airmass(80, 100, 0), 0.8 * airmass, 0.001);
+  ck_assert_float_eq_tol(calculate_airmass(80, 100, 0), 0.8 * airmass, 0.001);
 }
 END_TEST
 
