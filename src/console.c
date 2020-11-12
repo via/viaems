@@ -53,6 +53,7 @@ const struct console_feed_node console_feed_nodes[] = {
 
   /* Decoder */
   { .id = "rpm", .uint32_ptr = &config.decoder.rpm },
+  { .id = "tooth_rpm", .uint32_ptr = &config.decoder.tooth_rpm },
   { .id = "sync", .uint32_ptr = &config.decoder.valid },
   { .id = "rpm_variance", .float_ptr = &config.decoder.trigger_cur_rpm_change },
   { .id = "last_trigger_angle",
@@ -72,7 +73,7 @@ static struct {
   struct logged_event events[32];
   volatile uint32_t read;
   volatile uint32_t write;
-} event_log;
+} event_log = {.enabled = 1};
 
 static struct logged_event get_logged_event() {
   if (!event_log.enabled || (event_log.read == event_log.write)) {

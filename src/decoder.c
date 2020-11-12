@@ -35,43 +35,38 @@ static void push_time(struct decoder *d, timeval_t t) {
   d->times[0] = t;
 }
 
-static unsigned int current_rpm_window_size(unsigned int current_triggers,
-                                            unsigned int normal_window_size) {
-
-  /* Use the minimum of rpm_window_size and current previous triggers so that
-   * rpm is valid in case our window size is larger than required trigger
-   * count */
-  if (current_triggers < normal_window_size) {
-    return current_triggers;
-  } else {
-    return normal_window_size;
-  }
-}
-
 /* Update rpm information and validate */
 static void trigger_update_rpm(struct decoder *d) {
-  timeval_t diff = d->times[0] - d->times[1];
-  unsigned int slicerpm = rpm_from_time_diff(diff, d->degrees_per_trigger);
-  unsigned int rpm_window_size =
-    current_rpm_window_size(d->current_triggers_rpm, d->rpm_window_size);
 
-  if (rpm_window_size > 1) {
+  if (d->current_triggers_rpm > 1) {
+    timeval_t diff = d->times[0] - d->times[1];
+    d->tooth_rpm = rpm_from_time_diff(diff, d->degrees_per_trigger);
     /* We have at least two data points to draw an rpm from */
-    d->rpm = rpm_from_time_diff(d->times[0] - d->times[rpm_window_size - 1],
-                                d->degrees_per_trigger * (rpm_window_size - 1));
-    if (d->rpm) {
-      unsigned int delta =
-        (d->rpm > slicerpm) ? d->rpm - slicerpm : slicerpm - d->rpm;
+    if (d->tooth_rpm) {
+      uint32_t delta =
+        (d->rpm > d->tooth_rpm) ? d->rpm - d->tooth_rpm : d->tooth_rpm - d->rpm;
       d->trigger_cur_rpm_change = delta / (float)d->rpm;
     }
+    if ((d->current_triggers_rpm >= d->rpm_window_size) && (d->triggers_since_last_sync % d->rpm_window_size == 0)) {
+      /* Only set rpm if we're at the start of the window */
+      d->rpm = rpm_from_time_diff(d->times[0] - d->times[d->rpm_window_size - 1],
+                                d->degrees_per_trigger * (d->rpm_window_size - 1));
+    } else if (d->current_triggers_rpm < d->rpm_window_size) {
+      d->rpm = d->tooth_rpm;
+    }
+
+    /* If we pass 150% of a inter-tooth delay, lose sync */
+    d->expiration = d->times[0] + (timeval_t)(diff * 1.5);
+    set_expire_event(d->expiration);
   } else {
     d->rpm = 0;
+    d->tooth_rpm = 0;
   }
 
   /* Check for excessive per-tooth variation */
-  if ((slicerpm <= d->trigger_min_rpm) ||
-      (slicerpm > d->rpm + (d->rpm * d->trigger_max_rpm_change)) ||
-      (slicerpm < d->rpm - (d->rpm * d->trigger_max_rpm_change))) {
+  if ((d->tooth_rpm <= d->trigger_min_rpm) ||
+      (d->tooth_rpm > d->rpm + (d->rpm * d->trigger_max_rpm_change)) ||
+      (d->tooth_rpm < d->rpm - (d->rpm * d->trigger_max_rpm_change))) {
     d->state = DECODER_NOSYNC;
     d->loss = DECODER_VARIATION;
   }
@@ -84,9 +79,6 @@ static void trigger_update_rpm(struct decoder *d) {
 
   /* TODO here is the place to handle a missing tooth */
 
-  /* If we pass 150% of a inter-tooth delay, lose sync */
-  d->expiration = d->times[0] + (timeval_t)(diff * 1.5);
-  set_expire_event(d->expiration);
 }
 
 static void trigger_update(struct decoder *d, timeval_t t) {
@@ -202,7 +194,7 @@ void decoder_init(struct decoder *d) {
     break;
   case TOYOTA_24_1_CAS:
     d->decode = cam_nplusone_decoder;
-    d->required_triggers_rpm = 8;
+    d->required_triggers_rpm = 4;
     d->degrees_per_trigger = 30;
     d->rpm_window_size = 12;
     d->num_triggers = 24;
@@ -628,14 +620,6 @@ START_TEST(check_nplusone_decoder_syncloss_expire) {
 }
 END_TEST
 
-START_TEST(check_current_rpm_window_size) {
-  ck_assert_int_eq(current_rpm_window_size(0, 8), 0);
-  ck_assert_int_eq(current_rpm_window_size(1, 8), 1);
-  ck_assert_int_eq(current_rpm_window_size(8, 8), 8);
-  ck_assert_int_eq(current_rpm_window_size(10, 8), 8);
-}
-END_TEST
-
 START_TEST(check_update_rpm_single_point) {
   struct decoder d = {
     .times = { 100 },
@@ -710,7 +694,6 @@ TCase *setup_decoder_tests() {
   tcase_add_test(decoder_tests, check_nplusone_decoder_syncloss_expire);
   tcase_add_test(decoder_tests, check_bulk_decoder_updates);
 
-  tcase_add_test(decoder_tests, check_current_rpm_window_size);
   tcase_add_test(decoder_tests, check_update_rpm_single_point);
   tcase_add_test(decoder_tests, check_update_rpm_sufficient_points);
   tcase_add_test(decoder_tests, check_update_rpm_window_larger);

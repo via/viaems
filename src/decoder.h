@@ -36,6 +36,7 @@ struct decoder {
   /* Safe, only handled in main loop */
   decoder_func decode;
   uint32_t valid;
+  uint32_t tooth_rpm;
   uint32_t rpm;
   timeval_t last_trigger_time;
   degrees_t last_trigger_angle;
