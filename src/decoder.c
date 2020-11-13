@@ -195,22 +195,22 @@ void decoder_init(struct decoder *d) {
   expire_event.callback = handle_decoder_expire;
 }
 
-static void decode(struct decoder *d) {
+static void decode(struct decoder *d, struct decoder_event *ev) {
   timeval_t t0 = d->last_t0;
   decoder_state oldstate = d->state;
 
-  if (d->needs_decoding_t0) {
-    trigger_update(d, t0);
-    d->needs_decoding_t0 = 0;
-  }
-  if (d->needs_decoding_t1) {
-    sync_update(d);
-    d->needs_decoding_t1 = 0;
+  switch (ev->trigger) {
+    case 0:
+      trigger_update(d, ev->time);
+      break;
+    case 1:
+      sync_update(d, ev->time);
+      break;
   }
 
   if (d->state == DECODER_SYNC) {
     d->valid = 1;
-    d->last_trigger_time = t0;
+    d->last_trigger_time = times[0];
     d->loss = DECODER_NO_LOSS;
   } else {
     if (oldstate == DECODER_SYNC) {
@@ -230,13 +230,7 @@ void decoder_update_scheduling(struct decoder_event *events,
    * Convert the decode() functions to work directly off `decoder_event` structs
    */
   for (struct decoder_event *ev = events; count > 0; count--, ev++) {
-    if (ev->trigger == 0) {
-      config.decoder.last_t0 = ev->time;
-      config.decoder.needs_decoding_t0 = 1;
-    } else if (ev->trigger == 1) {
-      config.decoder.last_t1 = ev->time;
-      config.decoder.needs_decoding_t1 = 1;
-    }
+    decode(&config.decoder, ev);
     console_record_event((struct logged_event){
       .type = EVENT_TRIGGER,
       .value = ev->trigger,
