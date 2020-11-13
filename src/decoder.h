@@ -4,19 +4,23 @@
 #include "platform.h"
 #define MAX_TRIGGERS 36
 
-struct decoder;
-typedef void (*decoder_func)(struct decoder *);
+typedef enum {
+  TRIGGER_N_EVEN,
+  TRIGGER_N_MINUS_1,
+} trigger_type;
 
 typedef enum {
-  FORD_TFI,
-  TOYOTA_24_1_CAS,
-} trigger_type;
+  NO_SYNC,
+  ONE_SYNC,
+} cam_sync_type;
 
 typedef enum {
   DECODER_NOSYNC,
   DECODER_RPM,
-  DECODER_SYNC,
+  DECODER_CRANK_SYNC,
+  DECODER_CAM_SYNC,
 } decoder_state;
+
 
 typedef enum {
   DECODER_NO_LOSS,
@@ -34,7 +38,6 @@ struct decoder {
   uint32_t needs_decoding_t1;
 
   /* Safe, only handled in main loop */
-  decoder_func decode;
   uint32_t valid;
   uint32_t tooth_rpm;
   uint32_t rpm;
@@ -43,12 +46,15 @@ struct decoder {
   timeval_t expiration;
 
   /* Configuration */
-  trigger_type type;
+  trigger_type trigger;
+  cam_sync_type cam_sync;
   degrees_t offset;
+
   float trigger_max_rpm_change;
   float trigger_cur_rpm_change;
   uint32_t trigger_min_rpm;
   uint32_t required_triggers_rpm;
+
   uint32_t num_triggers;
   degrees_t degrees_per_trigger;
   uint32_t rpm_window_size;

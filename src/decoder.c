@@ -129,7 +129,7 @@ static void sync_update(struct decoder *d) {
   d->triggers_since_last_sync = 0;
 }
 
-void cam_nplusone_decoder(struct decoder *d) {
+void cam_n_and_cam_sync_decoder(struct decoder *d) {
   timeval_t t0 = d->last_t0;
   decoder_state oldstate = d->state;
 
@@ -154,7 +154,7 @@ void cam_nplusone_decoder(struct decoder *d) {
   }
 }
 
-void tfi_pip_decoder(struct decoder *d) {
+void crank_n_decoder(struct decoder *d) {
   stats_start_timing(STATS_DECODE_TIME);
   timeval_t t0;
   decoder_state oldstate = d->state;
@@ -184,24 +184,6 @@ void decoder_init(struct decoder *d) {
   d->last_t1 = 0;
   d->needs_decoding_t0 = 0;
   d->needs_decoding_t1 = 0;
-  switch (d->type) {
-  case FORD_TFI:
-    d->decode = tfi_pip_decoder;
-    d->required_triggers_rpm = 4;
-    d->degrees_per_trigger = 90;
-    d->rpm_window_size = 3;
-    d->num_triggers = 8;
-    break;
-  case TOYOTA_24_1_CAS:
-    d->decode = cam_nplusone_decoder;
-    d->required_triggers_rpm = 4;
-    d->degrees_per_trigger = 30;
-    d->rpm_window_size = 12;
-    d->num_triggers = 24;
-    break;
-  default:
-    break;
-  }
   d->current_triggers_rpm = 0;
   d->valid = 0;
   d->rpm = 0;
@@ -210,8 +192,33 @@ void decoder_init(struct decoder *d) {
   d->last_trigger_angle = 0;
   d->triggers_since_last_sync = 0;
   d->expiration = 0;
-
   expire_event.callback = handle_decoder_expire;
+}
+
+static void decode(struct decoder *d) {
+  timeval_t t0 = d->last_t0;
+  decoder_state oldstate = d->state;
+
+  if (d->needs_decoding_t0) {
+    trigger_update(d, t0);
+    d->needs_decoding_t0 = 0;
+  }
+  if (d->needs_decoding_t1) {
+    sync_update(d);
+    d->needs_decoding_t1 = 0;
+  }
+
+  if (d->state == DECODER_SYNC) {
+    d->valid = 1;
+    d->last_trigger_time = t0;
+    d->loss = DECODER_NO_LOSS;
+  } else {
+    if (oldstate == DECODER_SYNC) {
+      /* We lost sync */
+      invalidate_decoder();
+    }
+  }
+
 }
 
 /* When decoder has new information, reschedule everything */
