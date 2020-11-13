@@ -31,12 +31,6 @@ typedef enum {
 } decoder_loss_reason;
 
 struct decoder {
-  /* Unsafe interrupt-written vars */
-  timeval_t last_t0;
-  timeval_t last_t1;
-  uint32_t needs_decoding_t0;
-  uint32_t needs_decoding_t1;
-
   /* Safe, only handled in main loop */
   uint32_t valid;
   uint32_t tooth_rpm;
