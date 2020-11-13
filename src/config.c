@@ -204,8 +204,14 @@ struct config config __attribute__((section(".configdata"))) = {
     {.type=FUEL_EVENT, .angle=220, .pin=10},
   },
   .decoder = {
-    .type = TOYOTA_24_1_CAS,
+    .trigger = TRIGGER_N_EVEN,
+    .cam_sync = SYNC_ONE,
+    .degrees_per_trigger = 30,
+    .required_triggers_rpm = 4,
+    .rpm_window_size = 8,
+    .num_triggers = 24,
     .offset = 50,
+
     .trigger_max_rpm_change = 0.55, /*Startup sucks with only 90* trigger */
     .trigger_min_rpm = 80,
   },

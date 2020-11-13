@@ -870,12 +870,12 @@ static void render_decoder(struct console_request_context *ctx, void *ptr) {
   int type = config.decoder.type;
   render_enum_map_field(
     ctx,
-    "type",
-    "decoder wheel type",
+    "trigger-type",
+    "Primary trigger decoder method",
     (struct console_enum_mapping[]){
-      { FORD_TFI, "tfi" }, { TOYOTA_24_1_CAS, "cam24+1" }, { 0, NULL } },
+      { TRIGGER_N_EVENT, "n-even" }, { CAM_N_AND_SYNC, "n-1" }, { 0, NULL } },
     &type);
-  config.decoder.type = type;
+  config.decoder.trigger = type;
 }
 
 static void output_console_renderer(struct console_request_context *ctx,
