@@ -35,38 +35,46 @@ static void push_time(struct decoder *d, timeval_t t) {
   d->times[0] = t;
 }
 
+
+
+static unsigned int current_rpm_window_size(unsigned int current_triggers,
+                                            unsigned int normal_window_size) {
+
+  /* Use the minimum of rpm_window_size and current previous triggers so that
+   * rpm is valid in case our window size is larger than required trigger
+   * count */
+  if (current_triggers < normal_window_size) {
+    return current_triggers;
+  } else {
+    return normal_window_size;
+  }
+}
+
+
 /* Update rpm information and validate */
 static void trigger_update_rpm(struct decoder *d) {
+  timeval_t diff = d->times[0] - d->times[1];
+  unsigned int slicerpm = rpm_from_time_diff(diff, d->degrees_per_trigger);
+  unsigned int rpm_window_size =
+    current_rpm_window_size(d->current_triggers_rpm, d->rpm_window_size);
 
-  if (d->current_triggers_rpm > 1) {
-    timeval_t diff = d->times[0] - d->times[1];
-    d->tooth_rpm = rpm_from_time_diff(diff, d->degrees_per_trigger);
+  if (rpm_window_size > 1) {
     /* We have at least two data points to draw an rpm from */
-    if (d->tooth_rpm) {
-      uint32_t delta =
-        (d->rpm > d->tooth_rpm) ? d->rpm - d->tooth_rpm : d->tooth_rpm - d->rpm;
+    d->rpm = rpm_from_time_diff(d->times[0] - d->times[rpm_window_size - 1],
+                                d->degrees_per_trigger * (rpm_window_size - 1));
+    if (d->rpm) {
+      unsigned int delta =
+        (d->rpm > slicerpm) ? d->rpm - slicerpm : slicerpm - d->rpm;
       d->trigger_cur_rpm_change = delta / (float)d->rpm;
     }
-    if ((d->current_triggers_rpm >= d->rpm_window_size) && (d->triggers_since_last_sync % d->rpm_window_size == 0)) {
-      /* Only set rpm if we're at the start of the window */
-      d->rpm = rpm_from_time_diff(d->times[0] - d->times[d->rpm_window_size - 1],
-                                d->degrees_per_trigger * (d->rpm_window_size - 1));
-    } else if (d->current_triggers_rpm < d->rpm_window_size) {
-      d->rpm = d->tooth_rpm;
-    }
-
-    /* If we pass 150% of a inter-tooth delay, lose sync */
-    d->expiration = d->times[0] + (timeval_t)(diff * 1.5);
-    set_expire_event(d->expiration);
   } else {
     d->rpm = 0;
-    d->tooth_rpm = 0;
   }
 
   /* Check for excessive per-tooth variation */
-  if ((d->tooth_rpm <= d->trigger_min_rpm) ||
-      (d->tooth_rpm > d->rpm + (d->rpm * d->trigger_max_rpm_change)) ||
-      (d->tooth_rpm < d->rpm - (d->rpm * d->trigger_max_rpm_change))) {
+  if ((slicerpm <= d->trigger_min_rpm) ||
+      (slicerpm > d->rpm + (d->rpm * d->trigger_max_rpm_change)) ||
+      (slicerpm < d->rpm - (d->rpm * d->trigger_max_rpm_change))) {
     d->state = DECODER_NOSYNC;
     d->loss = DECODER_VARIATION;
   }
@@ -79,6 +87,9 @@ static void trigger_update_rpm(struct decoder *d) {
 
   /* TODO here is the place to handle a missing tooth */
 
+  /* If we pass 150% of a inter-tooth delay, lose sync */
+  d->expiration = d->times[0] + (timeval_t)(diff * 1.5);
+  set_expire_event(d->expiration);
 }
 
 static void trigger_update(struct decoder *d, timeval_t t) {
@@ -129,22 +140,18 @@ static void sync_update(struct decoder *d) {
   d->triggers_since_last_sync = 0;
 }
 
-void cam_n_and_cam_sync_decoder(struct decoder *d) {
-  timeval_t t0 = d->last_t0;
+void decode_even_with_camsync(struct decoder *d, struct decoder_event *ev) {
   decoder_state oldstate = d->state;
 
-  if (d->needs_decoding_t0) {
-    trigger_update(d, t0);
-    d->needs_decoding_t0 = 0;
-  }
-  if (d->needs_decoding_t1) {
+  if (ev->trigger == 0) {
+    trigger_update(d, ev->time);
+    d->last_trigger_time = ev->time;
+  } else if (ev->trigger == 1) {
     sync_update(d);
-    d->needs_decoding_t1 = 0;
   }
 
   if (d->state == DECODER_SYNC) {
     d->valid = 1;
-    d->last_trigger_time = t0;
     d->loss = DECODER_NO_LOSS;
   } else {
     if (oldstate == DECODER_SYNC) {
@@ -154,20 +161,14 @@ void cam_n_and_cam_sync_decoder(struct decoder *d) {
   }
 }
 
-void crank_n_decoder(struct decoder *d) {
-  stats_start_timing(STATS_DECODE_TIME);
-  timeval_t t0;
+void decode_even_no_sync(struct decoder *d, struct decoder_event *ev) {
   decoder_state oldstate = d->state;
-
-  t0 = d->last_t0;
-  d->needs_decoding_t0 = 0;
-
-  trigger_update(d, t0);
+  trigger_update(d, ev->time);
   if (d->state == DECODER_RPM || d->state == DECODER_SYNC) {
     d->state = DECODER_SYNC;
     d->loss = DECODER_NO_LOSS;
     d->valid = 1;
-    d->last_trigger_time = t0;
+    d->last_trigger_time = ev->time;
     d->triggers_since_last_sync = 0; /* There is no sync */
     ;
   } else {
@@ -180,10 +181,6 @@ void crank_n_decoder(struct decoder *d) {
 }
 
 void decoder_init(struct decoder *d) {
-  d->last_t0 = 0;
-  d->last_t1 = 0;
-  d->needs_decoding_t0 = 0;
-  d->needs_decoding_t1 = 0;
   d->current_triggers_rpm = 0;
   d->valid = 0;
   d->rpm = 0;
@@ -196,29 +193,16 @@ void decoder_init(struct decoder *d) {
 }
 
 static void decode(struct decoder *d, struct decoder_event *ev) {
-  timeval_t t0 = d->last_t0;
-  decoder_state oldstate = d->state;
-
-  switch (ev->trigger) {
-    case 0:
-      trigger_update(d, ev->time);
+  switch (d->type) {
+    case TRIGGER_EVEN_NOSYNC:
+      decode_even_no_sync(d, ev);
       break;
-    case 1:
-      sync_update(d, ev->time);
+    case TRIGGER_EVEN_CAMSYNC:
+      decode_even_with_camsync(d, ev);
+      break;
+    default:
       break;
   }
-
-  if (d->state == DECODER_SYNC) {
-    d->valid = 1;
-    d->last_trigger_time = times[0];
-    d->loss = DECODER_NO_LOSS;
-  } else {
-    if (oldstate == DECODER_SYNC) {
-      /* We lost sync */
-      invalidate_decoder();
-    }
-  }
-
 }
 
 /* When decoder has new information, reschedule everything */
@@ -230,13 +214,12 @@ void decoder_update_scheduling(struct decoder_event *events,
    * Convert the decode() functions to work directly off `decoder_event` structs
    */
   for (struct decoder_event *ev = events; count > 0; count--, ev++) {
-    decode(&config.decoder, ev);
     console_record_event((struct logged_event){
       .type = EVENT_TRIGGER,
       .value = ev->trigger,
       .time = ev->time,
     });
-    config.decoder.decode(&config.decoder);
+    decode(&config.decoder, ev);
   }
 
   if (config.decoder.valid) {
@@ -368,14 +351,6 @@ static void add_trigger_event_transition_loss(struct decoder_event **entries,
 
 static void validate_decoder_sequence(struct decoder_event *ev) {
   for (; ev; ev = ev->next) {
-    if (ev->trigger == 0) {
-      config.decoder.last_t0 = ev->time;
-      config.decoder.needs_decoding_t0 = 1;
-    } else if (ev->trigger == 1) {
-      config.decoder.last_t1 = ev->time;
-      config.decoder.needs_decoding_t1 = 1;
-    }
-
     set_current_time(ev->time);
     decoder_update_scheduling(ev, 1);
     ck_assert_msg(
@@ -396,14 +371,27 @@ static void validate_decoder_sequence(struct decoder_event *ev) {
   }
 }
 
-static void prepare_decoder(trigger_type type) {
-  config.decoder.type = type;
+static void prepare_ford_tfi_decoder() {
+  config.decoder.type = TRIGGER_EVEN_NOSYNC;
+  config.decoder.required_triggers_rpm = 4;
+  config.decoder.degrees_per_trigger = 90;
+  config.decoder.rpm_window_size = 3;
+  config.decoder.num_triggers = 8;
+  decoder_init(&config.decoder);
+}
+  
+static void prepare_7mgte_cps_decoder() {
+  config.decoder.type = TRIGGER_EVEN_CAMSYNC;
+  config.decoder.required_triggers_rpm = 8;
+  config.decoder.degrees_per_trigger = 30;
+  config.decoder.rpm_window_size = 8;
+  config.decoder.num_triggers = 24;
   decoder_init(&config.decoder);
 }
 
 START_TEST(check_tfi_decoder_startup_normal) {
   struct decoder_event *entries = NULL;
-  prepare_decoder(FORD_TFI);
+  prepare_ford_tfi_decoder();
 
   /* Triggers to get RPM */
   for (unsigned int i = 0; i < config.decoder.required_triggers_rpm - 1; ++i) {
@@ -422,7 +410,7 @@ END_TEST
 
 START_TEST(check_tfi_decoder_syncloss_variation) {
   struct decoder_event *entries = NULL;
-  prepare_decoder(FORD_TFI);
+  prepare_ford_tfi_decoder();
 
   /* Triggers to get RPM */
   for (unsigned int i = 0; i < config.decoder.required_triggers_rpm - 1; ++i) {
@@ -443,7 +431,7 @@ END_TEST
 
 START_TEST(check_tfi_decoder_syncloss_expire) {
   struct decoder_event *entries = NULL;
-  prepare_decoder(FORD_TFI);
+  prepare_ford_tfi_decoder();
 
   /* Triggers to get RPM */
   for (unsigned int i = 0; i < config.decoder.required_triggers_rpm - 1; ++i) {
@@ -489,7 +477,7 @@ static void cam_nplusone_normal_startup_to_sync(
 
 START_TEST(check_cam_nplusone_startup_normal) {
   struct decoder_event *entries = NULL;
-  prepare_decoder(TOYOTA_24_1_CAS);
+  prepare_7mgte_cps_decoder();
 
   cam_nplusone_normal_startup_to_sync(&entries);
 
@@ -508,7 +496,7 @@ END_TEST
 
 START_TEST(check_cam_nplusone_startup_normal_then_early_sync) {
   struct decoder_event *entries = NULL;
-  prepare_decoder(TOYOTA_24_1_CAS);
+  prepare_7mgte_cps_decoder();
 
   cam_nplusone_normal_startup_to_sync(&entries);
 
@@ -529,7 +517,7 @@ END_TEST
 
 START_TEST(check_cam_nplusone_startup_normal_sustained) {
   struct decoder_event *entries = NULL;
-  prepare_decoder(TOYOTA_24_1_CAS);
+  prepare_7mgte_cps_decoder();
 
   cam_nplusone_normal_startup_to_sync(&entries);
 
@@ -552,7 +540,7 @@ END_TEST
 
 START_TEST(check_bulk_decoder_updates) {
   struct decoder_event *entries = NULL;
-  prepare_decoder(TOYOTA_24_1_CAS);
+  prepare_7mgte_cps_decoder();
 
   cam_nplusone_normal_startup_to_sync(&entries);
 
@@ -576,7 +564,7 @@ END_TEST
 
 START_TEST(check_cam_nplusone_startup_normal_no_second_trigger) {
   struct decoder_event *entries = NULL;
-  prepare_decoder(TOYOTA_24_1_CAS);
+  prepare_7mgte_cps_decoder();
 
   cam_nplusone_normal_startup_to_sync(&entries);
 
@@ -596,7 +584,7 @@ END_TEST
 
 START_TEST(check_nplusone_decoder_syncloss_expire) {
   struct decoder_event *entries = NULL;
-  prepare_decoder(TOYOTA_24_1_CAS);
+  prepare_7mgte_cps_decoder();
 
   cam_nplusone_normal_startup_to_sync(&entries);
 

@@ -5,22 +5,16 @@
 #define MAX_TRIGGERS 36
 
 typedef enum {
-  TRIGGER_N_EVEN,
-  TRIGGER_N_MINUS_1,
-} trigger_type;
-
-typedef enum {
-  NO_SYNC,
-  ONE_SYNC,
-} cam_sync_type;
+  TRIGGER_EVEN_NOSYNC,
+  TRIGGER_EVEN_CAMSYNC,
+  TRIGGER_MISSING_CAMSYNC,
+} decoder_type;
 
 typedef enum {
   DECODER_NOSYNC,
   DECODER_RPM,
-  DECODER_CRANK_SYNC,
-  DECODER_CAM_SYNC,
+  DECODER_SYNC,
 } decoder_state;
-
 
 typedef enum {
   DECODER_NO_LOSS,
@@ -31,17 +25,16 @@ typedef enum {
 } decoder_loss_reason;
 
 struct decoder {
-  /* Safe, only handled in main loop */
   uint32_t valid;
-  uint32_t tooth_rpm;
   uint32_t rpm;
+  uint32_t tooth_rpm;
   timeval_t last_trigger_time;
   degrees_t last_trigger_angle;
+  degrees_t sync_degrees;
   timeval_t expiration;
 
   /* Configuration */
-  trigger_type trigger;
-  cam_sync_type cam_sync;
+  decoder_type type;
   degrees_t offset;
 
   float trigger_max_rpm_change;
