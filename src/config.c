@@ -204,8 +204,7 @@ struct config config __attribute__((section(".configdata"))) = {
     {.type=FUEL_EVENT, .angle=220, .pin=10},
   },
   .decoder = {
-    .trigger = TRIGGER_N_EVEN,
-    .cam_sync = SYNC_ONE,
+    .type = TRIGGER_EVEN_CAMSYNC,
     .degrees_per_trigger = 30,
     .required_triggers_rpm = 4,
     .rpm_window_size = 8,

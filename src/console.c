@@ -4,7 +4,6 @@
 #endif
 
 #include <assert.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
@@ -763,7 +762,7 @@ static void render_table_axis_values(struct console_request_context *ctx,
     }
     axis->num = len;
   }
-  for (int i = 0; i < axis->num; i++) {
+  for (int i = 0; i < (axis->num > MAX_AXIS_SIZE ? MAX_AXIS_SIZE : axis->num); i++) {
     struct console_request_context deeper;
     if (descend_array_field(ctx, &deeper, i)) {
       render_float_object(&deeper, "axis value", &axis->values[i]);
@@ -900,9 +899,9 @@ static void render_decoder(struct console_request_context *ctx, void *ptr) {
     "trigger-type",
     "Primary trigger decoder method",
     (struct console_enum_mapping[]){
-      { TRIGGER_N_EVENT, "n-even" }, { CAM_N_AND_SYNC, "n-1" }, { 0, NULL } },
+      { TRIGGER_EVEN_NOSYNC, "even" }, { TRIGGER_EVEN_CAMSYNC, "even+camsync" }, { 0, NULL } },
     &type);
-  config.decoder.trigger = type;
+  config.decoder.type = type;
 }
 
 static void output_console_renderer(struct console_request_context *ctx,
