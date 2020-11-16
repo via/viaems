@@ -120,6 +120,13 @@ static void trigger_update(struct decoder *d, timeval_t t) {
   }
 }
 
+static uint32_t missing_tooth_rpm(struct decoder *d) {
+  bool last_tooth_missing = (d->state == DECODER_SYNC) && (d->triggers_since_last_sync == 0);
+  timeval_t last_tooth_diff = d->times[0] - d->times[1];
+  degrees_t rpm_degrees = d->degrees_per_trigger * (last_tooth_missing ? 2 : 1);
+  return rpm_from_time_diff(last_tooth_diff, rpm_degrees);
+}
+
 static void missing_tooth_trigger_update(struct decoder *d, timeval_t t) {
   push_time(d, t);
   d->t0_count++;
@@ -190,14 +197,10 @@ static void missing_tooth_trigger_update(struct decoder *d, timeval_t t) {
       d->state = DECODER_NOSYNC;
       d->loss = DECODER_TRIGGERCOUNT_LOW;
     }
-  }
-
-  if (d->state != DECODER_NOSYNC) {
-    /* Calculate RPM from last tooth only */
     degrees_t rpm_degrees = d->degrees_per_trigger * (is_acceptable_missing_tooth ? 2 : 1);
     d->last_trigger_angle += rpm_degrees;
-    d->rpm = rpm_from_time_diff(last_tooth_diff, rpm_degrees);
   }
+
 }
 
 static void sync_update(struct decoder *d) {
@@ -267,6 +270,9 @@ void decode_missing_no_sync(struct decoder *d, struct decoder_event *ev) {
     d->last_trigger_time = ev->time;
   }
 
+  if (d->state != DECODER_NOSYNC) {
+    d->rpm = missing_tooth_rpm(d);
+  }
   if (d->state == DECODER_SYNC) {
     d->valid = 1;
     d->loss = DECODER_NO_LOSS;
