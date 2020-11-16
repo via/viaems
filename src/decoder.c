@@ -129,9 +129,12 @@ static void missing_tooth_trigger_update(struct decoder *d, timeval_t t) {
     d->current_triggers_rpm++;
   }
 
+  if (d->current_triggers_rpm < d->required_triggers_rpm) {
+    return;
+  }
+
   /* If we get enough triggers, we now have RPM */
-  if ((d->state == DECODER_NOSYNC) &&
-      (d->current_triggers_rpm >= d->required_triggers_rpm)) {
+  if (d->state == DECODER_NOSYNC) {
     d->state = DECODER_RPM;
   }
 
@@ -141,7 +144,7 @@ static void missing_tooth_trigger_update(struct decoder *d, timeval_t t) {
    * in the last N teeth, don't forget to include it */
   timeval_t rpm_window_tooth_diff = d->times[1] - d->times[d->required_triggers_rpm];
   uint32_t rpm_window_tooth_count = d->required_triggers_rpm - 1;
-  if ((d->state == DECODER_SYNC) && (d->triggers_since_last_sync < d->required_triggers_rpm)) {
+  if ((d->state == DECODER_SYNC) && (d->triggers_since_last_sync < rpm_window_tooth_count)) {
     rpm_window_tooth_count += 1; /* TODO: check this logic */
   }
 
@@ -167,16 +170,23 @@ static void missing_tooth_trigger_update(struct decoder *d, timeval_t t) {
     if (is_acceptable_missing_tooth) {
       d->state = DECODER_SYNC;
       d->triggers_since_last_sync = 0;
+      /* TODO reconcile this with a cam phase sync */
+      d->last_trigger_angle = 0;
     } else if (!is_acceptable_normal_tooth) {
       d->state = DECODER_NOSYNC;
       d->loss = DECODER_VARIATION;
     }
   } else if (d->state == DECODER_SYNC) {
-    if ((d->triggers_since_last_sync == d->num_triggers) && !is_acceptable_missing_tooth) {
-      d->state = DECODER_NOSYNC;
-      d->loss = DECODER_TRIGGERCOUNT_HIGH;
-    }
-    if ((d->triggers_since_last_sync != d->num_triggers) && !is_acceptable_normal_tooth) {
+    d->triggers_since_last_sync += 1;
+    /* Compare against num_triggers - 1, since we're missing a tooth */
+    if (d->triggers_since_last_sync == d->num_triggers - 1) {
+      if (is_acceptable_missing_tooth) {
+        d->triggers_since_last_sync = 0;
+      } else {
+        d->state = DECODER_NOSYNC;
+        d->loss = DECODER_TRIGGERCOUNT_HIGH;
+      }
+    } else if ((d->triggers_since_last_sync != d->num_triggers - 1) && !is_acceptable_normal_tooth) {
       d->state = DECODER_NOSYNC;
       d->loss = DECODER_TRIGGERCOUNT_LOW;
     }
@@ -185,6 +195,7 @@ static void missing_tooth_trigger_update(struct decoder *d, timeval_t t) {
   if (d->state != DECODER_NOSYNC) {
     /* Calculate RPM from last tooth only */
     degrees_t rpm_degrees = d->degrees_per_trigger * (is_acceptable_missing_tooth ? 2 : 1);
+    d->last_trigger_angle += rpm_degrees;
     d->rpm = rpm_from_time_diff(last_tooth_diff, rpm_degrees);
   }
 }
@@ -288,7 +299,7 @@ static void decode(struct decoder *d, struct decoder_event *ev) {
       decode_even_with_camsync(d, ev);
       break;
     case TRIGGER_MISSING_NOSYNC:
-      decode_even_with_camsync(d, ev);
+      decode_missing_no_sync(d, ev);
       break;
     default:
       break;
