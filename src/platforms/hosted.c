@@ -238,20 +238,16 @@ static void do_test_trigger(int interrupt_fd) {
   }
   last_trigger_time = curtime;
 
-  struct event ev = { .type = TRIGGER0, .time = curtime };
-  if (write(interrupt_fd, &ev, sizeof(ev)) < 0) {
-    perror("write");
-    exit(3);
-  }
 
   trigger++;
   if (trigger == 24) {
-    struct event ev = { .type = TRIGGER1, .time = curtime };
+    trigger = 0;
+  } else {
+    struct event ev = { .type = TRIGGER0, .time = curtime };
     if (write(interrupt_fd, &ev, sizeof(ev)) < 0) {
       perror("write");
-      exit(4);
+      exit(3);
     }
-    trigger = 0;
   }
 }
 
