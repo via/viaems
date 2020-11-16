@@ -36,7 +36,6 @@ static void push_time(struct decoder *d, timeval_t t) {
 }
 
 
-
 static unsigned int current_rpm_window_size(unsigned int current_triggers,
                                             unsigned int normal_window_size) {
 
@@ -121,6 +120,75 @@ static void trigger_update(struct decoder *d, timeval_t t) {
   }
 }
 
+static void missing_tooth_trigger_update(struct decoder *d, timeval_t t) {
+  push_time(d, t);
+  d->t0_count++;
+
+  /* Count triggers up until a full wheel */
+  if (d->current_triggers_rpm < MAX_TRIGGERS) {
+    d->current_triggers_rpm++;
+  }
+
+  /* If we get enough triggers, we now have RPM */
+  if ((d->state == DECODER_NOSYNC) &&
+      (d->current_triggers_rpm >= d->required_triggers_rpm)) {
+    d->state = DECODER_RPM;
+  }
+
+  timeval_t last_tooth_diff = d->times[0] - d->times[1];
+
+  /* Calculate the last N average. If we are synced, and the missing tooth was
+   * in the last N teeth, don't forget to include it */
+  timeval_t rpm_window_tooth_diff = d->times[1] - d->times[d->required_triggers_rpm];
+  uint32_t rpm_window_tooth_count = d->required_triggers_rpm - 1;
+  if ((d->state == DECODER_SYNC) && (d->triggers_since_last_sync < d->required_triggers_rpm)) {
+    rpm_window_tooth_count += 1; /* TODO: check this logic */
+  }
+
+  timeval_t rpm_window_average_tooth_diff = rpm_window_tooth_diff / rpm_window_tooth_count;
+
+  /* Four possibilities:
+   * We are in RPM, looking for a missing tooth:
+   *  - Last tooth time is 1.5-2.5x the last N tooth average: We become synced
+   *  - Last tooth variance is more than 0.5x-1.5x the last N tooth average,
+   *  drop to NOSYNC
+   *
+   * Or, We are in sync. Stay in sync unless:
+   *   - This isn't when we expect a missing tooth: Last tooth time is More than 0.5x-1.5x, go to NOSYNC
+   *   - This is when we're expecting to see a tooth, time is not 1.5x to 2.5x
+   *   last N average
+   */
+
+  float tooth_ratio = last_tooth_diff / (float)rpm_window_average_tooth_diff;
+  bool is_acceptable_missing_tooth = (tooth_ratio >= 1.5f) && (tooth_ratio <= 2.5f);
+  bool is_acceptable_normal_tooth = (tooth_ratio >= 0.5f) && (tooth_ratio <= 1.5f);
+
+  if (d->state == DECODER_RPM) {
+    if (is_acceptable_missing_tooth) {
+      d->state = DECODER_SYNC;
+      d->triggers_since_last_sync = 0;
+    } else if (!is_acceptable_normal_tooth) {
+      d->state = DECODER_NOSYNC;
+      d->loss = DECODER_VARIATION;
+    }
+  } else if (d->state == DECODER_SYNC) {
+    if ((d->triggers_since_last_sync == d->num_triggers) && !is_acceptable_missing_tooth) {
+      d->state = DECODER_NOSYNC;
+      d->loss = DECODER_TRIGGERCOUNT_HIGH;
+    }
+    if ((d->triggers_since_last_sync != d->num_triggers) && !is_acceptable_normal_tooth) {
+      d->state = DECODER_NOSYNC;
+      d->loss = DECODER_TRIGGERCOUNT_LOW;
+    }
+  }
+
+  if (d->state != DECODER_NOSYNC) {
+    /* Calculate RPM from last tooth only */
+    degrees_t rpm_degrees = d->degrees_per_trigger * (is_acceptable_missing_tooth ? 2 : 1);
+    d->rpm = rpm_from_time_diff(last_tooth_diff, rpm_degrees);
+  }
+}
+
 static void sync_update(struct decoder *d) {
   d->t1_count++;
   if (d->state == DECODER_RPM) {
@@ -180,6 +248,25 @@ void decode_even_no_sync(struct decoder *d, struct decoder_event *ev) {
   stats_finish_timing(STATS_DECODE_TIME);
 }
 
+void decode_missing_no_sync(struct decoder *d, struct decoder_event *ev) {
+  decoder_state oldstate = d->state;
+
+  if (ev->trigger == 0) {
+    missing_tooth_trigger_update(d, ev->time);
+    d->last_trigger_time = ev->time;
+  }
+
+  if (d->state == DECODER_SYNC) {
+    d->valid = 1;
+    d->loss = DECODER_NO_LOSS;
+  } else {
+    if (oldstate == DECODER_SYNC) {
+      /* We lost sync */
+      invalidate_decoder();
+    }
+  }
+}
+
 void decoder_init(struct decoder *d) {
   d->current_triggers_rpm = 0;
   d->valid = 0;
@@ -198,6 +285,9 @@ static void decode(struct decoder *d, struct decoder_event *ev) {
       decode_even_no_sync(d, ev);
       break;
     case TRIGGER_EVEN_CAMSYNC:
+      decode_even_with_camsync(d, ev);
+      break;
+    case TRIGGER_MISSING_NOSYNC:
       decode_even_with_camsync(d, ev);
       break;
     default:
