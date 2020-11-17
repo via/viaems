@@ -496,6 +496,14 @@ static void prepare_7mgte_cps_decoder() {
   decoder_init(&config.decoder);
 }
 
+static void prepare_36minus1_cam_wheel_decoder() {
+  config.decoder.type = TRIGGER_MISSING_NOSYNC;
+  config.decoder.required_triggers_rpm = 4;
+  config.decoder.degrees_per_trigger = 20;
+  config.decoder.num_triggers = 36;
+  decoder_init(&config.decoder);
+}
+
 START_TEST(check_tfi_decoder_startup_normal) {
   struct decoder_event *entries = NULL;
   prepare_ford_tfi_decoder();
@@ -716,6 +724,134 @@ START_TEST(check_nplusone_decoder_syncloss_expire) {
 }
 END_TEST
 
+START_TEST(check_missing_tooth_wrong_wheel) {
+  struct decoder_event *entries = NULL;
+  prepare_36minus1_cam_wheel_decoder();
+
+  for (unsigned int i = 0; i < config.decoder.required_triggers_rpm - 1; ++i) {
+    add_trigger_event(&entries, 25000, 0);
+  };
+  add_trigger_event_transition_rpm(&entries, 25000, 0);
+
+  /* Create logs of triggers, we should never get sync */
+  for (unsigned int i = 0; i < config.decoder.num_triggers * 4; ++i) {
+    add_trigger_event(&entries, 25000, 0);
+  }
+  validate_decoder_sequence(entries);
+
+  ck_assert_int_eq(config.decoder.valid, 0);
+  free_trigger_list(entries);
+}
+END_TEST
+
+START_TEST(check_missing_tooth_startup_normal) {
+  struct decoder_event *entries = NULL;
+  prepare_36minus1_cam_wheel_decoder();
+
+  for (unsigned int i = 0; i < config.decoder.required_triggers_rpm - 1; ++i) {
+    add_trigger_event(&entries, 25000, 0);
+  };
+  add_trigger_event_transition_rpm(&entries, 25000, 0);
+
+  for (unsigned int i = 0; i < config.decoder.required_triggers_rpm; ++i) {
+    add_trigger_event(&entries, 25000, 0);
+  }
+
+  /* Missing tooth */
+  add_trigger_event_transition_sync(&entries, 50000, 0);
+
+  add_trigger_event(&entries, 25000, 0);
+  validate_decoder_sequence(entries);
+
+  ck_assert_int_eq(config.decoder.valid, 1);
+  ck_assert_int_eq(config.decoder.last_trigger_angle, config.decoder.degrees_per_trigger);
+  free_trigger_list(entries);
+}
+END_TEST
+
+START_TEST(check_missing_tooth_startup_then_early) {
+  struct decoder_event *entries = NULL;
+  prepare_36minus1_cam_wheel_decoder();
+
+  for (unsigned int i = 0; i < config.decoder.required_triggers_rpm - 1; ++i) {
+    add_trigger_event(&entries, 25000, 0);
+  };
+  add_trigger_event_transition_rpm(&entries, 25000, 0);
+
+  for (unsigned int i = 0; i < config.decoder.required_triggers_rpm; ++i) {
+    add_trigger_event(&entries, 25000, 0);
+  }
+
+  /* Missing tooth */
+  add_trigger_event_transition_sync(&entries, 50000, 0);
+
+  for (unsigned int i = 0; i < 5; ++i) {
+    add_trigger_event(&entries, 25000, 0);
+  }
+
+  /* Another early missing tooth */
+  add_trigger_event_transition_loss(&entries, 50000, 0, DECODER_TRIGGERCOUNT_LOW);
+
+  validate_decoder_sequence(entries);
+
+  ck_assert_int_eq(config.decoder.valid, 0);
+  free_trigger_list(entries);
+}
+END_TEST
+
+START_TEST(check_missing_tooth_startup_then_late) {
+  struct decoder_event *entries = NULL;
+  prepare_36minus1_cam_wheel_decoder();
+
+  for (unsigned int i = 0; i < config.decoder.required_triggers_rpm - 1; ++i) {
+    add_trigger_event(&entries, 25000, 0);
+  };
+  add_trigger_event_transition_rpm(&entries, 25000, 0);
+
+  for (unsigned int i = 0; i < config.decoder.required_triggers_rpm; ++i) {
+    add_trigger_event(&entries, 25000, 0);
+  }
+
+  /* Missing tooth */
+  add_trigger_event_transition_sync(&entries, 50000, 0);
+
+  for (unsigned int i = 0; i < config.decoder.num_triggers - 2; ++i) {
+    add_trigger_event(&entries, 25000, 0);
+  }
+
+  /* Add a normal tooth when we should have a missing tooth */
+  add_trigger_event_transition_loss(&entries, 25000, 0, DECODER_TRIGGERCOUNT_HIGH);
+
+  /* Now a late missing tooth, we shouldn't immediately regain sync */
+  add_trigger_event(&entries, 50000, 0);
+
+  validate_decoder_sequence(entries);
+
+  ck_assert_int_eq(config.decoder.valid, 0);
+  free_trigger_list(entries);
+}
+END_TEST
+
+START_TEST(check_missing_tooth_false_starts) {
+  struct decoder_event *entries = NULL;
+  prepare_36minus1_cam_wheel_decoder();
+
+  add_trigger_event(&entries, 25000, 0);
+  add_trigger_event(&entries, 50000, 0);
+  add_trigger_event(&entries, 25000, 0);
+  /* This does go immediately to sync, as we do no checking for rpm variance as
+   * we're in RPM waiting for a missing tooth. Maybe this isn't ideal? */
+  add_trigger_event_transition_sync(&entries, 50000, 0);
+  add_trigger_event(&entries, 25000, 0);
+  add_trigger_event_transition_loss(&entries, 50000, 0, DECODER_TRIGGERCOUNT_LOW);
+
+  validate_decoder_sequence(entries);
+
+  ck_assert_int_eq(config.decoder.valid, 0);
+  free_trigger_list(entries);
+}
+END_TEST
+
 START_TEST(check_update_rpm_single_point) {
   struct decoder d = {
     .times = { 100 },
@@ -787,6 +923,13 @@ TCase *setup_decoder_tests() {
   tcase_add_test(decoder_tests, check_cam_nplusone_startup_normal_sustained);
   tcase_add_test(decoder_tests,
                  check_cam_nplusone_startup_normal_no_second_trigger);
+
+  tcase_add_test(decoder_tests, check_missing_tooth_wrong_wheel);
+  tcase_add_test(decoder_tests, check_missing_tooth_startup_normal);
+  tcase_add_test(decoder_tests, check_missing_tooth_startup_then_early);
+  tcase_add_test(decoder_tests, check_missing_tooth_startup_then_late);
+  tcase_add_test(decoder_tests, check_missing_tooth_false_starts);
+
   tcase_add_test(decoder_tests, check_nplusone_decoder_syncloss_expire);
   tcase_add_test(decoder_tests, check_bulk_decoder_updates);
 
