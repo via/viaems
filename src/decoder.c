@@ -222,7 +222,7 @@ static void sync_update(struct decoder *d) {
   d->triggers_since_last_sync = 0;
 }
 
-void decode_even_with_camsync(struct decoder *d, struct decoder_event *ev) {
+static void decode_even_with_camsync(struct decoder *d, struct decoder_event *ev) {
   decoder_state oldstate = d->state;
 
   if (ev->trigger == 0) {
@@ -243,7 +243,7 @@ void decode_even_with_camsync(struct decoder *d, struct decoder_event *ev) {
   }
 }
 
-void decode_even_no_sync(struct decoder *d, struct decoder_event *ev) {
+static void decode_even_no_sync(struct decoder *d, struct decoder_event *ev) {
   decoder_state oldstate = d->state;
   trigger_update(d, ev->time);
   if (d->state == DECODER_RPM || d->state == DECODER_SYNC) {
@@ -262,7 +262,29 @@ void decode_even_no_sync(struct decoder *d, struct decoder_event *ev) {
   stats_finish_timing(STATS_DECODE_TIME);
 }
 
-void decode_missing_no_sync(struct decoder *d, struct decoder_event *ev) {
+static void decode_missing_no_sync(struct decoder *d, struct decoder_event *ev) {
+  decoder_state oldstate = d->state;
+
+  if (ev->trigger == 0) {
+    missing_tooth_trigger_update(d, ev->time);
+    d->last_trigger_time = ev->time;
+  }
+
+  if (d->state != DECODER_NOSYNC) {
+    d->rpm = missing_tooth_rpm(d);
+  }
+  if (d->state == DECODER_SYNC) {
+    d->valid = 1;
+    d->loss = DECODER_NO_LOSS;
+  } else {
+    if (oldstate == DECODER_SYNC) {
+      /* We lost sync */
+      invalidate_decoder();
+    }
+  }
+}
+
+static void decode_missing_with_camsync(struct decoder *d, struct decoder_event *ev) {
   decoder_state oldstate = d->state;
 
   if (ev->trigger == 0) {
@@ -306,6 +328,9 @@ static void decode(struct decoder *d, struct decoder_event *ev) {
       break;
     case TRIGGER_MISSING_NOSYNC:
       decode_missing_no_sync(d, ev);
+      break;
+    case TRIGGER_MISSING_CAMSYNC:
+      decode_missing_with_camsync(d, ev);
       break;
     default:
       break;
@@ -500,6 +525,14 @@ static void prepare_36minus1_cam_wheel_decoder() {
   config.decoder.type = TRIGGER_MISSING_NOSYNC;
   config.decoder.required_triggers_rpm = 4;
   config.decoder.degrees_per_trigger = 20;
+  config.decoder.num_triggers = 36;
+  decoder_init(&config.decoder);
+}
+
+static void prepare_36minus1_crank_wheel_plus_cam_decoder() {
+  config.decoder.type = TRIGGER_MISSING_CAMSYNC;
+  config.decoder.required_triggers_rpm = 4;
+  config.decoder.degrees_per_trigger = 10;
   config.decoder.num_triggers = 36;
   decoder_init(&config.decoder);
 }
@@ -852,6 +885,89 @@ START_TEST(check_missing_tooth_false_starts) {
 }
 END_TEST
 
+START_TEST(check_missing_tooth_camsync_startup_no_cam_at_first) {
+  struct decoder_event *entries = NULL;
+  prepare_36minus1_crank_wheel_plus_cam_decoder();
+
+  for (unsigned int i = 0; i < config.decoder.required_triggers_rpm - 1; ++i) {
+    add_trigger_event(&entries, 25000, 0);
+  };
+  add_trigger_event_transition_rpm(&entries, 25000, 0);
+
+  for (unsigned int i = 0; i < config.decoder.required_triggers_rpm; ++i) {
+    add_trigger_event(&entries, 25000, 0);
+  }
+
+  /* Missing tooth */
+  add_trigger_event_transition_sync(&entries, 50000, 0);
+
+  add_trigger_event(&entries, 25000, 0);
+  validate_decoder_sequence(entries);
+
+  /* We never saw a cam, so we can't be valid */
+  ck_assert_int_eq(config.decoder.valid, 0);
+  free_trigger_list(entries);
+}
+END_TEST
+
+START_TEST(check_missing_tooth_camsync_startup_no_cam_long_time) {
+  struct decoder_event *entries = NULL;
+  prepare_36minus1_crank_wheel_plus_cam_decoder();
+
+  for (unsigned int i = 0; i < config.decoder.required_triggers_rpm - 1; ++i) {
+    add_trigger_event(&entries, 25000, 0);
+  };
+  add_trigger_event_transition_rpm(&entries, 25000, 0);
+
+  for (unsigned int i = 0; i < config.decoder.required_triggers_rpm; ++i) {
+    add_trigger_event(&entries, 25000, 0);
+  }
+
+  /* Missing tooth */
+  add_trigger_event_transition_sync(&entries, 50000, 0);
+
+  for (unsigned int i = 0; i < config.decoder.num_triggers - 2; ++i) {
+    add_trigger_event(&entries, 25000, 0);
+  }
+
+  add_trigger_event(&entries, 50000, 0);
+
+  validate_decoder_sequence(entries);
+
+  /* We still expect it to not be valid even though we've passed two missing
+   * teeth, because we still haven't see a cam cycle yet */
+  ck_assert_int_eq(config.decoder.valid, 0);
+  free_trigger_list(entries);
+}
+END_TEST
+
+START_TEST(check_missing_tooth_camsync_startup_normal) {
+  struct decoder_event *entries = NULL;
+  prepare_36minus1_crank_wheel_plus_cam_decoder();
+
+  add_trigger_event(&entries, 5000, 1);
+
+  for (unsigned int i = 0; i < config.decoder.required_triggers_rpm - 1; ++i) {
+    add_trigger_event(&entries, 25000, 0);
+  };
+  add_trigger_event_transition_rpm(&entries, 25000, 0);
+
+  for (unsigned int i = 0; i < config.decoder.required_triggers_rpm; ++i) {
+    add_trigger_event(&entries, 25000, 0);
+  }
+
+  /* Missing tooth */
+  add_trigger_event_transition_sync(&entries, 50000, 0);
+  add_trigger_event(&entries, 25000, 0);
+
+  validate_decoder_sequence(entries);
+
+  ck_assert_int_eq(config.decoder.valid, 1);
+  ck_assert_int_eq(config.decoder.last_trigger_angle, config.decoder.degrees_per_trigger);
+  free_trigger_list(entries);
+}
+END_TEST
+
 START_TEST(check_update_rpm_single_point) {
   struct decoder d = {
     .times = { 100 },
@@ -929,6 +1045,10 @@ TCase *setup_decoder_tests() {
   tcase_add_test(decoder_tests, check_missing_tooth_startup_then_early);
   tcase_add_test(decoder_tests, check_missing_tooth_startup_then_late);
   tcase_add_test(decoder_tests, check_missing_tooth_false_starts);
+
+  tcase_add_test(decoder_tests, check_missing_tooth_camsync_startup_no_cam_at_first);
+  tcase_add_test(decoder_tests, check_missing_tooth_camsync_startup_no_cam_long_time);
+  tcase_add_test(decoder_tests, check_missing_tooth_camsync_startup_normal);
 
   tcase_add_test(decoder_tests, check_nplusone_decoder_syncloss_expire);
   tcase_add_test(decoder_tests, check_bulk_decoder_updates);
