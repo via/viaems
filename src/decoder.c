@@ -284,7 +284,6 @@ static void decode_missing_no_sync(struct decoder *d, struct decoder_event *ev) 
   }
 }
 
-
 static void decode_missing_with_camsync(struct decoder *d, struct decoder_event *ev) {
   decoder_state oldstate = d->state;
   static bool camsync_seen_this_rotation = false;
@@ -294,6 +293,10 @@ static void decode_missing_with_camsync(struct decoder *d, struct decoder_event 
     missing_tooth_trigger_update(d, ev->time);
     d->last_trigger_time = ev->time;
     if ((d->state == DECODER_SYNC) && (d->triggers_since_last_sync == 0)) {
+      if (!camsync_seen_this_rotation && !camsync_seen_last_rotation) {
+        /* We've gone two cycles without a camsync, desync */
+        d->valid = 0;
+      }
       camsync_seen_last_rotation = camsync_seen_this_rotation;
       camsync_seen_this_rotation = false;
     }
@@ -325,7 +328,6 @@ static void decode_missing_with_camsync(struct decoder *d, struct decoder_event 
         d->last_trigger_angle -= 360;
       }
     }
-
   }
   if ((d->state != DECODER_SYNC) && (oldstate == DECODER_SYNC)) {
     /* We lost sync */

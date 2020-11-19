@@ -7,7 +7,17 @@
 typedef enum {
   TRIGGER_EVEN_NOSYNC,
   TRIGGER_EVEN_CAMSYNC,
+
+  /* Trigger wheel is N teeth with a single missing tooth. The first tooth after
+   * the gap is 0 degrees.  This decoder can provide sequential scheduling
+   * configured to add to 720 degrees */
   TRIGGER_MISSING_NOSYNC,
+
+  /* Trigger wheel identical to `TRIGGER_MISSING_NOSYNC`, but is expected to
+   * always be a crank wheel adding to 360 degrees, with a second single tooth
+   * wheel indicating the cam phase.  The crank cycle (measured from tooth 1 to
+   * tooth 1) with the cam sync is the first crank cycle, 0-360. The first
+   * tooth 1 *after* a cam sync is angle 360. */
   TRIGGER_MISSING_CAMSYNC,
 } decoder_type;
 
@@ -28,10 +38,8 @@ typedef enum {
 struct decoder {
   uint32_t valid;
   uint32_t rpm;
-  uint32_t tooth_rpm;
   timeval_t last_trigger_time;
   degrees_t last_trigger_angle;
-  degrees_t sync_degrees;
   timeval_t expiration;
 
   /* Configuration */
