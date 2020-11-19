@@ -54,7 +54,6 @@ const struct console_feed_node console_feed_nodes[] = {
 
   /* Decoder */
   { .id = "rpm", .uint32_ptr = &config.decoder.rpm },
-  { .id = "tooth_rpm", .uint32_ptr = &config.decoder.tooth_rpm },
   { .id = "sync", .uint32_ptr = &config.decoder.valid },
   { .id = "rpm_variance", .float_ptr = &config.decoder.trigger_cur_rpm_change },
   { .id = "last_trigger_angle",
@@ -74,7 +73,7 @@ static struct {
   struct logged_event events[32];
   volatile uint32_t read;
   volatile uint32_t write;
-} event_log = {.enabled = 1};
+} event_log = { .enabled = 1 };
 
 static struct logged_event get_logged_event() {
   if (!event_log.enabled || (event_log.read == event_log.write)) {
@@ -740,7 +739,8 @@ static void render_table_axis_values(struct console_request_context *ctx,
     }
     axis->num = len;
   }
-  for (int i = 0; i < (axis->num > MAX_AXIS_SIZE ? MAX_AXIS_SIZE : axis->num); i++) {
+  for (int i = 0; i < (axis->num > MAX_AXIS_SIZE ? MAX_AXIS_SIZE : axis->num);
+       i++) {
     struct console_request_context deeper;
     if (descend_array_field(ctx, &deeper, i)) {
       render_float_object(&deeper, "axis value", &axis->values[i]);
@@ -871,8 +871,9 @@ static void render_decoder(struct console_request_context *ctx, void *ptr) {
     ctx,
     "trigger-type",
     "Primary trigger decoder method",
-    (struct console_enum_mapping[]){
-      { TRIGGER_EVEN_NOSYNC, "even" }, { TRIGGER_EVEN_CAMSYNC, "even+camsync" }, { 0, NULL } },
+    (struct console_enum_mapping[]){ { TRIGGER_EVEN_NOSYNC, "even" },
+                                     { TRIGGER_EVEN_CAMSYNC, "even+camsync" },
+                                     { 0, NULL } },
     &type);
   config.decoder.type = type;
 }

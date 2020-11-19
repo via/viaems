@@ -204,12 +204,12 @@ struct config config __attribute__((section(".configdata"))) = {
     {.type=FUEL_EVENT, .angle=220, .pin=10},
   },
   .decoder = {
-    .type = TRIGGER_MISSING_NOSYNC,
-    .degrees_per_trigger = 30,
+    .type = TRIGGER_MISSING_CAMSYNC,
+    .degrees_per_trigger = 10,
     .required_triggers_rpm = 4,
     .rpm_window_size = 8,
-    .num_triggers = 24,
-    .offset = 50,
+    .num_triggers = 36,
+    .offset = 0,
 
     .trigger_max_rpm_change = 0.55, /*Startup sucks with only 90* trigger */
     .trigger_min_rpm = 80,
