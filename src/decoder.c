@@ -840,6 +840,30 @@ START_TEST(check_missing_tooth_startup_normal) {
 }
 END_TEST
 
+START_TEST(check_missing_tooth_rpm_after_gap) {
+  struct decoder_event *entries = NULL;
+  prepare_36minus1_cam_wheel_decoder();
+
+  for (unsigned int i = 0; i < config.decoder.required_triggers_rpm - 1; ++i) {
+    add_trigger_event(&entries, 25000, 0);
+  };
+  add_trigger_event_transition_rpm(&entries, 25000, 0);
+
+  for (unsigned int i = 0; i < config.decoder.required_triggers_rpm; ++i) {
+    add_trigger_event(&entries, 25000, 0);
+  }
+
+  /* Missing tooth */
+  add_trigger_event_transition_sync(&entries, 50000, 0);
+  validate_decoder_sequence(entries);
+
+  ck_assert_int_eq(config.decoder.valid, 1);
+  ck_assert_int_eq(config.decoder.last_trigger_angle, 0);
+  ck_assert_int_eq(config.decoder.rpm, rpm_from_time_diff(25000, config.decoder.degrees_per_trigger));
+  free_trigger_list(entries);
+}
+END_TEST
+
 START_TEST(check_missing_tooth_startup_then_early) {
   struct decoder_event *entries = NULL;
   prepare_36minus1_cam_wheel_decoder();
@@ -1126,6 +1150,7 @@ TCase *setup_decoder_tests() {
 
   tcase_add_test(decoder_tests, check_missing_tooth_wrong_wheel);
   tcase_add_test(decoder_tests, check_missing_tooth_startup_normal);
+  tcase_add_test(decoder_tests, check_missing_tooth_rpm_after_gap);
   tcase_add_test(decoder_tests, check_missing_tooth_startup_then_early);
   tcase_add_test(decoder_tests, check_missing_tooth_startup_then_late);
   tcase_add_test(decoder_tests, check_missing_tooth_false_starts);
