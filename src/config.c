@@ -207,11 +207,8 @@ struct config config __attribute__((section(".configdata"))) = {
     .type = TRIGGER_MISSING_CAMSYNC,
     .degrees_per_trigger = 10,
     .required_triggers_rpm = 4,
-    .rpm_window_size = 8,
     .num_triggers = 36,
-    .offset = 0,
-
-    .trigger_max_rpm_change = 0.55, /*Startup sucks with only 90* trigger */
+    .offset = 50,
     .trigger_min_rpm = 80,
   },
   .freq_inputs = {
