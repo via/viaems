@@ -170,10 +170,11 @@ static void missing_tooth_trigger_update(struct decoder *d, timeval_t t) {
    */
 
   float tooth_ratio = last_tooth_diff / (float)rpm_window_average_tooth_diff;
+  float max_variance = d->trigger_max_rpm_change;
   bool is_acceptable_missing_tooth =
-    (tooth_ratio >= 1.5f) && (tooth_ratio <= 2.5f);
+    (tooth_ratio >= 2.0f - max_variance) && (tooth_ratio <= 2.0f + max_variance);
   bool is_acceptable_normal_tooth =
-    (tooth_ratio >= 0.5f) && (tooth_ratio <= 1.5f);
+    (tooth_ratio >= 1.0f - max_variance) && (tooth_ratio <= 1.0f + max_variance);
 
   if (d->state == DECODER_RPM) {
     if (is_acceptable_missing_tooth) {
@@ -347,6 +348,9 @@ void decoder_init(struct decoder *d) {
   d->last_trigger_angle = 0;
   d->triggers_since_last_sync = 0;
   d->expiration = 0;
+  if (d->trigger_max_rpm_change == 0.0f) {
+    d->trigger_max_rpm_change = 0.5f;
+  }
   expire_event.callback = handle_decoder_expire;
 }
 
