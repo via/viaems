@@ -72,7 +72,7 @@ struct decoder_event {
   timeval_t time;
 #ifdef UNITTEST
   decoder_state state;
-  int valid;
+  uint32_t valid;
   decoder_loss_reason reason;
   struct decoder_event *next;
 #endif
