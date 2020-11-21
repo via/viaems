@@ -51,7 +51,7 @@ const struct console_feed_node console_feed_nodes[] = {
   { .id = "sensor.frp",
     .float_ptr = &config.sensors[SENSOR_FRP].processed_value },
 
-  { .id = "sensor_faults", .uint32_fptr = sensor_fault_status},
+  { .id = "sensor_faults", .uint32_fptr = sensor_fault_status },
 
   /* Decoder */
   { .id = "rpm", .uint32_ptr = &config.decoder.rpm },
@@ -1194,8 +1194,7 @@ static void render_version(struct console_request_context *ctx, void *_t) {
 
 static void render_info(struct console_request_context *ctx, void *ptr) {
   (void)ptr;
-  render_custom_map_field(
-    ctx, "version", render_version, NULL);
+  render_custom_map_field(ctx, "version", render_version, NULL);
 }
 
 static void console_toplevel_request(struct console_request_context *ctx,
