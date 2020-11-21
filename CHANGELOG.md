@@ -1,4 +1,4 @@
-### master (unreleased)
+### 1.3.0 (2020 Nov 20)
 - Switch build system to a GNU makefile at the toplevel
 - New hosted mode that can run at realtime speed
 - Fix bug in air density temperature correction and boost PWM logic
