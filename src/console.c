@@ -51,6 +51,8 @@ const struct console_feed_node console_feed_nodes[] = {
   { .id = "sensor.frp",
     .float_ptr = &config.sensors[SENSOR_FRP].processed_value },
 
+  { .id = "sensor_faults", .uint32_fptr = sensor_fault_status},
+
   /* Decoder */
   { .id = "rpm", .uint32_ptr = &config.decoder.rpm },
   { .id = "sync", .uint32_ptr = &config.decoder.valid },
