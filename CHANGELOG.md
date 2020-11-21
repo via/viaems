@@ -1,3 +1,8 @@
+### master (unreleased)
+This introduces a breaking change with interface software.
+
+- New console and logging interface, as defined in INTERFACE.md. 
+
 ### 1.3.0 (2020 Nov 20)
 - Switch build system to a GNU makefile at the toplevel
 - New hosted mode that can run at realtime speed

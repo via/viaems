@@ -3,787 +3,80 @@
 #define _POSIX_C_SOURCE 1
 #endif
 
-#include "console.h"
-#include "calculations.h"
-#include "config.h"
-#include "decoder.h"
-#include "platform.h"
-#include "sensors.h"
-#include "stats.h"
-
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
 
-static struct console console;
+#include "calculations.h"
+#include "config.h"
+#include "console.h"
+#include "decoder.h"
+#include "platform.h"
+#include "sensors.h"
+#include "stats.h"
 
-struct console_config_node {
-  const char *name;
-  void (*get)(const struct console_config_node *self,
-              char *dest,
-              char *remaining);
-  void (*set)(const struct console_config_node *self, char *remaining);
-  void *val;
+const struct console_feed_node console_feed_nodes[] = {
+  { .id = "cputime", .uint32_fptr = current_time },
+
+  /* Fueling */
+  { .id = "ve", .float_ptr = &calculated_values.ve },
+  { .id = "lambda", .float_ptr = &calculated_values.lambda },
+  { .id = "fuel_pulsewidth_us", .uint32_ptr = &calculated_values.fueling_us },
+  { .id = "temp_enrich_percent", .float_ptr = &calculated_values.ete },
+  { .id = "injector_dead_time", .float_ptr = &calculated_values.idt },
+  { .id = "accel_enrich_percent", .float_ptr = &calculated_values.tipin },
+
+  /* Ignition */
+  { .id = "advance", .float_ptr = &calculated_values.timing_advance },
+  { .id = "dwell", .uint32_ptr = &calculated_values.dwell_us },
+
+  { .id = "sensor.map",
+    .float_ptr = &config.sensors[SENSOR_MAP].processed_value },
+  { .id = "sensor.iat",
+    .float_ptr = &config.sensors[SENSOR_IAT].processed_value },
+  { .id = "sensor.clt",
+    .float_ptr = &config.sensors[SENSOR_CLT].processed_value },
+  { .id = "sensor.brv",
+    .float_ptr = &config.sensors[SENSOR_BRV].processed_value },
+  { .id = "sensor.tps",
+    .float_ptr = &config.sensors[SENSOR_TPS].processed_value },
+  { .id = "sensor.aap",
+    .float_ptr = &config.sensors[SENSOR_AAP].processed_value },
+  { .id = "sensor.frt",
+    .float_ptr = &config.sensors[SENSOR_FRT].processed_value },
+  { .id = "sensor.ego",
+    .float_ptr = &config.sensors[SENSOR_EGO].processed_value },
+  { .id = "sensor.frp",
+    .float_ptr = &config.sensors[SENSOR_FRP].processed_value },
+
+  { .id = "sensor_faults", .uint32_fptr = sensor_fault_status },
+
+  /* Decoder */
+  { .id = "rpm", .uint32_ptr = &config.decoder.rpm },
+  { .id = "sync", .uint32_ptr = &config.decoder.valid },
+  { .id = "rpm_variance", .float_ptr = &config.decoder.trigger_cur_rpm_change },
+  { .id = "last_trigger_angle",
+    .float_ptr = &config.decoder.last_trigger_angle },
+  { .id = "t0_count", .uint32_ptr = &config.decoder.t0_count },
+  { .id = "t1_count", .uint32_ptr = &config.decoder.t1_count },
+  { 0 },
 };
 
-static const struct console_config_node *console_search_node(
-  const struct console_config_node *nodes,
-  const char *var) {
-
-  if (!var) {
-    return NULL;
-  }
-  const struct console_config_node *n;
-  for (n = nodes; n->name; n++) {
-    if (!strcmp(n->name, var)) {
-      return n;
-    }
-  }
-  return NULL;
-}
-
-static struct console_feed_config {
-  size_t n_nodes;
-  const struct console_config_node *nodes[64];
-} console_feed_config = {
-  .n_nodes = 0,
-  .nodes = { 0 },
-};
-
-static struct console_config_node console_config_nodes[];
-static void console_set_feed(const struct console_config_node *self,
-                             char *remaining) {
-  assert(self);
-  assert(self->val);
-
-  unsigned int cur_entry = 0;
-  struct console_feed_config *c = self->val;
-  const char *cur_var = strtok(remaining, ",");
-  while (cur_var) {
-    const struct console_config_node *n =
-      console_search_node(console_config_nodes, cur_var);
-    if (n) {
-      c->nodes[cur_entry] = n;
-      cur_entry++;
-    }
-    cur_var = strtok(NULL, ",");
-  }
-  c->n_nodes = cur_entry;
-}
-
-static void console_get_feed(const struct console_config_node *self,
-                             char *dest,
-                             char *remaining __attribute__((unused))) {
-  assert(self);
-  assert(self->val);
-
-  struct console_feed_config *c = self->val;
-  unsigned int i;
-  if (!c->n_nodes) {
-    strcat(dest, "");
-    return;
-  }
-  for (i = 0; i < c->n_nodes - 1; i++) {
-    strcat(dest, c->nodes[i]->name);
-    strcat(dest, ",");
-  }
-  strcat(dest, c->nodes[i]->name);
-}
-
-static void console_get_time(const struct console_config_node *self
-                             __attribute__((unused)),
-                             char *dest,
-                             char *remaining __attribute__((unused))) {
-  sprintf(dest, "%u", (unsigned int)current_time());
-}
-
-static void console_get_float(const struct console_config_node *self,
-                              char *dest,
-                              char *remaining __attribute__((unused))) {
-  float *v = self->val;
-  sprintf(dest, "%.4f", *v);
-}
-
-static void console_set_float(const struct console_config_node *self,
-                              char *remaining) {
-  float *v = self->val;
-  *v = atof(remaining);
-}
-
-static void console_get_uint(const struct console_config_node *self,
-                             char *dest,
-                             char *remaining __attribute__((unused))) {
-  unsigned int *v = self->val;
-  sprintf(dest, "%u", *v);
-}
-
-static void console_set_uint(const struct console_config_node *self,
-                             char *remaining) {
-  unsigned int *v = self->val;
-  *v = (unsigned int)atoi(remaining);
-}
-
-static void console_get_fuel_cut(const struct console_config_node *self
-                                 __attribute__((unused)),
-                                 char *dest,
-                                 char *remaining __attribute__((unused))) {
-  sprintf(dest, "%u", fuel_cut());
-}
-
-static void console_get_ignition_cut(const struct console_config_node *self
-                                     __attribute__((unused)),
-                                     char *dest,
-                                     char *remaining __attribute__((unused))) {
-  sprintf(dest, "%u", ignition_cut());
-}
-
-static int parse_keyval_pair(char **key, char **val, char **str) {
-  char *saveptr;
-  *key = strtok_r(*str, "=", &saveptr);
-  if (!*key) {
-    return 0;
-  }
-  *val = strtok_r(NULL, " ", &saveptr);
-  if (!*val || !strlen(*val)) {
-    return 0;
-  }
-  *str = saveptr;
-  return 1;
-}
-
-static int console_set_table_element(struct table *t, const char *k, float v) {
-  unsigned int row, col;
-  int n_parsed = sscanf(k, "[%d][%d]", &row, &col);
-  if ((t->num_axis == 1) && (n_parsed == 1) && (row < t->axis[0].num)) {
-    t->data.one[row] = v;
-    return 1;
-  } else if ((t->num_axis == 2) && (n_parsed == 2) && (row < t->axis[1].num) &&
-             (col < t->axis[0].num)) {
-    t->data.two[row][col] = v;
-    return 1;
-  }
-  return 0;
-}
-
-static int console_get_table_element(const struct table *t,
-                                     const char *k,
-                                     float *v) {
-  int row, col;
-  int n_parsed = sscanf(k, "[%d][%d]", &row, &col);
-  if ((t->num_axis == 1) && (n_parsed == 1) && (row < t->axis[0].num)) {
-    *v = t->data.one[row];
-    return 1;
-  } else if ((t->num_axis == 2) && (n_parsed == 2) && (row < t->axis[1].num) &&
-             (col < t->axis[0].num)) {
-    *v = t->data.two[row][col];
-    return 1;
-  }
-  return 0;
-}
-
-static void console_set_table_axis_labels(struct table_axis *t, char *list) {
-  unsigned int cur = 0;
-  if ((list[0] != '[') || (list[strlen(list) - 1] != ']')) {
-    return;
-  }
-
-  char *saveptr;
-  char *curlabel = list;
-  curlabel = strtok_r(list, "[,]", &saveptr);
-  while (curlabel) {
-    if ((cur >= t->num) || (cur >= MAX_AXIS_SIZE)) {
-      return;
-    }
-    t->values[cur] = atof(curlabel);
-    curlabel = strtok_r(NULL, ",]", &saveptr);
-    cur++;
-  }
-}
-
-static void console_set_table(const struct console_config_node *self,
-                              char *remaining) {
-  assert(self);
-  assert(self->val);
-  assert(remaining);
-
-  struct table *t = self->val;
-
-  char *k, *v;
-  while (parse_keyval_pair(&k, &v, &remaining)) {
-    if (!strcmp("naxis", k)) {
-      t->num_axis = atoi(v);
-    } else if (!strcmp("name", k)) {
-      strncpy(t->title, v, 31);
-    } else if (!strcmp("cols", k)) {
-      t->axis[0].num = atoi(v);
-    } else if (!strcmp("colname", k)) {
-      strcpy(t->axis[0].name, v);
-    } else if (!strcmp("rows", k)) {
-      t->axis[1].num = atoi(v);
-    } else if (!strcmp("rowname", k)) {
-      strcpy(t->axis[1].name, v);
-    } else if (!strcmp("collabels", k)) {
-      console_set_table_axis_labels(&t->axis[0], v);
-    } else if (!strcmp("rowlabels", k)) {
-      console_set_table_axis_labels(&t->axis[1], v);
-    } else if (k[0] == '[') {
-      console_set_table_element(t, k, atof(v));
-    }
-  }
-}
-static void console_get_table_axis_labels(const struct table_axis *t,
-                                          char *dest) {
-  char buf[32];
-  strcat(dest, "[");
-  for (int i = 0; i < t->num; ++i) {
-    sprintf(buf, "%.1f", t->values[i]);
-    strcat(dest, buf);
-    if (i != t->num - 1) {
-      strcat(dest, ",");
-    }
-  }
-  strcat(dest, "]");
-}
-
-static void console_get_table(const struct console_config_node *self,
-                              char *dest,
-                              char *remaining) {
-  assert(self);
-
-  if (!self->val) {
-    strcpy(dest, "null");
-    return;
-  }
-
-  const struct table *t = self->val;
-  if (remaining && (remaining[0] == '[')) {
-    float val;
-    char *saveptr;
-    char *element = strtok_r(remaining, " ", &saveptr);
-    do {
-      if (console_get_table_element(t, element, &val)) {
-        dest += sprintf(dest, "%s%.2f", (element == remaining) ? "" : " ", val);
-      } else {
-        strcpy(dest, "invalid");
-      }
-    } while ((element = strtok_r(NULL, " ", &saveptr)));
-  } else {
-    dest += sprintf(dest,
-                    "name=%s naxis=%d cols=%d colname=%s "
-                    "rows=%d rowname=%s ",
-                    t->title,
-                    t->num_axis,
-                    t->axis[0].num,
-                    t->axis[0].name,
-                    t->axis[1].num,
-                    t->axis[1].name);
-
-    strcat(dest, "collabels=");
-    console_get_table_axis_labels(&t->axis[0], dest);
-
-    strcat(dest, " rowlabels=");
-    console_get_table_axis_labels(&t->axis[1], dest);
-  }
-}
-
-static void console_save_to_flash(const struct console_config_node *self
-                                  __attribute__((unused)),
-                                  char *rem __attribute__((unused))) {
-  platform_save_config();
-}
-
-static void console_bootloader(const struct console_config_node *self
-                               __attribute__((unused)),
-                               char *dest __attribute__((unused)),
-                               char *rem __attribute__((unused))) {
-  platform_reset_into_bootloader();
-}
-
-static void console_get_sensor(const struct console_config_node *self,
-                               char *dest,
-                               char *remaining __attribute__((unused))) {
-  assert(self);
-  assert(self->val);
-
-  const struct sensor_input *s = self->val;
-
-  const char *source = "";
-  switch (s->source) {
-  case SENSOR_NONE:
-    source = "disabled";
-    break;
-  case SENSOR_ADC:
-    source = "adc";
-    break;
-  case SENSOR_FREQ:
-    source = "freq";
-    break;
-  case SENSOR_DIGITAL:
-    source = "digital";
-    break;
-  case SENSOR_PWM:
-    source = "pwm";
-    break;
-  case SENSOR_CONST:
-    source = "const";
-    break;
-  }
-
-  const char *method = "";
-  switch (s->method) {
-  case METHOD_LINEAR:
-    method = "linear";
-    break;
-  case METHOD_LINEAR_WINDOWED:
-    method = "linear-window";
-    break;
-  case METHOD_TABLE:
-    method = "table";
-    break;
-  case METHOD_THERM:
-    method = "therm";
-    break;
-  }
-
-  dest += sprintf(dest, "source=%s method=%s pin=%d ", source, method, s->pin);
-  if (s->source == SENSOR_CONST) {
-    dest += sprintf(dest, "fixed-val=%.2f ", s->params.fixed_value);
-  } else if (s->method == METHOD_LINEAR) {
-    dest += sprintf(dest,
-                    "range-min=%.2f range-max=%.2f ",
-                    s->params.range.min,
-                    s->params.range.max);
-  } else if (s->method == METHOD_LINEAR_WINDOWED) {
-    dest += sprintf(dest,
-                    "range-min=%.2f range-max=%.2f window-total-size=%u "
-                    "window-capture-size=%u",
-                    s->params.range.min,
-                    s->params.range.max,
-                    (unsigned int)s->window.total_width,
-                    (unsigned int)s->window.capture_width);
-  } else if (s->method == METHOD_TABLE) {
-    dest += sprintf(dest, "table=%s ", "unsupported");
-  } else if (s->method == METHOD_THERM) {
-    dest += sprintf(dest,
-                    "therm-bias=%.2f therm-a=%e therm-b=%e therm-c=%e ",
-                    s->params.therm.bias,
-                    s->params.therm.a,
-                    s->params.therm.b,
-                    s->params.therm.c);
-  }
-  sprintf(dest,
-          "fault-min=%u fault-max=%u fault-val=%.2f lag=%f",
-          (unsigned int)s->fault_config.min,
-          (unsigned int)s->fault_config.max,
-          s->fault_config.fault_value,
-          s->lag);
-}
-
-static sensor_source console_sensor_source_from_str(const char *str) {
-  if (!strcmp("disabled", str)) {
-    return SENSOR_NONE;
-  } else if (!strcmp("adc", str)) {
-    return SENSOR_ADC;
-  } else if (!strcmp("freq", str)) {
-    return SENSOR_FREQ;
-  } else if (!strcmp("digital", str)) {
-    return SENSOR_DIGITAL;
-  } else if (!strcmp("pwm", str)) {
-    return SENSOR_PWM;
-  } else if (!strcmp("const", str)) {
-    return SENSOR_CONST;
-  }
-  return SENSOR_NONE;
-}
-
-static sensor_method console_sensor_method_from_str(const char *str) {
-  if (!strcmp("linear", str)) {
-    return METHOD_LINEAR;
-  } else if (!strcmp("linear-windowed", str)) {
-    return METHOD_LINEAR_WINDOWED;
-  } else if (!strcmp("table", str)) {
-    return METHOD_TABLE;
-  } else if (!strcmp("therm", str)) {
-    return METHOD_THERM;
-  }
-  return METHOD_TABLE;
-}
-
-static void console_set_sensor(const struct console_config_node *self,
-                               char *remaining) {
-  assert(self);
-  assert(self->val);
-  assert(remaining);
-
-  struct sensor_input *s = self->val;
-
-  char *k, *v;
-  while (parse_keyval_pair(&k, &v, &remaining)) {
-    if (!strcmp("source", k)) {
-      s->source = console_sensor_source_from_str(v);
-    } else if (!strcmp("method", k)) {
-      s->method = console_sensor_method_from_str(v);
-    } else if (!strcmp("pin", k)) {
-      s->pin = atoi(v);
-    } else if (!strcmp("lag", k)) {
-      s->lag = atof(v);
-    } else if (!strcmp("fixed-val", k)) {
-      s->params.fixed_value = atof(v);
-    } else if (!strcmp("range-min", k)) {
-      s->params.range.min = atof(v);
-    } else if (!strcmp("range-max", k)) {
-      s->params.range.max = atof(v);
-    } else if (!strcmp("therm-bias", k)) {
-      s->params.therm.bias = atof(v);
-    } else if (!strcmp("therm-a", k)) {
-      s->params.therm.a = atof(v);
-    } else if (!strcmp("therm-b", k)) {
-      s->params.therm.b = atof(v);
-    } else if (!strcmp("therm-c", k)) {
-      s->params.therm.c = atof(v);
-    } else if (!strcmp("window-total-size", k)) {
-      s->window.total_width = atoi(v);
-    } else if (!strcmp("window-capture-size", k)) {
-      s->window.capture_width = atoi(v);
-    } else if (!strcmp("fault-min", k)) {
-      s->fault_config.min = atoi(v);
-    } else if (!strcmp("fault-max", k)) {
-      s->fault_config.max = atoi(v);
-    } else if (!strcmp("fault-val", k)) {
-      s->fault_config.fault_value = atof(v);
-    }
-  }
-}
-
-static void console_get_sensor_fault(const struct console_config_node *self,
-                                     char *dest,
-                                     char *remaining __attribute__((unused))) {
-  const struct sensor_input *t = self->val;
-  const char *result;
-
-  switch (t->fault) {
-  case FAULT_RANGE:
-    result = "range";
-    break;
-  case FAULT_CONN:
-    result = "connection";
-    break;
-  default:
-    result = "-";
-    break;
-  }
-  strcat(dest, result);
-}
-
-static void console_get_decoder_loss_reason(
-  const struct console_config_node *self,
-  char *dest,
-  char *remaining __attribute__((unused))) {
-  assert(self);
-  assert(self->val);
-
-  const decoder_loss_reason *s = self->val;
-  const char *result = "";
-
-  switch (*s) {
-  case DECODER_NO_LOSS:
-    result = "none";
-    break;
-  case DECODER_VARIATION:
-    result = "variation";
-    break;
-  case DECODER_TRIGGERCOUNT_HIGH:
-    result = "triggers+";
-    break;
-  case DECODER_TRIGGERCOUNT_LOW:
-    result = "triggers-";
-    break;
-  case DECODER_EXPIRED:
-    result = "expired";
-    break;
-  }
-  strcat(dest, result);
-}
-
-static void console_get_decoder_state(const struct console_config_node *self,
-                                      char *dest,
-                                      char *remaining __attribute__((unused))) {
-  assert(self);
-  assert(self->val);
-
-  const decoder_state *s = self->val;
-  const char *result = "";
-
-  switch (*s) {
-  case DECODER_NOSYNC:
-    result = "none";
-    break;
-  case DECODER_RPM:
-    result = "rpm";
-    break;
-  case DECODER_SYNC:
-    result = "full";
-    break;
-  }
-  strcat(dest, result);
-}
-
-static void console_get_trigger(const struct console_config_node *self,
-                                char *dest,
-                                char *remaining __attribute__((unused))) {
-  assert(self);
-  assert(self->val);
-
-  const trigger_type *t = self->val;
-  const char *result = "";
-
-  switch (*t) {
-  case FORD_TFI:
-    result = "tfi";
-    break;
-  case TOYOTA_24_1_CAS:
-    result = "cam24+1";
-    break;
-  }
-  strcat(dest, result);
-}
-
-static void console_set_trigger(const struct console_config_node *self,
-                                char *remaining __attribute__((unused))) {
-  assert(self);
-  assert(self->val);
-
-  trigger_type *t = self->val;
-  if (!strcmp("tfi", remaining)) {
-    *t = FORD_TFI;
-  } else if (!strcmp("cam24+1", remaining)) {
-    *t = TOYOTA_24_1_CAS;
-  }
-}
-
-static void console_get_dwell_type(const struct console_config_node *self,
-                                   char *dest,
-                                   char *remaining __attribute__((unused))) {
-  assert(self);
-  assert(self->val);
-
-  const dwell_type *t = self->val;
-  const char *result = "";
-
-  switch (*t) {
-  case DWELL_FIXED_DUTY:
-    result = "fixed-duty";
-    break;
-  case DWELL_FIXED_TIME:
-    result = "fixed-time";
-    break;
-  case DWELL_BRV:
-    result = "brv";
-    break;
-  }
-  strcat(dest, result);
-}
-
-static void console_set_dwell_type(const struct console_config_node *self,
-                                   char *remaining __attribute__((unused))) {
-  assert(self);
-  assert(self->val);
-
-  dwell_type *t = self->val;
-  if (!strcmp("fixed-duty", remaining)) {
-    *t = DWELL_FIXED_DUTY;
-  } else if (!strcmp("fixed-time", remaining)) {
-    *t = DWELL_FIXED_TIME;
-  } else if (!strcmp("brv", remaining)) {
-    *t = DWELL_BRV;
-  }
-}
-
-static void console_get_stats(const struct console_config_node *self
-                              __attribute((unused)),
-                              char *dest,
-                              char *remaining __attribute__((unused))) {
-
-  const struct stats_entry *e;
-  for (e = &stats_entries[0]; e != &stats_entries[STATS_LAST]; ++e) {
-    dest += sprintf(dest,
-                    "  %s min/avg/max (uS) = %u/%u/%u\r\n",
-                    e->name,
-                    (unsigned int)e->min,
-                    (unsigned int)e->avg,
-                    (unsigned int)e->max);
-  }
-}
-
-static void console_get_events(const struct console_config_node *self
-                               __attribute__((unused)),
-                               char *dest,
-                               char *remaining) {
-
-  if (!remaining || !strcmp("", remaining)) {
-    sprintf(dest, "num_events=%d", config.num_events);
-    return;
-  }
-  unsigned int ev_n = atoi(strtok(remaining, " "));
-  if (ev_n < config.num_events) {
-    const struct output_event *ev = &config.events[ev_n];
-    const char *ev_type = "";
-    switch (ev->type) {
-    case FUEL_EVENT:
-      ev_type = "fuel";
-      break;
-    case IGNITION_EVENT:
-      ev_type = "ignition";
-      break;
-    default:
-      ev_type = "disabled";
-      break;
-    }
-    sprintf(dest,
-            "type=%s angle=%.0f output=%d inverted=%d",
-            ev_type,
-            ev->angle,
-            ev->pin,
-            ev->inverted);
-  } else {
-    strcpy(dest, "event out of range");
-  }
-}
-
-static void console_set_events(const struct console_config_node *self
-                               __attribute__((unused)),
-                               char *remaining) {
-
-  char *k, *v;
-  char *saveptr;
-
-  if (!remaining) {
-    return;
-  }
-  if (!strncmp("num_events=", remaining, 11)) {
-    if (parse_keyval_pair(&k, &v, &remaining)) {
-      config.num_events = atoi(v);
-    }
-    return;
-  }
-
-  unsigned int ev_n = atoi(strtok_r(remaining, " ", &saveptr));
-  if (ev_n >= config.num_events) {
-    return;
-  }
-  struct output_event *ev = &config.events[ev_n];
-
-  remaining = saveptr;
-  while (parse_keyval_pair(&k, &v, &remaining)) {
-    if (!strcmp("type", k)) {
-      if (!strcmp("fuel", v)) {
-        ev->type = FUEL_EVENT;
-      } else if (!strcmp("ignition", v)) {
-        ev->type = IGNITION_EVENT;
-      } else if (!strcmp("disabled", v)) {
-        ev->type = DISABLED_EVENT;
-      }
-    } else if (!strcmp("angle", k)) {
-      ev->angle = atoi(v);
-    } else if (!strcmp("output", k)) {
-      ev->pin = atoi(v);
-    } else if (!strcmp("inverted", k)) {
-      ev->inverted = atoi(v);
-    }
-  }
-}
-
-static void console_get_freq(const struct console_config_node *self
-                             __attribute__((unused)),
-                             char *dest,
-                             char *remaining) {
-
-  const int num_freqs = sizeof(config.freq_inputs) / sizeof(struct freq_input);
-  if (!remaining || !strcmp("", remaining)) {
-    sprintf(dest, "num_freq=%d", num_freqs);
-    return;
-  }
-
-  int freq_n = atoi(strtok(remaining, " "));
-  if (freq_n >= num_freqs) {
-    strcpy(dest, "Frequency input out of range");
-    return;
-  }
-  const char *edge, *type;
-  switch (config.freq_inputs[freq_n].edge) {
-  case RISING_EDGE:
-    edge = "rising";
-    break;
-  case FALLING_EDGE:
-    edge = "falling";
-    break;
-  case BOTH_EDGES:
-  default:
-    edge = "both";
-    break;
-  }
-
-  switch (config.freq_inputs[freq_n].type) {
-  case TRIGGER:
-    type = "trigger";
-    break;
-  case FREQ:
-  default:
-    type = "freq";
-    break;
-  }
-
-  sprintf(dest, "edge=%s type=%s", edge, type);
-}
-
-static void console_set_freq(const struct console_config_node *self
-                             __attribute__((unused)),
-                             char *remaining) {
-
-  char *k, *v;
-  char *saveptr;
-  const int num_freqs = sizeof(config.freq_inputs) / sizeof(struct freq_input);
-
-  if (!remaining) {
-    return;
-  }
-
-  int freq_n = atoi(strtok_r(remaining, " ", &saveptr));
-  if (freq_n >= num_freqs) {
-    return;
-  }
-  struct freq_input *freq = &config.freq_inputs[freq_n];
-
-  remaining = saveptr;
-  while (parse_keyval_pair(&k, &v, &remaining)) {
-    if (!strcmp("type", k)) {
-      if (!strcmp("trigger", v)) {
-        freq->type = TRIGGER;
-      } else if (!strcmp("freq", v)) {
-        freq->type = FREQ;
-      }
-    } else if (!strcmp("edge", k)) {
-      if (!strcmp("rising", v)) {
-        freq->edge = RISING_EDGE;
-      } else if (!strcmp("falling", v)) {
-        freq->edge = FALLING_EDGE;
-      } else if (!strcmp("both", v)) {
-        freq->edge = BOTH_EDGES;
-      }
-    }
-  }
-}
+#ifndef GIT_DESCRIBE
+#define GIT_DESCRIBE "unknown"
+static const char *git_describe = GIT_DESCRIBE;
+#endif
 
 static struct {
-  int enabled;
+  uint32_t enabled;
   struct logged_event events[32];
-  int read;
-  int write;
+  volatile uint32_t read;
+  volatile uint32_t write;
 } event_log;
 
-static struct logged_event platform_get_logged_event() {
+static struct logged_event get_logged_event() {
   if (!event_log.enabled || (event_log.read == event_log.write)) {
     return (struct logged_event){ .type = EVENT_NONE };
   }
@@ -807,1239 +100,1525 @@ void console_record_event(struct logged_event ev) {
   event_log.write = (event_log.write + 1) % size;
 }
 
-static struct timed_callback trig_cb = { 0 };
-static void console_fire_trigger_callback(void *_a) {
-  (void)_a;
+static size_t console_event_message(uint8_t *dest,
+                                    size_t bsize,
+                                    struct logged_event *ev) {
+  CborEncoder encoder;
 
-  decoder_update_scheduling(0, trig_cb.time);
+  cbor_encoder_init(&encoder, dest, bsize, 0);
+
+  CborEncoder top_encoder;
+  cbor_encoder_create_map(&encoder, &top_encoder, 3);
+  cbor_encode_text_stringz(&top_encoder, "type");
+  cbor_encode_text_stringz(&top_encoder, "event");
+
+  cbor_encode_text_stringz(&top_encoder, "time");
+  cbor_encode_int(&top_encoder, ev->time);
+
+  cbor_encode_text_stringz(&top_encoder, "event");
+
+  CborEncoder event_encoder;
+
+  switch (ev->type) {
+  case EVENT_OUTPUT:
+    cbor_encoder_create_map(&top_encoder, &event_encoder, 2);
+    cbor_encode_text_stringz(&event_encoder, "type");
+    cbor_encode_text_stringz(&event_encoder, "output");
+    cbor_encode_text_stringz(&event_encoder, "outputs");
+    cbor_encode_int(&event_encoder, ev->value);
+    cbor_encoder_close_container(&top_encoder, &event_encoder);
+    break;
+  case EVENT_GPIO:
+    cbor_encoder_create_map(&top_encoder, &event_encoder, 2);
+    cbor_encode_text_stringz(&event_encoder, "type");
+    cbor_encode_text_stringz(&event_encoder, "gpio");
+    cbor_encode_text_stringz(&event_encoder, "outputs");
+    cbor_encode_int(&event_encoder, ev->value);
+    cbor_encoder_close_container(&top_encoder, &event_encoder);
+    break;
+  case EVENT_TRIGGER:
+    cbor_encoder_create_map(&top_encoder, &event_encoder, 2);
+    cbor_encode_text_stringz(&event_encoder, "type");
+    cbor_encode_text_stringz(&event_encoder, "trigger");
+    cbor_encode_text_stringz(&event_encoder, "pin");
+    cbor_encode_int(&event_encoder, ev->value);
+    cbor_encoder_close_container(&top_encoder, &event_encoder);
+    break;
+  default:
+    break;
+  }
+  cbor_encoder_close_container(&encoder, &top_encoder);
+  return cbor_encoder_get_buffer_size(&encoder, dest);
 }
 
-static void console_set_trigger_callback(const struct console_config_node *self,
-                                         char *remaining) {
-  (void)self;
-  timeval_t stoptime = atoi(remaining);
-  trig_cb.callback = console_fire_trigger_callback;
-  schedule_callback(&trig_cb, stoptime);
+void render_type_field(CborEncoder *enc, const char *type) {
+  cbor_encode_text_stringz(enc, "_type");
+  cbor_encode_text_stringz(enc, type);
 }
 
-static void console_set_event_logging(const struct console_config_node *self,
-                                      char *remaining) {
-  (void)self;
+void render_description_field(CborEncoder *enc, const char *description) {
+  cbor_encode_text_stringz(enc, "description");
+  cbor_encode_text_stringz(enc, description);
+}
 
-  if (!strncmp(remaining, "on", 2)) {
-    platform_enable_event_logging();
-    event_log.enabled = 1;
-  } else {
-    platform_disable_event_logging();
-    event_log.enabled = 0;
+static void report_success(CborEncoder *enc, bool success) {
+  cbor_encode_text_stringz(enc, "success");
+  cbor_encode_boolean(enc, success);
+}
+
+static void report_parsing_error(CborEncoder *enc, const char *msg) {
+  cbor_encode_text_stringz(enc, "error");
+  cbor_encode_text_stringz(enc, msg);
+  report_success(enc, false);
+}
+
+static bool console_path_match_str(CborValue *path, const char *id) {
+  bool is_match = false;
+  if (cbor_value_text_string_equals(path, id, &is_match) != CborNoError) {
+    is_match = false;
+  }
+  return is_match;
+}
+
+static bool console_path_match_int(CborValue *path, int index) {
+  if (!cbor_value_is_integer(path)) {
+    return false;
+  }
+  int path_int;
+  if (cbor_value_get_int_checked(path, &path_int) != CborNoError) {
+    return false;
+  }
+  return (path_int == index);
+}
+
+static bool console_string_matches(CborValue *val, const char *str) {
+  bool match;
+  if (cbor_value_text_string_equals(val, str, &match) != CborNoError) {
+    return false;
+  }
+  return match;
+}
+
+static size_t console_feed_line_keys(uint8_t *dest, size_t bsize) {
+  CborEncoder encoder;
+  cbor_encoder_init(&encoder, dest, bsize, 0);
+
+  CborEncoder top_encoder;
+  cbor_encoder_create_map(&encoder, &top_encoder, 2);
+  cbor_encode_text_stringz(&top_encoder, "type");
+  cbor_encode_text_stringz(&top_encoder, "description");
+
+  cbor_encode_text_stringz(&top_encoder, "keys");
+  CborEncoder key_list_encoder;
+  cbor_encoder_create_array(
+    &top_encoder, &key_list_encoder, CborIndefiniteLength);
+  for (const struct console_feed_node *node = &console_feed_nodes[0];
+       node->id != NULL;
+       node++) {
+    cbor_encode_text_stringz(&key_list_encoder, node->id);
+  }
+  cbor_encoder_close_container(&top_encoder, &key_list_encoder);
+  cbor_encoder_close_container(&encoder, &top_encoder);
+  return cbor_encoder_get_buffer_size(&encoder, dest);
+}
+
+static size_t console_feed_line(uint8_t *dest, size_t bsize) {
+  CborEncoder encoder;
+
+  cbor_encoder_init(&encoder, dest, bsize, 0);
+
+  CborEncoder top_encoder;
+  cbor_encoder_create_map(&encoder, &top_encoder, 2);
+  cbor_encode_text_stringz(&top_encoder, "type");
+  cbor_encode_text_stringz(&top_encoder, "feed");
+
+  cbor_encode_text_stringz(&top_encoder, "values");
+  CborEncoder value_list_encoder;
+  cbor_encoder_create_array(
+    &top_encoder, &value_list_encoder, CborIndefiniteLength);
+  for (const struct console_feed_node *node = &console_feed_nodes[0];
+       node->id != NULL;
+       node++) {
+    if (node->uint32_ptr) {
+      cbor_encode_uint(&value_list_encoder, *node->uint32_ptr);
+    } else if (node->float_ptr) {
+      cbor_encode_float(&value_list_encoder, *node->float_ptr);
+    } else if (node->uint32_fptr) {
+      cbor_encode_uint(&value_list_encoder, node->uint32_fptr());
+    } else if (node->float_fptr) {
+      cbor_encode_float(&value_list_encoder, node->float_fptr());
+    } else {
+      cbor_encode_text_stringz(&value_list_encoder, "invalid");
+    }
+  }
+  cbor_encoder_close_container(&top_encoder, &value_list_encoder);
+  cbor_encoder_close_container(&encoder, &top_encoder);
+  return cbor_encoder_get_buffer_size(&encoder, dest);
+}
+
+static int console_write_full(const uint8_t *buf, size_t len) {
+  size_t remaining = len;
+  const uint8_t *ptr = buf;
+  while (remaining) {
+    size_t written = console_write(ptr, remaining);
+    if (written > 0) {
+      remaining -= written;
+      ptr += written;
+    }
+  }
+  return 1;
+}
+
+static uint8_t rx_buffer[16384];
+static size_t rx_buffer_size = 0;
+static timeval_t rx_start_time = 0;
+
+static void console_shift_rx_buffer(size_t amt) {
+  assert(amt <= rx_buffer_size);
+  memmove(&rx_buffer[0], &rx_buffer[amt], (rx_buffer_size - amt));
+  rx_buffer_size -= amt;
+}
+
+static size_t console_try_read() {
+  size_t remaining = sizeof(rx_buffer) - rx_buffer_size;
+
+  if (rx_buffer_size == 0) {
+    rx_start_time = current_time();
+  }
+
+  size_t read_amt = console_read(&rx_buffer[rx_buffer_size], remaining);
+  rx_buffer_size += read_amt;
+
+  if (rx_buffer_size == 0) {
+    return 0;
+  }
+
+  CborParser parser;
+  CborValue value;
+
+  /* We want to determine if we have a valid cbor object in buffer.  If the
+   * buffer doesn't start with a map, it is not valid, and we want to advance
+   * byte-by-byte until we find a start of map */
+  do {
+    if (cbor_parser_init(rx_buffer, rx_buffer_size, 0, &parser, &value) ==
+        CborNoError) {
+      if (cbor_value_is_map(&value)) {
+        break;
+      }
+    }
+    /* Reset timer since we have a new start */
+    console_shift_rx_buffer(1);
+    rx_start_time = current_time();
+
+    /* We've exhausted the buffer */
+    if (!rx_buffer_size) {
+      return 0;
+    }
+  } while (1);
+
+  switch (cbor_value_validate_basic(&value)) {
+    /* If we have a valid object, return its length */
+  case CborNoError:
+  case CborErrorGarbageAtEnd: {
+    cbor_value_advance(&value);
+    const uint8_t *next = cbor_value_get_next_byte(&value);
+    return (next - rx_buffer);
+  }
+  /* If we have the start of a valid object (as per the cbor_value_is_map check
+   * above, but not enough to decode the whole object, return but do not reset
+   * unless 1s has passed. This is a balance between allowing time for messages
+   * to arrive but not locking up communications due to some garbage */
+  case CborErrorAdvancePastEOF:
+  case CborErrorUnexpectedEOF:
+    if (current_time() - rx_start_time > time_from_us(1000000)) {
+      rx_buffer_size = 0;
+    }
+    /* Alternatively, if we've filled up, waiting longer will not work, reset */
+    if (rx_buffer_size == sizeof(rx_buffer)) {
+      rx_buffer_size = 0;
+    }
+    break;
+  /* Assume garbage input, reset */
+  default:
+    rx_buffer_size = 0;
+    break;
+  }
+  return 0;
+}
+
+static void console_request_ping(CborEncoder *enc) {
+  cbor_encode_text_stringz(enc, "response");
+  cbor_encode_text_stringz(enc, "pong");
+  report_success(enc, true);
+}
+
+void render_uint32_map_field(struct console_request_context *ctx,
+                             const char *id,
+                             const char *description,
+                             uint32_t *ptr) {
+  struct console_request_context deeper;
+  if (descend_map_field(ctx, &deeper, id)) {
+    render_uint32_object(&deeper, description, ptr);
   }
 }
 
-static void console_set_freeze(const struct console_config_node *self,
-                               char *remaining) {
-  (void)self;
-  (void)remaining;
+void render_uint32_object(struct console_request_context *ctx,
+                          const char *description,
+                          uint32_t *ptr) {
+  switch (ctx->type) {
+  case CONSOLE_SET:
+    if (cbor_value_is_integer(&ctx->value)) {
+      cbor_value_get_int_checked(&ctx->value, (int *)ptr);
+    }
+    /* Fall through */
+  case CONSOLE_GET:
+    cbor_encode_int(ctx->response, *ptr);
+    break;
+  case CONSOLE_DESCRIBE:
+  case CONSOLE_STRUCTURE: {
+    CborEncoder desc;
+    cbor_encoder_create_map(ctx->response, &desc, 2);
+    render_type_field(&desc, "uint32");
+    render_description_field(&desc, description);
+    cbor_encoder_close_container(ctx->response, &desc);
+    break;
+  }
+  default:
+    break;
+  }
 }
 
-static void console_set_test_trigger(const struct console_config_node *self,
-                                     char *remaining) {
-  (void)self;
+void render_float_map_field(struct console_request_context *ctx,
+                            const char *id,
+                            const char *description,
+                            float *ptr) {
+  struct console_request_context deeper;
+  if (descend_map_field(ctx, &deeper, id)) {
+    render_float_object(&deeper, description, ptr);
+  }
+}
 
-  uint32_t rpm = atoi(remaining);
-  set_test_trigger_rpm(rpm);
+void render_float_object(struct console_request_context *ctx,
+                         const char *description,
+                         float *ptr) {
+
+  switch (ctx->type) {
+  case CONSOLE_SET:
+    if (cbor_value_is_float(&ctx->value)) {
+      cbor_value_get_float(&ctx->value, ptr);
+    } else if (cbor_value_is_double(&ctx->value)) {
+      /* Support doubles for ease of use */
+      double val;
+      cbor_value_get_double(&ctx->value, &val);
+      *ptr = val;
+    }
+    /* Fall through */
+  case CONSOLE_GET:
+    cbor_encode_float(ctx->response, *ptr);
+    break;
+  case CONSOLE_STRUCTURE:
+  case CONSOLE_DESCRIBE: {
+    CborEncoder desc;
+    cbor_encoder_create_map(ctx->response, &desc, 2);
+    render_type_field(&desc, "float");
+    render_description_field(&desc, description);
+    cbor_encoder_close_container(ctx->response, &desc);
+    break;
+  }
+  default:
+    break;
+  }
+}
+
+void render_map_map_field(struct console_request_context *ctx,
+                          const char *id,
+                          console_renderer rend,
+                          void *ptr) {
+  struct console_request_context deeper;
+  if (descend_map_field(ctx, &deeper, id)) {
+    render_map_object(&deeper, rend, ptr);
+  }
+}
+
+void render_custom_map_field(struct console_request_context *ctx,
+                             const char *id,
+                             console_renderer rend,
+                             void *ptr) {
+  struct console_request_context deeper;
+  if (descend_map_field(ctx, &deeper, id)) {
+    rend(&deeper, ptr);
+  }
+}
+
+bool descend_array_field(struct console_request_context *ctx,
+                         struct console_request_context *deeper_ctx,
+                         int index) {
+  if (ctx->is_completed) {
+    return false;
+  }
+
+  *deeper_ctx = *ctx;
+
+  switch (ctx->type) {
+  case CONSOLE_SET:
+    if (!ctx->is_filtered) {
+      if (!cbor_value_is_array(&ctx->value)) {
+        return false;
+      }
+      CborValue newvalue;
+      cbor_value_enter_container(&ctx->value, &newvalue);
+      for (int i = 0; i < index; i++) {
+        if (cbor_value_at_end(&newvalue)) {
+          return false;
+        }
+        cbor_value_advance(&newvalue);
+      }
+      deeper_ctx->value = newvalue;
+    }
+    /* intentional fallthrough */
+  case CONSOLE_GET:
+    /* Short circuit all future rendering if we've already matched a path */
+    if (ctx->is_filtered) {
+      /* If we're filtering, we need to match the path */
+      if (!console_path_match_int(deeper_ctx->path, index)) {
+        return false;
+      }
+      cbor_value_advance(deeper_ctx->path);
+      ctx->is_completed = true;
+      deeper_ctx->is_filtered = !cbor_value_at_end(deeper_ctx->path);
+      deeper_ctx->is_completed = false;
+    }
+    return true;
+  case CONSOLE_STRUCTURE:
+  case CONSOLE_DESCRIBE:
+    return true;
+  }
+  return false;
+}
+
+void render_array_object(struct console_request_context *ctx,
+                         console_renderer rend,
+                         void *ptr) {
+
+  bool wrapped = !ctx->is_filtered;
+
+  CborEncoder array;
+  CborEncoder *outer = ctx->response;
+
+  if (wrapped) {
+    cbor_encoder_create_array(outer, &array, CborIndefiniteLength);
+    ctx->response = &array;
+  }
+
+  rend(ctx, ptr);
+  if (ctx->is_filtered && !ctx->is_completed) {
+    cbor_encode_null(ctx->response);
+  }
+
+  if (wrapped) {
+    cbor_encoder_close_container(outer, &array);
+  }
+  ctx->response = outer;
+}
+
+void render_map_array_field(struct console_request_context *ctx,
+                            int index,
+                            console_renderer rend,
+                            void *ptr) {
+  struct console_request_context deeper;
+  if (descend_array_field(ctx, &deeper, index)) {
+    render_map_object(&deeper, rend, ptr);
+  }
+}
+
+void render_array_map_field(struct console_request_context *ctx,
+                            const char *id,
+                            console_renderer rend,
+                            void *ptr) {
+  struct console_request_context deeper;
+  if (descend_map_field(ctx, &deeper, id)) {
+    render_array_object(&deeper, rend, ptr);
+  }
+}
+
+void render_map_object(struct console_request_context *ctx,
+                       console_renderer rend,
+                       void *ptr) {
+
+  bool wrapped = !ctx->is_filtered;
+
+  CborEncoder map;
+  CborEncoder *outer = ctx->response;
+
+  if (wrapped) {
+    cbor_encoder_create_map(outer, &map, CborIndefiniteLength);
+    ctx->response = &map;
+  }
+
+  rend(ctx, ptr);
+  if (ctx->is_filtered && !ctx->is_completed) {
+    cbor_encode_null(ctx->response);
+  }
+
+  if (wrapped) {
+    cbor_encoder_close_container(outer, &map);
+  }
+
+  ctx->response = outer;
+}
+
+bool descend_map_field(struct console_request_context *ctx,
+                       struct console_request_context *deeper_ctx,
+                       const char *id) {
+
+  if (ctx->is_completed) {
+    return false;
+  }
+
+  *deeper_ctx = *ctx;
+
+  switch (ctx->type) {
+  case CONSOLE_SET:
+    /* If unfiltered, start descending into the value object */
+    if (!ctx->is_filtered) {
+      if (!cbor_value_is_map(&ctx->value)) {
+        return false;
+      }
+      CborValue newvalue;
+      if (cbor_value_map_find_value(&ctx->value, id, &newvalue) !=
+          CborNoError) {
+        return false;
+      }
+      deeper_ctx->value = newvalue;
+    }
+    /* Intentional fallthrough */
+  case CONSOLE_GET:
+    /* Short circuit all future rendering if we've already matched a path */
+    if (ctx->is_filtered) {
+      /* If we're filtering, we need to match the path */
+      if (!console_path_match_str(deeper_ctx->path, id)) {
+        return false;
+      }
+      cbor_value_advance(deeper_ctx->path);
+      ctx->is_completed = true;
+      deeper_ctx->is_filtered = !cbor_value_at_end(deeper_ctx->path);
+      deeper_ctx->is_completed = false;
+    } else {
+      cbor_encode_text_stringz(ctx->response, id);
+    }
+    return true;
+  case CONSOLE_STRUCTURE:
+  case CONSOLE_DESCRIBE:
+
+    cbor_encode_text_stringz(ctx->response, id);
+    return true;
+  }
+  return false;
+}
+
+void render_enum_map_field(struct console_request_context *ctx,
+                           const char *id,
+                           const char *desc,
+                           const struct console_enum_mapping *mapping,
+                           void *ptr) {
+  struct console_request_context deeper;
+  if (descend_map_field(ctx, &deeper, id)) {
+    render_enum_object(&deeper, desc, mapping, ptr);
+  }
+}
+
+void render_enum_object(struct console_request_context *ctx,
+                        const char *desc,
+                        const struct console_enum_mapping *mapping,
+                        void *ptr) {
+  int *type = ptr;
+  bool success = false;
+  switch (ctx->type) {
+  case CONSOLE_SET:
+    for (const struct console_enum_mapping *m = mapping; m->s; m++) {
+      if (console_string_matches(&ctx->value, m->s)) {
+        *type = m->e;
+      }
+    }
+    /* Intentional Fallthrough */
+  case CONSOLE_GET:
+    for (const struct console_enum_mapping *m = mapping; m->s; m++) {
+      if (*type == m->e) {
+        success = true;
+        cbor_encode_text_stringz(ctx->response, m->s);
+      }
+    }
+    if (!success) {
+      cbor_encode_null(ctx->response);
+    }
+    return;
+  case CONSOLE_STRUCTURE:
+  case CONSOLE_DESCRIBE: {
+    CborEncoder map;
+    cbor_encoder_create_map(ctx->response, &map, 3);
+    render_type_field(&map, "string");
+    render_description_field(&map, desc);
+    cbor_encode_text_stringz(&map, "choices");
+    CborEncoder list_encoder;
+    cbor_encoder_create_array(&map, &list_encoder, CborIndefiniteLength);
+    for (const struct console_enum_mapping *m = mapping; m->s; m++) {
+      cbor_encode_text_stringz(&list_encoder, m->s);
+    }
+    cbor_encoder_close_container(&map, &list_encoder);
+    cbor_encoder_close_container(ctx->response, &map);
+  }
+    return;
+  }
+}
+
+static void render_table_title(struct console_request_context *ctx, void *_t) {
+
+  struct table *t = _t;
+  switch (ctx->type) {
+  case CONSOLE_SET:
+    if (cbor_value_is_text_string(&ctx->value)) {
+      size_t len = sizeof(t->title);
+      cbor_value_copy_text_string(&ctx->value, t->title, &len, NULL);
+    }
+    /* Fall through */
+  case CONSOLE_GET:
+    cbor_encode_text_stringz(ctx->response, t->title);
+    break;
+  case CONSOLE_STRUCTURE:
+  case CONSOLE_DESCRIBE: {
+    CborEncoder desc;
+    cbor_encoder_create_map(ctx->response, &desc, 2);
+    render_type_field(&desc, "string");
+    render_description_field(&desc, "table title");
+    cbor_encoder_close_container(ctx->response, &desc);
+    break;
+  }
+  default:
+    break;
+  }
+}
+
+static void render_table_axis_name(struct console_request_context *ctx,
+                                   void *_axis) {
+
+  struct table_axis *axis = _axis;
+  switch (ctx->type) {
+  case CONSOLE_SET:
+    if (cbor_value_is_text_string(&ctx->value)) {
+      size_t len = sizeof(axis->name);
+      cbor_value_copy_text_string(&ctx->value, axis->name, &len, NULL);
+    }
+    /* Fall through */
+  case CONSOLE_GET:
+    cbor_encode_text_stringz(ctx->response, axis->name);
+    break;
+  case CONSOLE_STRUCTURE:
+  case CONSOLE_DESCRIBE: {
+    CborEncoder desc;
+    cbor_encoder_create_map(ctx->response, &desc, 2);
+    render_type_field(&desc, "string");
+    render_description_field(&desc, "axis title");
+    cbor_encoder_close_container(ctx->response, &desc);
+    break;
+  }
+  default:
+    break;
+  }
+}
+
+static void render_table_axis_values(struct console_request_context *ctx,
+                                     void *_a) {
+
+  struct table_axis *axis = _a;
+  size_t len = axis->num;
+  if (ctx->type == CONSOLE_SET) {
+    if (cbor_value_get_array_length(&ctx->value, &len) != CborNoError) {
+      len = axis->num;
+    }
+    if (len > MAX_AXIS_SIZE) {
+      len = MAX_AXIS_SIZE;
+    }
+    axis->num = len;
+  }
+  for (int i = 0; i < axis->num; i++) {
+    struct console_request_context deeper;
+    if (descend_array_field(ctx, &deeper, i)) {
+      render_float_object(&deeper, "axis value", &axis->values[i]);
+    }
+  }
+}
+
+static void render_table_axis_description(struct console_request_context *ctx,
+                                          void *ptr) {
+  (void)ptr;
+  CborEncoder desc;
+  cbor_encoder_create_map(ctx->response, &desc, 3);
+  render_type_field(&desc, "[float]");
+  render_description_field(&desc, "list of axis values");
+  cbor_encode_text_stringz(&desc, "len");
+  cbor_encode_int(&desc, MAX_AXIS_SIZE);
+  cbor_encoder_close_container(ctx->response, &desc);
+}
+
+static void render_table_axis(struct console_request_context *ctx, void *_t) {
+  struct table_axis *axis = _t;
+  render_custom_map_field(ctx, "name", render_table_axis_name, axis);
+  if (ctx->type == CONSOLE_DESCRIBE) {
+    render_custom_map_field(ctx, "values", render_table_axis_description, NULL);
+  } else {
+    render_array_map_field(ctx, "values", render_table_axis_values, axis);
+  }
+}
+
+struct nested_table_context {
+  struct table *t;
+  int i;
+};
+
+static void render_table_second_axis_data(struct console_request_context *ctx,
+                                          void *_ntc) {
+  struct nested_table_context *ntc = _ntc;
+  struct table *t = ntc->t;
+  for (int j = 0; j < t->axis[1].num; j++) {
+    struct console_request_context deeper;
+    if (descend_array_field(ctx, &deeper, j)) {
+      render_float_object(&deeper, "axis value", &t->data.two[ntc->i][j]);
+    }
+  }
+}
+
+static void render_table_data_description(struct console_request_context *ctx,
+                                          void *ptr) {
+  (void)ptr;
+  CborEncoder desc;
+  cbor_encoder_create_map(ctx->response, &desc, 3);
+  render_type_field(&desc, "[[float]]");
+  render_description_field(&desc, "list of lists of table values");
+  cbor_encode_text_stringz(&desc, "len");
+  cbor_encode_int(&desc, MAX_AXIS_SIZE);
+  cbor_encoder_close_container(ctx->response, &desc);
+}
+
+static void render_table_data(struct console_request_context *ctx, void *_t) {
+  struct table *t = _t;
+  for (int i = 0; i < t->axis[0].num; i++) {
+    struct console_request_context deeper;
+    if (descend_array_field(ctx, &deeper, i)) {
+      if (t->num_axis == 1) {
+        render_float_object(&deeper, "axis value", &t->data.one[i]);
+      } else if (t->num_axis == 2) {
+        struct nested_table_context ntc = { .t = t, .i = i };
+        render_array_object(&deeper, render_table_second_axis_data, &ntc);
+      }
+    }
+  }
+}
+
+static void render_table_object(struct console_request_context *ctx, void *_t) {
+  struct table *t = _t;
+  if (ctx->type == CONSOLE_STRUCTURE) {
+    render_type_field(ctx->response, "table");
+    return;
+  }
+  render_custom_map_field(ctx, "title", render_table_title, t);
+  render_uint32_map_field(
+    ctx, "num-axis", "number of axis (1 or 2)", &t->num_axis);
+  render_map_map_field(ctx, "horizontal-axis", render_table_axis, &t->axis[0]);
+  render_map_map_field(ctx, "vertical-axis", render_table_axis, &t->axis[1]);
+
+  if ((ctx->type != CONSOLE_DESCRIBE)) {
+    render_array_map_field(ctx, "data", render_table_data, t);
+  } else {
+    render_custom_map_field(ctx, "data", render_table_data_description, NULL);
+  }
+}
+
+static void render_tables(struct console_request_context *ctx, void *ptr) {
+  (void)ptr;
+  render_map_map_field(ctx, "ve", render_table_object, config.ve);
+  render_map_map_field(
+    ctx, "lambda", render_table_object, config.commanded_lambda);
+  render_map_map_field(ctx, "dwell", render_table_object, config.dwell);
+  render_map_map_field(ctx, "timing", render_table_object, config.timing);
+  render_map_map_field(ctx,
+                       "injector_dead_time",
+                       render_table_object,
+                       config.injector_pw_compensation);
+  render_map_map_field(
+    ctx, "temp-enrich", render_table_object, config.engine_temp_enrich);
+  render_map_map_field(
+    ctx, "tipin-amount", render_table_object, config.tipin_enrich_amount);
+  render_map_map_field(
+    ctx, "tipin-time", render_table_object, config.tipin_enrich_duration);
+}
+
+static void render_decoder(struct console_request_context *ctx, void *ptr) {
+  (void)ptr;
+
+  render_float_map_field(
+    ctx, "offset", "offset past TDC for sync pulse", &config.decoder.offset);
+
+  render_float_map_field(ctx,
+                         "max-variance",
+                         "inter-tooth max time variation (0-1)",
+                         &config.decoder.trigger_max_rpm_change);
+
+  render_uint32_map_field(
+    ctx, "min-rpm", "minimum RPM for sync", &config.decoder.trigger_min_rpm);
+
+  int type = config.decoder.type;
+  render_enum_map_field(
+    ctx,
+    "type",
+    "decoder wheel type",
+    (struct console_enum_mapping[]){
+      { FORD_TFI, "tfi" }, { TOYOTA_24_1_CAS, "cam24+1" }, { 0, NULL } },
+    &type);
+  config.decoder.type = type;
+}
+
+static void output_console_renderer(struct console_request_context *ctx,
+                                    void *ptr) {
+  if (ctx->type == CONSOLE_STRUCTURE) {
+    render_type_field(ctx->response, "output");
+    return;
+  }
+
+  struct output_event *ev = ptr;
+  render_uint32_map_field(ctx, "pin", "pin", &ev->pin);
+  render_uint32_map_field(ctx, "inverted", "inverted", &ev->inverted);
+  render_float_map_field(
+    ctx, "angle", "angle past TDC to trigger event", &ev->angle);
+
+  int type = ev->type;
+  render_enum_map_field(
+    ctx,
+    "type",
+    "output type",
+    (struct console_enum_mapping[]){ { DISABLED_EVENT, "disabled" },
+                                     { FUEL_EVENT, "fuel" },
+                                     { IGNITION_EVENT, "ignition" },
+                                     { 0, NULL } },
+    &type);
+  ev->type = type;
+}
+
+static void render_outputs(struct console_request_context *ctx, void *ptr) {
+  (void)ptr;
+  for (int i = 0; i < MAX_EVENTS; i++) {
+    render_map_array_field(ctx, i, output_console_renderer, &config.events[i]);
+  }
+}
+
+static const char *sensor_name_from_type(sensor_input_type t) {
+  switch (t) {
+  case SENSOR_MAP:
+    return "map";
+  case SENSOR_IAT:
+    return "iat";
+  case SENSOR_CLT:
+    return "clt";
+  case SENSOR_BRV:
+    return "brv";
+  case SENSOR_TPS:
+    return "tps";
+  case SENSOR_AAP:
+    return "aap";
+  case SENSOR_FRT:
+    return "frt";
+  case SENSOR_EGO:
+    return "ego";
+  case SENSOR_FRP:
+    return "frp";
+  default:
+    return "invalid";
+  }
+}
+
+static void render_sensor_object(struct console_request_context *ctx,
+                                 void *ptr) {
+
+  if (ctx->type == CONSOLE_STRUCTURE) {
+    render_type_field(ctx->response, "sensor");
+    return;
+  }
+
+  struct sensor_input *input = ptr;
+
+  render_uint32_map_field(ctx, "pin", "adc sensor input pin", &input->pin);
+  render_float_map_field(
+    ctx, "lag", "lag filter coefficient (0-1)", &input->lag);
+
+  int source = input->source;
+  render_enum_map_field(
+    ctx,
+    "source",
+    "sensor data source",
+    (struct console_enum_mapping[]){ { SENSOR_NONE, "none" },
+                                     { SENSOR_ADC, "adc" },
+                                     { SENSOR_FREQ, "freq" },
+                                     { SENSOR_DIGITAL, "digital" },
+                                     { SENSOR_CONST, "const" },
+                                     { 0, NULL } },
+    &source);
+  input->source = source;
+
+  int method = input->method;
+  render_enum_map_field(ctx,
+                        "method",
+                        "sensor processing method",
+                        (struct console_enum_mapping[]){
+                          { METHOD_LINEAR, "linear" },
+                          { METHOD_LINEAR_WINDOWED, "linear-window" },
+                          { METHOD_TABLE, "table" },
+                          { METHOD_THERM, "therm" },
+                          { 0, NULL } },
+                        &method);
+  input->method = method;
+
+  render_float_map_field(
+    ctx, "range-min", "min for linear mapping", &input->params.range.min);
+  render_float_map_field(
+    ctx, "range-max", "max for linear mapping", &input->params.range.max);
+  render_float_map_field(ctx,
+                         "fixed-value",
+                         "value to hold for const input",
+                         &input->params.fixed_value);
+  render_float_map_field(
+    ctx, "therm-a", "thermistor A", &input->params.therm.a);
+  render_float_map_field(
+    ctx, "therm-b", "thermistor B", &input->params.therm.b);
+  render_float_map_field(
+    ctx, "therm-c", "thermistor C", &input->params.therm.c);
+  render_float_map_field(ctx,
+                         "therm-bias",
+                         "thermistor resistor bias value (ohms)",
+                         &input->params.therm.bias);
+  render_uint32_map_field(ctx,
+                          "fault-min",
+                          "Lower bound for raw sensor input",
+                          &input->fault_config.min);
+  render_uint32_map_field(ctx,
+                          "fault-max",
+                          "Upper bound for raw sensor input",
+                          &input->fault_config.max);
+  render_float_map_field(ctx,
+                         "fault-value",
+                         "Value to assume in fault condition",
+                         &input->fault_config.fault_value);
+
+  render_uint32_map_field(ctx,
+                          "window-capture-width",
+                          "Crank degrees in window to average samples over",
+                          &input->window.capture_width);
+  render_uint32_map_field(ctx,
+                          "window-total-width",
+                          "Crank degrees per window",
+                          &input->window.total_width);
+  render_uint32_map_field(ctx,
+                          "window-offset",
+                          "Crank degree into window to start averagine",
+                          &input->window.total_width);
+}
+
+static void render_sensors(struct console_request_context *ctx, void *ptr) {
+  (void)ptr;
+  for (sensor_input_type i = 0; i < NUM_SENSORS; i++) {
+    render_map_map_field(
+      ctx, sensor_name_from_type(i), render_sensor_object, &config.sensors[i]);
+  }
+}
+
+static void render_crank_enrich(struct console_request_context *ctx,
+                                void *ptr) {
+  (void)ptr;
+  render_float_map_field(ctx,
+                         "crank-rpm",
+                         "Upper RPM limit for crank enrich",
+                         &config.fueling.crank_enrich_config.crank_rpm);
+  render_float_map_field(
+    ctx,
+    "crank-temp",
+    "Upper temperature (C) for crank enrich",
+    &config.fueling.crank_enrich_config.cutoff_temperature);
+  render_float_map_field(ctx,
+                         "enrich-amt",
+                         "crank enrichment multiplier",
+                         &config.fueling.crank_enrich_config.enrich_amt);
+}
+
+static void render_fueling(struct console_request_context *ctx, void *ptr) {
+  (void)ptr;
+  render_float_map_field(ctx,
+                         "injector-cc",
+                         "fuel injector size cc/min",
+                         &config.fueling.injector_cc_per_minute);
+  render_float_map_field(
+    ctx, "cylinder-cc", "cylinder size in cc", &config.fueling.cylinder_cc);
+  render_float_map_field(ctx,
+                         "fuel-stoich-ratio",
+                         "stoich ratio of fuel to air",
+                         &config.fueling.fuel_stoich_ratio);
+  render_uint32_map_field(ctx,
+                          "injections-per-cycle",
+                          "Number of times injectors fire per cycle (batching)",
+                          &config.fueling.injections_per_cycle);
+  render_uint32_map_field(ctx,
+                          "fuel-pump-pin",
+                          "GPIO pin for fuel pump control",
+                          &config.fueling.fuel_pump_pin);
+  render_float_map_field(ctx,
+                         "fuel-density",
+                         "Fuel density (g/cc) at 15C",
+                         &config.fueling.density_of_fuel);
+  render_map_map_field(ctx, "crank-enrich", render_crank_enrich, NULL);
+}
+
+static void render_ignition(struct console_request_context *ctx, void *ptr) {
+  (void)ptr;
+  render_uint32_map_field(ctx,
+                          "min-fire-time",
+                          "minimum wait period for coil output (uS)",
+                          &config.ignition.min_fire_time_us);
+  render_float_map_field(ctx,
+                         "dwell-time",
+                         "dwell time for fixed-duty (uS)",
+                         &config.ignition.dwell_us);
+}
+
+static void render_boost_control(struct console_request_context *ctx,
+                                 void *ptr) {
+  (void)ptr;
+  render_uint32_map_field(
+    ctx, "pin", "GPIO pin for boost control output", &config.boost_control.pin);
+  render_float_map_field(ctx,
+                         "threshold",
+                         "Boost low threshold to enable boost control",
+                         &config.boost_control.threshhold_kpa);
+  render_float_map_field(ctx,
+                         "overboost",
+                         "High threshold for boost cut (kpa)",
+                         &config.boost_control.overboost);
+  render_map_map_field(
+    ctx, "pwm", render_table_object, config.boost_control.pwm_duty_vs_rpm);
+}
+
+static void render_cel(struct console_request_context *ctx, void *ptr) {
+  (void)ptr;
+  render_uint32_map_field(
+    ctx, "pin", "GPIO pin for CEL output", &config.cel.pin);
+  render_float_map_field(ctx,
+                         "lean-boost-kpa",
+                         "Boost low threshold for lean boost warning",
+                         &config.cel.lean_boost_kpa);
+  render_float_map_field(ctx,
+                         "lean-boost-ego",
+                         "EGO high threshold for lean boost warning",
+                         &config.cel.lean_boost_ego);
+}
+
+static void render_freq_object(struct console_request_context *ctx, void *ptr) {
+  struct freq_input *f = ptr;
+
+  int edge = f->edge;
+  int type = f->type;
+
+  render_enum_map_field(
+    ctx,
+    "edge",
+    "type of edge to trigger",
+    (const struct console_enum_mapping[]){ { RISING_EDGE, "rising" },
+                                           { FALLING_EDGE, "falling" },
+                                           { BOTH_EDGES, "both" },
+                                           { 0, NULL } },
+    &edge);
+  render_enum_map_field(
+    ctx,
+    "type",
+    "input interpretation",
+    (const struct console_enum_mapping[]){
+      { FREQ, "freq" }, { TRIGGER, "trigger" }, { 0, NULL } },
+    &type);
+
+  f->edge = edge;
+  f->type = type;
+}
+
+static void render_freq_list(struct console_request_context *ctx, void *ptr) {
+  (void)ptr;
+  for (int i = 0; i < 4; i++) {
+    render_map_array_field(ctx, i, render_freq_object, &config.freq_inputs[i]);
+  }
+}
+
+static void render_test(struct console_request_context *ctx, void *ptr) {
+  (void)ptr;
+  render_uint32_map_field(
+    ctx, "event-logging", "Enable event logging", &event_log.enabled);
+
+  /* Workaround to support the getter/setters */
+  uint32_t old_rpm = get_test_trigger_rpm();
+  uint32_t rpm = old_rpm;
+  render_uint32_map_field(
+    ctx, "test-trigger-rpm", "Test trigger output rpm (0 to disable)", &rpm);
+  if ((ctx->type == CONSOLE_SET) && (rpm != old_rpm)) {
+    set_test_trigger_rpm(rpm);
+  }
 }
 
 #ifndef GIT_DESCRIBE
 #define GIT_DESCRIBE "unknown"
-static const char *git_describe = GIT_DESCRIBE;
 #endif
 
-static void console_get_version(const struct console_config_node *self,
-                                char *dest,
-                                char *remaining) {
-  (void)self;
-  (void)remaining;
+static void render_version(struct console_request_context *ctx, void *_t) {
 
-  strcpy(dest, GIT_DESCRIBE);
-}
-
-static struct console_config_node console_config_nodes[] = {
-  /* Config hierarchy */
-  { .name = "config" },
-  { .name = "config.feed",
-    .get = console_get_feed,
-    .set = console_set_feed,
-    .val = &console_feed_config },
-
-  { .name = "config.tables" },
-  { .name = "config.tables.timing",
-    .val = &timing_vs_rpm_and_map,
-    .get = console_get_table,
-    .set = console_set_table },
-  { .name = "config.tables.iat_timing_adjust",
-    .get = console_get_table,
-    .set = console_set_table },
-  { .name = "config.tables.clt_timing_adjust",
-    .get = console_get_table,
-    .set = console_set_table },
-  { .name = "config.tables.clt_pw_adjust",
-    .get = console_get_table,
-    .set = console_set_table },
-  { .name = "config.tables.ve",
-    .val = &ve_vs_rpm_and_map,
-    .get = console_get_table,
-    .set = console_set_table },
-  { .name = "config.tables.commanded_lambda",
-    .val = &lambda_vs_rpm_and_map,
-    .get = console_get_table,
-    .set = console_set_table },
-  { .name = "config.tables.injector_dead_time",
-    .val = &injector_dead_time,
-    .get = console_get_table,
-    .set = console_set_table },
-  { .name = "config.tables.engine_temp_enrich",
-    .val = &enrich_vs_temp_and_map,
-    .get = console_get_table,
-    .set = console_set_table },
-  { .name = "config.tables.tipin_enrich_amount",
-    .val = &tipin_vs_tpsrate_and_tps,
-    .get = console_get_table,
-    .set = console_set_table },
-  { .name = "config.tables.tipin_enrich_duration",
-    .val = &tipin_duration_vs_rpm,
-    .get = console_get_table,
-    .set = console_set_table },
-  { .name = "config.tables.boost_control",
-    .val = &boost_control_pwm,
-    .get = console_get_table,
-    .set = console_set_table },
-  { .name = "config.tables.dwell",
-    .val = &dwell_ms_vs_brv,
-    .get = console_get_table,
-    .set = console_set_table },
-
-  /* Decoding */
-  { .name = "config.decoder" },
-  { .name = "config.decoder.trigger",
-    .val = &config.decoder.type,
-    .get = console_get_trigger,
-    .set = console_set_trigger },
-  { .name = "config.decoder.max_variance",
-    .val = &config.decoder.trigger_max_rpm_change,
-    .get = console_get_float,
-    .set = console_set_float },
-  { .name = "config.decoder.offset",
-    .val = &config.decoder.offset,
-    .get = console_get_float,
-    .set = console_set_float },
-  { .name = "config.decoder.min_rpm",
-    .val = &config.decoder.trigger_min_rpm,
-    .get = console_get_uint,
-    .set = console_set_uint },
-
-  /* Fueling */
-  { .name = "config.fueling" },
-  { .name = "config.fueling.injector_cc",
-    .val = &config.fueling.injector_cc_per_minute,
-    .get = console_get_float,
-    .set = console_set_float },
-  { .name = "config.fueling.cyclinder_cc",
-    .val = &config.fueling.cylinder_cc,
-    .get = console_get_float,
-    .set = console_set_float },
-  { .name = "config.fueling.fuel_stoich_ratio",
-    .val = &config.fueling.fuel_stoich_ratio,
-    .get = console_get_float,
-    .set = console_set_float },
-  { .name = "config.fueling.injections_per_cycle",
-    .val = &config.fueling.injections_per_cycle,
-    .get = console_get_uint,
-    .set = console_set_uint },
-  { .name = "config.fueling.fuel_pump_pin",
-    .val = &config.fueling.fuel_pump_pin,
-    .get = console_get_uint,
-    .set = console_set_uint },
-  { .name = "config.fueling.crank_enrich_rpm",
-    .val = &config.fueling.crank_enrich_config.crank_rpm,
-    .get = console_get_float,
-    .set = console_set_float },
-  { .name = "config.fueling.crank_enrich_temp",
-    .val = &config.fueling.crank_enrich_config.cutoff_temperature,
-    .get = console_get_float,
-    .set = console_set_float },
-  { .name = "config.fueling.crank_enrich_amt",
-    .val = &config.fueling.crank_enrich_config.enrich_amt,
-    .get = console_get_float,
-    .set = console_set_float },
-
-  /* Ignition */
-  { .name = "config.ignition" },
-  { .name = "config.ignition.dwell_type",
-    .val = &config.ignition.dwell,
-    .get = console_get_dwell_type,
-    .set = console_set_dwell_type },
-  { .name = "config.ignition.dwell_duty",
-    .val = &config.ignition.dwell_duty,
-    .get = console_get_float,
-    .set = console_set_float },
-  { .name = "config.ignition.dwell_us",
-    .val = &config.ignition.dwell_us,
-    .get = console_get_float,
-    .set = console_set_float },
-  { .name = "config.ignition.min_fire_time_us",
-    .val = &config.ignition.min_fire_time_us,
-    .get = console_get_uint,
-    .set = console_set_uint },
-
-  /* Sensors */
-  { .name = "config.sensors" },
-  { .name = "config.sensors.map",
-    .val = &config.sensors[SENSOR_MAP],
-    .get = console_get_sensor,
-    .set = console_set_sensor },
-  { .name = "config.sensors.iat",
-    .val = &config.sensors[SENSOR_IAT],
-    .get = console_get_sensor,
-    .set = console_set_sensor },
-  { .name = "config.sensors.clt",
-    .val = &config.sensors[SENSOR_CLT],
-    .get = console_get_sensor,
-    .set = console_set_sensor },
-  { .name = "config.sensors.brv",
-    .val = &config.sensors[SENSOR_BRV],
-    .get = console_get_sensor,
-    .set = console_set_sensor },
-  { .name = "config.sensors.tps",
-    .val = &config.sensors[SENSOR_TPS],
-    .get = console_get_sensor,
-    .set = console_set_sensor },
-  { .name = "config.sensors.aap",
-    .val = &config.sensors[SENSOR_AAP],
-    .get = console_get_sensor,
-    .set = console_set_sensor },
-  { .name = "config.sensors.frt",
-    .val = &config.sensors[SENSOR_FRT],
-    .get = console_get_sensor,
-    .set = console_set_sensor },
-  { .name = "config.sensors.ego",
-    .val = &config.sensors[SENSOR_EGO],
-    .get = console_get_sensor,
-    .set = console_set_sensor },
-
-  { .name = "config.events",
-    .get = console_get_events,
-    .set = console_set_events },
-
-  /* Tasks */
-  { .name = "config.tasks" },
-  { .name = "config.tasks.boost_control.overboost",
-    .val = &config.boost_control.overboost,
-    .get = console_get_float,
-    .set = console_set_float },
-  { .name = "config.tasks.boost_control.pin",
-    .val = &config.boost_control.pin,
-    .get = console_get_uint,
-    .set = console_set_uint },
-  { .name = "config.tasks.boost_control.threshold",
-    .val = &config.boost_control.threshhold_kpa,
-    .get = console_get_float,
-    .set = console_set_float },
-  { .name = "config.tasks.cel.pin",
-    .val = &config.cel.pin,
-    .get = console_get_uint,
-    .set = console_set_uint },
-  { .name = "config.tasks.cel.lean_boost_kpa",
-    .val = &config.cel.lean_boost_kpa,
-    .get = console_get_float,
-    .set = console_set_float },
-  { .name = "config.tasks.cel.lean_boost_ego",
-    .val = &config.cel.lean_boost_ego,
-    .get = console_get_float,
-    .set = console_set_float },
-
-  /* Hardware config */
-  { .name = "config.hardware" },
-  { .name = "config.hardware.freq",
-    .get = console_get_freq,
-    .set = console_set_freq },
-  { .name = "config.hardware.pwm" },
-
-  { .name = "status" },
-  { .name = "status.current_time", .get = console_get_time },
-
-  { .name = "status.decoder.state",
-    .val = &config.decoder.state,
-    .get = console_get_decoder_state },
-  { .name = "status.decoder.loss_reason",
-    .val = &config.decoder.loss,
-    .get = console_get_decoder_loss_reason },
-  { .name = "status.decoder.t0_count",
-    .val = &config.decoder.t0_count,
-    .get = console_get_uint },
-  { .name = "status.decoder.t1_count",
-    .val = &config.decoder.t1_count,
-    .get = console_get_uint },
-  { .name = "status.decoder.rpm",
-    .val = &config.decoder.rpm,
-    .get = console_get_uint },
-  { .name = "status.decoder.rpm_variance",
-    .val = &config.decoder.trigger_cur_rpm_change,
-    .get = console_get_float },
-
-  { .name = "status.fueling.cut", .get = console_get_fuel_cut },
-  { .name = "status.fueling.pw_us",
-    .val = &calculated_values.fueling_us,
-    .get = console_get_uint },
-  { .name = "status.fueling.ete",
-    .val = &calculated_values.ete,
-    .get = console_get_float },
-  { .name = "status.fueling.ve",
-    .val = &calculated_values.ve,
-    .get = console_get_float },
-  { .name = "status.fueling.lambda",
-    .val = &calculated_values.lambda,
-    .get = console_get_float },
-  { .name = "status.fueling.idt",
-    .val = &calculated_values.idt,
-    .get = console_get_float },
-  { .name = "status.fueling.fuel_volume",
-    .val = &calculated_values.fuelvol_per_cycle,
-    .get = console_get_float },
-  { .name = "status.fueling.tipin",
-    .val = &calculated_values.tipin,
-    .get = console_get_float },
-
-  { .name = "status.ignition.timing_advance",
-    .val = &calculated_values.timing_advance,
-    .get = console_get_float },
-  { .name = "status.ignition.dwell_us",
-    .val = &calculated_values.dwell_us,
-    .get = console_get_uint },
-  { .name = "status.ignition.cut", .get = console_get_ignition_cut },
-
-  /* Sensor values */
-  { .name = "status.sensors.map",
-    .val = &config.sensors[SENSOR_MAP].processed_value,
-    .get = console_get_float },
-  { .name = "status.sensors.map.fault",
-    .val = &config.sensors[SENSOR_MAP].fault,
-    .get = console_get_sensor_fault },
-  { .name = "status.sensors.iat",
-    .val = &config.sensors[SENSOR_IAT].processed_value,
-    .get = console_get_float },
-  { .name = "status.sensors.iat.fault",
-    .val = &config.sensors[SENSOR_IAT].fault,
-    .get = console_get_sensor_fault },
-  { .name = "status.sensors.clt",
-    .val = &config.sensors[SENSOR_CLT].processed_value,
-    .get = console_get_float },
-  { .name = "status.sensors.clt.fault",
-    .val = &config.sensors[SENSOR_CLT].fault,
-    .get = console_get_sensor_fault },
-  { .name = "status.sensors.brv",
-    .val = &config.sensors[SENSOR_BRV].processed_value,
-    .get = console_get_float },
-  { .name = "status.sensors.brv.fault",
-    .val = &config.sensors[SENSOR_BRV].fault,
-    .get = console_get_sensor_fault },
-  { .name = "status.sensors.tps",
-    .val = &config.sensors[SENSOR_TPS].processed_value,
-    .get = console_get_float },
-  { .name = "status.sensors.tps.fault",
-    .val = &config.sensors[SENSOR_TPS].fault,
-    .get = console_get_sensor_fault },
-  { .name = "status.sensors.aap",
-    .val = &config.sensors[SENSOR_AAP].processed_value,
-    .get = console_get_float },
-  { .name = "status.sensors.aap.fault",
-    .val = &config.sensors[SENSOR_AAP].fault,
-    .get = console_get_sensor_fault },
-  { .name = "status.sensors.frt",
-    .val = &config.sensors[SENSOR_FRT].processed_value,
-    .get = console_get_float },
-  { .name = "status.sensors.frt.fault",
-    .val = &config.sensors[SENSOR_FRT].fault,
-    .get = console_get_sensor_fault },
-  { .name = "status.sensors.ego",
-    .val = &config.sensors[SENSOR_EGO].processed_value,
-    .get = console_get_float },
-  { .name = "status.sensors.ego.fault",
-    .val = &config.sensors[SENSOR_EGO].fault,
-    .get = console_get_sensor_fault },
-  { .name = "status.sensors.frp",
-    .val = &config.sensors[SENSOR_FRP].processed_value,
-    .get = console_get_float },
-
-  /* Misc commands */
-  { .name = "flash", .set = console_save_to_flash },
-  { .name = "stats", .get = console_get_stats },
-  { .name = "bootloader", .get = console_bootloader },
-  { .name = "version", .get = console_get_version },
-
-  /* Host commands */
-  { .name = "sim" },
-  { .name = "sim.trigger_time", .set = console_set_trigger_callback },
-  { .name = "sim.test_trigger", .set = console_set_test_trigger },
-  { .name = "sim.event_logging", .set = console_set_event_logging },
-  { .name = "sim.freeze", .set = console_set_freeze },
-  { 0 },
-};
-
-/* Lists all immediate prefixes in node list nodes */
-static void console_list_prefix(const struct console_config_node *nodes,
-                                char *dest,
-                                const char *prefix) {
-
-  const struct console_config_node *node;
-  for (node = nodes; node->name; node++) {
-    /* If prefix doesn't match */
-    if (prefix && strlen(prefix) &&
-        strncmp(node->name, prefix, strlen(prefix))) {
-      continue;
-    }
-    strcat(dest, node->name);
-    strcat(dest, " ");
+  (void)_t;
+  switch (ctx->type) {
+  case CONSOLE_SET:
+  case CONSOLE_GET:
+    cbor_encode_text_stringz(ctx->response, GIT_DESCRIBE);
+    break;
+  case CONSOLE_STRUCTURE:
+  case CONSOLE_DESCRIBE: {
+    CborEncoder desc;
+    cbor_encoder_create_map(ctx->response, &desc, 2);
+    render_type_field(&desc, "string");
+    render_description_field(&desc, "ViaEMS version (RO)");
+    cbor_encoder_close_container(ctx->response, &desc);
+    break;
+  }
+  default:
+    break;
   }
 }
 
-int console_parse_request(char *dest, char *line) {
-  char *action = strtok(line, " ");
-  char *var = strtok(NULL, " ");
-  char *rem = strtok(NULL, "\0");
-
-  if (!action) {
-    strcat(dest, "invalid action");
-    return 0;
-  }
-
-  const struct console_config_node *node =
-    console_search_node(console_config_nodes, var);
-  if (!strcmp("list", action)) {
-    console_list_prefix(console_config_nodes, dest, var);
-    return 1;
-  } else if (!node) {
-    strcpy(dest, "invalid config node");
-    return 0;
-  } else if (!strcmp("get", action)) {
-    if (node->get) {
-      node->get(node, dest, rem);
-      return 1;
-    } else {
-      strcat(dest, "Config node ");
-      strncat(dest, node->name, 64);
-      strcat(dest, " does not support get");
-    }
-  } else if (!strcmp("set", action)) {
-    if (node->set) {
-      node->set(node, rem);
-      return 1;
-    } else {
-      strcat(dest, "Config node ");
-      strncat(dest, node->name, 64);
-      strcat(dest, " does not support set");
-    }
-  } else {
-    strcpy(dest, "invalid action");
-  }
-  return 0;
+static void render_info(struct console_request_context *ctx, void *ptr) {
+  (void)ptr;
+  render_custom_map_field(ctx, "version", render_version, NULL);
 }
 
-void console_init() {
-  const char *console_feed_defaults[] = {
-    "status.current_time",
-    "status.decoder.state",
-    "status.decoder.rpm",
-    "status.decoder.loss_reason",
-    "status.decoder.rpm_variance",
-    "status.decoder.t0_count",
-    "status.decoder.t1_count",
-    "status.ignition.timing_advance",
-    "status.fueling.pw_us",
-    "status.fueling.fuel_volume",
-    "status.fueling.ete",
-    "status.fueling.ve",
-    "status.fueling.lambda",
-    "status.fueling.idt",
-    "status.fueling.tipin",
-    "status.sensors.brv",
-    "status.sensors.map",
-    "status.sensors.aap",
-    "status.sensors.tps",
-    "status.sensors.iat",
-    "status.sensors.clt",
-    "status.sensors.ego",
-    NULL,
+static void console_toplevel_request(struct console_request_context *ctx,
+                                     void *ptr) {
+  (void)ptr;
+  render_map_map_field(ctx, "decoder", render_decoder, NULL);
+  render_map_map_field(ctx, "sensors", render_sensors, NULL);
+  render_array_map_field(ctx, "outputs", render_outputs, NULL);
+  render_map_map_field(ctx, "fueling", render_fueling, NULL);
+  render_map_map_field(ctx, "ignition", render_ignition, NULL);
+  render_map_map_field(ctx, "tables", render_tables, NULL);
+  render_map_map_field(ctx, "boost-control", render_boost_control, NULL);
+  render_map_map_field(ctx, "check-engine-light", render_cel, NULL);
+  render_array_map_field(ctx, "freq", render_freq_list, NULL);
+  render_map_map_field(ctx, "test", render_test, NULL);
+  render_map_map_field(ctx, "info", render_info, NULL);
+}
+
+static void console_toplevel_types(struct console_request_context *ctx,
+                                   void *ptr) {
+  (void)ptr;
+  render_map_map_field(ctx, "sensor", render_sensor_object, &config.sensors[0]);
+  render_map_map_field(
+    ctx, "output", output_console_renderer, &config.events[1]);
+  render_map_map_field(ctx, "table", render_table_object, config.ve);
+}
+
+static void console_request_structure(CborEncoder *enc) {
+
+  struct console_request_context structure_ctx = {
+    .type = CONSOLE_STRUCTURE,
+    .response = enc,
+    .is_filtered = false,
   };
+  render_map_map_field(
+    &structure_ctx, "response", console_toplevel_request, NULL);
 
-  int count = 0;
-  while (console_feed_defaults[count]) {
-    console_feed_config.nodes[count] =
-      console_search_node(console_config_nodes, console_feed_defaults[count]);
-    assert(console_feed_config.nodes[count]);
-    count++;
-  }
-  console_feed_config.n_nodes = count;
+  struct console_request_context type_ctx = {
+    .type = CONSOLE_DESCRIBE,
+    .response = enc,
+    .is_filtered = false,
+  };
+  render_map_map_field(&type_ctx, "types", console_toplevel_types, NULL);
+
+  report_success(enc, true);
 }
 
-static void console_feed_line(char *dest) {
-
-  unsigned int i;
-  char temp[64];
-  char empty[1] = "";
-  for (i = 0; i < console_feed_config.n_nodes; i++) {
-    const struct console_config_node *node = console_feed_config.nodes[i];
-    strcpy(temp, "");
-    if (!node->get) {
-      continue;
-    }
-    node->get(node, temp, empty);
-    strcat(dest, temp);
-    if (i < console_feed_config.n_nodes - 1) {
-      strcat(dest, ",");
-    }
-  }
-  strcat(dest, "\r\n");
+static void console_request_get(CborEncoder *enc, CborValue *pathlist) {
+  struct console_request_context ctx = {
+    .type = CONSOLE_GET,
+    .response = enc,
+    .path = pathlist,
+    .is_filtered = !cbor_value_at_end(pathlist),
+  };
+  cbor_encode_text_stringz(enc, "response");
+  render_map_object(&ctx, console_toplevel_request, NULL);
+  report_success(enc, true);
 }
 
-struct {
-  struct {
-    int in_progress;
-    size_t max;
-    const char *src;
-    char *ptr;
-  } rx, tx;
-} console_state = {
-  .tx = { .src = console.txbuffer, .in_progress = 0 },
-  .rx = { .src = console.rxbuffer, .in_progress = 0 },
-};
-
-int console_read_full(char *buf, size_t max) {
-  if (console_state.rx.in_progress) {
-    size_t r = console_state.rx.max - 1 -
-               (size_t)(console_state.rx.ptr - console_state.rx.src);
-    if (r == 0) {
-      console_state.rx.in_progress = 0;
-      return 0;
-    }
-    r = console_read(console_state.rx.ptr, r);
-    if (r) {
-      console_state.rx.ptr += r;
-      if (memchr(console_state.rx.src,
-                 '\r',
-                 (uint16_t)(console_state.rx.ptr - console_state.rx.src)) ||
-          memchr(console_state.rx.src,
-                 '\n',
-                 (uint16_t)(console_state.rx.ptr - console_state.rx.src))) {
-        console_state.rx.in_progress = 0;
-        return 1;
-      }
-    }
-  } else {
-    console_state.rx.in_progress = 1;
-    console_state.rx.max = max;
-    console_state.rx.src = buf;
-    console_state.rx.ptr = buf;
-
-    memset(buf, 0, max);
-  }
-  return 0;
+static void console_request_set(CborEncoder *enc,
+                                CborValue *pathlist,
+                                CborValue *value) {
+  struct console_request_context ctx = {
+    .type = CONSOLE_SET,
+    .response = enc,
+    .path = pathlist,
+    .is_filtered = !cbor_value_at_end(pathlist),
+    .value = *value,
+  };
+  cbor_encode_text_stringz(enc, "response");
+  render_map_object(&ctx, console_toplevel_request, NULL);
+  report_success(enc, true);
 }
 
-int console_write_full(char *buf, size_t max) {
-  if (console_state.tx.in_progress) {
-    size_t r = console_state.tx.max -
-               (size_t)(console_state.tx.ptr - console_state.tx.src);
-    r = console_write(console_state.tx.ptr, r);
-    if (r) {
-      console_state.tx.ptr += r;
-      if (console_state.tx.max ==
-          (uint16_t)(console_state.tx.ptr - console_state.tx.src)) {
-        console_state.tx.in_progress = 0;
-        return 1;
-      }
+static void console_request_flash(CborEncoder *response) {
+  platform_save_config();
+  report_success(response, true);
+}
+
+static void console_request_bootloader(CborEncoder *response) {
+  report_success(response, true);
+  platform_reset_into_bootloader();
+}
+
+static void console_process_request(CborValue *request, CborEncoder *response) {
+  cbor_encode_text_stringz(response, "type");
+  cbor_encode_text_stringz(response, "response");
+
+  int req_id = -1;
+  CborValue request_id_value;
+  if (!cbor_value_map_find_value(request, "id", &request_id_value)) {
+    if (cbor_value_is_integer(&request_id_value)) {
+      cbor_value_get_int(&request_id_value, &req_id);
     }
-  } else {
-    console_state.tx.in_progress = 1;
-    console_state.tx.max = max;
-    console_state.tx.src = buf;
-    console_state.tx.ptr = buf;
-  }
-  return 0;
-}
-
-static void console_process_rx() {
-  char *out = console.txbuffer;
-  char *in = strtok(console.rxbuffer, "\r\n");
-  char *response = out + 2; /* Allow for status character */
-  strcpy(response, "");
-
-  if (!in) {
-    /* Allow just raw \n's in the case of hosted mode */
-    in = strtok(console.rxbuffer, "\n");
-  }
-  int success = console_parse_request(response, in);
-  strcat(response, "\r\n");
-
-  out[0] = success ? '*' : '-';
-  out[1] = ' ';
-  console_write_full(out, strlen(out));
-}
-
-static int console_output_events() {
-  strcpy(console.txbuffer, "");
-  int num_ev = 0;
-  struct logged_event ev = platform_get_logged_event();
-  while ((ev.type != EVENT_NONE) && (num_ev != 16)) {
-    num_ev++;
-
-    char tempbuf[32];
-    switch (ev.type) {
-    case EVENT_OUTPUT:
-      sprintf(
-        tempbuf, "# OUTPUTS %lu %2x\r\n", (unsigned long)ev.time, ev.value);
-      break;
-    case EVENT_GPIO:
-      sprintf(tempbuf, "# GPIO %lu %2x\r\n", (unsigned long)ev.time, ev.value);
-      break;
-    case EVENT_TRIGGER0:
-      sprintf(tempbuf, "# TRIGGER0 %lu\r\n", (unsigned long)ev.time);
-      break;
-    case EVENT_TRIGGER1:
-      sprintf(tempbuf, "# TRIGGER1 %lu\r\n", (unsigned long)ev.time);
-      break;
-    default:
-      break;
-    }
-    strcat(console.txbuffer, tempbuf);
-
-    ev = platform_get_logged_event();
   }
 
-  if (num_ev != 0) {
-    console_write_full(console.txbuffer, strlen(console.txbuffer));
-  }
-  return num_ev;
-}
+  cbor_encode_text_stringz(response, "id");
+  cbor_encode_int(response, req_id);
 
-void console_process() {
-
-  static int pending_request = 0;
-  stats_start_timing(STATS_CONSOLE_TIME);
-  if (!pending_request &&
-      console_read_full(console.rxbuffer, CONSOLE_BUFFER_SIZE)) {
-    pending_request = 1;
-  }
-
-  /* We don't ever want to interrupt a feedline */
-  if (pending_request && !console_state.tx.in_progress) {
-    console_process_rx();
-    pending_request = 0;
-  }
-
-  /* We're still sending packets for a tx line, keep doing just that */
-  if (console_state.tx.in_progress) {
-    console_write_full(console.txbuffer, 0);
-    stats_finish_timing(STATS_CONSOLE_TIME);
+  CborValue request_method_value;
+  cbor_value_map_find_value(request, "method", &request_method_value);
+  if (cbor_value_get_type(&request_method_value) == CborInvalidType) {
+    report_parsing_error(response, "request has no 'method'");
+    report_success(response, false);
     return;
   }
 
-  console.txbuffer[0] = '\0';
-  if (!console_output_events() && console_feed_config.n_nodes) {
-    console_feed_line(console.txbuffer);
-    console_write_full(console.txbuffer, strlen(console.txbuffer));
+  bool match;
+  cbor_value_text_string_equals(&request_method_value, "ping", &match);
+  if (match) {
+    console_request_ping(response);
+    return;
   }
 
+  cbor_value_text_string_equals(&request_method_value, "structure", &match);
+  if (match) {
+    console_request_structure(response);
+    return;
+  }
+
+  cbor_value_text_string_equals(&request_method_value, "flash", &match);
+  if (match) {
+    console_request_flash(response);
+    return;
+  }
+
+  cbor_value_text_string_equals(&request_method_value, "bootloader", &match);
+  if (match) {
+    console_request_bootloader(response);
+    return;
+  }
+
+  CborValue path, pathlist;
+  cbor_value_map_find_value(request, "path", &path);
+  if (cbor_value_is_array(&path)) {
+    cbor_value_enter_container(&path, &pathlist);
+  } else {
+    report_parsing_error(response, "no 'path' provided'");
+    return;
+  }
+
+  cbor_value_text_string_equals(&request_method_value, "get", &match);
+  if (match) {
+    console_request_get(response, &pathlist);
+    return;
+  }
+
+  CborValue set_value;
+  cbor_value_map_find_value(request, "value", &set_value);
+  if (cbor_value_get_type(&set_value) == CborInvalidType) {
+    report_parsing_error(response, "invalid 'value' provided");
+    return;
+  }
+
+  cbor_value_text_string_equals(&request_method_value, "set", &match);
+  if (match) {
+    console_request_set(response, &pathlist, &set_value);
+    return;
+  }
+}
+
+static void console_process_request_raw(int len) {
+  CborParser parser;
+  CborValue value;
+  CborError err;
+
+  uint8_t response[16384];
+  CborEncoder encoder;
+
+  cbor_encoder_init(&encoder, response, sizeof(response), 0);
+
+  err = cbor_parser_init(rx_buffer, len, 0, &parser, &value);
+  if (err) {
+    return;
+  }
+
+  CborEncoder response_map;
+  if (cbor_encoder_create_map(&encoder, &response_map, CborIndefiniteLength) !=
+      CborNoError) {
+    return;
+  }
+
+  console_process_request(&value, &response_map);
+
+  if (cbor_encoder_close_container(&encoder, &response_map)) {
+    return;
+  }
+
+  size_t write_size = cbor_encoder_get_buffer_size(&encoder, response);
+  console_write_full(response, write_size);
+}
+
+void console_process() {
+  static timeval_t last_desc_time = 0;
+  uint8_t txbuffer[16384];
+
+  size_t read_size;
+  if ((read_size = console_try_read())) {
+    /* Parse a request from the client */
+    console_process_request_raw(read_size);
+    console_shift_rx_buffer(read_size);
+  }
+
+  /* Process any outstanding event messages */
+  struct logged_event ev = get_logged_event();
+  while (ev.type != EVENT_NONE) {
+    size_t write_size = console_event_message(txbuffer, sizeof(txbuffer), &ev);
+    console_write_full(txbuffer, write_size);
+    ev = get_logged_event();
+  }
+
+  /* Has it been 100ms since the last description? */
+  if (time_diff(current_time(), last_desc_time) > time_from_us(100000)) {
+    /* If so, print a description message */
+    size_t write_size = console_feed_line_keys(txbuffer, sizeof(txbuffer));
+    console_write_full(txbuffer, write_size);
+    last_desc_time = current_time();
+  } else {
+    /* Otherwise a feed message */
+    size_t write_size = console_feed_line(txbuffer, sizeof(txbuffer));
+    console_write_full(txbuffer, write_size);
+  }
   stats_finish_timing(STATS_CONSOLE_TIME);
 }
 
 #ifdef UNITTEST
 #include <check.h>
+#include <stdarg.h>
 
-static struct console_config_node test_nodes[] = {
-  { .name = "test1" },
-  { .name = "test2" },
-  { .name = "test2.testA" },
-  { .name = "test3.testA" },
-  { .name = "test3.testA.test1" },
-  { .name = "test2.testB" },
-  { .name = "test2.testB.test2" },
-  { 0 },
+struct cbor_test_context {
+  uint8_t buf[16384];
+  CborEncoder top_encoder;
+  CborParser top_parser;
+  CborValue top_value;
+
+  uint8_t pathbuf[512];
+  CborParser path_parser;
+  CborValue path_value;
 };
 
-START_TEST(check_console_search_node) {
+struct cbor_test_context test_ctx;
 
-  ck_assert_ptr_null(console_search_node(test_nodes, NULL));
-  ck_assert_ptr_null(console_search_node(test_nodes, ""));
-  ck_assert_ptr_null(console_search_node(test_nodes, "test5"));
-  ck_assert_ptr_null(console_search_node(test_nodes, "test3"));
-  ck_assert_ptr_null(console_search_node(test_nodes, "test1.testA"));
-  ck_assert_ptr_null(console_search_node(test_nodes, "test1.testA.test1"));
-
-  ck_assert_ptr_eq(console_search_node(test_nodes, "test1"), &test_nodes[0]);
-  ck_assert_ptr_eq(console_search_node(test_nodes, "test2"), &test_nodes[1]);
-  ck_assert_ptr_eq(console_search_node(test_nodes, "test2.testA"),
-                   &test_nodes[2]);
-  ck_assert_ptr_eq(console_search_node(test_nodes, "test3.testA.test1"),
-                   &test_nodes[4]);
+static void init_console_tests() {
+  cbor_encoder_init(
+    &test_ctx.top_encoder, test_ctx.buf, sizeof(test_ctx.buf), 0);
 }
-END_TEST
 
-START_TEST(check_console_list_prefix) {
-  char buf[128];
+static void deinit_console_tests() {}
 
-  strcpy(buf, "");
-  console_list_prefix(test_nodes, buf, "test2");
-  ck_assert_str_eq(buf, "test2 test2.testA test2.testB test2.testB.test2 ");
+static void render_path(const char *fmt, ...) {
+  CborEncoder enc, array;
+  cbor_encoder_init(&enc, test_ctx.pathbuf, sizeof(test_ctx.pathbuf), 0);
+  cbor_encoder_create_array(&enc, &array, CborIndefiniteLength);
+  va_list va_fmt;
+  va_start(va_fmt, fmt);
 
-  strcpy(buf, "");
-  console_list_prefix(test_nodes, buf, "test1");
-  ck_assert_str_eq(buf, "test1 ");
+  for (const char *i = fmt; *i != 0; i++) {
+    uint32_t u;
+    const char *s;
+    switch (*i) {
+    case 'u':
+      u = va_arg(va_fmt, uint32_t);
+      cbor_encode_int(&array, u);
+      break;
+    case 's':
+      s = va_arg(va_fmt, const char *);
+      cbor_encode_text_stringz(&array, s);
+      break;
+    default:
+      cbor_encode_null(&array);
+      break;
+    }
+  }
+  va_end(va_fmt);
+  cbor_encoder_close_container(&enc, &array);
 
-  strcpy(buf, "");
-  console_list_prefix(test_nodes, buf, "test3");
-  ck_assert_str_eq(buf, "test3.testA test3.testA.test1 ");
+  CborValue top_value;
+  cbor_parser_init(test_ctx.pathbuf,
+                   sizeof(test_ctx.pathbuf),
+                   0,
+                   &test_ctx.path_parser,
+                   &top_value);
+  cbor_value_enter_container(&top_value, &test_ctx.path_value);
 }
-END_TEST
 
-START_TEST(check_console_get_time) {
-  char buf[32] = { 0 };
-  console_get_time(NULL, buf, NULL);
-  ck_assert(strlen(buf) != 0);
+static void finish_writing() {
+  cbor_parser_init(test_ctx.buf,
+                   sizeof(test_ctx.buf),
+                   0,
+                   &test_ctx.top_parser,
+                   &test_ctx.top_value);
 }
-END_TEST
 
-START_TEST(check_console_get_float) {
-  float v;
-  struct console_config_node t = {
-    .val = &v,
+START_TEST(test_render_uint32_object_get) {
+  struct console_request_context ctx = {
+    .type = CONSOLE_GET,
+    .response = &test_ctx.top_encoder,
   };
 
-  v = 1.0f;
-  char buf[32];
-  console_get_float(&t, buf, NULL);
-  ck_assert_str_eq(buf, "1.0000");
+  uint32_t field = 12;
+  render_uint32_object(&ctx, "desc", &field);
+  finish_writing();
+
+  int result;
+  ck_assert(cbor_value_get_int(&test_ctx.top_value, &result) == CborNoError);
+  ck_assert_int_eq(result, field);
 }
 END_TEST
 
-START_TEST(check_console_set_float) {
-  float v;
-  struct console_config_node t = {
-    .val = &v,
+START_TEST(test_render_uint32_object_get_large) {
+  struct console_request_context ctx = {
+    .type = CONSOLE_GET,
+    .response = &test_ctx.top_encoder,
   };
 
-  char buf[] = "1.00";
-  console_set_float(&t, buf);
-  ck_assert_float_eq(v, 1.00);
+  /* Chosen to exceed signed 32 bit integer */
+  uint32_t field = 3000000000;
+  render_uint32_object(&ctx, "desc", &field);
+  finish_writing();
+
+  int result;
+  ck_assert(cbor_value_get_int(&test_ctx.top_value, &result) == CborNoError);
+  ck_assert_int_eq((uint32_t)result, field);
 }
 END_TEST
 
-START_TEST(check_console_get_uint) {
-  unsigned int v;
-  struct console_config_node t = {
-    .val = &v,
+START_TEST(test_render_float_object_get) {
+  struct console_request_context ctx = {
+    .type = CONSOLE_GET,
+    .response = &test_ctx.top_encoder,
   };
 
-  v = 200;
-  char buf[32];
-  console_get_uint(&t, buf, NULL);
-  ck_assert_str_eq(buf, "200");
+  float field = 3.2f;
+  render_float_object(&ctx, "desc", &field);
+  finish_writing();
+
+  float result;
+  ck_assert(cbor_value_get_float(&test_ctx.top_value, &result) == CborNoError);
+  ck_assert_float_eq(result, field);
 }
 END_TEST
 
-START_TEST(check_console_set_uint) {
-  unsigned int v;
-  struct console_config_node t = {
-    .val = &v,
-  };
+START_TEST(test_smoke_console_request_structure) {
+  CborEncoder structure_enc;
+  cbor_encoder_create_map(&test_ctx.top_encoder, &structure_enc, 1);
+  console_request_structure(&structure_enc);
+  cbor_encoder_close_container(&test_ctx.top_encoder, &structure_enc);
+  finish_writing();
 
-  char buf[] = "200";
-  console_set_uint(&t, buf);
-  ck_assert_uint_eq(v, 200);
+  ck_assert(cbor_value_validate_basic(&test_ctx.top_value) == CborNoError);
+  ck_assert(cbor_value_is_map(&test_ctx.top_value));
+
+  /* Test that decoder has an offset field with a type and description */
+  CborValue response_value;
+  ck_assert(cbor_value_map_find_value(
+              &test_ctx.top_value, "response", &response_value) == CborNoError);
+  ck_assert(cbor_value_is_map(&response_value));
+
+  CborValue decoder_value;
+  ck_assert(cbor_value_map_find_value(
+              &response_value, "decoder", &decoder_value) == CborNoError);
+  ck_assert(cbor_value_is_map(&decoder_value));
+
+  CborValue offset_value;
+  ck_assert(cbor_value_map_find_value(
+              &decoder_value, "offset", &offset_value) == CborNoError);
+  ck_assert(cbor_value_is_map(&offset_value));
+
+  CborValue type_value, description_value;
+  ck_assert(cbor_value_map_find_value(&offset_value, "_type", &type_value) ==
+            CborNoError);
+  ck_assert(cbor_value_map_find_value(
+              &offset_value, "description", &description_value) == CborNoError);
+
+  ck_assert(cbor_value_is_text_string(&type_value));
+  ck_assert(cbor_value_is_text_string(&description_value));
 }
 END_TEST
 
-START_TEST(check_parse_keyval_pair) {
-  char *buf = malloc(64);
-  char *orig = buf;
-
-  strcpy(buf, "");
-  char *k = NULL, *v = NULL;
-
-  ck_assert_int_eq(parse_keyval_pair(&k, &v, &buf), 0);
-  ck_assert_ptr_null(k);
-  ck_assert_ptr_null(v);
-
-  k = NULL;
-  k = NULL;
-  strcpy(buf, "");
-  ck_assert_int_eq(parse_keyval_pair(&k, &v, &buf), 0);
-
-  k = NULL;
-  k = NULL;
-  strcpy(buf, "keywithnoval");
-  ck_assert_int_eq(parse_keyval_pair(&k, &v, &buf), 0);
-
-  k = NULL;
-  k = NULL;
-  strcpy(buf, "keywithnoval=");
-  ck_assert_int_eq(parse_keyval_pair(&k, &v, &buf), 0);
-
-  k = NULL;
-  k = NULL;
-  strcpy(buf, "keywithval=val");
-  ck_assert_int_eq(parse_keyval_pair(&k, &v, &buf), 1);
-  ck_assert_str_eq(k, "keywithval");
-  ck_assert_str_eq(v, "val");
-
-  k = NULL;
-  k = NULL;
-  strcpy(buf, "keywithval=val anotherkey=anotherval");
-  ck_assert_int_eq(parse_keyval_pair(&k, &v, &buf), 1);
-  ck_assert_str_eq(k, "keywithval");
-  ck_assert_str_eq(v, "val");
-
-  ck_assert_int_eq(parse_keyval_pair(&k, &v, &buf), 1);
-  ck_assert_str_eq(k, "anotherkey");
-  ck_assert_str_eq(v, "anotherval");
-
-  free(orig);
-}
-END_TEST
-
-START_TEST(check_console_set_table_element_oneaxis) {
-  struct table t1 = {
-    .num_axis = 1,
-    .axis[0] = {
-      .num = 6,
-      .values = {0},
-    },
-  };
-
-  /* Out of bounds */
-  ck_assert_int_eq(console_set_table_element(&t1, "[10]", 1.0), 0);
-
-  /*Wrong type */
-  ck_assert_int_eq(console_set_table_element(&t1, "[3][3]", 1.0), 0);
-
-  /* Bad formatting */
-  ck_assert_int_eq(console_set_table_element(&t1, "3", 1.0), 0);
-  ck_assert_int_eq(console_set_table_element(&t1, "3]", 1.0), 0);
-
-  ck_assert_int_eq(console_set_table_element(&t1, "[3]", 1.0), 1);
-  ck_assert_float_eq(t1.data.one[3], 1.0);
-}
-END_TEST
-
-START_TEST(check_console_set_table_element_twoaxis) {
-  struct table t2 = {
-    .num_axis = 2,
-    .axis[0] = {
-      .num = 6,
-    }, 
-    .axis[1] = {
-      .num = 6,
-    },
-  };
-
-  /* Out of bounds */
-  ck_assert_int_eq(console_set_table_element(&t2, "[10][10]", 1.0), 0);
-
-  /*Wrong type */
-  ck_assert_int_eq(console_set_table_element(&t2, "[3]", 1.0), 0);
-
-  /* Bad formatting */
-  ck_assert_int_eq(console_set_table_element(&t2, "3", 1.0), 0);
-  ck_assert_int_eq(console_set_table_element(&t2, "3]4]", 1.0), 0);
-
-  ck_assert_int_eq(console_set_table_element(&t2, "[3][2]", 1.0), 1);
-  ck_assert_float_eq(t2.data.two[3][2], 1.0);
-}
-END_TEST
-
-START_TEST(check_console_get_table_element_oneaxis) {
-  const struct table t1 = {
-    .num_axis = 2,
-    .axis[0] = {
-      .num = 3,
-    },
-    .axis[1] = {
-      .num = 3,
-    },
-    .data = {
-      .two = {
-        {5, 6, 7, 8, 9},
-        {12, 13, 14, 15, 16},
-        {18, 19, 20, 21, 22},
-      },
-    },
-  };
-
-  float v;
-  /* Out of bounds */
-  ck_assert_int_eq(console_get_table_element(&t1, "[10][2]", &v), 0);
-
-  /*Wrong type */
-  ck_assert_int_eq(console_get_table_element(&t1, "[2]", &v), 0);
-
-  /* Bad formatting */
-  ck_assert_int_eq(console_get_table_element(&t1, "1", &v), 0);
-  ck_assert_int_eq(console_get_table_element(&t1, "1]1", &v), 0);
-
-  ck_assert_int_eq(console_get_table_element(&t1, "[1][1]", &v), 1);
-  ck_assert_float_eq(v, 13.0);
-}
-END_TEST
-
-START_TEST(check_console_get_table_element_twoaxis) {
-  struct table t2 = {
-    .num_axis = 2,
-    .axis[0] = {
-      .num = 6,
-      .values = {0},
-    }, 
-    .axis[1] = {
-      .num = 6,
-      .values = {0},
-    },
-  };
-
-  /* Out of bounds */
-  ck_assert_int_eq(console_set_table_element(&t2, "[10][10]", 1.0), 0);
-
-  /*Wrong type */
-  ck_assert_int_eq(console_set_table_element(&t2, "[3]", 1.0), 0);
-
-  /* Bad formatting */
-  ck_assert_int_eq(console_set_table_element(&t2, "3", 1.0), 0);
-  ck_assert_int_eq(console_set_table_element(&t2, "3]4]", 1.0), 0);
-
-  ck_assert_int_eq(console_set_table_element(&t2, "[3][2]", 1.0), 1);
-  ck_assert_float_eq(t2.data.two[3][2], 1.0);
-}
-END_TEST
-
-START_TEST(check_console_set_table_axis_labels) {
-  struct table_axis a = {
-    .num = 4,
-    .values = { 0 },
-  };
-  char buf[32];
-
-  /* Out of bounds */
-  strcpy(buf, "[1,2,3,4,5]");
-  console_set_table_axis_labels(&a, buf);
-  ck_assert_int_eq(a.values[3], 4);
-  ck_assert_int_eq(a.values[4], 0);
-
-  /* Malformed */
-  strcpy(buf, "10,11,12,13,15");
-  console_set_table_axis_labels(&a, buf);
-  ck_assert_int_eq(a.values[3], 4);
-  ck_assert_int_eq(a.values[4], 0);
-
-  strcpy(buf, "[8,9,10]");
-  console_set_table_axis_labels(&a, buf);
-  ck_assert_int_eq(a.values[0], 8);
-  ck_assert_int_eq(a.values[1], 9);
-  ck_assert_int_eq(a.values[2], 10);
-}
-END_TEST
-
-START_TEST(check_console_set_table) {
-  struct table t = { 0 };
-  const struct console_config_node n = { .val = &t };
-
-  char buf[] = "name=test naxis=2 rows=3 cols=3 rowname=row colname=col "
-               "rowlabels=[1,2,3] collabels=[5,6,7.2] [0][0]=5.0";
-
-  console_set_table(&n, buf);
-  ck_assert_str_eq(t.title, "test");
-  ck_assert_int_eq(t.num_axis, 2);
-  ck_assert_int_eq(t.axis[0].num, 3);
-  ck_assert_int_eq(t.axis[1].num, 3);
-  ck_assert_str_eq(t.axis[0].name, "col");
-  ck_assert_str_eq(t.axis[1].name, "row");
-
-  ck_assert_float_eq(t.axis[1].values[0], 1);
-  ck_assert_float_eq(t.axis[1].values[1], 2);
-  ck_assert_float_eq(t.axis[1].values[2], 3);
-
-  ck_assert_float_eq(t.axis[0].values[0], 5);
-  ck_assert_float_eq(t.axis[0].values[1], 6);
-  ck_assert_float_eq(t.axis[0].values[2], 7.2);
-
-  ck_assert_float_eq(t.data.two[0][0], 5.0);
-
-  char buf2[] = "[0][0]=1.1 [0][1]=1.2 [0][2]=1.3 [1][0]=2.0";
-  console_set_table(&n, buf2);
-  ck_assert_float_eq(t.data.two[0][0], 1.1);
-  ck_assert_float_eq(t.data.two[0][1], 1.2);
-  ck_assert_float_eq(t.data.two[0][2], 1.3);
-  ck_assert_float_eq(t.data.two[1][0], 2.0);
-}
-END_TEST
-
-START_TEST(check_console_get_table) {
-  struct table t;
-  const struct console_config_node n = { .val = &t };
-
-  char buf[512];
-  t = (struct table){
-    .title = "test",
-    .num_axis = 2,
-    .axis[0] = {
-      .name = "cols", .num = 3,
-      .values = {1, 2.0, 3},
-    },
-    .axis[1] = {
-      .name = "rows", .num = 3,
-      .values = {5, 6, 7},
-    },
-    .data = {
-      .two = {
-        {1, 2, 3},
-        {4, 6, 7},
-        {7, 8, 9},
-      },
-    },
-  };
-
-  char cmd[] = "";
-  console_get_table(&n, buf, cmd);
-  ck_assert_ptr_nonnull(strstr(buf, "name=test"));
-  ck_assert_ptr_nonnull(strstr(buf, "naxis=2"));
-  ck_assert_ptr_nonnull(strstr(buf, "rows=3"));
-  ck_assert_ptr_nonnull(strstr(buf, "rowname=rows"));
-  ck_assert_ptr_nonnull(strstr(buf, "rowlabels=[5.0,6.0,7.0]"));
-  ck_assert_ptr_nonnull(strstr(buf, "cols=3"));
-  ck_assert_ptr_nonnull(strstr(buf, "colname=cols"));
-  ck_assert_ptr_nonnull(strstr(buf, "collabels=[1.0,2.0,3.0]"));
-
-  char cmd2[] = "[1][1]";
-  console_get_table(&n, buf, cmd2);
-  ck_assert_str_eq(buf, "6.00");
-}
-END_TEST
-
-START_TEST(check_console_get_sensor) {
-  struct sensor_input s_const = {
-    .source = SENSOR_CONST,
-    .params = {
-      .fixed_value = 12.0,
-    },
-    .fault_config = {
-      .min = 1,
-      .max = 2,
-      .fault_value = 1.5,
-    },
-  };
-  struct console_config_node n = { .val = &s_const };
-  char buf[256];
-  char cmd[] = "";
-
-  strcpy(buf, "");
-  console_get_sensor(&n, buf, cmd);
-  ck_assert_ptr_nonnull(strstr(buf, "source=const"));
-  ck_assert_ptr_nonnull(strstr(buf, "fixed-val=12.00"));
-  ck_assert_ptr_nonnull(strstr(buf, "fault-min=1"));
-  ck_assert_ptr_nonnull(strstr(buf, "fault-max=2"));
-  ck_assert_ptr_nonnull(strstr(buf, "fault-val=1.50"));
-
-  struct sensor_input s_linear = {
-    .pin = 1,
-    .source = SENSOR_ADC,
-    .method = METHOD_LINEAR,
-    .lag = 20,
-    .params = {
-      .range = {
-        .min = 12,
-        .max = 20,
-      },
-    },
-  };
-  n.val = &s_linear;
-
-  strcpy(buf, "");
-  console_get_sensor(&n, buf, cmd);
-  ck_assert_ptr_nonnull(strstr(buf, "source=adc"));
-  ck_assert_ptr_nonnull(strstr(buf, "method=linear"));
-  ck_assert_ptr_nonnull(strstr(buf, "range-min=12.00"));
-  ck_assert_ptr_nonnull(strstr(buf, "range-max=20.00"));
-  ck_assert_ptr_nonnull(strstr(buf, "pin=1"));
-  ck_assert_ptr_nonnull(strstr(buf, "lag=20.00"));
-}
-END_TEST
-
-START_TEST(check_console_set_sensor) {
-  struct sensor_input s = { 0 };
-  const struct console_config_node n = { .val = &s };
-
-  char buf[] = "source=freq pin=2 method=linear lag=0.2 range-min=20.1 "
-               "range-max=100.1 fault-min=200 fault-max=400, fault-val=19.2 "
-               "window-total-size=120 window-capture-size=90";
-
-  console_set_sensor(&n, buf);
-  ck_assert_int_eq(s.source, SENSOR_FREQ);
-  ck_assert_int_eq(s.method, METHOD_LINEAR);
-  ck_assert_int_eq(s.pin, 2);
-  ck_assert_float_eq(s.lag, 0.2);
-  ck_assert_float_eq(s.params.range.min, 20.1);
-  ck_assert_float_eq(s.params.range.max, 100.1);
-  ck_assert_float_eq(s.fault_config.fault_value, 19.2);
-  ck_assert_int_eq(s.fault_config.min, 200);
-  ck_assert_int_eq(s.fault_config.max, 400);
-
-  ck_assert_int_eq(s.window.total_width, 120);
-  ck_assert_int_eq(s.window.capture_width, 90);
-
-  char buf2[] = "source=const fixed-val=101.1";
-  console_set_sensor(&n, buf2);
-  ck_assert_int_eq(s.source, SENSOR_CONST);
-  ck_assert_float_eq(s.params.fixed_value, 101.1);
-}
-END_TEST
-
-START_TEST(check_console_get_events) {
-
-  char cmd[16] = "";
-  char buf[128];
-
-  config.num_events = 4;
-  console_get_events(NULL, buf, cmd);
-  ck_assert_str_eq(buf, "num_events=4");
-
-  config.events[3] = (struct output_event){
-    .type = FUEL_EVENT,
-    .inverted = 1,
-    .angle = 100,
-    .pin = 5,
-  };
-
-  strcpy(cmd, "3");
-  console_get_events(NULL, buf, cmd);
-  ck_assert_ptr_nonnull(strstr(buf, "type=fuel"));
-  ck_assert_ptr_nonnull(strstr(buf, "angle=100"));
-  ck_assert_ptr_nonnull(strstr(buf, "output=5"));
-  ck_assert_ptr_nonnull(strstr(buf, "inverted=1"));
-
-  config.events[3] = (struct output_event){
-    .type = IGNITION_EVENT,
-    .inverted = 0,
-    .angle = 5,
-    .pin = 4,
-  };
-
-  strcpy(cmd, "3");
-  console_get_events(NULL, buf, cmd);
-  ck_assert_ptr_nonnull(strstr(buf, "type=ignition"));
-  ck_assert_ptr_nonnull(strstr(buf, "angle=5"));
-  ck_assert_ptr_nonnull(strstr(buf, "output=4"));
-  ck_assert_ptr_nonnull(strstr(buf, "inverted=0"));
-}
-END_TEST
-
-START_TEST(check_console_set_events) {
-
-  char buf[] = "num_events=4";
-  console_set_events(NULL, buf);
-  ck_assert_int_eq(config.num_events, 4);
-
-  char buf2[] = "2 type=fuel inverted=1 angle=12 output=6";
-
-  console_set_events(NULL, buf2);
-  ck_assert_int_eq(config.events[2].type, FUEL_EVENT);
-  ck_assert_int_eq(config.events[2].inverted, 1);
-  ck_assert_int_eq(config.events[2].angle, 12);
-  ck_assert_int_eq(config.events[2].pin, 6);
-}
-END_TEST
-
-START_TEST(check_console_get_freq) {
-
-  char cmd[16] = "";
-  char buf[128];
-
-  config.num_events = 4;
-  console_get_freq(NULL, buf, cmd);
-  ck_assert_str_eq(buf, "num_freq=4");
-
-  config.freq_inputs[0] = (struct freq_input){
-    .type = TRIGGER,
-    .edge = FALLING_EDGE,
-  };
-
-  strcpy(cmd, "0");
-  console_get_freq(NULL, buf, cmd);
-  ck_assert_ptr_nonnull(strstr(buf, "edge=falling"));
-  ck_assert_ptr_nonnull(strstr(buf, "type=trigger"));
-
-  config.freq_inputs[0] = (struct freq_input){
-    .type = FREQ,
-    .edge = RISING_EDGE,
-  };
-
-  strcpy(cmd, "0");
-  console_get_freq(NULL, buf, cmd);
-  ck_assert_ptr_nonnull(strstr(buf, "edge=rising"));
-  ck_assert_ptr_nonnull(strstr(buf, "type=freq"));
-
-  config.freq_inputs[0] = (struct freq_input){
-    .type = FREQ,
-    .edge = BOTH_EDGES,
-  };
-
-  strcpy(cmd, "0");
-  console_get_freq(NULL, buf, cmd);
-  ck_assert_ptr_nonnull(strstr(buf, "edge=both"));
-  ck_assert_ptr_nonnull(strstr(buf, "type=freq"));
-}
-END_TEST
-
-START_TEST(check_console_set_freq) {
-
-  char buf[] = "2 type=trigger edge=falling";
-
-  console_set_freq(NULL, buf);
-  ck_assert_int_eq(config.freq_inputs[2].type, TRIGGER);
-  ck_assert_int_eq(config.freq_inputs[2].edge, FALLING_EDGE);
-
-  char buf2[] = "1 type=freq edge=rising";
-
-  console_set_freq(NULL, buf2);
-  ck_assert_int_eq(config.freq_inputs[1].type, FREQ);
-  ck_assert_int_eq(config.freq_inputs[1].edge, RISING_EDGE);
-
-  char buf3[] = "1 type=freq edge=both";
-
-  console_set_freq(NULL, buf3);
-  ck_assert_int_eq(config.freq_inputs[1].type, FREQ);
-  ck_assert_int_eq(config.freq_inputs[1].edge, BOTH_EDGES);
+START_TEST(test_smoke_console_request_get_full) {
+
+  render_path("");
+
+  CborEncoder get_enc;
+  cbor_encoder_create_map(&test_ctx.top_encoder, &get_enc, 1);
+  console_request_get(&get_enc, &test_ctx.path_value);
+  cbor_encoder_close_container(&test_ctx.top_encoder, &get_enc);
+  finish_writing();
+
+  ck_assert(cbor_value_validate_basic(&test_ctx.top_value) == CborNoError);
+  ck_assert(cbor_value_is_map(&test_ctx.top_value));
+
+  /* Test that decoder has an offset field with a type and description */
+  CborValue response_value;
+  ck_assert(cbor_value_map_find_value(
+              &test_ctx.top_value, "response", &response_value) == CborNoError);
+  ck_assert(cbor_value_is_map(&response_value));
+
+  CborValue decoder_value;
+  ck_assert(cbor_value_map_find_value(
+              &response_value, "decoder", &decoder_value) == CborNoError);
+  ck_assert(cbor_value_is_map(&decoder_value));
+
+  CborValue offset_value;
+  ck_assert(cbor_value_map_find_value(
+              &decoder_value, "offset", &offset_value) == CborNoError);
+  ck_assert(cbor_value_is_float(&offset_value));
 }
 END_TEST
 
 TCase *setup_console_tests() {
   TCase *console_tests = tcase_create("console");
-  tcase_add_test(console_tests, check_console_search_node);
-  tcase_add_test(console_tests, check_console_list_prefix);
-  tcase_add_test(console_tests, check_console_get_time);
-  tcase_add_test(console_tests, check_console_get_float);
-  tcase_add_test(console_tests, check_console_set_float);
-  tcase_add_test(console_tests, check_console_get_uint);
-  tcase_add_test(console_tests, check_console_set_uint);
-  tcase_add_test(console_tests, check_parse_keyval_pair);
-  tcase_add_test(console_tests, check_console_set_table_element_oneaxis);
-  tcase_add_test(console_tests, check_console_set_table_element_twoaxis);
-  tcase_add_test(console_tests, check_console_get_table_element_oneaxis);
-  tcase_add_test(console_tests, check_console_get_table_element_twoaxis);
-  tcase_add_test(console_tests, check_console_set_table_axis_labels);
-  tcase_add_test(console_tests, check_console_set_table);
-  tcase_add_test(console_tests, check_console_get_table);
-  tcase_add_test(console_tests, check_console_set_sensor);
-  tcase_add_test(console_tests, check_console_get_sensor);
-  tcase_add_test(console_tests, check_console_set_events);
-  tcase_add_test(console_tests, check_console_get_events);
-  tcase_add_test(console_tests, check_console_set_freq);
-  tcase_add_test(console_tests, check_console_get_freq);
+  tcase_add_checked_fixture(
+    console_tests, init_console_tests, deinit_console_tests);
+  /* Object primitives */
+  tcase_add_test(console_tests, test_render_uint32_object_get);
+  tcase_add_test(console_tests, test_render_uint32_object_get_large);
+  tcase_add_test(console_tests, test_render_float_object_get);
+
+  /* Containers */
+
+  /* Real access / integration tests */
+  tcase_add_test(console_tests, test_smoke_console_request_structure);
+  tcase_add_test(console_tests, test_smoke_console_request_get_full);
   return console_tests;
 }
 

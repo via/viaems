@@ -1,5 +1,6 @@
 #include "decoder.h"
 #include "config.h"
+#include "console.h"
 #include "platform.h"
 #include "scheduler.h"
 #include "stats.h"
@@ -203,7 +204,7 @@ void decoder_init(struct decoder *d) {
     d->decode = cam_nplusone_decoder;
     d->required_triggers_rpm = 8;
     d->degrees_per_trigger = 30;
-    d->rpm_window_size = 8;
+    d->rpm_window_size = 12;
     d->num_triggers = 24;
     break;
   default:
@@ -238,7 +239,8 @@ void decoder_update_scheduling(struct decoder_event *events,
       config.decoder.needs_decoding_t1 = 1;
     }
     console_record_event((struct logged_event){
-      .type = ev->trigger == 0 ? EVENT_TRIGGER0 : EVENT_TRIGGER1,
+      .type = EVENT_TRIGGER,
+      .value = ev->trigger,
       .time = ev->time,
     });
     config.decoder.decode(&config.decoder);

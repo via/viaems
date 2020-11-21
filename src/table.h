@@ -1,6 +1,8 @@
 #ifndef _TABLE_H
 #define _TABLE_H
 
+#include <stdint.h>
+
 #define MAX_AXIS_SIZE 24
 
 struct table_axis {
@@ -11,7 +13,7 @@ struct table_axis {
 
 struct table {
   char title[32];
-  unsigned int num_axis;
+  uint32_t num_axis;
   struct table_axis axis[2];
   union {
     float one[MAX_AXIS_SIZE];

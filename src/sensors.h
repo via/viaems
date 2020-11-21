@@ -22,7 +22,6 @@ typedef enum {
   SENSOR_ADC,
   SENSOR_FREQ,
   SENSOR_DIGITAL,
-  SENSOR_PWM,
   SENSOR_CONST,
 } sensor_source;
 
@@ -45,7 +44,7 @@ struct thermistor_config {
 };
 
 struct sensor_input {
-  int pin;
+  uint32_t pin;
   sensor_source source;
   sensor_method method;
 

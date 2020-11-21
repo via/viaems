@@ -30,13 +30,13 @@ struct decoder {
   /* Unsafe interrupt-written vars */
   timeval_t last_t0;
   timeval_t last_t1;
-  char needs_decoding_t0;
-  char needs_decoding_t1;
+  uint32_t needs_decoding_t0;
+  uint32_t needs_decoding_t1;
 
   /* Safe, only handled in main loop */
   decoder_func decode;
-  unsigned char valid;
-  unsigned int rpm;
+  uint32_t valid;
+  uint32_t rpm;
   timeval_t last_trigger_time;
   degrees_t last_trigger_angle;
   timeval_t expiration;
@@ -46,21 +46,21 @@ struct decoder {
   degrees_t offset;
   float trigger_max_rpm_change;
   float trigger_cur_rpm_change;
-  unsigned int trigger_min_rpm;
-  unsigned int required_triggers_rpm;
-  unsigned int num_triggers;
+  uint32_t trigger_min_rpm;
+  uint32_t required_triggers_rpm;
+  uint32_t num_triggers;
   degrees_t degrees_per_trigger;
-  unsigned int rpm_window_size;
+  uint32_t rpm_window_size;
 
   /* Debug */
-  unsigned int t0_count;
-  unsigned int t1_count;
+  uint32_t t0_count;
+  uint32_t t1_count;
   decoder_loss_reason loss;
 
   /* Internal state */
   decoder_state state;
-  unsigned int current_triggers_rpm;
-  unsigned int triggers_since_last_sync;
+  uint32_t current_triggers_rpm;
+  uint32_t triggers_since_last_sync;
   timeval_t times[MAX_TRIGGERS];
 };
 

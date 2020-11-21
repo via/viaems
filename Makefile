@@ -1,6 +1,10 @@
 PLATFORM?=stm32f4
 OBJDIR=obj/${PLATFORM}
 
+TINYCBOR_DIR=$(PWD)/tinycbor
+TINYCBOR_LIB=libtinycbor.a
+
+
 all: $(OBJDIR)/viaems
 
 include targets/${PLATFORM}.mk
@@ -20,9 +24,11 @@ OBJS += calculations.o \
 DEPS = $(wildcard ${OBJDIR}/*.d)
 -include $(DEPS)
 
+
 GITDESC=$(shell git describe --tags --dirty)
 CFLAGS+=-I src/ -Wall -Wextra -Werror -g -std=c99 -DGIT_DESCRIBE=\"${GITDESC}\"
-LDFLAGS+= -lm
+CFLAGS+=-I ${TINYCBOR_DIR}/src
+LDFLAGS+= -lm -L${OBJDIR} -l:${TINYCBOR_LIB}
 
 OPENCM3_DIR=$(PWD)/libopencm3
 
@@ -35,14 +41,22 @@ $(OBJDIR):
 $(OBJDIR)/%.o: %.c
 	${CC} ${CFLAGS} -MMD -c -o $@ $<
 
-$(OBJDIR)/viaems: ${OBJDIR} ${DESTOBJS}
+$(OBJDIR)/viaems: ${OBJDIR} ${DESTOBJS} ${OBJDIR}/${TINYCBOR_LIB}
 	${CC} -o $@ ${CFLAGS} ${DESTOBJS} ${LDFLAGS}
+
+
+${OBJDIR}/${TINYCBOR_LIB}:
+	$(MAKE) -C ${TINYCBOR_DIR} ${MAKEFLAGS} clean
+	$(MAKE) -C ${TINYCBOR_DIR} ${MAKEFLAGS} CC="${CC}" CFLAGS="${CFLAGS}" freestanding-pass=1 BUILD_SHARED=0
+	cp ${TINYCBOR_DIR}/lib/${TINYCBOR_LIB} ${OBJDIR}
 
 format:
 	clang-format -i src/*.c src/*.h src/platforms/*.c
 
 lint:
-	clang-tidy src/*.c -- -I . -D TICKRATE=1000000
+	clang-tidy src/*.c -- ${CFLAGS}
 
 clean:
 	-rm ${OBJDIR}/*
+
+.PHONY: clean lint format integration

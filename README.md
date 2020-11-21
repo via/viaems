@@ -29,11 +29,6 @@ Features:
     3. [Sensors](#sensors)
     4. [Tables](#tables)
 3. [Runtime Configuration](#runtime-configuration)
-    1. [Frequency and Trigger Inputs](#frequency-and-trigger-inputs-1)
-    2. [Events](#events-1)
-    3. [Sensors](#sensors-1)
-    4. [Tables](#tables-1)
-    5. [Tasks](#tasks)
 4. [Compiling](#compiling)
 5. [Programming](#programming)
 6. [Simulation](#simulation)
@@ -180,123 +175,10 @@ For a new table to be configurable over the console, it must be declared
 externally such that it can be directly referenced in `console.c`.
 
 ## Runtime configuration
-On the stm32f4 target, the console is exposed via a USB virtual console.  At all
-times the console outputs status updates in the form of comma-delimited values
-(the list of which is controlled by the space-delimited `config.feed` node).
-Additionally, there is a command/response system for configuration and
-retrieving more complex information.  Responses to commands are distinguished by
-being prefixed with `* `, whereas the constant status updates have no
-prefix.
-
-There are various debug outputs that can also be enabled (primary the
-`sim.event_logging` flag), these outputs are prefixed with a `# `.
-
-All commands are newline delimited, and start with one of `list`, `get`, or
-`set`, followed by a configuration node to be acted on.
-- `list` returns all nodes prefixed with the given node. The node is optional,
-  and if not specified it will return all possible configuration nodes
-- `get` is used to retrieve configuration or status values
-- `set` is used to set configuration or status values
-
-Most nodes under `status` are simple display values representing current engine
-status, and most nodes under `config` are configuration values.  Several other
-toplevel nodes are special-use:
-
-Node | Meaning
---- | ---
-`flash` | `set flash` will save any runtime changes to flash
-`stats` | `get stats` reports multiple newline-delimited performance metrics
-`bootloader` | `get bootloader` will reboot into USB DFU mode for programming
-`sim.test_trigger` | `set sim.test_trigger 2500` will set the test output to 2500 RPM
-`sim.event_logging` | `set sim.event_logging on` will log all input and output changes to the status updates prefixed with `# `
-
-
-A few example status nodes:
-
-Node | Meaning
---- | ---
-`status.current_time` | Current cpu time in ticks (4 MHz for STM42F4 target)
-`status.decoder.rpm` | Current RPM
-`status.sensors.iat` | IAT sensor processed value
-`status.sensors.iat.fault` | IAT sensor fault status (`-` indicates no fault)
-`status.fueling.pw_us` | Current fuel injector pulse width
-
-Configuration nodes are divided into categories.  All values under
-`config.fueling`, `config.decoder`, and `config.ignition` are simple in that
-they take a single value to set or get, but the others are more complex data
-structures that are configured with multiple key/value pairs.
-
-### Frequency and Trigger inputs
-The `config.hardware.freq` node takes a frequency input number, type, and edge:
-```
-get config.hardware.freq
-* num_freq=4
-get config.hardware.freq 0
-* type=trigger edge=rising
-set config.hardware.freq 1 type=trigger edge=rising
-* 
-```
-
-### Events
-The `config.events` config node, if used as a simple node, only sets the number
-of configured events.  To actually configure an event, it takes an event number
-and extra key/value options:
-```
-get config.events
-* num_events=12
-get config.events 0
-* type=ignition angle=0 output=0 inverted=0
-set config.events 0 inverted=1
-* 
-get config.events 0
-* type=ignition angle=0 output=0 inverted=1
-```
-
-### Tables
-When a table node is read like a simple value, it will return metadata about the
-table.  If a `get` is given `[row][column]` indices (up to 16 at a time), it will return
-the table values at those points.  `set` can be given key/value pairs to set
-metadata or values:
-
-```
-get config.tables.ve
-* name=ve naxis=2 cols=16 colname=RPM rows=16 rowname=MAP collabels=[250.0,500.0,900.0,1200.0,1600.0,2000.0,2400.0,3000.0,3600.0,4000.0,4400.0,5200.0,5800.0,6400.0,6800.0,7200.0] rowlabels=[20.0,30.0,40.0,50.0,60.0,70.0,80.0,90.0,100.0,120.0,140.0,160.0,180.0,200.0,220.0,240.0]
-get config.tables.ve [0][0] [0][1]
-* 65.00 30.00
-set config.tables.ve name=myVE [0][0]=12.2
-* 
-get config.tables.ve
-* name=myVE naxis=2 cols=16 colname=RPM rows=16 rowname=MAP collabels=[250.0,500.0,900.0,1200.0,1600.0,2000.0,2400.0,3000.0,3600.0,4000.0,4400.0,5200.0,5800.0,6400.0,6800.0,7200.0] rowlabels=[20.0,30.0,40.0,50.0,60.0,70.0,80.0,90.0,100.0,120.0,140.0,160.0,180.0,200.0,220.0,240.0]
-get config.tables.ve [0][0]
-* 12.20
-```
-
-### Sensors
-The nodes under `config.sensors` will return sensor configuration as key/value
-pairs, and can be set similarly:
-
-```
-get config.sensors.iat
-* source=adc method=therm pin=1 therm-bias=2490.00 therm-a=1.461674e-03 therm-b=2.288757e-04 therm-c=1.644848e-07 fault-min=2 fault-max=4095 fault-val=10.00 lag=0.000000
-set config.sensors.iat pin=2 therm-bias=2400.0
-*
-get config.sensors.iat
-* source=adc method=therm pin=2 therm-bias=2400.00 therm-a=1.461674e-03 therm-b=2.288757e-04 therm-c=1.644848e-07 fault-min=2 fault-max=4095 fault-val=10.00 lag=0.000000
-```
-
-### Tasks
-Tasks are low priority tasks that execute during idle cycles.  These are useful
-for management of non-timing-critical outputs, such as boost control and fuel
-  pumps.
-
-Node | Meaning
---- | ---
-`config.tasks.boost_control.overboost` | Fuel and ignition cuts are activated at this manifold pressure
-`config.tasks.boost_control.pin` | PWM output for boost control solenoid
-`config.tasks.boost_control.threshold` | Boost control will not activate until this pressure is reached, though the solenoid will be fully activated below level if at WOT
-`config.tasks.cel.pin` | GPIO output for Check-Engine light
-`config.tasks.cel.lean_boost_kpa` | CEL will trigger in a boosted lean condition if lean above this pressure
-`config.tasks.cel.lean_boost_ego` | CEL will trigger in a boosted lean condition if leaner than this EGO value
+The EMS is uses a cbor-based (https://cbor.io/) binary RPC protocol for its
+console.  For hosted mode, standard out and in are used to exchange messages,
+and on the stm32f4 target, the console is exposed via a USB virtual console.
+Details of the binary protocol are described in [INTERFACE.md](INTERFACE.md).
 
 # Compiling
 Requires:

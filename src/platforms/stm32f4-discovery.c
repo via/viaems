@@ -1121,7 +1121,11 @@ static struct {
   int last_edge_active; /* Indicates upcoming edge should be falling */
 } test_trigger_config = {};
 
-void set_test_trigger_rpm(unsigned int rpm) {
+uint32_t get_test_trigger_rpm() {
+  return test_trigger_config.rpm;
+}
+
+void set_test_trigger_rpm(uint32_t rpm) {
   test_trigger_config.rpm = rpm;
 
   if (rpm) {
