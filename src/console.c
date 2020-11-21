@@ -1164,6 +1164,38 @@ static void render_test(struct console_request_context *ctx, void *ptr) {
   }
 }
 
+#ifndef GIT_DESCRIBE
+#define GIT_DESCRIBE "unknown"
+#endif
+
+static void render_version(struct console_request_context *ctx, void *_t) {
+
+  (void)_t;
+  switch (ctx->type) {
+  case CONSOLE_SET:
+  case CONSOLE_GET:
+    cbor_encode_text_stringz(ctx->response, GIT_DESCRIBE);
+    break;
+  case CONSOLE_STRUCTURE:
+  case CONSOLE_DESCRIBE: {
+    CborEncoder desc;
+    cbor_encoder_create_map(ctx->response, &desc, 2);
+    render_type_field(&desc, "string");
+    render_description_field(&desc, "ViaEMS version (RO)");
+    cbor_encoder_close_container(ctx->response, &desc);
+    break;
+  }
+  default:
+    break;
+  }
+}
+
+static void render_info(struct console_request_context *ctx, void *ptr) {
+  (void)ptr;
+  render_custom_map_field(
+    ctx, "version", render_version, NULL);
+}
+
 static void console_toplevel_request(struct console_request_context *ctx,
                                      void *ptr) {
   (void)ptr;
@@ -1177,6 +1209,7 @@ static void console_toplevel_request(struct console_request_context *ctx,
   render_map_map_field(ctx, "check-engine-light", render_cel, NULL);
   render_array_map_field(ctx, "freq", render_freq_list, NULL);
   render_map_map_field(ctx, "test", render_test, NULL);
+  render_map_map_field(ctx, "info", render_info, NULL);
 }
 
 static void console_toplevel_types(struct console_request_context *ctx,
