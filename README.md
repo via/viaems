@@ -175,10 +175,10 @@ For a new table to be configurable over the console, it must be declared
 externally such that it can be directly referenced in `console.c`.
 
 ## Runtime configuration
-The EMS is uses a cbor-based binary RPC protocol for its console.  For hosted
-mode, standard out and in are used to exchange messages, and on the stm32f4
-target, the console is exposed via a USB virtual console.  Details of the binary
-protocol are described in [INTERFACE.md](INTERFACE.md).
+The EMS is uses a cbor-based (https://cbor.io/) binary RPC protocol for its
+console.  For hosted mode, standard out and in are used to exchange messages,
+and on the stm32f4 target, the console is exposed via a USB virtual console.
+Details of the binary protocol are described in [INTERFACE.md](INTERFACE.md).
 
 # Compiling
 Requires:
