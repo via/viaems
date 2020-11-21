@@ -1115,10 +1115,13 @@ static void walk_trigger_buffers() {
 }
 
 static struct {
-  uint8_t current_tooth;
+  uint32_t current_tooth;
+  uint32_t missing_tooth;
+
   timeval_t last_trigger;
-  int rpm;
-  int last_edge_active; /* Indicates upcoming edge should be falling */
+  uint32_t rpm;
+  bool last_edge_active; /* Indicates upcoming edge should be falling */
+  bool cam_cycle;
 } test_trigger_config = {};
 
 uint32_t get_test_trigger_rpm() {
@@ -1139,6 +1142,11 @@ void set_test_trigger_rpm(uint32_t rpm) {
 
     timer_set_period(TIM6, period_us / 2);
 
+    if ((config.decoder.type == TRIGGER_MISSING_NOSYNC) ||
+        (config.decoder.type == TRIGGER_MISSING_CAMSYNC)) {
+      test_trigger_config.missing_tooth = 3;
+    }
+
     nvic_enable_irq(NVIC_TIM6_DAC_IRQ);
     nvic_set_priority(NVIC_TIM6_DAC_IRQ,
                       0); /* Always a fast interrupt, highest priority */
@@ -1151,7 +1159,9 @@ void set_test_trigger_rpm(uint32_t rpm) {
 static void handle_test_trigger_edge() {
   test_trigger_config.last_edge_active = !test_trigger_config.last_edge_active;
 
-  gpio_toggle(GPIOB, GPIO10);
+  if (test_trigger_config.current_tooth != test_trigger_config.missing_tooth) {
+    gpio_toggle(GPIOB, GPIO10);
+  }
 
   if (test_trigger_config.last_edge_active) {
     test_trigger_config.current_tooth =
@@ -1161,7 +1171,15 @@ static void handle_test_trigger_edge() {
     if ((test_trigger_config.current_tooth ==
          config.decoder.num_triggers - 1) ||
         (test_trigger_config.current_tooth == 0)) {
-      gpio_toggle(GPIOB, GPIO11);
+      if (config.decoder.type == TRIGGER_EVEN_CAMSYNC) {
+        gpio_toggle(GPIOB, GPIO11);
+      } else if ((config.decoder.type == TRIGGER_MISSING_CAMSYNC) && test_trigger_config.cam_cycle) {
+        gpio_toggle(GPIOB, GPIO11);
+      }
+    }
+
+    if (test_trigger_config.current_tooth == 0) {
+      test_trigger_config.cam_cycle = !test_trigger_config.cam_cycle;
     }
   }
 }
