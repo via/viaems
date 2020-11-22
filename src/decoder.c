@@ -90,7 +90,6 @@ static void trigger_update_rpm(struct decoder *d) {
 static void even_tooth_trigger_update(struct decoder *d, timeval_t t) {
   /* Bookkeeping */
   push_time(d, t);
-  d->t0_count++;
   d->triggers_since_last_sync++;
 
   /* Count triggers up until a full wheel */
@@ -127,7 +126,6 @@ static uint32_t missing_tooth_rpm(struct decoder *d) {
 
 static void missing_tooth_trigger_update(struct decoder *d, timeval_t t) {
   push_time(d, t);
-  d->t0_count++;
 
   /* Count triggers up until a full wheel */
   if (d->current_triggers_rpm < MAX_TRIGGERS) {
@@ -176,6 +174,9 @@ static void missing_tooth_trigger_update(struct decoder *d, timeval_t t) {
   bool is_acceptable_normal_tooth =
     (tooth_ratio >= 1.0f - max_variance) && (tooth_ratio <= 1.0f + max_variance);
 
+  /* Preserve meaning from old even tooth code */
+  d->trigger_cur_rpm_change = tooth_ratio < 1.0f ? 1.0f - tooth_ratio : tooth_ratio - 1.0f;
+
   if (d->state == DECODER_RPM) {
     if (is_acceptable_missing_tooth) {
       d->state = DECODER_SYNC;
@@ -211,7 +212,6 @@ static void missing_tooth_trigger_update(struct decoder *d, timeval_t t) {
 }
 
 static void even_tooth_sync_update(struct decoder *d) {
-  d->t1_count++;
   if (d->state == DECODER_RPM) {
     d->state = DECODER_SYNC;
     d->loss = DECODER_NO_LOSS;
@@ -389,6 +389,12 @@ void decoder_update_scheduling(struct decoder_event *events,
       .value = ev->trigger,
       .time = ev->time,
     });
+    if (ev->trigger == 0) {
+      config.decoder.t0_count++;
+    } else if (ev->trigger == 1) {
+      config.decoder.t1_count++;
+    }
+
     decode(&config.decoder, ev);
   }
 
