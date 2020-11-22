@@ -325,7 +325,9 @@ static void decode_missing_with_camsync(struct decoder *d,
 
   bool has_seen_camsync =
     camsync_seen_this_rotation || camsync_seen_last_rotation;
-  if (!was_valid && (d->state == DECODER_SYNC) && has_seen_camsync) {
+  if (d->state != DECODER_SYNC) {
+    d->valid = 0;
+  } else if (!was_valid && (d->state == DECODER_SYNC) && has_seen_camsync) {
     /* We gained sync */
     d->valid = 1;
     d->loss = DECODER_NO_LOSS;
