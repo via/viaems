@@ -169,13 +169,14 @@ static void missing_tooth_trigger_update(struct decoder *d, timeval_t t) {
 
   float tooth_ratio = last_tooth_diff / (float)rpm_window_average_tooth_diff;
   float max_variance = d->trigger_max_rpm_change;
-  bool is_acceptable_missing_tooth =
-    (tooth_ratio >= 2.0f - max_variance) && (tooth_ratio <= 2.0f + max_variance);
-  bool is_acceptable_normal_tooth =
-    (tooth_ratio >= 1.0f - max_variance) && (tooth_ratio <= 1.0f + max_variance);
+  bool is_acceptable_missing_tooth = (tooth_ratio >= 2.0f - max_variance) &&
+                                     (tooth_ratio <= 2.0f + max_variance);
+  bool is_acceptable_normal_tooth = (tooth_ratio >= 1.0f - max_variance) &&
+                                    (tooth_ratio <= 1.0f + max_variance);
 
   /* Preserve meaning from old even tooth code */
-  d->trigger_cur_rpm_change = tooth_ratio < 1.0f ? 1.0f - tooth_ratio : tooth_ratio - 1.0f;
+  d->trigger_cur_rpm_change =
+    tooth_ratio < 1.0f ? 1.0f - tooth_ratio : tooth_ratio - 1.0f;
 
   if (d->state == DECODER_RPM) {
     if (is_acceptable_missing_tooth) {
