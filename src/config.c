@@ -211,6 +211,7 @@ struct config config __attribute__((section(".configdata"))) = {
     .offset = 425,
     .trigger_min_rpm = 80,
     .trigger_max_rpm_change = 0.35f,
+    .tooth_corrections = {0.57, -0.21, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -0.68, },
   },
   .freq_inputs = {
     [0] = {.edge = RISING_EDGE, .type = TRIGGER},

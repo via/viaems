@@ -121,6 +121,13 @@ static uint32_t missing_tooth_rpm(struct decoder *d) {
     (d->state == DECODER_SYNC) && (d->triggers_since_last_sync == 0);
   timeval_t last_tooth_diff = d->times[0] - d->times[1];
   degrees_t rpm_degrees = d->degrees_per_trigger * (last_tooth_missing ? 2 : 1);
+
+  int prev_tooth = d->triggers_since_last_sync - 1;
+  if (prev_tooth < 0) {
+    prev_tooth += d->num_triggers;
+  }
+  rpm_degrees += d->tooth_corrections[d->triggers_since_last_sync];
+  rpm_degrees -= d->tooth_corrections[prev_tooth];
   return rpm_from_time_diff(last_tooth_diff, rpm_degrees);
 }
 
@@ -202,10 +209,8 @@ static void missing_tooth_trigger_update(struct decoder *d, timeval_t t) {
       d->state = DECODER_NOSYNC;
       d->loss = DECODER_TRIGGERCOUNT_LOW;
     }
-    degrees_t rpm_degrees =
-      d->degrees_per_trigger * (is_acceptable_missing_tooth ? 2 : 1);
     d->last_trigger_time = t;
-    d->last_trigger_angle += rpm_degrees;
+    d->last_trigger_angle = (d->degrees_per_trigger * d->triggers_since_last_sync) + d->tooth_corrections[d->triggers_since_last_sync];
     if (d->last_trigger_angle >= 720) {
       d->last_trigger_angle -= 720;
     }
@@ -345,7 +350,7 @@ static void decode_missing_with_camsync(struct decoder *d,
     d->loss = DECODER_NO_LOSS;
     d->last_trigger_angle =
       d->degrees_per_trigger * d->triggers_since_last_sync +
-      (camsync_seen_this_rotation ? 0 : 360);
+      (camsync_seen_this_rotation ? 0 : 360) + d->tooth_corrections[d->triggers_since_last_sync];
   }
   if (was_valid && !d->valid) {
     /* We lost sync */
@@ -940,7 +945,8 @@ START_TEST(check_missing_tooth_false_starts) {
   add_trigger_event(&entries, 25000, 0);
   add_trigger_event(&entries, 50000, 0);
   add_trigger_event(&entries, 25000, 0);
-  add_trigger_event_transition(&entries, 50000, 0, 0, DECODER_NOSYNC, DECODER_VARIATION);
+  add_trigger_event_transition(
+    &entries, 50000, 0, 0, DECODER_NOSYNC, DECODER_VARIATION);
   add_trigger_event(&entries, 25000, 0);
   add_trigger_event(&entries, 50000, 0);
 

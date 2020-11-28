@@ -65,6 +65,7 @@ struct decoder {
   uint32_t current_triggers_rpm;
   uint32_t triggers_since_last_sync;
   timeval_t times[MAX_TRIGGERS];
+  float tooth_corrections[MAX_TRIGGERS];
 };
 
 struct decoder_event {
