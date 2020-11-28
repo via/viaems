@@ -210,6 +210,17 @@ static void missing_tooth_trigger_update(struct decoder *d, timeval_t t) {
       d->last_trigger_angle -= 720;
     }
   }
+  if (d->state == DECODER_SYNC) {
+    /* Are we expecting this to be the gap? */
+    degrees_t expected_gap =
+      d->degrees_per_trigger *
+      ((d->triggers_since_last_sync == d->num_triggers - 2) ? 2 : 1);
+    timeval_t expected_time = time_from_rpm_diff(d->rpm, expected_gap);
+    d->expiration =
+      d->times[0] +
+      (timeval_t)(expected_time * (1.0f + d->trigger_max_rpm_change));
+    set_expire_event(d->expiration);
+  }
 }
 
 static void even_tooth_sync_update(struct decoder *d) {
@@ -381,9 +392,6 @@ void decoder_update_scheduling(struct decoder_event *events,
                                unsigned int count) {
   stats_start_timing(STATS_SCHEDULE_LATENCY);
 
-  /* TODO Right now this is a thin wrapper for the new decoder interface.
-   * Convert the decode() functions to work directly off `decoder_event` structs
-   */
   for (struct decoder_event *ev = events; count > 0; count--, ev++) {
     console_record_event((struct logged_event){
       .type = EVENT_TRIGGER,
@@ -932,13 +940,9 @@ START_TEST(check_missing_tooth_false_starts) {
   add_trigger_event(&entries, 25000, 0);
   add_trigger_event(&entries, 50000, 0);
   add_trigger_event(&entries, 25000, 0);
-  /* This does go immediately to sync, as we do no checking for rpm variance as
-   * we're in RPM waiting for a missing tooth. Maybe this isn't ideal? */
-  add_trigger_event_transition(
-    &entries, 50000, 0, 1, DECODER_SYNC, DECODER_NO_LOSS);
+  add_trigger_event_transition(&entries, 50000, 0, 0, DECODER_NOSYNC, DECODER_VARIATION);
   add_trigger_event(&entries, 25000, 0);
-  add_trigger_event_transition(
-    &entries, 50000, 0, 0, DECODER_NOSYNC, DECODER_TRIGGERCOUNT_LOW);
+  add_trigger_event(&entries, 50000, 0);
 
   validate_decoder_sequence(entries);
 
