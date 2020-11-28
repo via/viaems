@@ -208,9 +208,9 @@ struct config config __attribute__((section(".configdata"))) = {
     .degrees_per_trigger = 10,
     .required_triggers_rpm = 4,
     .num_triggers = 36,
-    .offset = 50,
+    .offset = 425,
     .trigger_min_rpm = 80,
-    .trigger_max_rpm_change = 0.5f,
+    .trigger_max_rpm_change = 0.35f,
   },
   .freq_inputs = {
     [0] = {.edge = RISING_EDGE, .type = TRIGGER},
