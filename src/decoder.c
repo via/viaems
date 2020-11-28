@@ -117,22 +117,11 @@ static void even_tooth_trigger_update(struct decoder *d, timeval_t t) {
 }
 
 static uint32_t missing_tooth_rpm(struct decoder *d) {
-  if (d->current_triggers_rpm > 12) {
-    if (d->triggers_since_last_sync % 6 != 3) {
-      return d->rpm;
-    }
-    bool missing_window =
-      (d->state == DECODER_SYNC) && (d->triggers_since_last_sync == 3);
-    timeval_t last_tooth_diff = d->times[0] - d->times[missing_window ? 5 : 6];
-    degrees_t rpm_degrees = d->degrees_per_trigger * 6;
-    return rpm_from_time_diff(last_tooth_diff, rpm_degrees);
-  } else {
-    bool last_tooth_missing =
-      (d->state == DECODER_SYNC) && (d->triggers_since_last_sync == 0);
-    timeval_t last_tooth_diff = d->times[0] - d->times[1];
-    degrees_t rpm_degrees = d->degrees_per_trigger * (last_tooth_missing ? 2 : 1);
-    return rpm_from_time_diff(last_tooth_diff, rpm_degrees);
-  }
+  bool last_tooth_missing =
+    (d->state == DECODER_SYNC) && (d->triggers_since_last_sync == 0);
+  timeval_t last_tooth_diff = d->times[0] - d->times[1];
+  degrees_t rpm_degrees = d->degrees_per_trigger * (last_tooth_missing ? 2 : 1);
+  return rpm_from_time_diff(last_tooth_diff, rpm_degrees);
 }
 
 static void missing_tooth_trigger_update(struct decoder *d, timeval_t t) {
