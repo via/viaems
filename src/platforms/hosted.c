@@ -7,14 +7,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h> /* For mode constants */
+#include <sys/mman.h> /* For mode constants */
 #include <time.h>
 #include <unistd.h>
+#include <cbor.h>
 
 #include "config.h"
 #include "console.h"
 #include "platform.h"
 #include "scheduler.h"
 #include "stats.h"
+
 
 static _Atomic timeval_t curtime;
 
@@ -31,6 +34,10 @@ struct slot {
 static size_t max_slots;
 static _Atomic size_t cur_slot = 0;
 static _Atomic size_t cur_buffer = 0;
+
+static bool replay_enabled;
+static const uint8_t *replay_data;
+static size_t replay_size;
 
 void platform_enable_event_logging() {
   event_logging_enabled = 1;
@@ -140,7 +147,7 @@ size_t console_write(const void *buf, size_t len) {
     return 0;
   }
   struct timespec wait = {
-    .tv_nsec = 1000000,
+    .tv_nsec = 125000,
   };
   nanosleep(&wait, NULL);
   ssize_t written = -1;
@@ -222,6 +229,80 @@ struct event {
   timeval_t time;
   uint16_t values;
 };
+
+static struct event fetch_replay_event() {
+  CborParser replay_parser;
+  CborValue replay_value;
+  struct event ev;
+  bool got_event = false;
+
+  while (!got_event) {
+    cbor_parser_init(replay_data, replay_size, 0, &replay_parser, &replay_value);
+
+    if (cbor_value_is_map(&replay_value)) {
+      CborValue type_value;
+      cbor_value_map_find_value(&replay_value, "type", &type_value);
+
+      bool is_type_event;
+      cbor_value_text_string_equals(&type_value, "event", &is_type_event);
+
+      bool is_type_feed;
+      cbor_value_text_string_equals(&type_value, "feed", &is_type_feed);
+
+      if (is_type_event) {
+        CborValue time_value;
+        cbor_value_map_find_value(&replay_value, "time", &time_value);
+
+        int64_t time;
+        cbor_value_get_int64_checked(&time_value, &time);
+
+        CborValue event_value;
+        cbor_value_map_find_value(&replay_value, "event", &event_value);
+
+        CborValue pin_value;
+        cbor_value_map_find_value(&event_value, "pin", &pin_value);
+
+        int64_t pin;
+        cbor_value_get_int64_checked(&pin_value, &pin);
+        got_event = true;
+        ev.time = time;
+        ev.values = (uint16_t)pin;
+      }
+    }
+    cbor_value_advance(&replay_value);
+    if (cbor_value_at_end(&replay_value)) {
+      const uint8_t *pos = cbor_value_get_next_byte(&replay_value);
+      replay_size -= (pos - replay_data);
+      replay_data = pos;
+    }
+  }
+  return ev;
+}
+
+static void do_replay_events(int interrupt_fd) {
+  (void)interrupt_fd;
+  static bool holding_event;
+  static struct event ev;
+
+  do {
+    if (!holding_event) {
+      ev = fetch_replay_event();
+      holding_event = true;
+    }
+
+    if (time_before(current_time(), ev.time)) {
+      return;
+    } else {
+      struct event v = { .type = ev.values > 0 ? TRIGGER1 : TRIGGER0, .time = ev.time };
+      if (write(interrupt_fd, &v, sizeof(v)) < 0) {
+        perror("write");
+        exit(3);
+      }
+      holding_event = false;
+    }
+  } while (true);
+}
+
 
 static void do_test_trigger(int interrupt_fd) {
   static bool camsync = true;
@@ -372,6 +453,10 @@ void *platform_timebase_thread(void *_interrupt_fd) {
     }
     do_test_trigger(*interrupt_fd);
 
+    if (replay_enabled) {
+      do_replay_events(*interrupt_fd);
+    }
+
     if (eventtimer_enable && (eventtimer_time == curtime)) {
       struct event event = { .type = SCHEDULED_EVENT };
       if (write(*interrupt_fd, &event, sizeof(event)) < 0) {
@@ -383,9 +468,34 @@ void *platform_timebase_thread(void *_interrupt_fd) {
   } while (1);
 }
 
-static int interrupt_pipes[2];
+static void open_replay(const char *file) {
+  replay_enabled = true;
+  int replay_fd = open(file, O_RDONLY);
+  if (replay_fd < 0) {
+    perror("open");
+    exit(EXIT_FAILURE);
+  }
 
-void platform_init() {
+  struct stat sb;
+  if (fstat(replay_fd, &sb) < 0) {
+    perror("stat");
+    exit(EXIT_FAILURE);
+  }
+
+  size_t length = sb.st_size;
+  void *res = mmap(NULL, length, PROT_READ, MAP_PRIVATE, replay_fd, 0);
+  if (!res) {
+    perror("mmap");
+    exit(EXIT_FAILURE);
+  }
+
+  replay_data = res;
+  replay_size = length;
+}
+
+
+static int interrupt_pipes[2];
+void platform_init(int argc, char **argv) {
 
   /* Initalize mutexes */
   pthread_mutexattr_t im_attr;
@@ -450,4 +560,15 @@ void platform_init() {
   sensors_process(SENSOR_ADC);
   sensors_process(SENSOR_FREQ);
   sensors_process(SENSOR_CONST);
+
+  int opt;
+  while ((opt = getopt(argc, argv, "r:")) != -1) {
+    switch (opt) {
+      case 'r': 
+        open_replay(optarg);
+        break;
+      default:
+        break;
+    }
+  }
 }

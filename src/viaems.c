@@ -11,10 +11,10 @@
 #include <assert.h>
 #include <stdio.h>
 
-int main() {
+int main(int argc, char *argv[]) {
   platform_load_config();
   decoder_init(&config.decoder);
-  platform_init(0, NULL);
+  platform_init(argc, argv);
   initialize_scheduler();
 
   assert(config_valid());

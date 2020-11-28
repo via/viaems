@@ -1,8 +1,3 @@
-/* For strtok_r */
-#ifndef _POSIX_C_SOURCE
-#define _POSIX_C_SOURCE 1
-#endif
-
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
