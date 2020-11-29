@@ -210,7 +210,9 @@ static void missing_tooth_trigger_update(struct decoder *d, timeval_t t) {
       d->loss = DECODER_TRIGGERCOUNT_LOW;
     }
     d->last_trigger_time = t;
-    d->last_trigger_angle = (d->degrees_per_trigger * d->triggers_since_last_sync) + d->tooth_corrections[d->triggers_since_last_sync];
+    d->last_trigger_angle =
+      (d->degrees_per_trigger * d->triggers_since_last_sync) +
+      d->tooth_corrections[d->triggers_since_last_sync];
     if (d->last_trigger_angle >= 720) {
       d->last_trigger_angle -= 720;
     }
@@ -350,7 +352,8 @@ static void decode_missing_with_camsync(struct decoder *d,
     d->loss = DECODER_NO_LOSS;
     d->last_trigger_angle =
       d->degrees_per_trigger * d->triggers_since_last_sync +
-      (camsync_seen_this_rotation ? 0 : 360) + d->tooth_corrections[d->triggers_since_last_sync];
+      (camsync_seen_this_rotation ? 0 : 360) +
+      d->tooth_corrections[d->triggers_since_last_sync];
   }
   if (was_valid && !d->valid) {
     /* We lost sync */
