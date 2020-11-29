@@ -55,6 +55,8 @@ struct decoder {
   degrees_t degrees_per_trigger;
   uint32_t rpm_window_size;
 
+  float tooth_corrections[MAX_TRIGGERS];
+
   /* Debug */
   uint32_t t0_count;
   uint32_t t1_count;
@@ -65,7 +67,6 @@ struct decoder {
   uint32_t current_triggers_rpm;
   uint32_t triggers_since_last_sync;
   timeval_t times[MAX_TRIGGERS];
-  float tooth_corrections[MAX_TRIGGERS];
 };
 
 struct decoder_event {

@@ -852,6 +852,28 @@ static void render_tables(struct console_request_context *ctx, void *ptr) {
     ctx, "tipin-time", render_table_object, config.tipin_enrich_duration);
 }
 
+static void render_tooth_corrections(struct console_request_context *ctx, void *_a) {
+  (void)_a;
+  for (int i = 0; i < MAX_TRIGGERS; i++) {
+    struct console_request_context deeper;
+    if (descend_array_field(ctx, &deeper, i)) {
+      render_float_object(&deeper, "correction (degrees)", &config.decoder.tooth_corrections[i]);
+    }
+  }
+}
+
+static void render_tooth_corrections_structure(struct console_request_context *ctx,
+                                          void *ptr) {
+  (void)ptr;
+  CborEncoder desc;
+  cbor_encoder_create_map(ctx->response, &desc, 3);
+  render_type_field(&desc, "[float]");
+  render_description_field(&desc, "list of tooth corrections (relative degrees)");
+  cbor_encode_text_stringz(&desc, "len");
+  cbor_encode_int(&desc, MAX_TRIGGERS);
+  cbor_encoder_close_container(ctx->response, &desc);
+}
+
 static void render_decoder(struct console_request_context *ctx, void *ptr) {
   (void)ptr;
 
@@ -873,9 +895,17 @@ static void render_decoder(struct console_request_context *ctx, void *ptr) {
     "Primary trigger decoder method",
     (struct console_enum_mapping[]){ { TRIGGER_EVEN_NOSYNC, "even" },
                                      { TRIGGER_EVEN_CAMSYNC, "even+camsync" },
+                                     { TRIGGER_MISSING_NOSYNC, "missing" },
+                                     { TRIGGER_MISSING_CAMSYNC, "missing+camsync" },
                                      { 0, NULL } },
     &type);
   config.decoder.type = type;
+
+  if (ctx->type == CONSOLE_STRUCTURE) {
+    render_custom_map_field(ctx, "tooth-corrections", render_tooth_corrections_structure, NULL);
+  } else {
+    render_array_map_field(ctx, "tooth-corrections", render_tooth_corrections, NULL);
+  }
 }
 
 static void output_console_renderer(struct console_request_context *ctx,
