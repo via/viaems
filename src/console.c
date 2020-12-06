@@ -54,6 +54,7 @@ const struct console_feed_node console_feed_nodes[] = {
 
   /* Decoder */
   { .id = "rpm", .uint32_ptr = &config.decoder.rpm },
+  { .id = "tooth_rpm", .uint32_ptr = &config.decoder.tooth_rpm },
   { .id = "sync", .uint32_ptr = &config.decoder.valid },
   { .id = "rpm_variance", .float_ptr = &config.decoder.trigger_cur_rpm_change },
   { .id = "last_trigger_angle",

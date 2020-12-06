@@ -1173,7 +1173,8 @@ static void handle_test_trigger_edge() {
         (test_trigger_config.current_tooth == 0)) {
       if (config.decoder.type == TRIGGER_EVEN_CAMSYNC) {
         gpio_toggle(GPIOB, GPIO11);
-      } else if ((config.decoder.type == TRIGGER_MISSING_CAMSYNC) && test_trigger_config.cam_cycle) {
+      } else if ((config.decoder.type == TRIGGER_MISSING_CAMSYNC) &&
+                 test_trigger_config.cam_cycle) {
         gpio_toggle(GPIOB, GPIO11);
       }
     }
