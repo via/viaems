@@ -290,9 +290,8 @@ static void decode_missing_no_sync(struct decoder *d,
   }
 
   if (d->state != DECODER_NOSYNC) {
-    d->rpm = missing_tooth_rpm(d);
+    d->tooth_rpm = missing_tooth_rpm(d);
   }
-
   if (d->state == DECODER_SYNC) {
     d->valid = 1;
     d->loss = DECODER_NO_LOSS;
@@ -332,7 +331,15 @@ static void decode_missing_with_camsync(struct decoder *d,
   }
 
   if (d->state != DECODER_NOSYNC) {
-    d->rpm = missing_tooth_rpm(d);
+    d->tooth_rpm = missing_tooth_rpm(d);
+  }
+  if (d->current_triggers_rpm >= MAX_TRIGGERS) {
+    if (d->triggers_since_last_sync == 0) {
+      d->rpm = rpm_from_time_diff(d->times[0] - d->times[d->num_triggers - 2],
+                                  d->num_triggers * d->degrees_per_trigger);
+    }
+  } else {
+    d->rpm = d->tooth_rpm;
   }
 
   bool has_seen_camsync =
@@ -357,6 +364,7 @@ void decoder_init(struct decoder *d) {
   d->current_triggers_rpm = 0;
   d->valid = 0;
   d->rpm = 0;
+  d->tooth_rpm = 0;
   d->state = DECODER_NOSYNC;
   d->last_trigger_time = 0;
   d->last_trigger_angle = 0;
@@ -940,7 +948,8 @@ START_TEST(check_missing_tooth_false_starts) {
   add_trigger_event(&entries, 25000, 0);
   add_trigger_event(&entries, 50000, 0);
   add_trigger_event(&entries, 25000, 0);
-  add_trigger_event_transition(&entries, 50000, 0, 0, DECODER_NOSYNC, DECODER_VARIATION);
+  add_trigger_event_transition(
+    &entries, 50000, 0, 0, DECODER_NOSYNC, DECODER_VARIATION);
   add_trigger_event(&entries, 25000, 0);
   add_trigger_event(&entries, 50000, 0);
 

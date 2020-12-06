@@ -38,6 +38,7 @@ typedef enum {
 struct decoder {
   uint32_t valid;
   uint32_t rpm;
+  uint32_t tooth_rpm;
   timeval_t last_trigger_time;
   degrees_t last_trigger_angle;
   timeval_t expiration;
