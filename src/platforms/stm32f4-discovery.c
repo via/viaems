@@ -831,8 +831,8 @@ void otg_fs_isr() {
 
 void platform_init_usb() {
 
-  gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO9 | GPIO11 | GPIO12);
-  gpio_set_af(GPIOA, GPIO_AF10, GPIO9 | GPIO11 | GPIO12);
+  gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO11 | GPIO12);
+  gpio_set_af(GPIOA, GPIO_AF10, GPIO11 | GPIO12);
 
   usbd_dev = usbd_init(&otgfs_usb_driver,
                        &dev,
