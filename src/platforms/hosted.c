@@ -233,7 +233,7 @@ static void do_test_trigger(int interrupt_fd) {
     return;
   }
 
-  timeval_t time_between_teeth = time_from_rpm_diff(test_trigger_rpm, 30);
+  timeval_t time_between_teeth = time_from_rpm_diff(test_trigger_rpm, config.decoder.degrees_per_trigger);
   timeval_t curtime = current_time();
   if (time_diff(curtime, last_trigger_time) < time_between_teeth) {
     return;

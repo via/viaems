@@ -9,6 +9,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <math.h>
+#include <stdio.h>
 
 #define MAX_TRIGGERS 36
 
@@ -87,18 +88,37 @@ static void even_tooth_trigger_update(struct decoder *d, timeval_t t) {
     d->loss = DECODER_VARIATION;
   }
 
-  /* TODO: We've removed angle calcs */
-
-  d->expiration = tooth_times[0] + diff * (1 + d->trigger_cur_rpm_change);
+  d->expiration = tooth_times[0] + diff * (1 + d->trigger_max_rpm_change);
   set_expire_event(d->expiration);
 }
 
-static uint32_t missing_tooth_rpm(struct decoder *d) {
+static uint32_t missing_tooth_instantaneous_rpm(struct decoder *d) {
   bool last_tooth_missing =
     (state == DECODER_SYNC) && (triggers_since_last_sync == 0);
   timeval_t last_tooth_diff = tooth_times[0] - tooth_times[1];
   degrees_t rpm_degrees = d->degrees_per_trigger * (last_tooth_missing ? 2 : 1);
   return rpm_from_time_diff(last_tooth_diff, rpm_degrees);
+}
+
+static uint32_t average_rpm(struct decoder *d) {
+  uint32_t n_triggers;
+  switch (d->type) {
+    case TRIGGER_MISSING_CAMSYNC:
+    case TRIGGER_MISSING_NOSYNC:
+      n_triggers = d->num_triggers - 1;
+      break;
+    case TRIGGER_EVEN_CAMSYNC:
+    case TRIGGER_EVEN_NOSYNC:
+    default:
+      n_triggers = d->num_triggers;
+      break;
+  }
+
+  if ((current_triggers_rpm >= n_triggers) && (triggers_since_last_sync == 0)) {
+    return rpm_from_time_diff(tooth_times[0] - tooth_times[n_triggers - 1],
+        d->num_triggers * d->degrees_per_trigger);
+  }
+  return d->tooth_rpm;
 }
 
 static void missing_tooth_trigger_update(struct decoder *d, timeval_t t) {
@@ -117,6 +137,8 @@ static void missing_tooth_trigger_update(struct decoder *d, timeval_t t) {
   if (state == DECODER_NOSYNC) {
     state = DECODER_RPM;
   }
+
+  d->tooth_rpm = missing_tooth_instantaneous_rpm(d);
 
   timeval_t last_tooth_diff = tooth_times[0] - tooth_times[1];
 
@@ -192,7 +214,7 @@ static void missing_tooth_trigger_update(struct decoder *d, timeval_t t) {
     degrees_t expected_gap =
       d->degrees_per_trigger *
       ((triggers_since_last_sync == d->num_triggers - 2) ? 2 : 1);
-    timeval_t expected_time = time_from_rpm_diff(d->rpm, expected_gap);
+    timeval_t expected_time = time_from_rpm_diff(d->tooth_rpm, expected_gap);
     d->expiration =
       tooth_times[0] +
       (timeval_t)(expected_time * (1.0f + d->trigger_max_rpm_change));
@@ -234,6 +256,8 @@ static void decode_even_with_camsync(struct decoder *d,
     d->loss = DECODER_TRIGGERCOUNT_HIGH;
   }
 
+  d->rpm = average_rpm(d);
+
   if (state == DECODER_SYNC) {
     d->valid = 1;
     d->loss = DECODER_NO_LOSS;
@@ -256,6 +280,7 @@ static void decode_even_no_sync(struct decoder *d, struct decoder_event *ev) {
     d->last_trigger_time = ev->time;
     triggers_since_last_sync = 0; /* There is no sync */
     d->last_trigger_angle += d->degrees_per_trigger;
+    d->rpm = d->tooth_rpm;
   } else {
     if (oldstate == DECODER_SYNC) {
       /* We lost sync */
@@ -276,9 +301,8 @@ static void decode_missing_no_sync(struct decoder *d,
     missing_tooth_trigger_update(d, ev->time);
   }
 
-  if (state != DECODER_NOSYNC) {
-    d->tooth_rpm = missing_tooth_rpm(d);
-  }
+  d->rpm = average_rpm(d);
+
   if (state == DECODER_SYNC) {
     d->valid = 1;
     d->loss = DECODER_NO_LOSS;
@@ -317,17 +341,7 @@ static void decode_missing_with_camsync(struct decoder *d,
     }
   }
 
-  if (state != DECODER_NOSYNC) {
-    d->tooth_rpm = missing_tooth_rpm(d);
-  }
-  if (current_triggers_rpm >= MAX_TRIGGERS) {
-    if (triggers_since_last_sync == 0) {
-      d->rpm = rpm_from_time_diff(tooth_times[0] - tooth_times[d->num_triggers - 2],
-                                  d->num_triggers * d->degrees_per_trigger);
-    }
-  } else {
-    d->rpm = d->tooth_rpm;
-  }
+  d->rpm = average_rpm(d);
 
   bool has_seen_camsync =
     camsync_seen_this_rotation || camsync_seen_last_rotation;
