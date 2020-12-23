@@ -9,8 +9,7 @@ static void handle_fuel_pump() {
   static timeval_t last_valid = 0;
 
   /* If engine is turning, keep pump on */
-  if ((config.decoder.state == DECODER_RPM) ||
-      (config.decoder.state == DECODER_SYNC)) {
+  if (config.decoder.valid) {
     last_valid = current_time();
     set_gpio(config.fueling.fuel_pump_pin, 1);
     return;

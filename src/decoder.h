@@ -2,7 +2,6 @@
 #define _DECODER_H
 
 #include "platform.h"
-#define MAX_TRIGGERS 36
 
 typedef enum {
   TRIGGER_EVEN_NOSYNC,
@@ -21,11 +20,6 @@ typedef enum {
   TRIGGER_MISSING_CAMSYNC,
 } decoder_type;
 
-typedef enum {
-  DECODER_NOSYNC,
-  DECODER_RPM,
-  DECODER_SYNC,
-} decoder_state;
 
 typedef enum {
   DECODER_NO_LOSS,
@@ -37,8 +31,10 @@ typedef enum {
 
 struct decoder {
   uint32_t valid;
+
   uint32_t rpm;
   uint32_t tooth_rpm;
+
   timeval_t last_trigger_time;
   degrees_t last_trigger_angle;
   timeval_t expiration;
@@ -54,7 +50,6 @@ struct decoder {
 
   uint32_t num_triggers;
   degrees_t degrees_per_trigger;
-  uint32_t rpm_window_size;
 
   /* Debug */
   uint32_t t0_count;
@@ -62,10 +57,6 @@ struct decoder {
   decoder_loss_reason loss;
 
   /* Internal state */
-  decoder_state state;
-  uint32_t current_triggers_rpm;
-  uint32_t triggers_since_last_sync;
-  timeval_t times[MAX_TRIGGERS];
 };
 
 struct decoder_event {

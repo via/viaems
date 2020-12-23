@@ -246,7 +246,7 @@ static void do_test_trigger(int interrupt_fd) {
     camsync = !camsync;
     cycle += 1;
   } else {
-    if (trigger == 30 && camsync && cycle < 8) {
+    if (trigger == 30 && camsync) {
       struct event ev = { .type = TRIGGER1, .time = curtime };
       if (write(interrupt_fd, &ev, sizeof(ev)) < 0) {
         perror("write");
