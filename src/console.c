@@ -16,6 +16,12 @@
 #include "sensors.h"
 #include "stats.h"
 
+static uint32_t repr_loss_reason() {
+  return (uint32_t)decoder_status.loss;
+}
+
+uint32_t repr_decoder_state();
+
 const struct console_feed_node console_feed_nodes[] = {
   { .id = "cputime", .uint32_fptr = current_time },
 
@@ -56,6 +62,8 @@ const struct console_feed_node console_feed_nodes[] = {
   { .id = "rpm", .uint32_ptr = &decoder_status.rpm },
   { .id = "tooth_rpm", .uint32_ptr = &decoder_status.tooth_rpm },
   { .id = "sync", .uint32_ptr = &decoder_status.valid },
+  { .id = "loss_reason", .uint32_fptr = repr_loss_reason},
+  { .id = "decoder_state", .uint32_fptr = repr_decoder_state},
   { .id = "rpm_variance", .float_ptr = &decoder_status.cur_variance },
   { .id = "t0_count", .uint32_ptr = &decoder_status.t0_count },
   { .id = "t1_count", .uint32_ptr = &decoder_status.t1_count },

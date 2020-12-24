@@ -26,22 +26,33 @@ static decoder_state state;
 static uint32_t current_triggers_rpm;
 static uint32_t triggers_since_last_sync;
 
+/* TODO REMOVE */
+uint32_t repr_decoder_state() {
+  return state;
+}
+
 static struct timed_callback expire_event;
-static timeval_t last_trigger_time;
 static degrees_t last_trigger_angle;
 static timeval_t expiration;
 
-static void invalidate_decoder() {
+static void set_decoder_valid() {
+  decoder_status.valid = 1;
+  decoder_status.loss = DECODER_NO_LOSS;
+}
+
+static void invalidate_decoder(decoder_loss_reason reason) {
   decoder_status.valid = 0;
+  decoder_status.loss = reason;
   state = DECODER_NOSYNC;
   current_triggers_rpm = 0;
   triggers_since_last_sync = 0;
+  decoder_status.rpm = 0;
+  decoder_status.tooth_rpm = 0;
   invalidate_scheduled_events(config.events, config.num_events);
 }
 
 static void handle_decoder_expire() {
-  decoder_status.loss = DECODER_EXPIRED;
-  invalidate_decoder();
+  invalidate_decoder(DECODER_EXPIRED);
 }
 
 static void set_expire_event(timeval_t t) {
@@ -58,7 +69,6 @@ static void push_time(timeval_t t) {
 static void even_tooth_trigger_update(timeval_t t) {
   push_time(t);
   triggers_since_last_sync++;
-  last_trigger_time = t;
 
   /* Count triggers up until a full wheel */
   if (current_triggers_rpm < MAX_TRIGGERS) {
@@ -89,8 +99,7 @@ static void even_tooth_trigger_update(timeval_t t) {
 
   /* Check for excessive per-tooth variation */
   if (fabs(decoder_status.cur_variance) > config.decoder.max_variance) {
-    state = DECODER_NOSYNC;
-    decoder_status.loss = DECODER_VARIATION;
+    invalidate_decoder(DECODER_VARIATION);
   }
 
   expiration = tooth_times[0] + diff * (1 + config.decoder.max_variance);
@@ -188,10 +197,8 @@ static void missing_tooth_trigger_update(timeval_t t) {
     if (is_acceptable_missing_tooth) {
       state = DECODER_SYNC;
       triggers_since_last_sync = 0;
-      last_trigger_angle = 0;
     } else if (!is_acceptable_normal_tooth) {
-      state = DECODER_NOSYNC;
-      decoder_status.loss = DECODER_VARIATION;
+      invalidate_decoder(DECODER_VARIATION);
     }
   } else if (state == DECODER_SYNC) {
     triggers_since_last_sync += 1;
@@ -200,20 +207,11 @@ static void missing_tooth_trigger_update(timeval_t t) {
       if (is_acceptable_missing_tooth) {
         triggers_since_last_sync = 0;
       } else {
-        state = DECODER_NOSYNC;
-        decoder_status.loss = DECODER_TRIGGERCOUNT_HIGH;
+        invalidate_decoder(DECODER_TRIGGERCOUNT_HIGH);
       }
     } else if ((triggers_since_last_sync != config.decoder.num_triggers - 1) &&
                !is_acceptable_normal_tooth) {
-      state = DECODER_NOSYNC;
-      decoder_status.loss = DECODER_TRIGGERCOUNT_LOW;
-    }
-    degrees_t rpm_degrees =
-      config.decoder.degrees_per_trigger * (is_acceptable_missing_tooth ? 2 : 1);
-    last_trigger_time = t;
-    last_trigger_angle += rpm_degrees;
-    if (last_trigger_angle >= 720) {
-      last_trigger_angle -= 720;
+      invalidate_decoder(DECODER_TRIGGERCOUNT_LOW);
     }
   }
   if (state != DECODER_NOSYNC) {
@@ -233,24 +231,17 @@ static void missing_tooth_trigger_update(timeval_t t) {
 static void even_tooth_sync_update() {
   if (state == DECODER_RPM) {
     state = DECODER_SYNC;
-    decoder_status.loss = DECODER_NO_LOSS;
-    last_trigger_angle = 0;
   } else if (state == DECODER_SYNC) {
     if (triggers_since_last_sync == config.decoder.num_triggers) {
       state = DECODER_SYNC;
-      decoder_status.loss = DECODER_NO_LOSS;
-      last_trigger_angle = 0;
     } else {
-      state = DECODER_NOSYNC;
-      decoder_status.loss = DECODER_TRIGGERCOUNT_LOW;
+      invalidate_decoder(DECODER_TRIGGERCOUNT_LOW);
     }
   }
   triggers_since_last_sync = 0;
 }
 
 static void decode_even_with_camsync(struct decoder_event *ev) {
-  decoder_state oldstate = state;
-
   if (ev->trigger == 0) {
     even_tooth_trigger_update(ev->time);
   } else if (ev->trigger == 1) {
@@ -259,50 +250,36 @@ static void decode_even_with_camsync(struct decoder_event *ev) {
 
   /* Check for too many triggers between syncs */
   if (triggers_since_last_sync > config.decoder.num_triggers) {
-    state = DECODER_NOSYNC;
-    decoder_status.loss = DECODER_TRIGGERCOUNT_HIGH;
+    invalidate_decoder(DECODER_TRIGGERCOUNT_HIGH);
   }
 
   decoder_status.rpm = average_rpm();
 
   if (state == DECODER_SYNC) {
-    decoder_status.valid = 1;
-    decoder_status.loss = DECODER_NO_LOSS;
     last_trigger_angle = config.decoder.degrees_per_trigger * triggers_since_last_sync;
-  } else {
-    if (oldstate == DECODER_SYNC) {
-      /* We lost sync */
-      invalidate_decoder();
-    }
+    set_decoder_valid();
   }
 }
 
 static void decode_even_no_sync(struct decoder_event *ev) {
-  decoder_state oldstate = state;
   even_tooth_trigger_update(ev->time);
+
   if (state == DECODER_RPM || state == DECODER_SYNC) {
     state = DECODER_SYNC;
-    decoder_status.loss = DECODER_NO_LOSS;
-    decoder_status.valid = 1;
+    set_decoder_valid();
     decoder_status.rpm = decoder_status.tooth_rpm;
-    last_trigger_time = ev->time;
     last_trigger_angle += config.decoder.degrees_per_trigger;
     triggers_since_last_sync = 0; /* There is no sync */
-  } else {
-    if (oldstate == DECODER_SYNC) {
-      /* We lost sync */
-      invalidate_decoder();
-    }
   }
+
   if (last_trigger_angle > 720) {
     last_trigger_angle -= 720;
   }
+
   stats_finish_timing(STATS_DECODE_TIME);
 }
 
 static void decode_missing_no_sync(struct decoder_event *ev) {
-  decoder_state oldstate = state;
-
   if (ev->trigger == 0) {
     missing_tooth_trigger_update(ev->time);
   }
@@ -310,27 +287,22 @@ static void decode_missing_no_sync(struct decoder_event *ev) {
   decoder_status.rpm = average_rpm();
 
   if (state == DECODER_SYNC) {
-    decoder_status.valid = 1;
-    decoder_status.loss = DECODER_NO_LOSS;
-  } else {
-    if (oldstate == DECODER_SYNC) {
-      /* We lost sync */
-      invalidate_decoder();
-    }
+    last_trigger_angle =
+      config.decoder.degrees_per_trigger * triggers_since_last_sync;
+    set_decoder_valid();
   }
 }
 
 static void decode_missing_with_camsync(struct decoder_event *ev) {
-  bool was_valid = decoder_status.valid;
   static bool camsync_seen_this_rotation = false;
   static bool camsync_seen_last_rotation = false;
 
   if (ev->trigger == 0) {
     missing_tooth_trigger_update(ev->time);
-    if ((state == DECODER_SYNC) && (triggers_since_last_sync == 0)) {
+    if (decoder_status.valid && (triggers_since_last_sync == 0)) {
       if (!camsync_seen_this_rotation && !camsync_seen_last_rotation) {
         /* We've gone two cycles without a camsync, desync */
-        decoder_status.valid = 0;
+        invalidate_decoder(DECODER_MISSING_SYNC);
       }
       camsync_seen_last_rotation = camsync_seen_this_rotation;
       camsync_seen_this_rotation = false;
@@ -338,7 +310,7 @@ static void decode_missing_with_camsync(struct decoder_event *ev) {
   } else if (ev->trigger == 1) {
     if (state == DECODER_SYNC) {
       if (camsync_seen_this_rotation || camsync_seen_last_rotation) {
-        decoder_status.valid = 0;
+        invalidate_decoder(DECODER_EXTRA_SYNC);
         camsync_seen_this_rotation = false;
       } else {
         camsync_seen_this_rotation = true;
@@ -350,31 +322,20 @@ static void decode_missing_with_camsync(struct decoder_event *ev) {
 
   bool has_seen_camsync =
     camsync_seen_this_rotation || camsync_seen_last_rotation;
-  if (state != DECODER_SYNC) {
-    decoder_status.valid = 0;
-  } else if (!was_valid && (state == DECODER_SYNC) && has_seen_camsync) {
-    /* We gained sync */
-    decoder_status.valid = 1;
-    decoder_status.loss = DECODER_NO_LOSS;
+
+  if ((state == DECODER_SYNC) && has_seen_camsync) {
     last_trigger_angle =
       config.decoder.degrees_per_trigger * triggers_since_last_sync +
       (camsync_seen_this_rotation ? 0 : 360);
-  }
-  if (was_valid && !decoder_status.valid) {
-    /* We lost sync */
-    invalidate_decoder();
+    set_decoder_valid();
   }
 }
 
 void decoder_init() {
-  current_triggers_rpm = 0;
-  decoder_status.valid = 0;
+  invalidate_decoder(DECODER_EXPIRED);
   decoder_status.rpm = 0;
   decoder_status.tooth_rpm = 0;
-  state = DECODER_NOSYNC;
-  last_trigger_time = 0;
   last_trigger_angle = 0;
-  triggers_since_last_sync = 0;
   expiration = 0;
   if (config.decoder.max_variance == 0.0f) {
     config.decoder.max_variance = 0.5f;
@@ -438,7 +399,7 @@ degrees_t current_angle() {
     return last_trigger_angle;
   }
   degrees_t angle_since_last_tooth = degrees_from_time_diff(
-    current_time() - last_trigger_time, decoder_status.rpm);
+    current_time() - tooth_times[0], decoder_status.rpm);
 
   return clamp_angle(last_trigger_angle + angle_since_last_tooth,
                      720);
@@ -446,7 +407,7 @@ degrees_t current_angle() {
 
 timeval_t next_time_of_angle(degrees_t angle) {
   degrees_t relative_angle = clamp_angle(angle - last_trigger_angle + config.decoder.offset, 720);
-  return last_trigger_time + time_from_rpm_diff(decoder_status.tooth_rpm, relative_angle);
+  return tooth_times[0] + time_from_rpm_diff(decoder_status.tooth_rpm, relative_angle);
 }
 
 #ifdef UNITTEST
