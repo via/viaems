@@ -192,7 +192,7 @@ START_TEST(check_sensor_convert_linear_windowed) {
     },
   };
 
-  config.decoder.rpm = 1000;
+  decoder_status.rpm = 1000;
 
   ck_assert_float_eq_tol(
     sensor_convert_linear_windowed(&si, 0, 2048), 12.0, 0.01);
@@ -224,7 +224,7 @@ START_TEST(check_sensor_convert_linear_windowed_skipped) {
     },
   };
 
-  config.decoder.rpm = 1000;
+  decoder_status.rpm = 1000;
 
   ck_assert_float_eq_tol(
     sensor_convert_linear_windowed(&si, 0, 2048), 12.0, 0.01);
@@ -261,7 +261,7 @@ START_TEST(check_sensor_convert_linear_windowed_wide) {
     },
   };
 
-  config.decoder.rpm = 1000;
+  decoder_status.rpm = 1000;
 
   ck_assert_float_eq_tol(
     sensor_convert_linear_windowed(&si, 0, 2048), 12.0, 0.01);
@@ -303,7 +303,7 @@ START_TEST(check_sensor_convert_linear_windowed_offset) {
     },
   };
 
-  config.decoder.rpm = 1000;
+  decoder_status.rpm = 1000;
 
   /* All values should be ignored */
   ck_assert_float_eq_tol(

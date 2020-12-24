@@ -502,20 +502,20 @@ static void validate_decoder_sequence(struct decoder_test_event *ev) {
     struct decoder_event dev = event_from_test_event(*ev);
     decoder_update_scheduling(&dev, 1);
     ck_assert_msg(
-      (config.decoder.state == ev->state) &&
-        (config.decoder.valid == ev->valid),
+      (state == ev->state) &&
+        (decoder_status.valid == ev->valid),
       "expected event at %d: (state=%d, valid=%d). Got (state=%d, valid=%d)",
       ev->time,
       ev->state,
       ev->valid,
-      config.decoder.state,
-      config.decoder.valid);
+      state,
+      decoder_status.valid);
     if (!ev->valid) {
-      ck_assert_msg(config.decoder.loss == ev->reason,
+      ck_assert_msg(decoder_status.loss == ev->reason,
                     "reason mismatch at %d: %d. Got %d",
                     ev->time,
                     ev->reason,
-                    config.decoder.loss);
+                    decoder_status.loss);
     }
   }
 }
@@ -589,7 +589,7 @@ START_TEST(check_tfi_decoder_syncloss_variation) {
 
   validate_decoder_sequence(entries);
 
-  ck_assert_int_eq(config.decoder.current_triggers_rpm, 0);
+  ck_assert_int_eq(current_triggers_rpm, 0);
 
   free_trigger_list(entries);
 }
@@ -613,13 +613,13 @@ START_TEST(check_tfi_decoder_syncloss_expire) {
    * trigger time */
   timeval_t expected_expiration =
     find_last_trigger_event(&entries)->time + (1.5 * 25000);
-  ck_assert_int_eq(config.decoder.expiration, expected_expiration);
+  ck_assert_int_eq(expiration, expected_expiration);
 
   set_current_time(expected_expiration + 500);
-  handle_decoder_expire(&config.decoder);
-  ck_assert(!config.decoder.valid);
-  ck_assert_int_eq(0, config.decoder.current_triggers_rpm);
-  ck_assert_int_eq(DECODER_EXPIRED, config.decoder.loss);
+  handle_decoder_expire();
+  ck_assert(!decoder_status.valid);
+  ck_assert_int_eq(0, current_triggers_rpm);
+  ck_assert_int_eq(DECODER_EXPIRED, decoder_status.loss);
   free_trigger_list(entries);
 }
 END_TEST
@@ -679,7 +679,7 @@ START_TEST(check_cam_nplusone_startup_normal_then_early_sync) {
 
   validate_decoder_sequence(entries);
 
-  ck_assert(!config.decoder.valid);
+  ck_assert(!decoder_status.valid);
 
   free_trigger_list(entries);
 }
@@ -724,7 +724,7 @@ START_TEST(check_bulk_decoder_updates) {
   }
   decoder_update_scheduling(entry_list, len);
 
-  ck_assert(config.decoder.valid);
+  ck_assert(decoder_status.valid);
   ck_assert_int_eq(last_trigger_angle,
                    1 * config.decoder.degrees_per_trigger);
   free_trigger_list(entries);
@@ -747,7 +747,7 @@ START_TEST(check_cam_nplusone_startup_normal_no_second_trigger) {
     &entries, 25500, 0, 0, DECODER_NOSYNC, DECODER_TRIGGERCOUNT_HIGH);
 
   validate_decoder_sequence(entries);
-  ck_assert(!config.decoder.valid);
+  ck_assert(!decoder_status.valid);
   free_trigger_list(entries);
 }
 END_TEST
@@ -768,13 +768,13 @@ START_TEST(check_nplusone_decoder_syncloss_expire) {
    * trigger time */
   timeval_t expected_expiration =
     find_last_trigger_event(&entries)->time + (1.5 * 25000);
-  ck_assert_int_eq(config.decoder.expiration, expected_expiration);
+  ck_assert_int_eq(expiration, expected_expiration);
 
   set_current_time(expected_expiration + 500);
   handle_decoder_expire(&config.decoder);
-  ck_assert(!config.decoder.valid);
-  ck_assert_int_eq(0, config.decoder.current_triggers_rpm);
-  ck_assert_int_eq(DECODER_EXPIRED, config.decoder.loss);
+  ck_assert(!decoder_status.valid);
+  ck_assert_int_eq(0, current_triggers_rpm);
+  ck_assert_int_eq(DECODER_EXPIRED, decoder_status.loss);
   free_trigger_list(entries);
 }
 END_TEST
@@ -795,7 +795,7 @@ START_TEST(check_missing_tooth_wrong_wheel) {
   }
   validate_decoder_sequence(entries);
 
-  ck_assert_int_eq(config.decoder.valid, 0);
+  ck_assert_int_eq(decoder_status.valid, 0);
   free_trigger_list(entries);
 }
 END_TEST
@@ -821,7 +821,7 @@ START_TEST(check_missing_tooth_startup_normal) {
   add_trigger_event(&entries, 25000, 0);
   validate_decoder_sequence(entries);
 
-  ck_assert_int_eq(config.decoder.valid, 1);
+  ck_assert_int_eq(decoder_status.valid, 1);
   ck_assert_int_eq(last_trigger_angle,
                    config.decoder.degrees_per_trigger);
   free_trigger_list(entries);
@@ -847,10 +847,10 @@ START_TEST(check_missing_tooth_rpm_after_gap) {
     &entries, 50000, 0, 1, DECODER_SYNC, DECODER_NO_LOSS);
   validate_decoder_sequence(entries);
 
-  ck_assert_int_eq(config.decoder.valid, 1);
+  ck_assert_int_eq(decoder_status.valid, 1);
   ck_assert_int_eq(last_trigger_angle, 0);
   ck_assert_int_eq(
-    config.decoder.rpm,
+    decoder_status.rpm,
     rpm_from_time_diff(25000, config.decoder.degrees_per_trigger));
   free_trigger_list(entries);
 }
@@ -884,7 +884,6 @@ START_TEST(check_missing_tooth_startup_then_early) {
 
   validate_decoder_sequence(entries);
 
-  ck_assert_int_eq(config.decoder.valid, 0);
   free_trigger_list(entries);
 }
 END_TEST
@@ -920,7 +919,6 @@ START_TEST(check_missing_tooth_startup_then_late) {
 
   validate_decoder_sequence(entries);
 
-  ck_assert_int_eq(config.decoder.valid, 0);
   free_trigger_list(entries);
 }
 END_TEST
@@ -939,7 +937,6 @@ START_TEST(check_missing_tooth_false_starts) {
 
   validate_decoder_sequence(entries);
 
-  ck_assert_int_eq(config.decoder.valid, 0);
   free_trigger_list(entries);
 }
 END_TEST
@@ -1143,61 +1140,31 @@ START_TEST(check_missing_tooth_camsync_startup_normal_cam_stops_working) {
 }
 END_TEST
 
-START_TEST(check_update_rpm_single_point) {
-  struct decoder d = {
-    .degrees_per_trigger = 30,
-    .current_triggers_rpm = 1,
-    .trigger_max_rpm_change = 0.5,
-  };
-  tooth_times = { 100 },
+START_TEST(check_even_tooth_rpm_single_point) {
+  prepare_7mgte_cps_decoder();
 
-  trigger_update_rpm(&d);
-  ck_assert_int_eq(d.rpm, 0);
-  ck_assert_int_eq(d.state, DECODER_NOSYNC);
+  even_tooth_trigger_update(100);
+  ck_assert_int_eq(decoder_status.rpm, 0);
+  ck_assert_int_eq(state, DECODER_NOSYNC);
 }
 END_TEST
 
-START_TEST(check_update_rpm_sufficient_points) {
-  struct decoder d = {
-    .degrees_per_trigger = 30,
-    .required_triggers_rpm = 4,
-    .num_triggers = 24,
-    .trigger_max_rpm_change = 0.5,
-  };
-  tooth_times = { 400, 300, 200, 100 },
+START_TEST(check_even_tooth_rpm_sufficient_points) {
+  prepare_7mgte_cps_decoder();
 
-  trigger_update_rpm(&d);
-  ck_assert_int_eq(d.rpm, rpm_from_time_diff(100, d.degrees_per_trigger));
+  tooth_times[0] = 100;
+  tooth_times[1] = 200;
+  tooth_times[2] = 300;
+  tooth_times[3] = 400;
+  current_triggers_rpm = 4;
+
+  even_tooth_trigger_update(100);
+  ck_assert(state == DECODER_RPM);
+  ck_assert_int_eq(decoder_status.rpm, rpm_from_time_diff(100, config.decoder.degrees_per_trigger));
+  ck_assert_int_eq(decoder_status.tooth_rpm, rpm_from_time_diff(100, config.decoder.degrees_per_trigger));
 }
 END_TEST
 
-START_TEST(check_update_rpm_window_larger) {
-  struct decoder d = {
-    .degrees_per_trigger = 30,
-    .required_triggers_rpm = 4,
-    .num_triggers = 24,
-    .trigger_max_rpm_change = 0.5,
-  };
-  tooth_times = { 800, 700, 700, 500, 400, 300, 200, 100 },
-
-  trigger_update_rpm(&d);
-  ck_assert_int_eq(d.rpm, rpm_from_time_diff(100, d.degrees_per_trigger));
-}
-END_TEST
-
-START_TEST(check_update_rpm_window_smaller) {
-  struct decoder d = {
-    .degrees_per_trigger = 30,
-    .required_triggers_rpm = 8,
-    .num_triggers = 24,
-    .trigger_max_rpm_change = 0.5,
-  };
-  tooth_times = { 800, 700, 700, 500, 400, 300, 200, 100 },
-
-  trigger_update_rpm(&d);
-  ck_assert_int_eq(d.rpm, rpm_from_time_diff(100, d.degrees_per_trigger));
-}
-END_TEST
 
 TCase *setup_decoder_tests() {
   TCase *decoder_tests = tcase_create("decoder");
@@ -1238,10 +1205,8 @@ TCase *setup_decoder_tests() {
 
   tcase_add_test(decoder_tests, check_bulk_decoder_updates);
 
-  tcase_add_test(decoder_tests, check_update_rpm_single_point);
-  tcase_add_test(decoder_tests, check_update_rpm_sufficient_points);
-  tcase_add_test(decoder_tests, check_update_rpm_window_larger);
-  tcase_add_test(decoder_tests, check_update_rpm_window_smaller);
+  tcase_add_test(decoder_tests, check_even_tooth_rpm_single_point);
+  tcase_add_test(decoder_tests, check_even_tooth_rpm_sufficient_points);
   return decoder_tests;
 }
 #endif

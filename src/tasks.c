@@ -169,7 +169,7 @@ START_TEST(check_tasks_handle_fuel_pump) {
   ck_assert_int_eq(get_gpio(1), 0);
 
   /* Get RPM sync */
-  config.decoder.state = DECODER_RPM;
+  decoder_status.valid = 1;
   handle_fuel_pump();
   ck_assert_int_eq(get_gpio(1), 1);
 
@@ -179,7 +179,7 @@ START_TEST(check_tasks_handle_fuel_pump) {
   ck_assert_int_eq(get_gpio(1), 1);
 
   /* Lose RPM sync */
-  config.decoder.state = DECODER_NOSYNC;
+  decoder_status.valid = 0;
   set_current_time(time_from_us(19000000));
   handle_fuel_pump();
   ck_assert_int_eq(get_gpio(1), 1);
@@ -198,7 +198,7 @@ END_TEST
 
 START_TEST(check_tasks_next_cel_state) {
   /* no fault */
-  config.decoder.valid = 1;
+  decoder_status.valid = 1;
   ck_assert_int_eq(determine_next_cel_state(), CEL_NONE);
 
   /* Sensor fault */
@@ -206,8 +206,8 @@ START_TEST(check_tasks_next_cel_state) {
   ck_assert_int_eq(determine_next_cel_state(), CEL_CONSTANT);
 
   /* Decoder loss */
-  config.decoder.valid = 0;
-  config.decoder.rpm = 1000;
+  decoder_status.valid = 0;
+  decoder_status.rpm = 1000;
   config.sensors[SENSOR_MAP].fault = FAULT_NONE;
   ck_assert_int_eq(determine_next_cel_state(), CEL_SLOWBLINK);
 
@@ -217,7 +217,7 @@ START_TEST(check_tasks_next_cel_state) {
 
   /* Lean in boost */
   config.sensors[SENSOR_MAP].fault = FAULT_NONE;
-  config.decoder.valid = 1;
+  decoder_status.valid = 1;
   config.sensors[SENSOR_MAP].processed_value = 180;
   config.sensors[SENSOR_EGO].processed_value = 1.1;
   ck_assert_int_eq(determine_next_cel_state(), CEL_FASTBLINK);
