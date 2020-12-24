@@ -332,7 +332,7 @@ static void decode_missing_with_camsync(struct decoder_event *ev) {
 }
 
 void decoder_init() {
-  invalidate_decoder(DECODER_EXPIRED);
+  invalidate_decoder(DECODER_NO_LOSS);
   decoder_status.rpm = 0;
   decoder_status.tooth_rpm = 0;
   last_trigger_angle = 0;
