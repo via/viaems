@@ -1156,7 +1156,10 @@ START_TEST(check_even_tooth_rpm_sufficient_points) {
   tooth_times[1] = 200;
   tooth_times[2] = 300;
   tooth_times[3] = 400;
-  current_triggers_rpm = 4;
+  tooth_times[4] = 500;
+  tooth_times[5] = 600;
+  tooth_times[6] = 700;
+  current_triggers_rpm = 7;
 
   even_tooth_trigger_update(100);
   ck_assert(state == DECODER_RPM);
