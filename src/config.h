@@ -19,7 +19,7 @@ struct config {
   struct output_event events[MAX_EVENTS];
 
   /* Trigger setup */
-  struct decoder decoder;
+  struct decoder_config decoder;
 
   /* Analog inputs */
   struct sensor_input sensors[NUM_SENSORS];

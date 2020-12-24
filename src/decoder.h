@@ -29,7 +29,17 @@ typedef enum {
   DECODER_EXPIRED,
 } decoder_loss_reason;
 
-struct decoder {
+struct decoder_config {
+  decoder_type type;
+  degrees_t offset;
+  float max_variance;
+  uint32_t trigger_min_rpm;
+  uint32_t required_triggers_rpm;
+  uint32_t num_triggers;
+  degrees_t degrees_per_trigger;
+};
+
+struct decoder_status {
   uint32_t valid;
 
   uint32_t rpm;
@@ -39,41 +49,24 @@ struct decoder {
   degrees_t last_trigger_angle;
   timeval_t expiration;
 
-  /* Configuration */
-  decoder_type type;
-  degrees_t offset;
+  float cur_variance;
 
-  float trigger_max_rpm_change;
-  float trigger_cur_rpm_change;
-  uint32_t trigger_min_rpm;
-  uint32_t required_triggers_rpm;
-
-  uint32_t num_triggers;
-  degrees_t degrees_per_trigger;
-
-  /* Debug */
   uint32_t t0_count;
   uint32_t t1_count;
   decoder_loss_reason loss;
-
-  /* Internal state */
 };
 
 struct decoder_event {
   unsigned int trigger;
   timeval_t time;
-#ifdef UNITTEST
-  decoder_state state;
-  uint32_t valid;
-  decoder_loss_reason reason;
-  struct decoder_event *next;
-#endif
 };
 
-void decoder_init(struct decoder *);
-void decoder_update_scheduling(struct decoder_event *, unsigned int count);
+extern struct decoder_status decoder_status;
 
+void decoder_init();
+void decoder_update_scheduling(struct decoder_event *, unsigned int count);
 degrees_t current_angle();
+timeval_t next_time_of_angle(degrees_t angle);
 
 #ifdef UNITTEST
 #include <check.h>

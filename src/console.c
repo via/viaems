@@ -53,14 +53,12 @@ const struct console_feed_node console_feed_nodes[] = {
   { .id = "sensor_faults", .uint32_fptr = sensor_fault_status },
 
   /* Decoder */
-  { .id = "rpm", .uint32_ptr = &config.decoder.rpm },
-  { .id = "tooth_rpm", .uint32_ptr = &config.decoder.tooth_rpm },
-  { .id = "sync", .uint32_ptr = &config.decoder.valid },
-  { .id = "rpm_variance", .float_ptr = &config.decoder.trigger_cur_rpm_change },
-  { .id = "last_trigger_angle",
-    .float_ptr = &config.decoder.last_trigger_angle },
-  { .id = "t0_count", .uint32_ptr = &config.decoder.t0_count },
-  { .id = "t1_count", .uint32_ptr = &config.decoder.t1_count },
+  { .id = "rpm", .uint32_ptr = &decoder_status.rpm },
+  { .id = "tooth_rpm", .uint32_ptr = &decoder_status.tooth_rpm },
+  { .id = "sync", .uint32_ptr = &decoder_status.valid },
+  { .id = "rpm_variance", .float_ptr = &decoder_status.cur_variance },
+  { .id = "t0_count", .uint32_ptr = &decoder_status.t0_count },
+  { .id = "t1_count", .uint32_ptr = &decoder_status.t1_count },
   { 0 },
 };
 
@@ -862,7 +860,7 @@ static void render_decoder(struct console_request_context *ctx, void *ptr) {
   render_float_map_field(ctx,
                          "max-variance",
                          "inter-tooth max time variation (0-1)",
-                         &config.decoder.trigger_max_rpm_change);
+                         &config.decoder.max_variance);
 
   render_uint32_map_field(
     ctx, "min-rpm", "minimum RPM for sync", &config.decoder.trigger_min_rpm);

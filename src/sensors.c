@@ -25,7 +25,7 @@ static int current_angle_in_window(struct sensor_input *in, degrees_t angle) {
 static float sensor_convert_linear_windowed(struct sensor_input *in,
                                             degrees_t angle,
                                             float raw) {
-  if (!config.decoder.rpm) {
+  if (!decoder_status.rpm) {
     /* If engine not turning, don't window */
     return sensor_convert_linear(in, raw);
   }

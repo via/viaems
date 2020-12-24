@@ -140,7 +140,7 @@ size_t console_write(const void *buf, size_t len) {
     return 0;
   }
   struct timespec wait = {
-    .tv_nsec = 1000000,
+    .tv_nsec = 100000,
   };
   nanosleep(&wait, NULL);
   ssize_t written = -1;

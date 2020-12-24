@@ -366,30 +366,24 @@ static void schedule_output_event_safely(struct output_event *ev,
 }
 
 static int schedule_ignition_event(struct output_event *ev,
-                                   struct decoder *d,
                                    degrees_t advance,
                                    unsigned int usecs_dwell) {
 
   timeval_t stop_time;
   timeval_t start_time;
-  degrees_t firing_angle;
 
-  if (!d->tooth_rpm || !config.decoder.valid) {
+  if (!decoder_status.valid) {
     return 0;
   }
 
-  firing_angle =
-    clamp_angle(ev->angle - advance - d->last_trigger_angle + d->offset, 720);
-
-  stop_time =
-    d->last_trigger_time + time_from_rpm_diff(d->tooth_rpm, firing_angle);
+  stop_time = next_time_of_angle(ev->angle - advance);
   start_time = stop_time - time_from_us(usecs_dwell);
 
   if (event_has_fired(ev)) {
 
     /* Don't reschedule until we've passed at least 90*/
     if ((time_diff(stop_time, ev->stop.time) <
-         time_from_rpm_diff(d->rpm, 90))) {
+         time_from_rpm_diff(decoder_status.rpm, 90))) {
       return 0;
     }
 
@@ -403,7 +397,7 @@ static int schedule_ignition_event(struct output_event *ev,
    * forward once it is scheduled */
   if (ev->stop.scheduled && time_before(ev->stop.time, stop_time) &&
       ((time_diff(stop_time, ev->stop.time) >
-        time_from_rpm_diff(d->rpm, 180)))) {
+        time_from_rpm_diff(decoder_status.rpm, 180)))) {
     return 0;
   }
 
@@ -419,29 +413,23 @@ static int schedule_ignition_event(struct output_event *ev,
 }
 
 static int schedule_fuel_event(struct output_event *ev,
-                               struct decoder *d,
                                unsigned int usecs_pw) {
 
   timeval_t stop_time;
   timeval_t start_time;
-  degrees_t firing_angle;
 
-  if (!d->tooth_rpm || !config.decoder.valid) {
+  if (!decoder_status.valid) {
     return 0;
   }
 
-  firing_angle =
-    clamp_angle(ev->angle - d->last_trigger_angle + d->offset, 720);
-
-  stop_time =
-    d->last_trigger_time + time_from_rpm_diff(d->tooth_rpm, firing_angle);
+  stop_time = next_time_of_angle(ev->angle);
   start_time = stop_time - (TICKRATE / 1000000) * usecs_pw;
 
   if (event_has_fired(ev)) {
 
     /* Don't reschedule until we've passed at least 90*/
     if ((time_diff(stop_time, ev->stop.time) <
-         time_from_rpm_diff(d->rpm, 90))) {
+         time_from_rpm_diff(decoder_status.rpm, 90))) {
       return 0;
     }
 
@@ -457,7 +445,7 @@ static int schedule_fuel_event(struct output_event *ev,
 
   if (ev->stop.scheduled && time_before(ev->stop.time, stop_time) &&
       ((time_diff(stop_time, ev->stop.time) >
-        time_from_rpm_diff(d->rpm, 180)))) {
+        time_from_rpm_diff(decoder_status.rpm, 180)))) {
     return 0;
   }
 
@@ -476,22 +464,21 @@ static int schedule_fuel_event(struct output_event *ev,
 void schedule_event(struct output_event *ev) {
   switch (ev->type) {
   case IGNITION_EVENT:
-    if (ignition_cut() || !config.decoder.valid) {
+    if (ignition_cut() || !decoder_status.valid) {
       invalidate_scheduled_events(config.events, config.num_events);
       return;
     }
     schedule_ignition_event(ev,
-                            &config.decoder,
                             (degrees_t)calculated_values.timing_advance,
                             calculated_values.dwell_us);
     break;
 
   case FUEL_EVENT:
-    if (fuel_cut() || !config.decoder.valid) {
+    if (fuel_cut() || !decoder_status.valid) {
       invalidate_scheduled_events(config.events, config.num_events);
       return;
     }
-    schedule_fuel_event(ev, &config.decoder, calculated_values.fueling_us);
+    schedule_fuel_event(ev, calculated_values.fueling_us);
     break;
 
   default:

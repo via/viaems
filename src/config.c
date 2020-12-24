@@ -210,7 +210,7 @@ struct config config __attribute__((section(".configdata"))) = {
     .num_triggers = 36,
     .offset = 425,
     .trigger_min_rpm = 80,
-    .trigger_max_rpm_change = 0.35f,
+    .max_variance = 0.35f,
   },
   .freq_inputs = {
     [0] = {.edge = RISING_EDGE, .type = TRIGGER},

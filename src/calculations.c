@@ -7,17 +7,17 @@ struct calculated_values calculated_values;
 
 static int fuel_overduty() {
   /* Maximum pulse width */
-  timeval_t max_pw = time_from_rpm_diff(config.decoder.rpm, 720) /
+  timeval_t max_pw = time_from_rpm_diff(decoder_status.rpm, 720) /
                      config.fueling.injections_per_cycle;
 
   return time_from_us(calculated_values.fueling_us) >= max_pw;
 }
 
 static int rpm_limit() {
-  if (config.decoder.rpm >= config.rpm_stop) {
+  if (decoder_status.rpm >= config.rpm_stop) {
     calculated_values.rpm_limit_cut = 1;
   }
-  if (config.decoder.rpm < config.rpm_start) {
+  if (decoder_status.rpm < config.rpm_start) {
     calculated_values.rpm_limit_cut = 0;
   }
   return calculated_values.rpm_limit_cut;
@@ -39,12 +39,12 @@ bool fuel_cut() {
 void calculate_ignition() {
   calculated_values.timing_advance =
     interpolate_table_twoaxis(config.timing,
-                              config.decoder.rpm,
+                              decoder_status.rpm,
                               config.sensors[SENSOR_MAP].processed_value);
   switch (config.ignition.dwell) {
   case DWELL_FIXED_DUTY:
     calculated_values.dwell_us =
-      time_from_rpm_diff(config.decoder.rpm, 45) / (TICKRATE / 1000000);
+      time_from_rpm_diff(decoder_status.rpm, 45) / (TICKRATE / 1000000);
     break;
   case DWELL_FIXED_TIME:
     calculated_values.dwell_us = config.ignition.dwell_us;
@@ -145,14 +145,14 @@ void calculate_fueling() {
   float tpsrate = config.sensors[SENSOR_TPS].derivative.value;
 
   if (config.ve) {
-    ve = interpolate_table_twoaxis(config.ve, config.decoder.rpm, map);
+    ve = interpolate_table_twoaxis(config.ve, decoder_status.rpm, map);
   } else {
     ve = 100.0;
   }
 
   if (config.commanded_lambda) {
     lambda = interpolate_table_twoaxis(
-      config.commanded_lambda, config.decoder.rpm, map);
+      config.commanded_lambda, decoder_status.rpm, map);
   } else {
     lambda = 1.0;
   }
@@ -170,13 +170,13 @@ void calculate_fueling() {
   }
 
   /* Cranking enrichment config overrides ETE */
-  if ((config.decoder.rpm < config.fueling.crank_enrich_config.crank_rpm) &&
+  if ((decoder_status.rpm < config.fueling.crank_enrich_config.crank_rpm) &&
       (clt < config.fueling.crank_enrich_config.cutoff_temperature)) {
     ete = config.fueling.crank_enrich_config.enrich_amt;
   }
 
   calculated_values.tipin =
-    calculate_tipin_enrichment(tps, tpsrate, config.decoder.rpm);
+    calculate_tipin_enrichment(tps, tpsrate, decoder_status.rpm);
 
   calculated_values.airmass_per_cycle = calculate_airmass(ve, map, iat);
 
@@ -236,7 +236,7 @@ END_TEST
 START_TEST(check_fuel_overduty) {
 
   /* 20 ms for two complete revolutions */
-  config.decoder.rpm = 6000;
+  decoder_status.rpm = 6000;
   config.fueling.injections_per_cycle = 1;
   calculated_values.fueling_us = 18000;
   ck_assert(!fuel_overduty());
@@ -258,23 +258,23 @@ START_TEST(check_calculate_ignition_cut) {
   config.rpm_stop = 5000;
   config.rpm_start = 4500;
 
-  config.decoder.rpm = 1000;
+  decoder_status.rpm = 1000;
   ck_assert_int_eq(ignition_cut(), 0);
   ck_assert_int_eq(calculated_values.rpm_limit_cut, 0);
 
-  config.decoder.rpm = 5500;
+  decoder_status.rpm = 5500;
   ck_assert_int_eq(ignition_cut(), 1);
   ck_assert_int_eq(calculated_values.rpm_limit_cut, 1);
 
-  config.decoder.rpm = 4000;
+  decoder_status.rpm = 4000;
   ck_assert_int_eq(ignition_cut(), 0);
   ck_assert_int_eq(calculated_values.rpm_limit_cut, 0);
 
-  config.decoder.rpm = 4800;
+  decoder_status.rpm = 4800;
   ck_assert_int_eq(ignition_cut(), 0);
   ck_assert_int_eq(calculated_values.rpm_limit_cut, 0);
 
-  config.decoder.rpm = 5500;
+  decoder_status.rpm = 5500;
   ck_assert_int_eq(ignition_cut(), 1);
   ck_assert_int_eq(calculated_values.rpm_limit_cut, 1);
 }
@@ -289,7 +289,7 @@ START_TEST(check_calculate_ignition_fixedduty) {
   };
   config.timing = &t;
   config.ignition.dwell = DWELL_FIXED_DUTY;
-  config.decoder.rpm = 6000;
+  decoder_status.rpm = 6000;
 
   calculate_ignition();
 

@@ -9,7 +9,7 @@ static void handle_fuel_pump() {
   static timeval_t last_valid = 0;
 
   /* If engine is turning, keep pump on */
-  if (config.decoder.valid) {
+  if (decoder_status.valid) {
     last_valid = current_time();
     set_gpio(config.fueling.fuel_pump_pin, 1);
     return;
@@ -36,7 +36,7 @@ static void handle_boost_control() {
     }
   } else {
     duty = interpolate_table_oneaxis(config.boost_control.pwm_duty_vs_rpm,
-                                     config.decoder.rpm);
+                                     decoder_status.rpm);
   }
   set_pwm(config.boost_control.pin, duty);
 }
@@ -65,7 +65,7 @@ static cel_state_t determine_next_cel_state() {
   static cel_state_t next_cel_state;
 
   int sensor_in_fault = (sensor_fault_status() > 0);
-  int decode_loss = !config.decoder.valid && (config.decoder.rpm > 0);
+  int decode_loss = !decoder_status.valid && (decoder_status.rpm > 0);
   int lean_in_boost =
     (config.sensors[SENSOR_MAP].processed_value > config.cel.lean_boost_kpa) &&
     (config.sensors[SENSOR_EGO].processed_value > config.cel.lean_boost_ego);
