@@ -772,17 +772,17 @@ static void render_table_axis(struct console_request_context *ctx, void *_t) {
 
 struct nested_table_context {
   struct table *t;
-  int i;
+  int row;
 };
 
 static void render_table_second_axis_data(struct console_request_context *ctx,
                                           void *_ntc) {
   struct nested_table_context *ntc = _ntc;
   struct table *t = ntc->t;
-  for (int j = 0; j < t->axis[1].num; j++) {
+  for (int j = 0; j < t->axis[0].num; j++) {
     struct console_request_context deeper;
     if (descend_array_field(ctx, &deeper, j)) {
-      render_float_object(&deeper, "axis value", &t->data.two[ntc->i][j]);
+      render_float_object(&deeper, "axis value", &t->data.two[ntc->row][j]);
     }
   }
 }
@@ -801,13 +801,18 @@ static void render_table_data_description(struct console_request_context *ctx,
 
 static void render_table_data(struct console_request_context *ctx, void *_t) {
   struct table *t = _t;
-  for (int i = 0; i < t->axis[0].num; i++) {
-    struct console_request_context deeper;
-    if (descend_array_field(ctx, &deeper, i)) {
-      if (t->num_axis == 1) {
+  if (t->num_axis == 1) {
+    for (int i = 0; i < t->axis[0].num; i++) {
+      struct console_request_context deeper;
+      if (descend_array_field(ctx, &deeper, i)) {
         render_float_object(&deeper, "axis value", &t->data.one[i]);
-      } else if (t->num_axis == 2) {
-        struct nested_table_context ntc = { .t = t, .i = i };
+      }
+    }
+  } else if (t->num_axis == 2) {
+    for (int i = 0; i < t->axis[1].num; i++) {
+      struct console_request_context deeper;
+      if (descend_array_field(ctx, &deeper, i)) {
+        struct nested_table_context ntc = { .t = t, .row = i };
         render_array_object(&deeper, render_table_second_axis_data, &ntc);
       }
     }
