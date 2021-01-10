@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <math.h>
 
 #include "calculations.h"
 #include "config.h"
@@ -397,6 +398,22 @@ void render_float_map_field(struct console_request_context *ctx,
     render_float_object(&deeper, description, ptr);
   }
 }
+/* This function loosely borrowed from tinycbor's internal helpers until
+ * https://github.com/intel/tinycbor/issues/149 is merged
+ */
+static float decode_half(uint16_t half) {
+  int exp = (half >> 10) & 0x1f;
+  int mant = half & 0x3ff;
+  float val;
+  if (exp == 0) {
+    val = ldexpf(mant, -24);
+  } else if (exp != 31) {
+    val = ldexpf(mant + 1024, exp - 25);
+  } else {
+    val = mant == 0 ? INFINITY : NAN;
+  }
+  return half & 0x8000 ? -val : val;
+}
 
 void render_float_object(struct console_request_context *ctx,
                          const char *description,
@@ -406,8 +423,13 @@ void render_float_object(struct console_request_context *ctx,
   case CONSOLE_SET:
     if (cbor_value_is_float(&ctx->value)) {
       cbor_value_get_float(&ctx->value, ptr);
+    } else if (cbor_value_is_half_float(&ctx->value)) {
+      /* Support f16 for client support */
+      uint16_t dest;
+      cbor_value_get_half_float(&ctx->value, &dest);
+      *ptr = decode_half(dest);
     } else if (cbor_value_is_double(&ctx->value)) {
-      /* Support doubles for ease of use */
+      /* Support doubles for client support */
       double val;
       cbor_value_get_double(&ctx->value, &val);
       *ptr = val;
