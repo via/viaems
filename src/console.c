@@ -753,7 +753,7 @@ static void render_table_axis_values(struct console_request_context *ctx,
 
   struct table_axis *axis = _a;
   size_t len = axis->num;
-  if (ctx->type == CONSOLE_SET) {
+  if (ctx->type == CONSOLE_SET && cbor_value_is_array(&ctx->value)) {
     if (cbor_value_get_array_length(&ctx->value, &len) != CborNoError) {
       len = axis->num;
     }
