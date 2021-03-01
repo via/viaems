@@ -24,6 +24,7 @@ typedef enum {
   DECODER_TRIGGERCOUNT_HIGH,
   DECODER_TRIGGERCOUNT_LOW,
   DECODER_EXPIRED,
+  DECODER_OVERFLOW,
 } decoder_loss_reason;
 
 struct decoder {
@@ -77,7 +78,7 @@ struct decoder_event {
 
 void decoder_init(struct decoder *);
 void decoder_update_scheduling(struct decoder_event *, unsigned int count);
-
+void decoder_desync(decoder_loss_reason);
 degrees_t current_angle();
 
 #ifdef UNITTEST
