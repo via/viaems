@@ -28,6 +28,11 @@ static void set_expire_event(timeval_t t) {
   schedule_callback(&expire_event, t);
 }
 
+void decoder_desync(decoder_loss_reason reason) {
+  config.decoder.loss = reason;
+  invalidate_decoder();
+}
+
 static void push_time(struct decoder *d, timeval_t t) {
   for (int i = MAX_TRIGGERS - 1; i > 0; --i) {
     d->times[i] = d->times[i - 1];

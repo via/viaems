@@ -1001,6 +1001,17 @@ void tim2_isr() {
     timer_clear_flag(TIM2, TIM_SR_CC2IF);
   }
 
+  /* Did we miss a capture event? */
+  if (timer_get_flag(TIM2, TIM_SR_CC1OF) || 
+      timer_get_flag(TIM2, TIM_SR_CC2OF)) {
+    timer_clear_flag(TIM2, TIM_SR_CC1OF);
+    timer_clear_flag(TIM2, TIM_SR_CC2OF);
+    decoder_desync(DECODER_OVERFLOW);
+    stats_finish_timing(STATS_INT_TOTAL_TIME);
+    return;
+  }
+
+
   if (cc1_fired && cc2_fired) {
     if (time_before(cc2, cc1)) {
       evs[0] = (struct decoder_event){ .trigger = 1, .time = cc2 };
