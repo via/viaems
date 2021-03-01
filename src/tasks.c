@@ -11,8 +11,8 @@ static void handle_fuel_pump() {
   /* If engine is turning (as defined by seeing a trigger in the last second),
    * keep pump on */
   timeval_t last_trigger = config.decoder.last_trigger_time;
-  if (time_in_range(current_time(), last_trigger, last_trigger +
-        time_from_us(1000000))) {
+  if (time_in_range(
+        current_time(), last_trigger, last_trigger + time_from_us(1000000))) {
     last_valid = current_time();
     set_gpio(config.fueling.fuel_pump_pin, 1);
     return;
@@ -162,7 +162,7 @@ START_TEST(check_tasks_handle_fuel_pump) {
   ck_assert_int_eq(get_gpio(1), 1);
 
   /* Wait 4 seconds, should turn off */
-  set_current_time(time_from_us(4000000));
+  set_current_time(time_from_us(4001000));
   handle_fuel_pump();
   ck_assert_int_eq(get_gpio(1), 0);
 

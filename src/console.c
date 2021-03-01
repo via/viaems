@@ -4,10 +4,10 @@
 #endif
 
 #include <assert.h>
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include <math.h>
 
 #include "calculations.h"
 #include "config.h"
@@ -16,6 +16,10 @@
 #include "platform.h"
 #include "sensors.h"
 #include "stats.h"
+
+static uint32_t render_loss_reason() {
+  return (uint32_t)config.decoder.loss;
+};
 
 const struct console_feed_node console_feed_nodes[] = {
   { .id = "cputime", .uint32_fptr = current_time },
@@ -57,6 +61,7 @@ const struct console_feed_node console_feed_nodes[] = {
   { .id = "rpm", .uint32_ptr = &config.decoder.rpm },
   { .id = "tooth_rpm", .uint32_ptr = &config.decoder.tooth_rpm },
   { .id = "sync", .uint32_ptr = &config.decoder.valid },
+  { .id = "loss", .uint32_fptr = render_loss_reason },
   { .id = "rpm_variance", .float_ptr = &config.decoder.trigger_cur_rpm_change },
   { .id = "last_trigger_angle",
     .float_ptr = &config.decoder.last_trigger_angle },
@@ -901,6 +906,8 @@ static void render_decoder(struct console_request_context *ctx, void *ptr) {
     "Primary trigger decoder method",
     (struct console_enum_mapping[]){ { TRIGGER_EVEN_NOSYNC, "even" },
                                      { TRIGGER_EVEN_CAMSYNC, "even+camsync" },
+                                     { TRIGGER_MISSING_NOSYNC, "missing" },
+                                     { TRIGGER_MISSING_CAMSYNC, "missing+camsync" },
                                      { 0, NULL } },
     &type);
   config.decoder.type = type;
