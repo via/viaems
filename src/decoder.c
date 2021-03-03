@@ -468,7 +468,7 @@ START_TEST(check_tfi_decoder_syncloss_expire) {
   ck_assert_int_eq(config.decoder.expiration, expected_expiration);
 
   set_current_time(expected_expiration + 500);
-  handle_decoder_expire(&config.decoder);
+  handle_decoder_expire();
   ck_assert(!config.decoder.valid);
   ck_assert_int_eq(0, config.decoder.current_triggers_rpm);
   ck_assert_int_eq(DECODER_EXPIRED, config.decoder.loss);
@@ -620,7 +620,7 @@ START_TEST(check_nplusone_decoder_syncloss_expire) {
   ck_assert_int_eq(config.decoder.expiration, expected_expiration);
 
   set_current_time(expected_expiration + 500);
-  handle_decoder_expire(&config.decoder);
+  handle_decoder_expire();
   ck_assert(!config.decoder.valid);
   ck_assert_int_eq(0, config.decoder.current_triggers_rpm);
   ck_assert_int_eq(DECODER_EXPIRED, config.decoder.loss);

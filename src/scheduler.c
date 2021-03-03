@@ -1132,14 +1132,14 @@ START_TEST(check_callback_remove) {
 }
 END_TEST
 
+static void _increase_count(void *_c) {
+  int *c = (int *)_c;
+  (*c)++;
+}
+
 START_TEST(check_callback_execute) {
 
   int count = 0;
-
-  void _increase_count(void *_c) {
-    int *c = (int *)_c;
-    (*c)++;
-  }
 
   struct timed_callback tc1 = {
     .time = 95,
