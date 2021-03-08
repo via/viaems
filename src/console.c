@@ -1045,7 +1045,7 @@ static void render_sensor_object(struct console_request_context *ctx,
   render_uint32_map_field(ctx,
                           "window-offset",
                           "Crank degree into window to start averagine",
-                          &input->window.total_width);
+                          &input->window.offset);
 }
 
 static void render_sensors(struct console_request_context *ctx, void *ptr) {
