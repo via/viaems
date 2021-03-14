@@ -210,7 +210,7 @@ static void missing_tooth_trigger_update(struct decoder *d, timeval_t t) {
       d->last_trigger_angle -= 720;
     }
   }
-  if (d->state != DECODER_NOSYNC) {
+  if (d->state == DECODER_SYNC) {
     /* Are we expecting this to be the gap? */
     degrees_t expected_gap =
       d->degrees_per_trigger *
