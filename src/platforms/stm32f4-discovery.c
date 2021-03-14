@@ -1002,7 +1002,7 @@ void tim2_isr() {
   }
 
   /* Did we miss a capture event? */
-  if (timer_get_flag(TIM2, TIM_SR_CC1OF) || 
+  if (timer_get_flag(TIM2, TIM_SR_CC1OF) ||
       timer_get_flag(TIM2, TIM_SR_CC2OF)) {
     timer_clear_flag(TIM2, TIM_SR_CC1OF);
     timer_clear_flag(TIM2, TIM_SR_CC2OF);
@@ -1010,7 +1010,6 @@ void tim2_isr() {
     stats_finish_timing(STATS_INT_TOTAL_TIME);
     return;
   }
-
 
   if (cc1_fired && cc2_fired) {
     if (time_before(cc2, cc1)) {

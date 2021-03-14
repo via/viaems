@@ -267,11 +267,15 @@ degrees_t current_angle() {
   if (!config.decoder.rpm) {
     return config.decoder.last_trigger_angle;
   }
-  degrees_t angle_since_last_tooth = degrees_from_time_diff(
-    current_time() - config.decoder.last_trigger_time, config.decoder.rpm);
+  disable_interrupts();
+  timeval_t last_time = config.decoder.last_trigger_time;
+  degrees_t last_angle = config.decoder.last_trigger_angle;
+  enable_interrupts();
 
-  return clamp_angle(config.decoder.last_trigger_angle + angle_since_last_tooth,
-                     720);
+  degrees_t angle_since_last_tooth =
+    degrees_from_time_diff(current_time() - last_time, config.decoder.rpm);
+
+  return clamp_angle(last_angle + angle_since_last_tooth, 720);
 }
 
 #ifdef UNITTEST
