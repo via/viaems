@@ -2,6 +2,8 @@
 This introduces a breaking change with interface software.
 
 - New console and logging interface, as defined in INTERFACE.md. 
+- Revert trigger inputs to old non-dma interrupts
+- Fix linear window sensor glitch caused by race in current_angle()
 
 ### 1.3.0 (2020 Nov 20)
 - Switch build system to a GNU makefile at the toplevel

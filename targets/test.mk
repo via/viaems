@@ -8,4 +8,4 @@ CFLAGS+= -fsanitize=undefined -fsanitize=address
 LDFLAGS+= $(shell pkg-config --libs check)
 
 check: ${OBJDIR}/viaems
-	${OBJDIR}/viaems
+	CK_DEFAULT_TIMEOUT=10 ${OBJDIR}/viaems

@@ -28,6 +28,11 @@ static void set_expire_event(timeval_t t) {
   schedule_callback(&expire_event, t);
 }
 
+void decoder_desync(decoder_loss_reason reason) {
+  config.decoder.loss = reason;
+  invalidate_decoder();
+}
+
 static void push_time(struct decoder *d, timeval_t t) {
   for (int i = MAX_TRIGGERS - 1; i > 0; --i) {
     d->times[i] = d->times[i - 1];
@@ -428,11 +433,15 @@ degrees_t current_angle() {
   if (!config.decoder.rpm) {
     return config.decoder.last_trigger_angle;
   }
-  degrees_t angle_since_last_tooth = degrees_from_time_diff(
-    current_time() - config.decoder.last_trigger_time, config.decoder.rpm);
+  disable_interrupts();
+  timeval_t last_time = config.decoder.last_trigger_time;
+  degrees_t last_angle = config.decoder.last_trigger_angle;
+  enable_interrupts();
 
-  return clamp_angle(config.decoder.last_trigger_angle + angle_since_last_tooth,
-                     720);
+  degrees_t angle_since_last_tooth =
+    degrees_from_time_diff(current_time() - last_time, config.decoder.rpm);
+
+  return clamp_angle(last_angle + angle_since_last_tooth, 720);
 }
 
 #ifdef UNITTEST
@@ -629,7 +638,7 @@ START_TEST(check_tfi_decoder_syncloss_expire) {
   ck_assert_int_eq(config.decoder.expiration, expected_expiration);
 
   set_current_time(expected_expiration + 500);
-  handle_decoder_expire(&config.decoder);
+  handle_decoder_expire();
   ck_assert(!config.decoder.valid);
   ck_assert_int_eq(0, config.decoder.current_triggers_rpm);
   ck_assert_int_eq(DECODER_EXPIRED, config.decoder.loss);
@@ -784,7 +793,7 @@ START_TEST(check_nplusone_decoder_syncloss_expire) {
   ck_assert_int_eq(config.decoder.expiration, expected_expiration);
 
   set_current_time(expected_expiration + 500);
-  handle_decoder_expire(&config.decoder);
+  handle_decoder_expire();
   ck_assert(!config.decoder.valid);
   ck_assert_int_eq(0, config.decoder.current_triggers_rpm);
   ck_assert_int_eq(DECODER_EXPIRED, config.decoder.loss);
