@@ -864,25 +864,6 @@ static void render_table_object(struct console_request_context *ctx, void *_t) {
   }
 }
 
-static void render_tables(struct console_request_context *ctx, void *ptr) {
-  (void)ptr;
-  render_map_map_field(ctx, "ve", render_table_object, config.ve);
-  render_map_map_field(
-    ctx, "lambda", render_table_object, config.commanded_lambda);
-  render_map_map_field(ctx, "dwell", render_table_object, config.dwell);
-  render_map_map_field(ctx, "timing", render_table_object, config.timing);
-  render_map_map_field(ctx,
-                       "injector_dead_time",
-                       render_table_object,
-                       config.injector_pw_compensation);
-  render_map_map_field(
-    ctx, "temp-enrich", render_table_object, config.engine_temp_enrich);
-  render_map_map_field(
-    ctx, "tipin-amount", render_table_object, config.tipin_enrich_amount);
-  render_map_map_field(
-    ctx, "tipin-time", render_table_object, config.tipin_enrich_duration);
-}
-
 static void render_decoder(struct console_request_context *ctx, void *ptr) {
   (void)ptr;
 
@@ -906,6 +887,11 @@ static void render_decoder(struct console_request_context *ctx, void *ptr) {
       { FORD_TFI, "tfi" }, { TOYOTA_24_1_CAS, "cam24+1" }, { 0, NULL } },
     &type);
   config.decoder.type = type;
+
+  render_float_map_field(ctx,
+                         "crank-rpm",
+                         "Upper RPM limit for cranking",
+                         &config.decoder.cranking_rpm);
 }
 
 static void output_console_renderer(struct console_request_context *ctx,
@@ -1060,24 +1046,6 @@ static void render_sensors(struct console_request_context *ctx, void *ptr) {
   }
 }
 
-static void render_crank_enrich(struct console_request_context *ctx,
-                                void *ptr) {
-  (void)ptr;
-  render_float_map_field(ctx,
-                         "crank-rpm",
-                         "Upper RPM limit for crank enrich",
-                         &config.fueling.crank_enrich_config.crank_rpm);
-  render_float_map_field(
-    ctx,
-    "crank-temp",
-    "Upper temperature (C) for crank enrich",
-    &config.fueling.crank_enrich_config.cutoff_temperature);
-  render_float_map_field(ctx,
-                         "enrich-amt",
-                         "crank enrichment multiplier",
-                         &config.fueling.crank_enrich_config.enrich_amt);
-}
-
 static void render_fueling(struct console_request_context *ctx, void *ptr) {
   (void)ptr;
   render_float_map_field(ctx,
@@ -1102,7 +1070,27 @@ static void render_fueling(struct console_request_context *ctx, void *ptr) {
                          "fuel-density",
                          "Fuel density (g/cc) at 15C",
                          &config.fueling.density_of_fuel);
-  render_map_map_field(ctx, "crank-enrich", render_crank_enrich, NULL);
+  render_map_map_field(ctx, "ve", render_table_object, config.fueling.ve);
+  render_map_map_field(
+    ctx, "lambda", render_table_object, config.fueling.commanded_lambda);
+  render_map_map_field(ctx,
+                       "injector_dead_time",
+                       render_table_object,
+                       config.fueling.injector_pw_compensation);
+  render_map_map_field(
+    ctx, "temp-enrich", render_table_object, config.fueling.engine_temp_enrich);
+  render_map_map_field(ctx,
+                       "tipin-amount",
+                       render_table_object,
+                       config.fueling.tipin_enrich_amount);
+  render_map_map_field(ctx,
+                       "tipin-time",
+                       render_table_object,
+                       config.fueling.tipin_enrich_duration);
+  render_map_map_field(ctx,
+                       "crank-enrich",
+                       render_table_object,
+                       config.fueling.crank_enrich_vs_temp);
 }
 
 static void render_ignition(struct console_request_context *ctx, void *ptr) {
@@ -1115,6 +1103,11 @@ static void render_ignition(struct console_request_context *ctx, void *ptr) {
                          "dwell-time",
                          "dwell time for fixed-duty (uS)",
                          &config.ignition.dwell_us);
+
+  render_map_map_field(
+    ctx, "dwell", render_table_object, config.ignition.dwell);
+  render_map_map_field(
+    ctx, "timing", render_table_object, config.ignition.timing);
 }
 
 static void render_boost_control(struct console_request_context *ctx,
@@ -1236,7 +1229,6 @@ static void console_toplevel_request(struct console_request_context *ctx,
   render_array_map_field(ctx, "outputs", render_outputs, NULL);
   render_map_map_field(ctx, "fueling", render_fueling, NULL);
   render_map_map_field(ctx, "ignition", render_ignition, NULL);
-  render_map_map_field(ctx, "tables", render_tables, NULL);
   render_map_map_field(ctx, "boost-control", render_boost_control, NULL);
   render_map_map_field(ctx, "check-engine-light", render_cel, NULL);
   render_array_map_field(ctx, "freq", render_freq_list, NULL);
@@ -1250,7 +1242,7 @@ static void console_toplevel_types(struct console_request_context *ctx,
   render_map_map_field(ctx, "sensor", render_sensor_object, &config.sensors[0]);
   render_map_map_field(
     ctx, "output", output_console_renderer, &config.events[1]);
-  render_map_map_field(ctx, "table", render_table_object, config.ve);
+  render_map_map_field(ctx, "table", render_table_object, config.fueling.ve);
 }
 
 static void console_request_structure(CborEncoder *enc) {

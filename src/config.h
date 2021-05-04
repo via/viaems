@@ -27,19 +27,11 @@ struct config {
   /* Frequency inputs */
   struct freq_input freq_inputs[4];
 
-  /* Tables */
-  struct table *timing;
-  struct table *ve;
-  struct table *commanded_lambda;
-  struct table *injector_pw_compensation;
-  struct table *engine_temp_enrich;
-  struct table *dwell;
-  struct table *tipin_enrich_amount;
-  struct table *tipin_enrich_duration;
-
-  /* Fuel information */
+  /* Main Fuel/Ign */
   struct fueling_config fueling;
   struct ignition_config ignition;
+
+  /* Tasks */
   struct boost_control_config boost_control;
   struct cel_config cel;
 
