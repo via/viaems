@@ -51,8 +51,9 @@ void calculate_ignition() {
     break;
   case DWELL_BRV:
     calculated_values.dwell_us =
-      1000 * interpolate_table_oneaxis(
-               config.ignition.dwell, config.sensors[SENSOR_BRV].processed_value);
+      1000 *
+      interpolate_table_oneaxis(config.ignition.dwell,
+                                config.sensors[SENSOR_BRV].processed_value);
     break;
   }
 }
@@ -101,7 +102,8 @@ static float calculate_tipin_enrichment(float tps, float tpsrate, int rpm) {
     int active;
   } current = { 0 };
 
-  if (!config.fueling.tipin_enrich_amount || !config.fueling.tipin_enrich_duration) {
+  if (!config.fueling.tipin_enrich_amount ||
+      !config.fueling.tipin_enrich_duration) {
     return 0.0;
   }
 
@@ -119,7 +121,8 @@ static float calculate_tipin_enrichment(float tps, float tpsrate, int rpm) {
     /* Overwrite our event */
     current.time = current_time();
     current.length = time_from_us(
-      interpolate_table_oneaxis(config.fueling.tipin_enrich_duration, rpm) * 1000);
+      interpolate_table_oneaxis(config.fueling.tipin_enrich_duration, rpm) *
+      1000);
     current.amount = new_tipin_amount;
     current.active = 1;
   }
@@ -158,20 +161,22 @@ void calculate_fueling() {
   }
 
   if (config.fueling.injector_pw_compensation) {
-    idt = interpolate_table_oneaxis(config.fueling.injector_pw_compensation, brv);
+    idt =
+      interpolate_table_oneaxis(config.fueling.injector_pw_compensation, brv);
   } else {
     idt = 1.0;
   }
 
   if (config.fueling.engine_temp_enrich) {
-    ete = interpolate_table_twoaxis(config.fueling.engine_temp_enrich, clt, map);
+    ete =
+      interpolate_table_twoaxis(config.fueling.engine_temp_enrich, clt, map);
   } else {
     ete = 1.0;
   }
 
   /* Cranking enrichment config overrides ETE */
-  if (config.fueling.crank_enrich_vs_temp && 
-    (config.decoder.rpm < config.decoder.cranking_rpm)) {
+  if (config.fueling.crank_enrich_vs_temp &&
+      (config.decoder.rpm < config.decoder.cranking_rpm)) {
     ete = interpolate_table_oneaxis(config.fueling.crank_enrich_vs_temp, clt);
   }
 

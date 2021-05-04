@@ -1046,7 +1046,6 @@ static void render_sensors(struct console_request_context *ctx, void *ptr) {
   }
 }
 
-
 static void render_fueling(struct console_request_context *ctx, void *ptr) {
   (void)ptr;
   render_float_map_field(ctx,
@@ -1080,12 +1079,18 @@ static void render_fueling(struct console_request_context *ctx, void *ptr) {
                        config.fueling.injector_pw_compensation);
   render_map_map_field(
     ctx, "temp-enrich", render_table_object, config.fueling.engine_temp_enrich);
-  render_map_map_field(
-    ctx, "tipin-amount", render_table_object, config.fueling.tipin_enrich_amount);
-  render_map_map_field(
-    ctx, "tipin-time", render_table_object, config.fueling.tipin_enrich_duration);
-  render_map_map_field(
-    ctx, "crank-enrich", render_table_object, config.fueling.crank_enrich_vs_temp);
+  render_map_map_field(ctx,
+                       "tipin-amount",
+                       render_table_object,
+                       config.fueling.tipin_enrich_amount);
+  render_map_map_field(ctx,
+                       "tipin-time",
+                       render_table_object,
+                       config.fueling.tipin_enrich_duration);
+  render_map_map_field(ctx,
+                       "crank-enrich",
+                       render_table_object,
+                       config.fueling.crank_enrich_vs_temp);
 }
 
 static void render_ignition(struct console_request_context *ctx, void *ptr) {
@@ -1099,8 +1104,10 @@ static void render_ignition(struct console_request_context *ctx, void *ptr) {
                          "dwell time for fixed-duty (uS)",
                          &config.ignition.dwell_us);
 
-  render_map_map_field(ctx, "dwell", render_table_object, config.ignition.dwell);
-  render_map_map_field(ctx, "timing", render_table_object, config.ignition.timing);
+  render_map_map_field(
+    ctx, "dwell", render_table_object, config.ignition.dwell);
+  render_map_map_field(
+    ctx, "timing", render_table_object, config.ignition.timing);
 }
 
 static void render_boost_control(struct console_request_context *ctx,

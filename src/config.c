@@ -317,11 +317,13 @@ int config_valid() {
     return 0;
   }
 
-  if (config.fueling.commanded_lambda && !table_valid(config.fueling.commanded_lambda)) {
+  if (config.fueling.commanded_lambda &&
+      !table_valid(config.fueling.commanded_lambda)) {
     return 0;
   }
 
-  if (config.fueling.tipin_enrich_amount && !table_valid(config.fueling.tipin_enrich_amount)) {
+  if (config.fueling.tipin_enrich_amount &&
+      !table_valid(config.fueling.tipin_enrich_amount)) {
     return 0;
   }
 
