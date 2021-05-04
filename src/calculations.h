@@ -11,11 +11,13 @@ struct fueling_config {
   uint32_t injections_per_cycle; /* fuel quantity per shot divisor */
   uint32_t fuel_pump_pin;
 
-  struct {
-    float crank_rpm;
-    float cutoff_temperature;
-    float enrich_amt;
-  } crank_enrich_config;
+  struct table *crank_enrich_vs_temp;
+  struct table *ve;
+  struct table *commanded_lambda;
+  struct table *injector_pw_compensation;
+  struct table *engine_temp_enrich;
+  struct table *tipin_enrich_amount;
+  struct table *tipin_enrich_duration;
 
   /* Constants */
   float density_of_air_stp; /* g/cc at 0C */
@@ -29,10 +31,13 @@ typedef enum {
 } dwell_type;
 
 struct ignition_config {
-  dwell_type dwell;
+  dwell_type dwell_type;
   float dwell_duty;
   float dwell_us;
   uint32_t min_fire_time_us;
+
+  struct table *timing;
+  struct table *dwell;
 };
 
 struct calculated_values {

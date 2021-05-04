@@ -52,6 +52,7 @@ struct decoder {
   uint32_t num_triggers;
   degrees_t degrees_per_trigger;
   uint32_t rpm_window_size;
+  float cranking_rpm;
 
   /* Debug */
   uint32_t t0_count;

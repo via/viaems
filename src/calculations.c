@@ -38,10 +38,10 @@ bool fuel_cut() {
 
 void calculate_ignition() {
   calculated_values.timing_advance =
-    interpolate_table_twoaxis(config.timing,
+    interpolate_table_twoaxis(config.ignition.timing,
                               config.decoder.rpm,
                               config.sensors[SENSOR_MAP].processed_value);
-  switch (config.ignition.dwell) {
+  switch (config.ignition.dwell_type) {
   case DWELL_FIXED_DUTY:
     calculated_values.dwell_us =
       time_from_rpm_diff(config.decoder.rpm, 45) / (TICKRATE / 1000000);
@@ -52,7 +52,7 @@ void calculate_ignition() {
   case DWELL_BRV:
     calculated_values.dwell_us =
       1000 * interpolate_table_oneaxis(
-               config.dwell, config.sensors[SENSOR_BRV].processed_value);
+               config.ignition.dwell, config.sensors[SENSOR_BRV].processed_value);
     break;
   }
 }
@@ -101,12 +101,12 @@ static float calculate_tipin_enrichment(float tps, float tpsrate, int rpm) {
     int active;
   } current = { 0 };
 
-  if (!config.tipin_enrich_amount || !config.tipin_enrich_duration) {
+  if (!config.fueling.tipin_enrich_amount || !config.fueling.tipin_enrich_duration) {
     return 0.0;
   }
 
   float new_tipin_amount =
-    interpolate_table_twoaxis(config.tipin_enrich_amount, tpsrate, tps);
+    interpolate_table_twoaxis(config.fueling.tipin_enrich_amount, tpsrate, tps);
 
   /* Update status flag */
   if (current.active && !time_in_range(current_time(),
@@ -119,7 +119,7 @@ static float calculate_tipin_enrichment(float tps, float tpsrate, int rpm) {
     /* Overwrite our event */
     current.time = current_time();
     current.length = time_from_us(
-      interpolate_table_oneaxis(config.tipin_enrich_duration, rpm) * 1000);
+      interpolate_table_oneaxis(config.fueling.tipin_enrich_duration, rpm) * 1000);
     current.amount = new_tipin_amount;
     current.active = 1;
   }
@@ -144,35 +144,35 @@ void calculate_fueling() {
   float tps = config.sensors[SENSOR_TPS].processed_value;
   float tpsrate = config.sensors[SENSOR_TPS].derivative.value;
 
-  if (config.ve) {
-    ve = interpolate_table_twoaxis(config.ve, config.decoder.rpm, map);
+  if (config.fueling.ve) {
+    ve = interpolate_table_twoaxis(config.fueling.ve, config.decoder.rpm, map);
   } else {
     ve = 100.0;
   }
 
-  if (config.commanded_lambda) {
+  if (config.fueling.commanded_lambda) {
     lambda = interpolate_table_twoaxis(
-      config.commanded_lambda, config.decoder.rpm, map);
+      config.fueling.commanded_lambda, config.decoder.rpm, map);
   } else {
     lambda = 1.0;
   }
 
-  if (config.injector_pw_compensation) {
-    idt = interpolate_table_oneaxis(config.injector_pw_compensation, brv);
+  if (config.fueling.injector_pw_compensation) {
+    idt = interpolate_table_oneaxis(config.fueling.injector_pw_compensation, brv);
   } else {
     idt = 1.0;
   }
 
-  if (config.engine_temp_enrich) {
-    ete = interpolate_table_twoaxis(config.engine_temp_enrich, clt, map);
+  if (config.fueling.engine_temp_enrich) {
+    ete = interpolate_table_twoaxis(config.fueling.engine_temp_enrich, clt, map);
   } else {
     ete = 1.0;
   }
 
   /* Cranking enrichment config overrides ETE */
-  if ((config.decoder.rpm < config.fueling.crank_enrich_config.crank_rpm) &&
-      (clt < config.fueling.crank_enrich_config.cutoff_temperature)) {
-    ete = config.fueling.crank_enrich_config.enrich_amt;
+  if (config.fueling.crank_enrich_vs_temp && 
+    (config.decoder.rpm < config.decoder.cranking_rpm)) {
+    ete = interpolate_table_oneaxis(config.fueling.crank_enrich_vs_temp, clt);
   }
 
   calculated_values.tipin =
@@ -287,8 +287,8 @@ START_TEST(check_calculate_ignition_fixedduty) {
               { .num = 2, .values = { 5, 10 } } },
     .data = { .two = { { 10, 10 }, { 10, 10 } } },
   };
-  config.timing = &t;
-  config.ignition.dwell = DWELL_FIXED_DUTY;
+  config.ignition.timing = &t;
+  config.ignition.dwell_type = DWELL_FIXED_DUTY;
   config.decoder.rpm = 6000;
 
   calculate_ignition();
@@ -315,8 +315,8 @@ static struct table tipin_duration = {
 
 START_TEST(check_calculate_tipin_newevent) {
 
-  config.tipin_enrich_amount = &tipin_amount;
-  config.tipin_enrich_duration = &tipin_duration;
+  config.fueling.tipin_enrich_amount = &tipin_amount;
+  config.fueling.tipin_enrich_duration = &tipin_duration;
 
   set_current_time(0);
 
@@ -334,8 +334,8 @@ END_TEST
 
 START_TEST(check_calculate_tipin_overriding_event) {
 
-  config.tipin_enrich_amount = &tipin_amount;
-  config.tipin_enrich_duration = &tipin_duration;
+  config.fueling.tipin_enrich_amount = &tipin_amount;
+  config.fueling.tipin_enrich_duration = &tipin_duration;
 
   set_current_time(0);
 

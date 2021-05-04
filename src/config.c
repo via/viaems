@@ -67,6 +67,18 @@ struct table dwell_ms_vs_brv __attribute__((section(".configdata"))) = {
   },
 };
 
+struct table crank_enrich_vs_temp __attribute__((section(".configdata"))) = {
+  .title = "crank enrichment", .num_axis = 1,
+  .axis = { { 
+      .name = "CLT", .num = 4,
+      .values = {0, 20, 40, 70},
+    },
+  },
+  .data = {
+    .one = {2.5, 2.0, 1.5, 1.2}
+  },
+};
+
 struct table ve_vs_rpm_and_map __attribute__((section(".configdata"))) = {
   .title = "ve", .num_axis = 2,
   .axis = { { 
@@ -208,6 +220,7 @@ struct config config __attribute__((section(".configdata"))) = {
     .offset = 50,
     .trigger_max_rpm_change = 0.55, /*Startup sucks with only 90* trigger */
     .trigger_min_rpm = 80,
+    .cranking_rpm = 400,
   },
   .freq_inputs = {
     [0] = {.edge = RISING_EDGE, .type = TRIGGER},
@@ -253,14 +266,6 @@ struct config config __attribute__((section(".configdata"))) = {
       .params={.range={.min=-86, .max=862}}, /* AEM 3.5 bar MAP sensor*/
     }
   },
-  .timing = &timing_vs_rpm_and_map,
-  .injector_pw_compensation = &injector_dead_time,
-  .ve = &ve_vs_rpm_and_map,
-  .commanded_lambda = &lambda_vs_rpm_and_map,
-  .engine_temp_enrich = &enrich_vs_temp_and_map,
-  .tipin_enrich_amount = &tipin_vs_tpsrate_and_tps,
-  .tipin_enrich_duration = &tipin_duration_vs_rpm,
-  .dwell = &dwell_ms_vs_brv,
   .rpm_stop = 6700,
   .rpm_start = 6200,
   .fueling = {
@@ -271,15 +276,19 @@ struct config config __attribute__((section(".configdata"))) = {
     .fuel_pump_pin = 0,
     .density_of_fuel = 0.755, /* g/cm^3 at 15C */
     .density_of_air_stp = 1.2922e-3, /* g/cm^3 at 0C */
-    .crank_enrich_config = {
-      .crank_rpm = 400,
-      .cutoff_temperature = 20.0,
-      .enrich_amt = 2.5,
-    },
+    .crank_enrich_vs_temp = &crank_enrich_vs_temp,
+    .injector_pw_compensation = &injector_dead_time,
+    .ve = &ve_vs_rpm_and_map,
+    .commanded_lambda = &lambda_vs_rpm_and_map,
+    .engine_temp_enrich = &enrich_vs_temp_and_map,
+    .tipin_enrich_amount = &tipin_vs_tpsrate_and_tps,
+    .tipin_enrich_duration = &tipin_duration_vs_rpm,
   },
   .ignition = {
-    .dwell = DWELL_BRV,
+    .dwell_type = DWELL_BRV,
     .min_fire_time_us = 500,
+    .timing = &timing_vs_rpm_and_map,
+    .dwell = &dwell_ms_vs_brv,
   },
   .boost_control = {
     .pwm_duty_vs_rpm = &boost_control_pwm,
@@ -295,29 +304,29 @@ struct config config __attribute__((section(".configdata"))) = {
 };
 
 int config_valid() {
-  if (config.ve && !table_valid(config.ve)) {
+  if (config.fueling.ve && !table_valid(config.fueling.ve)) {
     return 0;
   }
 
-  if (config.timing && !table_valid(config.timing)) {
+  if (config.ignition.timing && !table_valid(config.ignition.timing)) {
     return 0;
   }
 
-  if (config.injector_pw_compensation &&
-      !table_valid(config.injector_pw_compensation)) {
+  if (config.fueling.injector_pw_compensation &&
+      !table_valid(config.fueling.injector_pw_compensation)) {
     return 0;
   }
 
-  if (config.commanded_lambda && !table_valid(config.commanded_lambda)) {
+  if (config.fueling.commanded_lambda && !table_valid(config.fueling.commanded_lambda)) {
     return 0;
   }
 
-  if (config.tipin_enrich_amount && !table_valid(config.tipin_enrich_amount)) {
+  if (config.fueling.tipin_enrich_amount && !table_valid(config.fueling.tipin_enrich_amount)) {
     return 0;
   }
 
-  if (config.tipin_enrich_duration &&
-      !table_valid(config.tipin_enrich_duration)) {
+  if (config.fueling.tipin_enrich_duration &&
+      !table_valid(config.fueling.tipin_enrich_duration)) {
     return 0;
   }
 
