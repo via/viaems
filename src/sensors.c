@@ -8,8 +8,7 @@
 
 static float sensor_convert_linear(struct sensor_input *in, float raw) {
   float partial = raw / 4096.0f;
-  return in->range.min +
-         partial * (in->range.max - in->range.min);
+  return in->range.min + partial * (in->range.max - in->range.min);
 }
 
 static int current_angle_in_window(struct sensor_input *in, degrees_t angle) {
@@ -164,7 +163,7 @@ uint32_t sensor_fault_status() {
 
 START_TEST(check_sensor_convert_linear) {
   struct sensor_input si = {
-    .range = { .min=-10.0, .max=10.0},
+    .range = { .min = -10.0, .max = 10.0 },
   };
 
   si.raw_value = 0;
