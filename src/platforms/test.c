@@ -33,6 +33,7 @@ void set_pwm(int pin, float val) {
 void check_platform_reset() {
   curtime = 0;
   current_buffer = 0;
+  memset(config.events, 0, sizeof(config.events));
   initialize_scheduler();
 }
 

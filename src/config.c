@@ -190,7 +190,6 @@ struct table boost_control_pwm __attribute__((section(".configdata"))) = {
 };
 
 struct config config __attribute__((section(".configdata"))) = {
-  .num_events = 9,
   .events = {
     {.type=IGNITION_EVENT, .angle=0, .pin=0},
     {.type=IGNITION_EVENT, .angle=120, .pin=1},

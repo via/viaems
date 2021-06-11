@@ -302,8 +302,8 @@ void set_pwm(int output, float percent) {
 static void platform_init_scheduled_outputs() {
   gpio_clear(GPIOD, 0xFFFF);
   unsigned int i;
-  for (i = 0; i < config.num_events; ++i) {
-    if (config.events[i].inverted && config.events[i].type) {
+  for (i = 0; i < MAX_EVENTS; ++i) {
+    if (config.events[i].inverted && config.events[i].type != DISABLED_EVENT) {
       set_output(config.events[i].pin, 1);
     }
   }

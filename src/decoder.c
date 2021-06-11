@@ -16,7 +16,7 @@ static void invalidate_decoder() {
   config.decoder.state = DECODER_NOSYNC;
   config.decoder.current_triggers_rpm = 0;
   config.decoder.triggers_since_last_sync = 0;
-  invalidate_scheduled_events(config.events, config.num_events);
+  invalidate_scheduled_events(config.events, MAX_EVENTS);
 }
 
 static void handle_decoder_expire() {
@@ -255,7 +255,7 @@ void decoder_update_scheduling(struct decoder_event *events,
     calculate_ignition();
     calculate_fueling();
     stats_start_timing(STATS_SCHED_TOTAL_TIME);
-    for (unsigned int e = 0; e < config.num_events; ++e) {
+    for (unsigned int e = 0; e < MAX_EVENTS; ++e) {
       schedule_event(&config.events[e]);
     }
     stats_finish_timing(STATS_SCHED_TOTAL_TIME);
