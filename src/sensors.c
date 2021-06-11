@@ -8,8 +8,8 @@
 
 static float sensor_convert_linear(struct sensor_input *in, float raw) {
   float partial = raw / 4096.0f;
-  return in->params.range.min +
-         partial * (in->params.range.max - in->params.range.min);
+  return in->range.min +
+         partial * (in->range.max - in->range.min);
 }
 
 static int current_angle_in_window(struct sensor_input *in, degrees_t angle) {
@@ -100,7 +100,7 @@ static void sensor_convert(struct sensor_input *in) {
     raw = sensor_convert_freq(in->raw_value);
     break;
   case SENSOR_CONST:
-    in->processed_value = in->params.fixed_value;
+    in->processed_value = in->fixed_value;
     return;
   default:
     raw = 0.0;
@@ -116,10 +116,10 @@ static void sensor_convert(struct sensor_input *in) {
       sensor_convert_linear_windowed(in, current_angle(), raw);
     break;
   case METHOD_TABLE:
-    in->processed_value = interpolate_table_oneaxis(in->params.table, raw);
+    in->processed_value = interpolate_table_oneaxis(in->table, raw);
     break;
   case METHOD_THERM:
-    in->processed_value = sensor_convert_thermistor(&in->params.therm, raw);
+    in->processed_value = sensor_convert_thermistor(&in->therm, raw);
     break;
   }
 
@@ -164,9 +164,7 @@ uint32_t sensor_fault_status() {
 
 START_TEST(check_sensor_convert_linear) {
   struct sensor_input si = {
-    .params = {
-      .range = { .min=-10.0, .max=10.0},
-    },
+    .range = { .min=-10.0, .max=10.0},
   };
 
   si.raw_value = 0;
@@ -183,9 +181,7 @@ END_TEST
 START_TEST(check_sensor_convert_linear_windowed) {
   struct sensor_input si = {
     .processed_value = 12.0,
-    .params = {
-      .range = { .min=0, .max=4096.0},
-    },
+    .range = { .min=0, .max=4096.0},
     .window = {
       .total_width = 90,
       .capture_width = 45,
@@ -215,9 +211,7 @@ END_TEST
 START_TEST(check_sensor_convert_linear_windowed_skipped) {
   struct sensor_input si = {
     .processed_value = 12.0,
-    .params = {
-      .range = { .min=0, .max=4096.0},
-    },
+    .range = { .min=0, .max=4096.0},
     .window = {
       .total_width = 90,
       .capture_width = 45,
@@ -252,9 +246,7 @@ END_TEST
 START_TEST(check_sensor_convert_linear_windowed_wide) {
   struct sensor_input si = {
     .processed_value = 12.0,
-    .params = {
-      .range = { .min=0, .max=4096.0},
-    },
+    .range = { .min=0, .max=4096.0},
     .window = {
       .total_width = 90,
       .capture_width = 90,
@@ -293,9 +285,7 @@ END_TEST
 START_TEST(check_sensor_convert_linear_windowed_offset) {
   struct sensor_input si = {
     .processed_value = 12.0,
-    .params = {
-      .range = { .min=0, .max=4096.0},
-    },
+    .range = { .min=0, .max=4096.0},
     .window = {
       .total_width = 90,
       .capture_width = 45,

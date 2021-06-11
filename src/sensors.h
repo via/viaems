@@ -48,24 +48,15 @@ struct sensor_input {
   sensor_source source;
   sensor_method method;
 
-  union {
-    struct {
-      float min;
-      float max;
-    } range;
-    struct table *table;
-    float fixed_value;
-    struct thermistor_config therm;
-  } params;
-
-  uint32_t raw_value;
-  float processed_value;
-  float lag;
   struct {
-    timeval_t last_sample_time;
-    float last_sample_value;
-    float value;
-  } derivative;
+    float min;
+    float max;
+  } range;
+  struct table *table;
+  float fixed_value;
+  struct thermistor_config therm;
+
+  float lag;
   struct {
     uint32_t min;
     uint32_t max;
@@ -81,6 +72,14 @@ struct sensor_input {
     uint8_t collecting;
     degrees_t collection_start_angle;
   } window;
+
+  uint32_t raw_value;
+  float processed_value;
+  struct {
+    timeval_t last_sample_time;
+    float last_sample_value;
+    float value;
+  } derivative;
   sensor_fault fault;
 };
 
