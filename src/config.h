@@ -15,7 +15,6 @@
 
 struct config {
   /* Event list */
-  unsigned int num_events;
   struct output_event events[MAX_EVENTS];
 
   /* Trigger setup */
