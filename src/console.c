@@ -1013,23 +1013,18 @@ static void render_sensor_object(struct console_request_context *ctx,
   input->method = method;
 
   render_float_map_field(
-    ctx, "range-min", "min for linear mapping", &input->params.range.min);
+    ctx, "range-min", "min for linear mapping", &input->range.min);
   render_float_map_field(
-    ctx, "range-max", "max for linear mapping", &input->params.range.max);
-  render_float_map_field(ctx,
-                         "fixed-value",
-                         "value to hold for const input",
-                         &input->params.fixed_value);
+    ctx, "range-max", "max for linear mapping", &input->range.max);
   render_float_map_field(
-    ctx, "therm-a", "thermistor A", &input->params.therm.a);
-  render_float_map_field(
-    ctx, "therm-b", "thermistor B", &input->params.therm.b);
-  render_float_map_field(
-    ctx, "therm-c", "thermistor C", &input->params.therm.c);
+    ctx, "fixed-value", "value to hold for const input", &input->fixed_value);
+  render_float_map_field(ctx, "therm-a", "thermistor A", &input->therm.a);
+  render_float_map_field(ctx, "therm-b", "thermistor B", &input->therm.b);
+  render_float_map_field(ctx, "therm-c", "thermistor C", &input->therm.c);
   render_float_map_field(ctx,
                          "therm-bias",
                          "thermistor resistor bias value (ohms)",
-                         &input->params.therm.bias);
+                         &input->therm.bias);
   render_uint32_map_field(ctx,
                           "fault-min",
                           "Lower bound for raw sensor input",
