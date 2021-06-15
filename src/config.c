@@ -216,40 +216,40 @@ struct config config __attribute__((section(".configdata"))) = {
   },
   .sensors = {
     [SENSOR_BRV] = {.pin=0, .source=SENSOR_ADC, .method=METHOD_LINEAR,
-      .params={.range={.min=0, .max=24.5}}, .lag=80,
+      .range={.min=0, .max=24.5}, .lag=80,
       .fault_config={.min = 100, .max = 4000, .fault_value = 13.8}},
     [SENSOR_IAT] = {.pin=1, .source=SENSOR_ADC, .method=METHOD_THERM,
       .fault_config={.min = 2, .max = 4095, .fault_value = 10.0},
-      .params={.therm={
+      .therm={
         .bias=2490,
         .a=0.00146167419060305,
         .b=0.00022887572003919,
         .c=1.64484831669638E-07,
-      }}},
+      }},
     [SENSOR_CLT] = {.pin=2, .source=SENSOR_ADC, .method=METHOD_THERM,
       .fault_config={.min = 2, .max = 4095, .fault_value = 50.0},
-      .params={.therm={
+      .therm={
         .bias=2490,
         .a=0.00131586818223649,
         .b=0.00025618700140100302,
         .c=0.00000018474199456928,
-      }}},
+      }},
     [SENSOR_EGO] = {.pin=3, .source=SENSOR_ADC, .method=METHOD_LINEAR,
-      .params={.range={.min=0.499, .max=1.309}}},
+      .range={.min=0.499, .max=1.309}},
     [SENSOR_MAP] = {.pin=4, .source=SENSOR_ADC, .method=METHOD_LINEAR_WINDOWED,
-      .params={.range={.min=12, .max=420}}, /* AEM 3.5 bar MAP sensor*/
+      .range={.min=12, .max=420}, /* AEM 3.5 bar MAP sensor*/
       .fault_config={.min = 10, .max = 4050, .fault_value = 50.0},
       .window={.total_width=120, .capture_width = 120}},
     [SENSOR_AAP] = {.pin=5, .source=SENSOR_ADC, .method=METHOD_LINEAR,
-      .params={.range={.min=10.5, .max=121.6}}, /* AEM 3.5 bar MAP sensor*/
+      .range={.min=10.5, .max=121.6}, /* AEM 3.5 bar MAP sensor*/
       .fault_config={.min = 10, .max = 4050, .fault_value = 50.0}},
     [SENSOR_TPS] = {.pin=6, .source=SENSOR_ADC, .method=METHOD_LINEAR,
-      .params={.range={.min=-15.74, .max=145.47}},
+      .range={.min=-15.74, .max=145.47},
       .fault_config={.min = 200, .max = 3200, .fault_value = 25.0},
       .lag = 10.0},
-    [SENSOR_FRT] = {.source=SENSOR_CONST, .params={.fixed_value = 15.0}},
+    [SENSOR_FRT] = {.source=SENSOR_CONST, .fixed_value = 15.0},
     [SENSOR_FRP] = {.pin=7, .source=SENSOR_ADC, .method=METHOD_LINEAR,
-      .params={.range={.min=-86, .max=862}}, /* AEM 3.5 bar MAP sensor*/
+      .range={.min=-86, .max=862}, /* AEM 3.5 bar MAP sensor*/
     }
   },
   .timing = &timing_vs_rpm_and_map,
