@@ -128,11 +128,11 @@ void handle_emergency_shutdown() {
   set_gpio(config.fueling.fuel_pump_pin, 0);
 
   /* Stop events */
-  invalidate_scheduled_events(config.events, config.num_events);
+  invalidate_scheduled_events(config.events, MAX_EVENTS);
 
   /* TODO evaluate what to do about ignition outputs
    * for now, make sure fuel injectors are off */
-  for (unsigned int i = 0; i < config.num_events; ++i) {
+  for (unsigned int i = 0; i < MAX_EVENTS; ++i) {
     if (config.events[i].type == FUEL_EVENT) {
       set_output(config.events[i].pin, config.events[i].inverted);
     }

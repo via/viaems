@@ -477,7 +477,7 @@ void schedule_event(struct output_event *ev) {
   switch (ev->type) {
   case IGNITION_EVENT:
     if (ignition_cut() || !config.decoder.valid) {
-      invalidate_scheduled_events(config.events, config.num_events);
+      invalidate_scheduled_events(config.events, MAX_EVENTS);
       return;
     }
     schedule_ignition_event(ev,
@@ -488,7 +488,7 @@ void schedule_event(struct output_event *ev) {
 
   case FUEL_EVENT:
     if (fuel_cut() || !config.decoder.valid) {
-      invalidate_scheduled_events(config.events, config.num_events);
+      invalidate_scheduled_events(config.events, MAX_EVENTS);
       return;
     }
     schedule_fuel_event(ev, &config.decoder, calculated_values.fueling_us);
@@ -646,7 +646,6 @@ static void check_scheduler_setup() {
   config.decoder.offset = 0;
   config.decoder.rpm = 6000;
   config.decoder.valid = 1;
-  config.num_events = 1;
   *oev = (struct output_event){
     .type = IGNITION_EVENT,
     .angle = 360,
