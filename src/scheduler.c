@@ -93,7 +93,6 @@ static void schedule_output_event_safely(struct output_event *ev,
                                          timeval_t newstart,
                                          timeval_t newstop) {
 
-  stats_start_timing(STATS_SCHED_SINGLE_TIME);
 
   ev->start.pin = ev->pin;
   ev->start.val = ev->inverted ? 0 : 1;
@@ -102,16 +101,10 @@ static void schedule_output_event_safely(struct output_event *ev,
 
   if (!ev->start.scheduled && !ev->stop.scheduled) {
     disable_interrupts();
-    if (sched_entry_enable(&ev->stop, newstop)) {
-      if (!sched_entry_enable(&ev->start, newstart)) {
-        /* Failure here means we only ever had a stop event for an otherwise
-         * unscheduled event for a time range we can no longer change, who cares?
-         */
-        sched_entry_disable(&ev->stop);
-      }
+    if (sched_entry_enable(&ev->start, newstart)) {
+      sched_entry_enable(&ev->stop, newstop);
     }
     enable_interrupts();
-    stats_finish_timing(STATS_SCHED_SINGLE_TIME);
     return;
   }
 
@@ -127,7 +120,6 @@ static void schedule_output_event_safely(struct output_event *ev,
   sched_entry_enable(&ev->stop, newstop);
 
   enable_interrupts();
-  stats_finish_timing(STATS_SCHED_SINGLE_TIME);
 }
 
 static int schedule_ignition_event(struct output_event *ev,
@@ -341,9 +333,35 @@ void scheduler_callback_timer_execute() {
   }
 }
 
-void scheduler_buffer_swap() {
-}
+void scheduler_output_buffer_ready(struct output_buffer *buf) {
+  struct output_event *oev;
+  int i;
+  for (i = 0; i < MAX_EVENTS; ++i) {
+    oev = &config.events[i];
 
+    /* OEVs that were in the old buffer are no longer */
+    if (oev->start.submitted && time_before(oev->start.time, buf->first_time)) {
+      oev->start.submitted = false;
+      oev->start.scheduled = false;
+    }
+    if (oev->stop.submitted && time_before(oev->stop.time, buf->first_time)) {
+      oev->stop.submitted = false;
+      oev->stop.scheduled = false;
+    }
+
+    /* Is this an event that is scheduled for this time window? */
+    if (oev->start.scheduled &&
+        time_in_range(oev->start.time, buf->first_time, buf->last_time)) {
+      platform_output_buffer_set(buf, &oev->start);
+      oev->start.submitted = true;
+    }
+    if (oev->stop.scheduled &&
+        time_in_range(oev->stop.time, buf->first_time, buf->last_time)) {
+      platform_output_buffer_set(buf, &oev->stop);
+      oev->stop.submitted = true;
+    }
+  }
+}
 void initialize_scheduler() {
   n_callbacks = 0;
 }

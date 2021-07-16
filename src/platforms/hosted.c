@@ -22,15 +22,7 @@ static _Atomic timeval_t eventtimer_time;
 static _Atomic uint32_t eventtimer_enable = 0;
 static int event_logging_enabled = 1;
 static uint32_t test_trigger_rpm = 0;
-static _Atomic uint16_t cur_outputs = 0;
-
-struct slot {
-  uint16_t on_mask;
-  uint16_t off_mask;
-} __attribute__((packed)) * output_slots[2] = { 0 };
-static size_t max_slots;
-static _Atomic size_t cur_slot = 0;
-static _Atomic size_t cur_buffer = 0;
+static uint16_t cur_outputs = 0;
 
 void platform_enable_event_logging() {
   event_logging_enabled = 1;
@@ -166,21 +158,6 @@ void platform_load_config() {}
 
 void platform_save_config() {}
 
-timeval_t init_output_thread(uint32_t *buf0, uint32_t *buf1, uint32_t len) {
-  output_slots[0] = (struct slot *)buf0;
-  output_slots[1] = (struct slot *)buf1;
-  max_slots = len;
-  return 0;
-}
-
-int current_output_buffer() {
-  return cur_buffer;
-}
-
-int current_output_slot() {
-  return cur_slot;
-}
-
 void set_test_trigger_rpm(uint32_t rpm) {
   test_trigger_rpm = rpm;
 }
@@ -296,43 +273,64 @@ void *platform_interrupt_thread(void *_interrupt_fd) {
   } while (1);
 }
 
+#define MAX_SLOTS 128
+struct slot {
+  uint16_t on_mask;
+  uint16_t off_mask;
+} current_slots[MAX_SLOTS], next_slots[MAX_SLOTS]; 
+
+void platform_output_buffer_set(struct output_buffer *buf, struct sched_entry
+    *s) {
+  struct slot *slots = (struct slot *)buf->buf;
+
+  assert(time_in_range(s->time, buf->first_time, buf->last_time));
+  uint32_t pos = s->time - buf->first_time;
+  if (s->val) {
+    slots[pos].on_mask |= (1 << s->pin);
+  } else {
+    slots[pos].off_mask |= (1 << s->pin);
+  }
+}
+
+struct output_buffer current_buffer;
+struct output_buffer next_buffer;
+
 static void do_output_slots() {
-  static uint16_t old_outputs = 0;
-  static uint16_t old_fifo_on_mask = 0;
-  static uint16_t old_fifo_off_mask = 0;
-
-  if (!output_slots[0]) {
-    return;
+  /* Only take action on first slot time */
+  if (curtime % MAX_SLOTS == 0) {
+    memcpy(current_slots, next_slots, sizeof(current_slots));
+    memset(next_slots, 0, sizeof(next_slots));
+    current_buffer = (struct output_buffer){
+      .first_time = curtime,
+      .last_time = curtime + MAX_SLOTS - 1,
+      .buf = current_slots,
+    };
+    next_buffer = (struct output_buffer){
+      .first_time = curtime + MAX_SLOTS,
+      .last_time = curtime + MAX_SLOTS + MAX_SLOTS - 1,
+      .buf = next_slots,
+    };
+    scheduler_output_buffer_ready(&next_buffer);
   }
 
-  cur_slot++;
-  if (cur_slot == max_slots) {
-    cur_buffer = (cur_buffer + 1) % 2;
-    cur_slot = 0;
-    scheduler_buffer_swap();
-  }
-
-  int read_slot = (cur_slot + 1) % max_slots;
-  int read_buffer = (read_slot == 0) ? !cur_buffer : cur_buffer;
-
-  cur_outputs |= old_fifo_on_mask;
-  cur_outputs &= ~old_fifo_off_mask;
-
-  old_fifo_on_mask = output_slots[read_buffer][read_slot].on_mask;
-  old_fifo_off_mask = output_slots[read_buffer][read_slot].off_mask;
+  uint32_t pos = curtime - current_buffer.first_time;
+  uint16_t old_outputs = cur_outputs;
+  cur_outputs |= current_slots[pos].on_mask;
+  cur_outputs &= ~current_slots[pos].off_mask;
 
   if (cur_outputs != old_outputs) {
     char output[64];
     sprintf(output, "# OUTPUTS %lu %2x\n", (long unsigned)curtime, cur_outputs);
     write(STDERR_FILENO, output, strlen(output));
     console_record_event((struct logged_event){
-      .time = curtime,
-      .value = cur_outputs,
-      .type = EVENT_OUTPUT,
-    });
+        .time = curtime,
+        .value = cur_outputs,
+        .type = EVENT_OUTPUT,
+        });
     old_outputs = cur_outputs;
   }
 }
+
 /* Thread that busywaits to increment the primary timebase.  This loop is also
  * responsible for triggering event timer, buffer swap, and trigger events
  */
@@ -353,12 +351,7 @@ void *platform_timebase_thread(void *_interrupt_fd) {
     clock_nanosleep_busywait(next_tick);
     current_time = next_tick;
 
-    if (!output_slots[0]) {
-      continue;
-    }
-
     curtime += 1;
-
     do_output_slots();
 
     if ((curtime % 10000) == 0) {

@@ -56,7 +56,7 @@ int schedule_callback(struct timed_callback *tcb, timeval_t time);
 
 void scheduler_callback_timer_execute();
 void initialize_scheduler();
-void scheduler_buffer_swap();
+void scheduler_output_buffer_ready(struct output_buffer *);
 
 bool event_has_fired(struct output_event *);
 void invalidate_scheduled_events(struct output_event *, int);

@@ -43,10 +43,6 @@ size_t console_write(const void *buf, size_t count);
 void platform_load_config();
 void platform_save_config();
 
-timeval_t init_output_thread(uint32_t *buf0, uint32_t *buf1, uint32_t len);
-int current_output_buffer();
-int current_output_slot();
-
 void platform_enable_event_logging();
 void platform_disable_event_logging();
 void platform_reset_into_bootloader();
@@ -63,10 +59,8 @@ struct output_buffer {
 
 struct sched_entry;
 
-/* These are intended only to be called from the buffer swap callback */
-void platform_submit_output_buffer(struct output_buffer *);
-void platform_output_buffer_enable(struct output_buffer *, struct sched_entry *);
-void platform_output_buffer_disable(struct output_buffer *, struct sched_entry *);
+/* This is intended only to be called from the buffer swap callback */
+void platform_output_buffer_set(struct output_buffer *, struct sched_entry *);
 
 
 #ifdef UNITTEST
