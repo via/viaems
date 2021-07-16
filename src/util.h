@@ -2,6 +2,7 @@
 #define UTIL_H
 
 #include "platform.h"
+#include <stdbool.h>
 
 timeval_t time_diff(timeval_t t1, timeval_t t2);
 int time_before(timeval_t n, timeval_t x);
@@ -14,7 +15,7 @@ degrees_t clamp_angle(degrees_t, degrees_t);
 
 #ifdef UNITTEST
 #include <check.h>
-TCase *setup_util_tests();
+TCase *setup_util_tests(void);
 #endif
 
 #endif

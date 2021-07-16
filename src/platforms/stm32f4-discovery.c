@@ -1,4 +1,3 @@
-
 #include <libopencm3/cm3/cortex.h>
 #include <libopencm3/cm3/dwt.h>
 #include <libopencm3/cm3/nvic.h>
@@ -27,6 +26,7 @@
 #include "tasks.h"
 #include "util.h"
 
+#include <stdatomic.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -70,14 +70,12 @@
  *   - 0-15 Maps to Port E
  *
  *  nvic priorities:
- *    tim2 (triggers) 32
- *    dma2s1 (buffer swap) 16
- *    dma1s3 (adc) 64
  *    tim6 (test trigger) 0
- *
- *    unset:
- *    otg (usb) 0
- *
+ *    dma2s1 (buffer swap) 16
+ *    tim2 (triggers, callbacks, scheduling, fueling calcs) 32
+ *    dma1s3 (adc) 64
+ *    otg (usb) 128
+ *    systick 128
  */
 
 static int capture_edge_from_config(trigger_edge e) {
@@ -173,56 +171,6 @@ static void platform_init_eventtimer() {
   platform_setup_tim8();
 }
 
-static uint32_t output_buffer_len;
-/* Give two buffers of len size, dma will start reading from buf0 and double
- * buffer between buf0 and buf0.
- * Returns the time that buf0 starts at
- */
-timeval_t init_output_thread(uint32_t *buf0, uint32_t *buf1, uint32_t len) {
-  timeval_t start;
-
-  output_buffer_len = len;
-  /* dma2 stream 1, channel 7*/
-  dma_stream_reset(DMA2, DMA_STREAM1);
-  dma_set_priority(DMA2, DMA_STREAM1, DMA_SxCR_PL_HIGH);
-  dma_enable_double_buffer_mode(DMA2, DMA_STREAM1);
-  dma_set_memory_size(DMA2, DMA_STREAM1, DMA_SxCR_MSIZE_32BIT);
-  dma_set_peripheral_size(DMA2, DMA_STREAM1, DMA_SxCR_PSIZE_32BIT);
-  dma_enable_memory_increment_mode(DMA2, DMA_STREAM1);
-  dma_set_transfer_mode(DMA2, DMA_STREAM1, DMA_SxCR_DIR_MEM_TO_PERIPHERAL);
-  dma_enable_circular_mode(DMA2, DMA_STREAM1);
-  dma_set_peripheral_address(DMA2, DMA_STREAM1, (uint32_t)&GPIOD_BSRR);
-  dma_set_memory_address(DMA2, DMA_STREAM1, (uint32_t)buf0);
-  dma_set_memory_address_1(DMA2, DMA_STREAM1, (uint32_t)buf1);
-  dma_set_number_of_data(DMA2, DMA_STREAM1, len);
-  dma_channel_select(DMA2, DMA_STREAM1, DMA_SxCR_CHSEL_7);
-  dma_enable_direct_mode(DMA2, DMA_STREAM1);
-  dma_enable_transfer_complete_interrupt(DMA2, DMA_STREAM1);
-
-  timer_disable_counter(TIM8);
-  dma_enable_stream(DMA2, DMA_STREAM1);
-  start = timer_get_counter(TIM2);
-  timer_enable_counter(TIM8);
-
-  nvic_enable_irq(NVIC_DMA2_STREAM1_IRQ);
-  nvic_set_priority(NVIC_DMA2_STREAM1_IRQ, 16);
-
-  return start;
-}
-
-/* Returns 0 if buf0 is active */
-int current_output_buffer() {
-  return dma_get_target(DMA2, DMA_STREAM1);
-}
-
-/* Returns the current slot that DMA is pointing at.
- * Note that the slot returned is the one queued to output next, but is already
- * in the FIFO so is considered 'done'
- */
-int current_output_slot() {
-  return output_buffer_len - DMA2_S1NDTR;
-}
-
 static void platform_init_pwm() {
 
   gpio_mode_setup(GPIOC, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO6);
@@ -299,6 +247,51 @@ void set_pwm(int output, float percent) {
   }
 }
 
+#define NUM_SLOTS 128
+/* GPIO BSRR is 16 bits of "on" mask and 16 bits of "off" mask */
+struct output_slot {
+  uint16_t on;
+  uint16_t off;
+} __attribute__((packed)) __attribute((aligned(4)));
+
+struct output_buffer {
+  timeval_t first_time; /* First time represented by the range */
+  struct output_slot slots[NUM_SLOTS];
+};
+
+static struct output_buffer output_buffers[2] = { 0 };
+static int current_buffer = 0;
+
+static void platform_output_slot_unset(struct output_slot *slots,
+                                       uint32_t index,
+                                       uint32_t pin,
+                                       bool value) {
+  if (value) {
+    slots[index].on &= ~(1 << pin);
+  } else {
+    slots[index].off &= ~(1 << pin);
+  }
+}
+
+static void platform_output_slot_set(struct output_slot *slots,
+                                     uint32_t index,
+                                     uint32_t pin,
+                                     bool value) {
+  if (value) {
+    slots[index].on |= (1 << pin);
+  } else {
+    slots[index].off |= (1 << pin);
+  }
+}
+
+/* Return the first time that is gauranteed to be changable.  We use a circular
+ * pair of buffers: We can't change the current buffer, and its likely the next
+ * buffer's time range is already submitted, so use the time after that.
+ */
+timeval_t platform_output_earliest_schedulable_time() {
+  return output_buffers[current_buffer].first_time + NUM_SLOTS * 2;
+}
+
 static void platform_init_scheduled_outputs() {
   gpio_clear(GPIOD, 0xFFFF);
   unsigned int i;
@@ -312,6 +305,31 @@ static void platform_init_scheduled_outputs() {
     GPIOD, GPIO_OTYPE_PP, GPIO_OSPEED_100MHZ, 0xFFFF & ~GPIO5);
   gpio_mode_setup(GPIOE, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, 0xFF);
   gpio_set_output_options(GPIOE, GPIO_OTYPE_PP, GPIO_OSPEED_100MHZ, 0xFF);
+
+  /* dma2 stream 1, channel 7*/
+  dma_stream_reset(DMA2, DMA_STREAM1);
+  dma_set_priority(DMA2, DMA_STREAM1, DMA_SxCR_PL_HIGH);
+  dma_enable_double_buffer_mode(DMA2, DMA_STREAM1);
+  dma_set_memory_size(DMA2, DMA_STREAM1, DMA_SxCR_MSIZE_32BIT);
+  dma_set_peripheral_size(DMA2, DMA_STREAM1, DMA_SxCR_PSIZE_32BIT);
+  dma_enable_memory_increment_mode(DMA2, DMA_STREAM1);
+  dma_set_transfer_mode(DMA2, DMA_STREAM1, DMA_SxCR_DIR_MEM_TO_PERIPHERAL);
+  dma_enable_circular_mode(DMA2, DMA_STREAM1);
+  dma_set_peripheral_address(DMA2, DMA_STREAM1, (uint32_t)&GPIOD_BSRR);
+  dma_set_memory_address(DMA2, DMA_STREAM1, (uint32_t)output_buffers[0].slots);
+  dma_set_memory_address_1(
+    DMA2, DMA_STREAM1, (uint32_t)output_buffers[1].slots);
+  dma_set_number_of_data(DMA2, DMA_STREAM1, NUM_SLOTS);
+  dma_channel_select(DMA2, DMA_STREAM1, DMA_SxCR_CHSEL_7);
+  dma_enable_direct_mode(DMA2, DMA_STREAM1);
+  dma_enable_transfer_complete_interrupt(DMA2, DMA_STREAM1);
+
+  timer_disable_counter(TIM8);
+  dma_enable_stream(DMA2, DMA_STREAM1);
+  timer_enable_counter(TIM8);
+
+  nvic_enable_irq(NVIC_DMA2_STREAM1_IRQ);
+  nvic_set_priority(NVIC_DMA2_STREAM1_IRQ, 16);
 }
 
 void platform_enable_event_logging() {
@@ -716,6 +734,7 @@ void platform_init_usb() {
 
   usbd_register_set_config_callback(usbd_dev, cdcacm_set_config);
   nvic_enable_irq(NVIC_OTG_FS_IRQ);
+  nvic_set_priority(NVIC_OTG_FS_IRQ, 128);
 }
 
 void platform_init_test_trigger() {
@@ -1075,17 +1094,81 @@ void tim2_isr() {
   stats_finish_timing(STATS_INT_TOTAL_TIME);
 }
 
+/* Retire all stop/stop events that are in the time range of our "completed"
+ * buffer and were previously submitted by setting them to "fired" and clearing
+ * out the dma bits */
+static void retire_output_buffer(struct output_buffer *buf) {
+  timeval_t offset_from_start;
+  for (int i = 0; i < MAX_EVENTS; i++) {
+    struct output_event *oev = &config.events[i];
+
+    offset_from_start = oev->start.time - buf->first_time;
+    if (sched_entry_get_state(&oev->start) == SCHED_SUBMITTED &&
+        offset_from_start < NUM_SLOTS) {
+      platform_output_slot_unset(
+        buf->slots, offset_from_start, oev->start.pin, oev->start.val);
+      sched_entry_set_state(&oev->start, SCHED_FIRED);
+    }
+
+    offset_from_start = oev->stop.time - buf->first_time;
+    if (sched_entry_get_state(&oev->stop) == SCHED_SUBMITTED &&
+        offset_from_start < NUM_SLOTS) {
+      platform_output_slot_unset(
+        buf->slots, offset_from_start, oev->stop.pin, oev->stop.val);
+      sched_entry_set_state(&oev->stop, SCHED_FIRED);
+    }
+  }
+}
+
+/* Any scheduled start/stop event in the time range for the new buffer can be
+ * "submitted" and the dma bits set */
+static void populate_output_buffer(struct output_buffer *buf) {
+  timeval_t offset_from_start;
+  for (int i = 0; i < MAX_EVENTS; i++) {
+    struct output_event *oev = &config.events[i];
+    offset_from_start = oev->start.time - buf->first_time;
+    if (sched_entry_get_state(&oev->start) == SCHED_SCHEDULED &&
+        offset_from_start < NUM_SLOTS) {
+      platform_output_slot_set(
+        buf->slots, offset_from_start, oev->start.pin, oev->start.val);
+      sched_entry_set_state(&oev->start, SCHED_SUBMITTED);
+    }
+    offset_from_start = oev->stop.time - buf->first_time;
+    if (sched_entry_get_state(&oev->stop) == SCHED_SCHEDULED &&
+        offset_from_start < NUM_SLOTS) {
+      platform_output_slot_set(
+        buf->slots, offset_from_start, oev->stop.pin, oev->stop.val);
+      sched_entry_set_state(&oev->stop, SCHED_SUBMITTED);
+    }
+  }
+}
+
+static timeval_t round_time_to_buffer_start(timeval_t time) {
+  timeval_t time_since_buffer_start = time % NUM_SLOTS;
+  return time - time_since_buffer_start;
+}
+
+static void platform_buffer_swap() {
+  struct output_buffer *buf = &output_buffers[current_buffer];
+  current_buffer = (current_buffer + 1) % 2;
+
+  retire_output_buffer(buf);
+
+  buf->first_time = round_time_to_buffer_start(current_time()) + NUM_SLOTS;
+
+  populate_output_buffer(buf);
+}
+
 void dma2_stream1_isr(void) {
-  stats_increment_counter(STATS_INT_RATE);
-  stats_increment_counter(STATS_INT_BUFFERSWAP_RATE);
-  stats_start_timing(STATS_INT_TOTAL_TIME);
   if (dma_get_interrupt_flag(DMA2, DMA_STREAM1, DMA_TCIF)) {
     dma_clear_interrupt_flags(DMA2, DMA_STREAM1, DMA_TCIF);
-    stats_start_timing(STATS_INT_BUFFERSWAP_TIME);
-    scheduler_buffer_swap();
-    stats_finish_timing(STATS_INT_BUFFERSWAP_TIME);
+    platform_buffer_swap();
+
+    if (current_buffer != dma_get_target(DMA2, DMA_STREAM1)) {
+      /* We have overflowed or gone out of sync, abort immediately */
+      abort();
+    }
   }
-  stats_finish_timing(STATS_INT_TOTAL_TIME);
 }
 
 volatile int interrupt_disables = 0;
@@ -1228,7 +1311,7 @@ _write(int fd, const char *buf, size_t count) {
   return count;
 }
 
-void _exit(int status) {
+void __attribute__((externally_visible)) _exit(int status) {
   (void)status;
 
   handle_emergency_shutdown();

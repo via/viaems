@@ -54,10 +54,10 @@ struct calculated_values {
 
 extern struct calculated_values calculated_values;
 
-void calculate_ignition();
-void calculate_fueling();
-bool ignition_cut();
-bool fuel_cut();
+void calculate_ignition(void);
+void calculate_fueling(void);
+bool ignition_cut(void);
+bool fuel_cut(void);
 
 #ifdef UNITTEST
 #include <check.h>

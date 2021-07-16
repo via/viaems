@@ -17,7 +17,6 @@ static timeval_t cureventtime = 0;
 static int int_disables = 0;
 static int output_states[16] = { 0 };
 static int gpio_states[16] = { 0 };
-static int current_buffer = 0;
 
 void platform_enable_event_logging() {}
 
@@ -32,7 +31,6 @@ void set_pwm(int pin, float val) {
 
 void check_platform_reset() {
   curtime = 0;
-  current_buffer = 0;
   memset(config.events, 0, sizeof(config.events));
   initialize_scheduler();
 }
@@ -54,16 +52,25 @@ uint64_t cycle_count() {
   return 0;
 }
 
-void set_current_time(timeval_t t) {
-  timeval_t c = curtime;
-  curtime = t;
+timeval_t platform_output_earliest_schedulable_time() {
+  /* Round/floor to nearest 128-time buffer start, then use next one */
+  return curtime + 1;
+}
 
-  /* Swap buffers until we're at time t */
-  while (c < ((t / 512) * 512)) {
-    current_buffer = (current_buffer + 1) % 2;
-    scheduler_buffer_swap();
-    c += 512;
+void set_current_time(timeval_t t) {
+  /* All events between old time and new time that are scheduled get fired */
+  for (int i = 0; i < MAX_EVENTS; i++) {
+    struct output_event *oev = &config.events[i];
+    if (sched_entry_get_state(&oev->start) == SCHED_SCHEDULED &&
+        time_in_range(oev->start.time, current_time(), t)) {
+      sched_entry_set_state(&oev->start, SCHED_FIRED);
+    }
+    if (sched_entry_get_state(&oev->stop) == SCHED_SCHEDULED &&
+        time_in_range(oev->stop.time, current_time(), t)) {
+      sched_entry_set_state(&oev->stop, SCHED_FIRED);
+    }
   }
+  curtime = t;
 }
 
 void set_event_timer(timeval_t t) {
@@ -104,17 +111,6 @@ int get_gpio(int output) {
 
 void adc_gather(void *_adc) {
   (void)_adc;
-}
-
-int current_output_buffer() {
-  return current_buffer;
-}
-
-timeval_t init_output_thread(uint32_t *b0, uint32_t *b1, uint32_t len) {
-  (void)b0;
-  (void)b1;
-  (void)len;
-  return 0;
 }
 
 void set_test_trigger_rpm(uint32_t rpm) {

@@ -117,13 +117,13 @@ struct console_feed_node {
 void render_description_field(CborEncoder *, const char *desc);
 void render_type_field(CborEncoder *, const char *type);
 
-void console_process();
+void console_process(void);
 
 void console_record_event(struct logged_event);
 
 #ifdef UNITTEST
 #include <check.h>
-TCase *setup_console_tests();
+TCase *setup_console_tests(void);
 #endif
 
 #endif
