@@ -54,6 +54,21 @@ void platform_reset_into_bootloader();
 void set_test_trigger_rpm(uint32_t rpm);
 uint32_t get_test_trigger_rpm();
 
+/* New buffer api */
+struct output_buffer {
+  void *buf;
+  timeval_t first_time;
+  timeval_t last_time;
+};
+
+struct sched_entry;
+
+/* These are intended only to be called from the buffer swap callback */
+void platform_submit_output_buffer(struct output_buffer *);
+void platform_output_buffer_enable(struct output_buffer *, struct sched_entry *);
+void platform_output_buffer_disable(struct output_buffer *, struct sched_entry *);
+
+
 #ifdef UNITTEST
 #include <check.h>
 

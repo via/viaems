@@ -9,71 +9,14 @@
 #include <string.h>
 #include <strings.h>
 
-#define OUTPUT_BUFFER_LEN (512)
-static struct output_buffer {
-  timeval_t start;
-  struct output_slot {
-    uint16_t on_mask;  /* On little endian arch, most-significant */
-    uint16_t off_mask; /* are last in struct */
-  } __attribute__((packed)) __attribute__((aligned(4)))
-  slots[OUTPUT_BUFFER_LEN];
-} output_buffers[2];
-
 #define MAX_CALLBACKS 32
 struct timed_callback *callbacks[MAX_CALLBACKS] = { 0 };
 static int n_callbacks = 0;
 
-/*
- * For this check to be valid, output buffer swaps *must* have executed in time
- */
-static int sched_entry_has_fired(struct sched_entry *en) {
-  assert(en);
 
-  int ret = 0;
-  disable_interrupts();
-
-  if (en->buffer && time_before(en->buffer->start, current_time()) &&
-      time_in_range(en->time, en->buffer->start, current_time())) {
-    ret = 1;
-  }
-  if (en->fired) {
-    ret = 1;
-  }
-  enable_interrupts();
-  return ret;
-}
-
-int event_is_active(struct output_event *ev) {
-  return (sched_entry_has_fired(&ev->start) &&
-          !sched_entry_has_fired(&ev->stop));
-}
-
-int event_has_fired(struct output_event *ev) {
-  return (sched_entry_has_fired(&ev->start) &&
-          sched_entry_has_fired(&ev->stop));
-}
-
-static struct output_buffer *buffer_for_time(timeval_t time) {
-  struct output_buffer *buf = NULL;
-  if (time_in_range(time,
-                    output_buffers[0].start,
-                    output_buffers[0].start + OUTPUT_BUFFER_LEN - 1)) {
-    buf = &output_buffers[0];
-  } else if (time_in_range(time,
-                           output_buffers[1].start,
-                           output_buffers[1].start + OUTPUT_BUFFER_LEN - 1)) {
-    buf = &output_buffers[1];
-  }
-  return buf;
-}
-
-/* Sets the fired flag based on a sched_entry enable/disable status result.
- * This is used when we're modifying sched entries in a way that they might
- * fire, but not be accounted for automatically in the buffer swap (because the
- * output buffer contents does not match) */
-static int fired_if_failed(struct sched_entry *en, int success) {
-  en->fired = !success;
-  return success;
+/* Returns true if both the start and stop event have been submitted */
+bool event_has_fired(struct output_event *ev) {
+  return ev->start.submitted && ev->stop.submitted;
 }
 
 /* Modifies the output buffer to not have the event, returns 0 if event is in
@@ -83,41 +26,14 @@ static int fired_if_failed(struct sched_entry *en, int success) {
  * time.
  *
  * Does no bookkeeping but can set fired flag */
-static int sched_entry_disable(const struct sched_entry *en, timeval_t time) {
+static int sched_entry_disable(struct sched_entry *en) {
 
   assert(!interrupts_enabled());
-  /* before either buffer starts */
-  if (time_before(time, output_buffers[0].start) &&
-      time_before(time, output_buffers[1].start)) {
+  if (en->submitted) {
     return 0;
   }
 
-  struct output_buffer *buf = buffer_for_time(time);
-
-  /* In the future, bail out successfully */
-  if (!buf) {
-    return 1;
-  }
-
-  int slot = time - buf->start;
-  assert((slot >= 0) && (slot < 512));
-
-  uint16_t *addr =
-    en->val ? &buf->slots[slot].on_mask : &buf->slots[slot].off_mask;
-  uint16_t value = *addr & ~(1 << en->pin);
-
-  timeval_t before_time = current_time();
-  *addr = value;
-  timeval_t after_time = current_time();
-
-  if (time_in_range(time - 1, before_time, after_time)) {
-    set_output(en->pin, en->val);
-    return 0;
-  }
-  if (time_before(time - 1, before_time) || en->fired) {
-    return 0;
-  }
-
+  en->scheduled = false;
   return 1;
 }
 
@@ -127,70 +43,30 @@ static int sched_entry_disable(const struct sched_entry *en, timeval_t time) {
  * Return of 0 means the event did not fire.
  *
  * Does no bookkeeping of sched_entry */
-static int sched_entry_enable(const struct sched_entry *en, timeval_t time) {
+static int sched_entry_enable(struct sched_entry *en, timeval_t time) {
 
   assert(!interrupts_enabled());
-  /* before either buffer starts */
-  if (time_before(time, output_buffers[0].start) &&
-      time_before(time, output_buffers[1].start)) {
+  if (en->submitted) {
     return 0;
   }
 
-  struct output_buffer *buf = buffer_for_time(time);
-
-  /* In the future, bail out successfully */
-  if (!buf) {
-    return 1;
-  }
-
-  int slot = time - buf->start;
-  assert((slot >= 0) && (slot < 512));
-
-  uint16_t *addr =
-    en->val ? &buf->slots[slot].on_mask : &buf->slots[slot].off_mask;
-  uint16_t value = *addr | (1 << en->pin);
-
-  timeval_t before_time = current_time();
-  *addr = value;
-  timeval_t after_time = current_time();
-
-  if (time_in_range(time - 1, before_time, after_time)) {
-    set_output(en->pin, en->val);
-  }
-
-  if (time_before(time - 1, before_time)) {
-    return 0;
-  }
+  en->time = time;
+  en->scheduled = true;
 
   return 1;
-}
-
-static void sched_entry_update(struct sched_entry *en, timeval_t time) {
-  en->buffer = buffer_for_time(time);
-  en->scheduled = 1;
-  en->time = time;
-}
-
-static void sched_entry_off(struct sched_entry *en) {
-  en->scheduled = 0;
-  en->buffer = NULL;
 }
 
 void deschedule_event(struct output_event *ev) {
   disable_interrupts();
 
-  if (ev->start.fired) {
+  if (ev->start.submitted) {
     enable_interrupts();
     return;
   }
 
-  int success;
-  success = fired_if_failed(&ev->start,
-                            sched_entry_disable(&ev->start, ev->start.time));
+  int success = sched_entry_disable(&ev->start);
   if (success) {
-    fired_if_failed(&ev->stop, sched_entry_disable(&ev->stop, ev->stop.time));
-    sched_entry_off(&ev->start);
-    sched_entry_off(&ev->stop);
+    sched_entry_disable(&ev->stop);
   }
   enable_interrupts();
 }
@@ -210,116 +86,6 @@ void invalidate_scheduled_events(struct output_event *evs, int n) {
     }
   }
 }
-
-/* Reschedule the end of an event */
-static void reschedule_end(struct sched_entry *s,
-                           timeval_t old,
-                           timeval_t new) {
-  if (new == old)
-    return;
-
-  int success;
-  success = sched_entry_enable(s, new);
-  if (success) {
-    success = fired_if_failed(s, sched_entry_disable(s, old));
-    if (!success) {
-      /* if we failed to disable the old time, remove the stale enable of the
-       * new time */
-      sched_entry_disable(s, new);
-      sched_entry_update(s, old);
-    } else {
-      /* Otherwise, update book-keeping to point to the new end */
-      sched_entry_update(s, new);
-    }
-  }
-  /* If we failed to schedule the new end time, there is nothing we can do.
-   * Either the new end time was after the old end time, so the event is over
-   * anyway, or its before, and we must live with a longer-than-desired event */
-}
-
-static void schedule_output_safely_backwards(struct output_event *ev,
-                                             timeval_t newstart,
-                                             timeval_t newstop) {
-  timeval_t oldstart = ev->start.time;
-  timeval_t oldstop = ev->stop.time;
-  int success;
-
-  /* Moving an event backwards carries three possible scenarios:
-   * 1) New end time is before old start time (no overlap, totally backwards)
-   * 2) New end time is between old start and stop (partial overlap)
-   * 3) New end time is after old end time (new even is longer and totally
-   *    overlaps)
-   */
-
-  /* Opportunistically we try to enable the new start. This is safe because if
-   * we fail, the old start will still happen later */
-  success = sched_entry_enable(&ev->start, newstart);
-
-  /* For fueling, preserve the duration of the event if we failed */
-  if (!success && (ev->type == FUEL_EVENT)) {
-    newstop += oldstart - newstart;
-  }
-
-  if (success) {
-    /* If we succeeded, for (2) and (3) the old start is a no-op so it is safe
-     * to disable and ignore. For (1), we have not scheduled the new end yet, so
-     * worst case is an extra-long event */
-    sched_entry_disable(&ev->start, oldstart);
-    sched_entry_update(&ev->start, newstart);
-  } else {
-    /* If we failed, we deschedule our new start time, */
-    sched_entry_disable(&ev->start, newstart);
-  }
-
-  /* If the eventual start time we used is before our new stop time, reschedule
-   * the stop.  This would be true unless we failed to reschedule the start, and
-   * it was a nonoverlapping (1) case */
-  if (time_before(ev->start.time, newstop)) {
-    reschedule_end(&ev->stop, oldstop, newstop);
-  }
-}
-
-static void schedule_output_safely_forwards(struct output_event *ev,
-                                            timeval_t newstart,
-                                            timeval_t newstop) {
-  timeval_t oldstart = ev->start.time;
-  timeval_t oldstop = ev->stop.time;
-  int success;
-
-  /*  Moving an event forwards has three possible scenarios:
-   *  1) New event starts after old ends, no overlap
-   *  2) New event ends before old event ends, partial overlap
-   *  3) New event ends before old event ends, full overlap
-   */
-  if (time_in_range(newstart, oldstart, oldstop)) {
-    /* Case (2) or (3), it is safe to schedule the new start, since failing
-     * would be a no-op */
-    sched_entry_enable(&ev->start, newstart);
-  }
-  /* Disable the old start. If we failed, the event has definitely already
-   * started, mark as such */
-  success =
-    fired_if_failed(&ev->start, sched_entry_disable(&ev->start, oldstart));
-
-  /* For fueling, preserve the duration of the event if we failed */
-  if (!success && (ev->type == FUEL_EVENT)) {
-    newstop += oldstart - newstart;
-  }
-  reschedule_end(&ev->stop, oldstop, newstop);
-
-  if (success) {
-    /* Special handling of case (1) */
-    sched_entry_enable(&ev->start, newstart);
-    sched_entry_update(&ev->start, newstart);
-  } else {
-    /* If we failed, and we handled (2) and (3) first, don't leave a stray
-     * enable */
-    if (time_in_range(newstart, oldstart, oldstop)) {
-      sched_entry_disable(&ev->start, newstart);
-    }
-  }
-}
-
 /* Schedules an output event in a hazard-free manner, assuming
  * that the start and stop times occur at least after curtime
  */
@@ -337,14 +103,11 @@ static void schedule_output_event_safely(struct output_event *ev,
   if (!ev->start.scheduled && !ev->stop.scheduled) {
     disable_interrupts();
     if (sched_entry_enable(&ev->stop, newstop)) {
-      sched_entry_update(&ev->stop, newstop);
-      if (sched_entry_enable(&ev->start, newstart)) {
-        sched_entry_update(&ev->start, newstart);
-      } else {
-        sched_entry_disable(&ev->start, newstart);
-        sched_entry_off(&ev->start);
-        sched_entry_disable(&ev->stop, newstop);
-        sched_entry_off(&ev->stop);
+      if (!sched_entry_enable(&ev->start, newstart)) {
+        /* Failure here means we only ever had a stop event for an otherwise
+         * unscheduled event for a time range we can no longer change, who cares?
+         */
+        sched_entry_disable(&ev->stop);
       }
     }
     enable_interrupts();
@@ -352,14 +115,16 @@ static void schedule_output_event_safely(struct output_event *ev,
     return;
   }
 
+  timeval_t oldstart = ev->start.time;
+
   disable_interrupts();
-  if (ev->start.time == newstart) {
-    reschedule_end(&ev->stop, ev->stop.time, newstop);
-  } else if (time_before(newstart, ev->start.time)) {
-    schedule_output_safely_backwards(ev, newstart, newstop);
-  } else {
-    schedule_output_safely_forwards(ev, newstart, newstop);
+  int success = sched_entry_enable(&ev->start, newstart);
+
+  /* Adjust stop time to compensate */
+  if (!success && (ev->type == FUEL_EVENT)) {
+    newstop += oldstart - newstart;
   }
+  sched_entry_enable(&ev->stop, newstop);
 
   enable_interrupts();
   stats_finish_timing(STATS_SCHED_SINGLE_TIME);
@@ -392,10 +157,10 @@ static int schedule_ignition_event(struct output_event *ev,
       return 0;
     }
 
-    ev->start.fired = 0;
-    ev->stop.fired = 0;
-    ev->start.scheduled = 0;
-    ev->stop.scheduled = 0;
+    ev->start.submitted = false;
+    ev->stop.submitted = false;
+    ev->start.scheduled = false;
+    ev->stop.scheduled = false;
   }
 
   /* Don't let the stop time move more than 180*
@@ -443,10 +208,10 @@ static int schedule_fuel_event(struct output_event *ev,
       return 0;
     }
 
-    ev->start.fired = 0;
-    ev->stop.fired = 0;
-    ev->start.scheduled = 0;
-    ev->stop.scheduled = 0;
+    ev->start.submitted = false;
+    ev->stop.submitted = false;
+    ev->start.scheduled = false;
+    ev->stop.scheduled = false;
   }
 
   /* Don't let the stop time move more than 180*
@@ -577,56 +342,9 @@ void scheduler_callback_timer_execute() {
 }
 
 void scheduler_buffer_swap() {
-  disable_interrupts();
-
-  int newbuf = (current_output_buffer() + 1) % 2;
-  struct output_buffer *obuf = &output_buffers[newbuf];
-
-  struct output_event *oev;
-  int i;
-  for (i = 0; i < MAX_EVENTS; ++i) {
-    oev = &config.events[i];
-
-    /* OEVs that were in the old buffer are no longer */
-    if (oev->start.buffer == obuf) {
-      oev->start.buffer = NULL;
-      oev->start.fired = 1;
-    }
-    if (oev->stop.buffer == obuf) {
-      oev->stop.buffer = NULL;
-      oev->stop.fired = 1;
-    }
-  }
-
-  memset(obuf->slots, 0, sizeof(struct output_slot) * OUTPUT_BUFFER_LEN);
-  obuf->start += 2 * OUTPUT_BUFFER_LEN;
-  timeval_t end = obuf->start + OUTPUT_BUFFER_LEN - 1;
-
-  for (i = 0; i < MAX_EVENTS; ++i) {
-    oev = &config.events[i];
-    /* Is this an event that is scheduled for this time window? */
-    if (oev->start.scheduled &&
-        time_in_range(oev->start.time, obuf->start, end)) {
-      sched_entry_enable(&oev->start, oev->start.time);
-      sched_entry_update(&oev->start, oev->start.time);
-    }
-    if (oev->stop.scheduled &&
-        time_in_range(oev->stop.time, obuf->start, end)) {
-      sched_entry_enable(&oev->stop, oev->stop.time);
-      sched_entry_update(&oev->stop, oev->stop.time);
-    }
-  }
-  enable_interrupts();
 }
+
 void initialize_scheduler() {
-  memset(&output_buffers, 0, sizeof(output_buffers));
-
-  output_buffers[0].start =
-    init_output_thread((uint32_t *)output_buffers[0].slots,
-                       (uint32_t *)output_buffers[1].slots,
-                       OUTPUT_BUFFER_LEN);
-  output_buffers[1].start = output_buffers[0].start + OUTPUT_BUFFER_LEN;
-
   n_callbacks = 0;
 }
 
@@ -772,20 +490,6 @@ START_TEST(check_schedule_fuel_immediately_after_finish) {
 
   /* Reschedule same event */
   ck_assert(!schedule_fuel_event(oev, &config.decoder, 1000));
-}
-END_TEST
-
-START_TEST(check_event_is_active) {
-  ck_assert(!event_is_active(oev));
-
-  oev->start.fired = 1;
-  ck_assert(event_is_active(oev));
-
-  oev->stop.fired = 1;
-  ck_assert(!event_is_active(oev));
-
-  oev->start.fired = 0;
-  ck_assert(!event_is_active(oev));
 }
 END_TEST
 
