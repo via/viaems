@@ -295,6 +295,10 @@ void platform_output_buffer_set(struct output_buffer *buf, struct sched_entry
 struct output_buffer current_buffer;
 struct output_buffer next_buffer;
 
+timeval_t platform_output_earliest_schedulable_time() { 
+  return next_buffer.first_time;
+}
+
 static void do_output_slots() {
   /* Only take action on first slot time */
   if (curtime % MAX_SLOTS == 0) {
@@ -310,6 +314,7 @@ static void do_output_slots() {
       .last_time = curtime + MAX_SLOTS + MAX_SLOTS - 1,
       .buf = next_slots,
     };
+    
     scheduler_output_buffer_ready(&next_buffer);
   }
 

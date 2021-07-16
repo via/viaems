@@ -61,6 +61,7 @@ struct sched_entry;
 
 /* This is intended only to be called from the buffer swap callback */
 void platform_output_buffer_set(struct output_buffer *, struct sched_entry *);
+timeval_t platform_output_earliest_schedulable_time();
 
 
 #ifdef UNITTEST

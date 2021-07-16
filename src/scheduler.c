@@ -49,6 +49,9 @@ static int sched_entry_enable(struct sched_entry *en, timeval_t time) {
   if (en->submitted) {
     return 0;
   }
+  if (time_before(time, platform_output_earliest_schedulable_time())) {
+    return 0;
+  }
 
   en->time = time;
   en->scheduled = true;
