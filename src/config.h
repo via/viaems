@@ -49,6 +49,6 @@ struct config {
 
 extern struct config config;
 
-int config_valid();
+int config_valid(void);
 
 #endif

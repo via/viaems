@@ -2,7 +2,8 @@
 #define SCHEDULER_H
 
 #include "platform.h"
-//#include "queue.h"
+#include <stdatomic.h>
+#include <stdbool.h>
 
 typedef enum {
   DISABLED_EVENT,
@@ -10,32 +11,36 @@ typedef enum {
   IGNITION_EVENT,
 } event_type_t;
 
+typedef enum {
+  SCHED_UNSCHEDULED, /* Blank event, not scheduled, not valid time */
+  SCHED_SCHEDULED,   /* Event is set and scheduled, but is still changable as
+  long as interrupts are disabled to prevent it from being submitted  */
+  SCHED_SUBMITTED,   /* Event is submitted to platform and cannot be undone, but
+                        may or may not have actually fired yet */
+  SCHED_FIRED,       /* Event is confirmed fired */
+} sched_state_t;
+
 struct sched_entry {
-  /* scheduled time of an event */
   timeval_t time;
-
-  /* Otherwise an output change */
-  uint32_t pin;
-  uint32_t val;
-
-  volatile uint32_t fired;
-  volatile uint32_t scheduled; /* current time is valid */
-  struct output_buffer *buffer;
+  uint8_t pin;
+  bool val;
+  _Atomic sched_state_t state;
 };
 
-/* Meaning of scheduled/fired:
- *   fired   |  scheduled  |  meaning
- *     0     |      0      |  new event
- *     1     |      1      |  event fired, time not updated since
- *     0     |      1      |  time updated, waiting to fire
- *     1     |      0      |  event fired, not meaningful
- */
+static inline sched_state_t sched_entry_get_state(struct sched_entry *s) {
+  return atomic_load_explicit(&s->state, memory_order_relaxed);
+}
+
+static inline void sched_entry_set_state(struct sched_entry *s,
+                                         sched_state_t state) {
+  atomic_store_explicit(&s->state, state, memory_order_relaxed);
+}
 
 struct timed_callback {
   void (*callback)(void *);
   void *data;
   timeval_t time;
-  uint32_t scheduled;
+  bool scheduled;
 };
 
 struct output_event {
@@ -54,23 +59,14 @@ void deschedule_event(struct output_event *);
 
 int schedule_callback(struct timed_callback *tcb, timeval_t time);
 
-void scheduler_callback_timer_execute();
-void initialize_scheduler();
-void scheduler_buffer_swap();
-
-int event_is_active(struct output_event *);
-int event_has_fired(struct output_event *);
+void scheduler_callback_timer_execute(void);
+void initialize_scheduler(void);
 void invalidate_scheduled_events(struct output_event *, int);
 
 #ifdef UNITTEST
 #include <check.h>
 void check_add_buffer_tests(TCase *);
-TCase *setup_scheduler_tests();
-#endif
-
-#ifdef BENCHMARK
-void bench_set_all_events_fired();
-void bench_set_all_events_ready_to_schedule();
+TCase *setup_scheduler_tests(void);
 #endif
 
 #endif

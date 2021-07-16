@@ -28,7 +28,7 @@ int table_valid(struct table *);
 
 #ifdef UNITTEST
 #include <check.h>
-TCase *setup_table_tests();
+TCase *setup_table_tests(void);
 #endif
 
 #endif
