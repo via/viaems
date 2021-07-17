@@ -277,10 +277,10 @@ void *platform_interrupt_thread(void *_interrupt_fd) {
 struct slot {
   uint16_t on_mask;
   uint16_t off_mask;
-} current_slots[MAX_SLOTS], next_slots[MAX_SLOTS]; 
+} current_slots[MAX_SLOTS], next_slots[MAX_SLOTS];
 
-void platform_output_buffer_set(struct output_buffer *buf, struct sched_entry
-    *s) {
+void platform_output_buffer_set(struct output_buffer *buf,
+                                struct sched_entry *s) {
   struct slot *slots = (struct slot *)buf->buf;
 
   assert(time_in_range(s->time, buf->first_time, buf->last_time));
@@ -295,7 +295,7 @@ void platform_output_buffer_set(struct output_buffer *buf, struct sched_entry
 struct output_buffer current_buffer;
 struct output_buffer next_buffer;
 
-timeval_t platform_output_earliest_schedulable_time() { 
+timeval_t platform_output_earliest_schedulable_time() {
   return next_buffer.first_time;
 }
 
@@ -314,7 +314,7 @@ static void do_output_slots() {
       .last_time = curtime + MAX_SLOTS + MAX_SLOTS - 1,
       .buf = next_slots,
     };
-    
+
     scheduler_output_buffer_ready(&next_buffer);
   }
 
@@ -328,10 +328,10 @@ static void do_output_slots() {
     sprintf(output, "# OUTPUTS %lu %2x\n", (long unsigned)curtime, cur_outputs);
     write(STDERR_FILENO, output, strlen(output));
     console_record_event((struct logged_event){
-        .time = curtime,
-        .value = cur_outputs,
-        .type = EVENT_OUTPUT,
-        });
+      .time = curtime,
+      .value = cur_outputs,
+      .type = EVENT_OUTPUT,
+    });
     old_outputs = cur_outputs;
   }
 }

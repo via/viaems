@@ -52,7 +52,8 @@ timeval_t cycle_count() {
   return 0;
 }
 
-void platform_output_buffer_set(struct output_buffer *b, struct sched_entry *s) {
+void platform_output_buffer_set(struct output_buffer *b,
+                                struct sched_entry *s) {
   (void)b;
   (void)s;
 }
@@ -61,7 +62,6 @@ timeval_t platform_output_earliest_schedulable_time() {
   /* Round/floor to nearest 128-time buffer start, then use next one */
   return curtime / 128 * 128 + 128;
 }
-
 
 void set_current_time(timeval_t t) {
   /* Swap buffers until we're at time t */

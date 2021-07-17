@@ -13,7 +13,6 @@
 struct timed_callback *callbacks[MAX_CALLBACKS] = { 0 };
 static int n_callbacks = 0;
 
-
 /* Returns true if both the start and stop event have been submitted */
 bool event_has_fired(struct output_event *ev) {
   return (ev->start.state == SCHED_FIRED) && (ev->stop.state == SCHED_FIRED);
@@ -59,7 +58,8 @@ static void sched_entry_reset_fired(struct sched_entry *en) {
 void deschedule_event(struct output_event *ev) {
   disable_interrupts();
 
-  if (ev->start.state == SCHED_SCHEDULED || ev->stop.state == SCHED_UNSCHEDULED) {
+  if (ev->start.state == SCHED_SCHEDULED ||
+      ev->stop.state == SCHED_UNSCHEDULED) {
     enable_interrupts();
     return;
   }
@@ -93,13 +93,13 @@ static void schedule_output_event_safely(struct output_event *ev,
                                          timeval_t newstart,
                                          timeval_t newstop) {
 
-
   ev->start.pin = ev->pin;
   ev->start.val = ev->inverted ? 0 : 1;
   ev->stop.pin = ev->pin;
   ev->stop.val = ev->inverted ? 1 : 0;
 
-  if (ev->start.state == SCHED_UNSCHEDULED && ev->stop.state == SCHED_UNSCHEDULED) {
+  if (ev->start.state == SCHED_UNSCHEDULED &&
+      ev->stop.state == SCHED_UNSCHEDULED) {
     disable_interrupts();
     if (sched_entry_enable(&ev->start, newstart)) {
       sched_entry_enable(&ev->stop, newstop);
@@ -154,7 +154,8 @@ static int schedule_ignition_event(struct output_event *ev,
 
   /* Don't let the stop time move more than 180*
    * forward once it is scheduled */
-  if (ev->stop.state == SCHED_SCHEDULED && time_before(ev->stop.time, stop_time) &&
+  if (ev->stop.state == SCHED_SCHEDULED &&
+      time_before(ev->stop.time, stop_time) &&
       ((time_diff(stop_time, ev->stop.time) >
         time_from_rpm_diff(d->rpm, 180)))) {
     return 0;
@@ -205,7 +206,8 @@ static int schedule_fuel_event(struct output_event *ev,
    * forward once it is scheduled
    * TODO evaluate if this is necessary for fueling */
 
-  if (ev->stop.state == SCHED_SCHEDULED && time_before(ev->stop.time, stop_time) &&
+  if (ev->stop.state == SCHED_SCHEDULED &&
+      time_before(ev->stop.time, stop_time) &&
       ((time_diff(stop_time, ev->stop.time) >
         time_from_rpm_diff(d->rpm, 180)))) {
     return 0;
@@ -335,10 +337,12 @@ void scheduler_output_buffer_ready(struct output_buffer *buf) {
     oev = &config.events[i];
 
     /* OEVs that were in the old buffer are now known for to have fired */
-    if (oev->start.state == SCHED_SUBMITTED && time_before(oev->start.time, buf->first_time)) {
+    if (oev->start.state == SCHED_SUBMITTED &&
+        time_before(oev->start.time, buf->first_time)) {
       oev->start.state = SCHED_FIRED;
     }
-    if (oev->stop.state == SCHED_SUBMITTED && time_before(oev->stop.time, buf->first_time)) {
+    if (oev->stop.state == SCHED_SUBMITTED &&
+        time_before(oev->stop.time, buf->first_time)) {
       oev->stop.state = SCHED_FIRED;
     }
 
@@ -406,7 +410,6 @@ START_TEST(check_schedule_ignition_reschedule_completely_later) {
   set_current_time(oev->start.time - 200);
   ck_assert(!oev->start.submitted);
   ck_assert(!oev->stop.submitted);
-
 
   /* Reschedule 10 degrees later */
   schedule_ignition_event(oev, &config.decoder, 0, 1000);

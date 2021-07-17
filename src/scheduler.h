@@ -13,10 +13,10 @@ typedef enum {
 
 typedef enum {
   SCHED_UNSCHEDULED, /* Blank event, not scheduled, not valid time */
-  SCHED_SCHEDULED, /* Event is set and scheduled, but is still changable */
-  SCHED_SUBMITTED, /* Event is submitted to platform and cannot be undone, but
-                      may or may not have actually fired yet */
-  SCHED_FIRED, /* Event is confirmed fired */
+  SCHED_SCHEDULED,   /* Event is set and scheduled, but is still changable */
+  SCHED_SUBMITTED,   /* Event is submitted to platform and cannot be undone, but
+                        may or may not have actually fired yet */
+  SCHED_FIRED,       /* Event is confirmed fired */
 } sched_state_t;
 
 struct sched_entry {
