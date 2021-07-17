@@ -11,31 +11,26 @@ typedef enum {
   IGNITION_EVENT,
 } event_type_t;
 
+typedef enum {
+  SCHED_UNSCHEDULED, /* Blank event, not scheduled, not valid time */
+  SCHED_SCHEDULED, /* Event is set and scheduled, but is still changable */
+  SCHED_SUBMITTED, /* Event is submitted to platform and cannot be undone, but
+                      may or may not have actually fired yet */
+  SCHED_FIRED, /* Event is confirmed fired */
+} sched_state_t;
+
 struct sched_entry {
-  /* scheduled time of an event */
   timeval_t time;
-
-  /* Otherwise an output change */
-  uint32_t pin;
-  uint32_t val;
-
-  _Atomic bool submitted;
-  _Atomic bool scheduled;
+  uint8_t pin;
+  bool val;
+  _Atomic sched_state_t state;
 };
-
-/* Meaning of scheduled/submitted:
- *   submitted   |  scheduled  |  meaning
- *     0     |      0      |  new event
- *     1     |      1      |  event has submitted (pending or has fired), can be reused
- *     0     |      1      |  time updated, waiting to fire
- *     1     |      0      |  ---
- */
 
 struct timed_callback {
   void (*callback)(void *);
   void *data;
   timeval_t time;
-  uint32_t scheduled;
+  bool scheduled;
 };
 
 struct output_event {

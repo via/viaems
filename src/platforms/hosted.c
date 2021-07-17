@@ -21,7 +21,7 @@ static _Atomic timeval_t curtime;
 static _Atomic timeval_t eventtimer_time;
 static _Atomic uint32_t eventtimer_enable = 0;
 static int event_logging_enabled = 1;
-static uint32_t test_trigger_rpm = 0;
+static uint32_t test_trigger_rpm = 100;
 static uint16_t cur_outputs = 0;
 
 void platform_enable_event_logging() {
