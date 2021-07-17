@@ -398,78 +398,56 @@ static void check_scheduler_setup() {
     .pin = 0,
     .inverted = 0,
   };
+  check_reset_sched_log();
 }
 
 START_TEST(check_schedule_ignition) {
 
-  /* Set our current position at 270* for an event at 360* */
-  set_current_time(time_from_rpm_diff(6000, 270));
   schedule_ignition_event(oev, &config.decoder, 10, 1000);
-//  ck_assert(oev->start.scheduled);
-//  ck_assert(oev->stop.scheduled);
+  ck_assert(oev->start.state == SCHED_SCHEDULED);
+  ck_assert(oev->stop.state == SCHED_SCHEDULED);
 
   ck_assert_int_eq(oev->stop.time - oev->start.time,
                    1000 * (TICKRATE / 1000000));
   ck_assert_int_eq(oev->stop.time,
                    time_from_rpm_diff(config.decoder.rpm,
                                       oev->angle + config.decoder.offset - 10));
+
+  set_current_time(oev->stop.time + 512);
 }
 END_TEST
 
 START_TEST(check_schedule_ignition_reschedule_completely_later) {
 
-  check_reset_sched_log();
-  set_current_time(time_from_rpm_diff(6000, 270));
   schedule_ignition_event(oev, &config.decoder, 10, 1000);
-
-  set_current_time(oev->start.time - 200);
-//  ck_assert(!oev->start.submitted);
-//  ck_assert(!oev->stop.submitted);
 
   /* Reschedule 10 degrees later */
   schedule_ignition_event(oev, &config.decoder, 0, 1000);
 
-#if 0
-  ck_assert(oev->start.scheduled);
-  ck_assert(oev->stop.scheduled);
-  ck_assert(!oev->start.submitted);
-  ck_assert(!oev->stop.submitted);
-#endif
+  ck_assert(oev->start.state == SCHED_SCHEDULED);
+  ck_assert(oev->stop.state == SCHED_SCHEDULED);
 
   ck_assert_int_eq(oev->stop.time - oev->start.time,
                    1000 * (TICKRATE / 1000000));
   ck_assert_int_eq(
     oev->stop.time,
     time_from_rpm_diff(config.decoder.rpm, oev->angle + config.decoder.offset));
-
-  set_current_time(oev->stop.time + 500);
-  struct sched_entry *s = check_get_sched_log();
-  while (s->time) {
-    fprintf(stderr, "time: %d pin: %d val: %d\n", s->time, s->pin, s->val);
-    s++;
-  }
 }
 END_TEST
 
 START_TEST(check_schedule_ignition_reschedule_completely_earlier_still_future) {
 
-  set_current_time(time_from_rpm_diff(6000, 180));
   schedule_ignition_event(oev, &config.decoder, 10, 1000);
   /* Reschedule 10 earlier later */
-  schedule_ignition_event(oev, &config.decoder, 50, 1000);
+  schedule_ignition_event(oev, &config.decoder, 20, 1000);
+  ck_assert(oev->start.state == SCHED_SCHEDULED);
+  ck_assert(oev->stop.state == SCHED_SCHEDULED);
 
-#if 0
-  ck_assert(oev->start.scheduled);
-  ck_assert(oev->stop.scheduled);
-  ck_assert(!oev->start.submitted);
-  ck_assert(!oev->stop.submitted);
-
-#endif
   ck_assert_int_eq(oev->stop.time - oev->start.time,
                    1000 * (TICKRATE / 1000000));
   ck_assert_int_eq(oev->stop.time,
                    time_from_rpm_diff(config.decoder.rpm,
-                                      oev->angle + config.decoder.offset - 50));
+                                      oev->angle + config.decoder.offset - 20));
 }
 END_TEST
 
@@ -478,35 +456,64 @@ START_TEST(check_schedule_ignition_reschedule_onto_now) {
   set_current_time(time_from_rpm_diff(6000, 340));
   schedule_ignition_event(oev, &config.decoder, 15, 1000);
 
-  /* Start would fail, stop should schedule */
-#if 0
-  ck_assert(!oev->start.scheduled);
-  ck_assert(!oev->stop.scheduled);
-  ck_assert(!oev->start.submitted);
-  ck_assert(!oev->stop.submitted);
-#endif
+  ck_assert(oev->start.state == SCHED_UNSCHEDULED);
+  ck_assert(oev->stop.state == SCHED_UNSCHEDULED);
 }
 END_TEST
 
 START_TEST(check_schedule_ignition_reschedule_active_later) {
 
-  set_current_time(time_from_rpm_diff(6000, 270));
   schedule_ignition_event(oev, &config.decoder, 10, 1000);
+  timeval_t start_time = oev->start.time;
 
-  /* Emulate firing of the event */
+  /* Move to a time we're sure the event can no longer reschedule */
   set_current_time(oev->start.time + 1);
-#if 0
-  ck_assert(oev->start.submitted);
-  ck_assert(!oev->stop.submitted);
-#endif
+  ck_assert(oev->start.state == SCHED_SUBMITTED ||
+            oev->start.state == SCHED_FIRED);
+
+  /* metatest: make sure we chose numbers that allow us to still change the stop
+   * */
+  ck_assert(
+    !time_before(oev->stop.time, platform_output_earliest_schedulable_time()));
 
   /* Reschedule 10* later */
   schedule_ignition_event(oev, &config.decoder, 0, 1000);
 
-//  ck_assert(oev->stop.scheduled);
+  ck_assert(oev->stop.state == SCHED_SCHEDULED);
+  /* We shouldn't have changed the start */
+  ck_assert_int_eq(oev->start.time, start_time);
   ck_assert_int_eq(
     oev->stop.time,
     time_from_rpm_diff(config.decoder.rpm, oev->angle + config.decoder.offset));
+}
+END_TEST
+
+START_TEST(check_schedule_fuel_reschedule_active_later) {
+
+  oev->angle = 360;
+  oev->type = FUEL_EVENT;
+  schedule_fuel_event(oev, &config.decoder, 1000);
+  timeval_t start_time = oev->start.time;
+
+  /* Move to a time we're sure the event can no longer reschedule */
+  set_current_time(oev->start.time + 1);
+  ck_assert(oev->start.state == SCHED_SUBMITTED ||
+            oev->start.state == SCHED_FIRED);
+
+  /* metatest: make sure we chose numbers that allow us to still change the stop
+   * */
+  ck_assert(
+    !time_before(oev->stop.time, platform_output_earliest_schedulable_time()));
+
+  /* Reschedule 10* later, but one tick longer */
+  oev->angle = 370;
+  schedule_fuel_event(oev, &config.decoder, 1001);
+
+  ck_assert(oev->stop.state == SCHED_SCHEDULED);
+  /* We shouldn't have changed the start */
+  ck_assert_int_eq(oev->start.time, start_time);
+  /* and total time should be the new 1001 time */
+  ck_assert_int_eq(oev->stop.time, start_time + time_from_us(1001));
 }
 END_TEST
 
@@ -514,16 +521,23 @@ END_TEST
  * reinterpretted as future */
 START_TEST(check_schedule_ignition_reschedule_active_too_early) {
   oev->angle = 60;
-  set_current_time(time_from_rpm_diff(6000, 0));
   schedule_ignition_event(oev, &config.decoder, 0, 1000);
+  ck_assert(oev->start.state == SCHED_SCHEDULED);
+  ck_assert(oev->stop.state == SCHED_SCHEDULED);
+
   /* Emulate firing of the event */
   set_current_time(oev->start.time + 5);
+
+  /* metatest: make sure we chose numbers that allow us to still change the stop
+   * */
+  ck_assert(
+    !time_before(oev->stop.time, platform_output_earliest_schedulable_time()));
 
   timeval_t old_stop = oev->stop.time;
   /* Reschedule 45* earlier, now in past*/
   schedule_ignition_event(oev, &config.decoder, 45, 1000);
 
-//  ck_assert(oev->stop.scheduled);
+  ck_assert(oev->stop.state == SCHED_SCHEDULED);
   ck_assert_int_eq(oev->stop.time, old_stop);
 }
 END_TEST
@@ -532,304 +546,29 @@ START_TEST(check_schedule_fuel_immediately_after_finish) {
   oev->angle = 60;
   config.decoder.rpm = 6000;
   schedule_fuel_event(oev, &config.decoder, 1000);
+  ck_assert(oev->start.state == SCHED_SCHEDULED);
+  ck_assert(oev->stop.state == SCHED_SCHEDULED);
 
   /* Emulate firing of the event */
   set_current_time(oev->stop.time + 5);
 
   /* Reschedule same event */
   schedule_fuel_event(oev, &config.decoder, 1000);
-//  ck_assert(!oev->start.scheduled);
-//  ck_assert(!oev->stop.scheduled);
+  ck_assert(oev->start.state != SCHED_SCHEDULED);
+  ck_assert(oev->stop.state != SCHED_SCHEDULED);
 }
 END_TEST
 
 START_TEST(check_invalidate_events_when_active) {
   /* Schedule an event, get in the middle of it */
-  set_current_time(time_from_rpm_diff(6000, 270));
   schedule_ignition_event(oev, &config.decoder, 10, 1000);
-  set_current_time(oev->start.time + 500);
+  set_current_time(oev->start.time + 5);
 
   invalidate_scheduled_events(oev, 1);
 
-//  ck_assert(oev->stop.scheduled);
+  ck_assert(oev->stop.state != SCHED_UNSCHEDULED);
 }
 END_TEST
-#if 0
-
-START_TEST(check_buffer_insert_totally_after) {
-  struct output_event oev = { 0 };
-  oev.type = IGNITION_EVENT;
-
-  schedule_output_event_safely(&oev, 20, 40);
-
-  schedule_output_event_safely(&oev, 80, 100);
-  ck_assert_int_eq(output_buffers[0].slots[20].on_mask, 0);
-  ck_assert_int_eq(output_buffers[0].slots[40].off_mask, 0);
-  ck_assert_int_eq(output_buffers[0].slots[80].on_mask, 1);
-  ck_assert_int_eq(output_buffers[0].slots[100].off_mask, 1);
-  ck_assert_int_eq(oev.start.scheduled, 1);
-  ck_assert_int_eq(oev.stop.scheduled, 1);
-
-  oev.type = FUEL_EVENT;
-  schedule_output_event_safely(&oev, 100, 150);
-  ck_assert_int_eq(output_buffers[0].slots[80].on_mask, 0);
-  ck_assert_int_eq(output_buffers[0].slots[100].off_mask, 0);
-  ck_assert_int_eq(output_buffers[0].slots[100].on_mask, 1);
-  ck_assert_int_eq(output_buffers[0].slots[150].off_mask, 1);
-  ck_assert_int_eq(oev.start.scheduled, 1);
-  ck_assert_int_eq(oev.stop.scheduled, 1);
-}
-END_TEST
-
-START_TEST(check_buffer_insert_totally_before) {
-  struct output_event oev = { 0 };
-
-  oev.type = IGNITION_EVENT;
-  schedule_output_event_safely(&oev, 80, 100);
-
-  schedule_output_event_safely(&oev, 20, 40);
-  ck_assert_int_eq(output_buffers[0].slots[80].on_mask, 0);
-  ck_assert_int_eq(output_buffers[0].slots[100].off_mask, 0);
-  ck_assert_int_eq(output_buffers[0].slots[20].on_mask, 1);
-  ck_assert_int_eq(output_buffers[0].slots[40].off_mask, 1);
-  ck_assert_int_eq(oev.start.scheduled, 1);
-  ck_assert_int_eq(oev.stop.scheduled, 1);
-
-  oev.type = FUEL_EVENT;
-  schedule_output_event_safely(&oev, 10, 15);
-  ck_assert_int_eq(output_buffers[0].slots[20].on_mask, 0);
-  ck_assert_int_eq(output_buffers[0].slots[40].off_mask, 0);
-  ck_assert_int_eq(output_buffers[0].slots[10].on_mask, 1);
-  ck_assert_int_eq(output_buffers[0].slots[15].off_mask, 1);
-  ck_assert_int_eq(oev.start.scheduled, 1);
-  ck_assert_int_eq(oev.stop.scheduled, 1);
-}
-END_TEST
-
-START_TEST(check_buffer_insert_totally_inside) {
-  struct output_event oev = { 0 };
-  oev.type = IGNITION_EVENT;
-
-  schedule_output_event_safely(&oev, 20, 100);
-
-  schedule_output_event_safely(&oev, 30, 90);
-  ck_assert_int_eq(output_buffers[0].slots[20].on_mask, 0);
-  ck_assert_int_eq(output_buffers[0].slots[100].off_mask, 0);
-  ck_assert_int_eq(output_buffers[0].slots[30].on_mask, 1);
-  ck_assert_int_eq(output_buffers[0].slots[90].off_mask, 1);
-  ck_assert_int_eq(oev.start.scheduled, 1);
-  ck_assert_int_eq(oev.stop.scheduled, 1);
-
-  schedule_output_event_safely(&oev, 30, 80);
-  ck_assert_int_eq(output_buffers[0].slots[90].off_mask, 0);
-  ck_assert_int_eq(output_buffers[0].slots[30].on_mask, 1);
-  ck_assert_int_eq(output_buffers[0].slots[80].off_mask, 1);
-  ck_assert_int_eq(oev.start.scheduled, 1);
-  ck_assert_int_eq(oev.stop.scheduled, 1);
-
-  schedule_output_event_safely(&oev, 40, 80);
-  ck_assert_int_eq(output_buffers[0].slots[30].on_mask, 0);
-  ck_assert_int_eq(output_buffers[0].slots[40].on_mask, 1);
-  ck_assert_int_eq(output_buffers[0].slots[80].off_mask, 1);
-  ck_assert_int_eq(oev.start.scheduled, 1);
-  ck_assert_int_eq(oev.stop.scheduled, 1);
-}
-END_TEST
-
-START_TEST(check_buffer_insert_totally_outside) {
-  struct output_event oev = { 0 };
-  oev.type = IGNITION_EVENT;
-
-  schedule_output_event_safely(&oev, 40, 80);
-
-  schedule_output_event_safely(&oev, 30, 90);
-  ck_assert_int_eq(output_buffers[0].slots[40].on_mask, 0);
-  ck_assert_int_eq(output_buffers[0].slots[80].off_mask, 0);
-  ck_assert_int_eq(output_buffers[0].slots[30].on_mask, 1);
-  ck_assert_int_eq(output_buffers[0].slots[90].off_mask, 1);
-  ck_assert_int_eq(oev.start.scheduled, 1);
-  ck_assert_int_eq(oev.stop.scheduled, 1);
-
-  schedule_output_event_safely(&oev, 30, 100);
-  ck_assert_int_eq(output_buffers[0].slots[90].off_mask, 0);
-  ck_assert_int_eq(output_buffers[0].slots[30].on_mask, 1);
-  ck_assert_int_eq(output_buffers[0].slots[100].off_mask, 1);
-  ck_assert_int_eq(oev.start.scheduled, 1);
-  ck_assert_int_eq(oev.stop.scheduled, 1);
-
-  schedule_output_event_safely(&oev, 20, 100);
-  ck_assert_int_eq(output_buffers[0].slots[30].on_mask, 0);
-  ck_assert_int_eq(output_buffers[0].slots[20].on_mask, 1);
-  ck_assert_int_eq(output_buffers[0].slots[100].off_mask, 1);
-  ck_assert_int_eq(oev.start.scheduled, 1);
-  ck_assert_int_eq(oev.stop.scheduled, 1);
-}
-END_TEST
-
-START_TEST(check_buffer_insert_partially_later) {
-  struct output_event oev = { 0 };
-  oev.type = IGNITION_EVENT;
-
-  schedule_output_event_safely(&oev, 40, 80);
-
-  schedule_output_event_safely(&oev, 50, 90);
-  ck_assert_int_eq(output_buffers[0].slots[40].on_mask, 0);
-  ck_assert_int_eq(output_buffers[0].slots[80].off_mask, 0);
-  ck_assert_int_eq(output_buffers[0].slots[50].on_mask, 1);
-  ck_assert_int_eq(output_buffers[0].slots[90].off_mask, 1);
-  ck_assert_int_eq(oev.start.scheduled, 1);
-  ck_assert_int_eq(oev.stop.scheduled, 1);
-}
-END_TEST
-
-START_TEST(check_buffer_insert_partially_earlier) {
-  struct output_event oev = { 0 };
-  oev.type = IGNITION_EVENT;
-
-  schedule_output_event_safely(&oev, 40, 80);
-
-  schedule_output_event_safely(&oev, 30, 70);
-  ck_assert_int_eq(output_buffers[0].slots[40].on_mask, 0);
-  ck_assert_int_eq(output_buffers[0].slots[80].off_mask, 0);
-  ck_assert_int_eq(output_buffers[0].slots[30].on_mask, 1);
-  ck_assert_int_eq(output_buffers[0].slots[70].off_mask, 1);
-  ck_assert_int_eq(oev.start.scheduled, 1);
-  ck_assert_int_eq(oev.stop.scheduled, 1);
-}
-END_TEST
-
-START_TEST(check_buffer_insert_active_later) {
-  struct output_event oev = { 0 };
-  oev.type = IGNITION_EVENT;
-
-  schedule_output_event_safely(&oev, 40, 80);
-
-  set_current_time(50);
-  /* If we don't preserve duration, it'll stay fired through */
-  schedule_output_event_safely(&oev, 100, 120);
-  ck_assert_int_eq(output_buffers[0].slots[80].off_mask, 0);
-  ck_assert_int_eq(output_buffers[0].slots[120].off_mask, 1);
-  ck_assert_int_eq(oev.stop.scheduled, 1);
-}
-END_TEST
-
-START_TEST(check_buffer_insert_active_later_preserve_duration) {
-  struct output_event oev = { 0 };
-  oev.type = FUEL_EVENT;
-
-  schedule_output_event_safely(&oev, 40, 80);
-
-  set_current_time(50);
-  /* We want to preserve the pulse width at the expense
-   * of end time */
-  schedule_output_event_safely(&oev, 100, 120);
-  ck_assert_int_eq(output_buffers[0].slots[60].off_mask, 1);
-  ck_assert_int_eq(output_buffers[0].slots[100].on_mask, 0);
-  ck_assert_int_eq(oev.stop.scheduled, 1);
-}
-END_TEST
-
-START_TEST(check_buffer_insert_active_earlier) {
-  struct output_event oev = { 0 };
-  oev.type = IGNITION_EVENT;
-
-  schedule_output_event_safely(&oev, 40, 80);
-
-  set_current_time(50);
-  /* Currently in this situation we give up, leave it the same.
-   * The naive fix to this causes errors in other situations */
-  schedule_output_event_safely(&oev, 30, 70);
-  ck_assert_int_eq(output_buffers[0].slots[40].off_mask, 0);
-  ck_assert_int_eq(output_buffers[0].slots[80].off_mask, 0);
-  ck_assert_int_eq(output_buffers[0].slots[70].off_mask, 1);
-  ck_assert_int_eq(oev.stop.scheduled, 1);
-}
-END_TEST
-
-START_TEST(check_buffer_insert_active_earlier_repeated) {
-  struct output_event oev = { 0 };
-  oev.type = IGNITION_EVENT;
-
-  schedule_output_event_safely(&oev, 40, 80);
-
-  set_current_time(50);
-  schedule_output_event_safely(&oev, 30, 70);
-  ck_assert_int_eq(output_buffers[0].slots[40].off_mask, 0);
-  ck_assert_int_eq(output_buffers[0].slots[80].off_mask, 0);
-  ck_assert_int_eq(output_buffers[0].slots[70].off_mask, 1);
-  ck_assert_int_eq(oev.stop.scheduled, 1);
-
-  set_current_time(55);
-  schedule_output_event_safely(&oev, 30, 60);
-  ck_assert_int_eq(output_buffers[0].slots[70].off_mask, 0);
-  ck_assert_int_eq(output_buffers[0].slots[60].off_mask, 1);
-  ck_assert_int_eq(oev.stop.scheduled, 1);
-
-  set_current_time(58);
-  schedule_output_event_safely(&oev, 30, 55);
-  ck_assert_int_eq(output_buffers[0].slots[60].off_mask, 1);
-  ck_assert_int_eq(oev.stop.scheduled, 1);
-}
-END_TEST
-
-START_TEST(check_buffer_insert_active_earlier_longer) {
-  struct output_event oev = { 0 };
-  oev.type = IGNITION_EVENT;
-
-  schedule_output_event_safely(&oev, 40, 80);
-
-  set_current_time(50);
-  schedule_output_event_safely(&oev, 30, 90);
-  ck_assert_int_eq(output_buffers[0].slots[80].off_mask, 0);
-  ck_assert_int_eq(output_buffers[0].slots[90].off_mask, 1);
-  ck_assert_int_eq(oev.stop.scheduled, 1);
-}
-END_TEST
-
-START_TEST(check_buffer_insert_active_too_earlier) {
-  struct output_event oev = { 0 };
-  oev.type = IGNITION_EVENT;
-
-  schedule_output_event_safely(&oev, 40, 80);
-
-  set_current_time(50);
-  schedule_output_event_safely(&oev, 30, 45);
-  ck_assert_int_eq(output_buffers[0].slots[80].off_mask, 1);
-  ck_assert_int_eq(oev.stop.scheduled, 1);
-}
-END_TEST
-
-START_TEST(check_buffer_insert_active_earlier_not_yet_started) {
-  struct output_event oev = { 0 };
-  oev.type = IGNITION_EVENT;
-
-  schedule_output_event_safely(&oev, 40, 80);
-
-  set_current_time(50);
-  schedule_output_event_safely(&oev, 60, 70);
-  ck_assert_int_eq(output_buffers[0].slots[80].off_mask, 0);
-  ck_assert_int_eq(output_buffers[0].slots[70].off_mask, 1);
-  ck_assert_int_eq(oev.stop.scheduled, 1);
-}
-END_TEST
-
-START_TEST(check_buffer_insert_active_earlier_preserve_duration) {
-  struct output_event oev = { 0 };
-  oev.type = FUEL_EVENT;
-
-  schedule_output_event_safely(&oev, 40, 80);
-
-  set_current_time(50);
-  /* We want to preserve the pulse width at the expense
-   * of end time */
-  schedule_output_event_safely(&oev, 30, 60);
-  ck_assert_int_eq(output_buffers[0].slots[80].off_mask, 0);
-  ck_assert_int_eq(output_buffers[0].slots[60].off_mask, 0);
-  ck_assert_int_eq(output_buffers[0].slots[70].off_mask, 1);
-  ck_assert_int_eq(oev.stop.scheduled, 1);
-}
-END_TEST
-#endif
 
 START_TEST(check_callback_insert) {
 
@@ -934,6 +673,7 @@ TCase *setup_scheduler_tests() {
     tc, check_schedule_ignition_reschedule_completely_earlier_still_future);
   tcase_add_test(tc, check_schedule_ignition_reschedule_onto_now);
   tcase_add_test(tc, check_schedule_ignition_reschedule_active_later);
+  tcase_add_test(tc, check_schedule_fuel_reschedule_active_later);
   tcase_add_test(tc, check_schedule_ignition_reschedule_active_too_early);
   tcase_add_test(tc, check_schedule_fuel_immediately_after_finish);
   tcase_add_test(tc, check_invalidate_events_when_active);

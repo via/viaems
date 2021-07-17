@@ -60,7 +60,23 @@ void check_reset_sched_log() {
   log_entry_count = 0;
 }
 
+int sched_entry_compare(const void *_a, const void *_b) {
+  const struct sched_entry *a = _a;
+  const struct sched_entry *b = _b;
+
+  if (time_before(a->time, b->time)) {
+    return -1;
+  } else if (a->time == b->time) {
+    return 0;
+  } else {
+    return 1;
+  }
+}
 struct sched_entry *check_get_sched_log() {
+  qsort(log_entries,
+        log_entry_count,
+        sizeof(struct sched_entry),
+        sched_entry_compare);
   return log_entries;
 }
 
@@ -69,23 +85,10 @@ static void append_sched_entry(struct sched_entry e) {
   log_entry_count++;
 }
 
-struct slot {
-  bool used;
-  bool on[16];
-  bool off[16];
-};
-
 void platform_output_buffer_set(struct output_buffer *b,
                                 struct sched_entry *s) {
-  int pos = b->first_time - curtime;
-  ck_assert((pos >= 0) && (pos < 128));
-  struct slot *slot = &((struct slot *)b->buf)[pos];
-  if (s->val) {
-    slot->on[s->pin] = true;
-  } else {
-    slot->off[s->pin] = true;
-  }
-  slot->used = true;
+  assert(time_in_range(s->time, b->first_time, b->last_time));
+  append_sched_entry(*s);
 }
 
 timeval_t platform_output_earliest_schedulable_time() {
@@ -98,32 +101,12 @@ void set_current_time(timeval_t t) {
   while (time_before(curtime, t)) {
     curtime++;
     if (curtime % 128 == 0) {
-      struct slot slots[128];
-      memset(slots, 0, sizeof(slots));
       struct output_buffer buf = {
         .first_time = curtime,
         .last_time = curtime + 128 - 1,
-        .buf = slots,
+        .buf = NULL,
       };
       scheduler_output_buffer_ready(&buf);
-      for (int i = 0; i < 128; i++) {
-        if (!slots[i].used) {
-          continue;
-        }
-        for (int pin = 0; pin < 16; pin++) {
-          bool pin_on = slots[i].on[pin];
-          bool pin_off = slots[i].off[pin];
-          /* We can't both turn on and off at the same time */
-          ck_assert(!(pin_on && pin_off));
-          if (pin_off || pin_on) {
-            append_sched_entry((struct sched_entry){
-                .time = buf.first_time + i,
-                .pin = pin,
-                .val = pin_on ? 1 : 0,
-                });
-          }
-        }
-      }
     }
   }
 }
