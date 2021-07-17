@@ -1,7 +1,7 @@
 OBJS+= test.o
 
 CFLAGS+= $(shell pkg-config --cflags check)
-CFLAGS+= -O0 -ggdb
+CFLAGS+= -O3 -ggdb
 CFLAGS+= -D TICKRATE=4000000 -DUNITTEST
 #CFLAGS+= -fsanitize=undefined -fsanitize=address
 
