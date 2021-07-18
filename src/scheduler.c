@@ -349,11 +349,11 @@ void scheduler_output_buffer_ready(struct output_buffer *buf) {
 
     /* OEVs that were in the old buffer are now known for to have fired */
     if (oev->start.state == SCHED_SUBMITTED &&
-        time_before(oev->start.time, buf->first_time)) {
+        time_before(oev->start.time, buf->first_time - 128)) {
       oev->start.state = SCHED_FIRED;
     }
     if (oev->stop.state == SCHED_SUBMITTED &&
-        time_before(oev->stop.time, buf->first_time)) {
+        time_before(oev->stop.time, buf->first_time - 128)) {
       oev->stop.state = SCHED_FIRED;
     }
 
