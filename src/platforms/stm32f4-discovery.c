@@ -1047,6 +1047,8 @@ void dma2_stream1_isr(void) {
   if (dma_get_interrupt_flag(DMA2, DMA_STREAM1, DMA_TCIF)) {
     dma_clear_interrupt_flags(DMA2, DMA_STREAM1, DMA_TCIF);
     int buffer_to_update = current_buffer;
+    scheduler_output_buffer_fired(&output_buffers[buffer_to_update]);
+
     current_buffer = (current_buffer + 1) % 2;
 
     timeval_t curtime = current_time();

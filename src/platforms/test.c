@@ -101,12 +101,18 @@ void set_current_time(timeval_t t) {
   while (time_before(curtime, t)) {
     curtime++;
     if (curtime % 128 == 0) {
-      struct output_buffer buf = {
+      struct output_buffer fired = {
+        .first_time = curtime - 128,
+        .last_time = curtime - 1,
+        .buf = NULL,
+      };
+      scheduler_output_buffer_ready(&fired);
+      struct output_buffer new = {
         .first_time = curtime,
         .last_time = curtime + 128 - 1,
         .buf = NULL,
       };
-      scheduler_output_buffer_ready(&buf);
+      scheduler_output_buffer_ready(&new);
     }
   }
 }

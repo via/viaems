@@ -52,6 +52,7 @@ int schedule_callback(struct timed_callback *tcb, timeval_t time);
 void scheduler_callback_timer_execute();
 void initialize_scheduler();
 void scheduler_output_buffer_ready(struct output_buffer *);
+void scheduler_output_buffer_fired(struct output_buffer *);
 void invalidate_scheduled_events(struct output_event *, int);
 
 #ifdef UNITTEST

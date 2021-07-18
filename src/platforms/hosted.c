@@ -304,6 +304,7 @@ static void do_output_slots() {
   if (curtime % MAX_SLOTS == 0) {
     memcpy(current_slots, next_slots, sizeof(current_slots));
     memset(next_slots, 0, sizeof(next_slots));
+    scheduler_output_buffer_fired(&current_buffer);
     current_buffer = (struct output_buffer){
       .first_time = curtime,
       .last_time = curtime + MAX_SLOTS - 1,
