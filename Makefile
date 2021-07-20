@@ -7,8 +7,6 @@ TINYCBOR_LIB=libtinycbor.a
 
 all: $(OBJDIR)/viaems
 
-include targets/${PLATFORM}.mk
-
 OBJS += calculations.o \
 				config.o \
 				console.o \
@@ -18,8 +16,15 @@ OBJS += calculations.o \
 				stats.o \
 				table.o \
 				tasks.o \
-				util.o \
-				benchmark.o
+				util.o
+
+ifeq ($(BENCHMARK),1)
+OBJS += benchmark.o
+else
+OBJS += viaems.o
+endif
+
+include targets/${PLATFORM}.mk
 
 DEPS = $(wildcard ${OBJDIR}/*.d)
 -include $(DEPS)
@@ -44,6 +49,8 @@ $(OBJDIR)/%.o: %.c
 $(OBJDIR)/viaems: ${OBJDIR} ${DESTOBJS} ${OBJDIR}/${TINYCBOR_LIB}
 	${CC} -o $@ ${CFLAGS} ${DESTOBJS} ${LDFLAGS}
 
+$(OBJDIR)/benchmark: ${OBJDIR} ${DESTOBJS} ${OBJDIR}/${TINYCBOR_LIB}
+	${CC} -o $@ ${CFLAGS} ${DESTOBJS} ${LDFLAGS}
 
 ${OBJDIR}/${TINYCBOR_LIB}:
 	$(MAKE) -C ${TINYCBOR_DIR} ${MAKEFLAGS} clean
@@ -56,7 +63,10 @@ format:
 lint:
 	clang-tidy src/*.c -- ${CFLAGS}
 
+benchmark: $(OBJDIR)/benchmark
+
 clean:
 	-rm ${OBJDIR}/*
 
-.PHONY: clean lint format integration
+
+.PHONY: clean lint format integration benchmark

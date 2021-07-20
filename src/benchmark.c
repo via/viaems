@@ -78,7 +78,6 @@ static void do_sensor_adc_calcs() {
 int main() {
   platform_load_config();
   decoder_init(&config.decoder);
-  console_init();
   platform_init(0, NULL);
   initialize_scheduler();
 
