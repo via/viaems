@@ -5,7 +5,7 @@ TINYCBOR_DIR=$(PWD)/tinycbor
 TINYCBOR_LIB=libtinycbor.a
 
 
-all: $(OBJDIR)/viaems
+all: $(OBJDIR)/viaems $(OBJDIR)/benchmark
 
 OBJS += calculations.o \
 				config.o \
@@ -18,10 +18,10 @@ OBJS += calculations.o \
 				tasks.o \
 				util.o
 
-ifeq ($(BENCHMARK),1)
-OBJS += benchmark.o
+ifeq (1,2)
+	OBJS += viaems.o
 else
-OBJS += viaems.o
+	OBJS += benchmark.o
 endif
 
 include targets/${PLATFORM}.mk
@@ -31,7 +31,7 @@ DEPS = $(wildcard ${OBJDIR}/*.d)
 
 
 GITDESC=$(shell git describe --tags --dirty)
-CFLAGS+=-I src/ -Wall -Wextra -Werror -g -std=c99 -DGIT_DESCRIBE=\"${GITDESC}\"
+CFLAGS+=-I src/ -Wall -Wextra  -g -std=c99 -DGIT_DESCRIBE=\"${GITDESC}\"
 CFLAGS+=-I ${TINYCBOR_DIR}/src
 LDFLAGS+= -lm -L${OBJDIR} -l:${TINYCBOR_LIB}
 

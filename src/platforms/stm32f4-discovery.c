@@ -865,8 +865,8 @@ void platform_reset_into_bootloader() {
     ;
 }
 
-uint32_t cycle_count() {
-  return dwt_read_cycle_counter();
+uint64_t current_realtime_ns() {
+  return dwt_read_cycle_counter() / 168 * 1000;
 }
 
 /* Sensor sampling complete

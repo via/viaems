@@ -46,11 +46,11 @@ timeval_t current_time() {
   return curtime;
 }
 
-timeval_t cycle_count() {
+uint64_t current_realtime_ns() {
 
   struct timespec tp;
   clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &tp);
-  return (timeval_t)((uint64_t)tp.tv_sec * 1000000000 + tp.tv_nsec);
+  return (uint64_t)tp.tv_sec * 1000000000 + tp.tv_nsec;
 }
 
 void set_event_timer(timeval_t t) {
@@ -136,9 +136,6 @@ void adc_gather() {}
 
 timeval_t last_tx = 0;
 size_t console_write(const void *buf, size_t len) {
-  if (curtime - last_tx < 50) {
-    return 0;
-  }
   struct timespec wait = {
     .tv_nsec = 100000,
   };

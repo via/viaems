@@ -15,21 +15,21 @@
 
 static void do_fuel_calculation_bench() {
   char outbuf[1024];
-  timeval_t start = current_time();
+  uint64_t start = current_realtime_ns();
   for (int i = 0; i < BENCH_RUNS; i++) {
     calculate_fueling();
   }
-  timeval_t end = current_time();
+  uint64_t end = current_realtime_ns();
 
-  uint64_t res = (end - start) * 250;
-  sprintf(outbuf, "calculate_fueling: %lu ns\r\n", (timeval_t)(res / BENCH_RUNS));
+  uint64_t res = (end - start) / BENCH_RUNS;
+  sprintf(outbuf, "calculate_fueling: %lu ns\r\n", res);
   console_write(outbuf, strlen(outbuf));
 }
 
 static void do_schedule_ignition_event_bench() {
   char outbuf[1024];
 
-  timeval_t start = current_time();
+  uint64_t start = current_realtime_ns();
   for (int i = 0; i < BENCH_RUNS; i++) {
     config.events[0].start.scheduled = 0;
     config.events[0].start.fired = 0;
@@ -37,24 +37,24 @@ static void do_schedule_ignition_event_bench() {
     config.events[0].stop.fired = 0;
     schedule_event(&config.events[0]);
   }
-  timeval_t end = current_time();
+  uint64_t end = current_realtime_ns();
 
-  uint64_t res = (end - start) * 250;
-  sprintf(outbuf, "schedule_event: %lu ns\r\n", (timeval_t)(res / BENCH_RUNS));
+  uint64_t res = (end - start) / BENCH_RUNS;
+  sprintf(outbuf, "schedule_event: %lu ns\r\n", res);
   console_write(outbuf, strlen(outbuf));
 }
 
 static void do_schedule_backward_ignition_event_bench() {
   char outbuf[1024];
 
-  timeval_t start = current_time();
+  uint64_t start = current_realtime_ns();
   for (int i = 0; i < BENCH_RUNS; i++) {
     schedule_event(&config.events[0]);
   }
-  timeval_t end = current_time();
+  uint64_t end = current_realtime_ns();
 
-  uint64_t res = (end - start) * 250;
-  sprintf(outbuf, "backward schedule_event: %lu ns\r\n", (timeval_t)(res / BENCH_RUNS));
+  uint64_t res = (end - start) / BENCH_RUNS;
+  sprintf(outbuf, "backward schedule_event: %lu ns\r\n", res);
   console_write(outbuf, strlen(outbuf));
 }
 
@@ -64,24 +64,21 @@ static void do_sensor_adc_calcs() {
   for (int i = 0; i < NUM_SENSORS; i++) {
     config.sensors[i].raw_value = 2048;
   }
-  timeval_t start = current_time();
+  uint64_t start = current_realtime_ns();
   for (int i = 0; i < BENCH_RUNS; i++) {
     sensors_process(SENSOR_ADC);
   }
-  timeval_t end = current_time();
+  uint64_t end = current_realtime_ns();
 
-  uint64_t res = (end - start) * 250;
-  sprintf(outbuf, "process_sensor(adc): %lu ns\r\n", (timeval_t)(res / BENCH_RUNS));
+  uint64_t res = (end - start) / BENCH_RUNS;
+  sprintf(outbuf, "process_sensor(adc): %lu ns\r\n", res);
   console_write(outbuf, strlen(outbuf));
 }
 
 int main() {
   platform_load_config();
-  decoder_init(&config.decoder);
-  platform_init(0, NULL);
-  initialize_scheduler();
 
-  set_test_trigger_rpm(3000);
+  platform_init(0, NULL);
 
   /* Preparations for all benchmarks */
   config.sensors[SENSOR_IAT].processed_value = 15.0f;

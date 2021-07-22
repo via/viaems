@@ -17,7 +17,7 @@ typedef float degrees_t;
 /* timeval_t is gauranteed to be 32 bits */
 
 timeval_t current_time();
-timeval_t cycle_count();
+uint64_t current_realtime_ns();
 
 void set_event_timer(timeval_t);
 timeval_t get_event_timer();

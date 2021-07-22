@@ -50,7 +50,7 @@ timeval_t current_time() {
   return curtime;
 }
 
-timeval_t cycle_count() {
+uint64_t current_realtime_ns() {
   return 0;
 }
 
