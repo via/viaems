@@ -14,7 +14,6 @@
 #define BENCH_RUNS 1000000
 
 static void do_fuel_calculation_bench() {
-  char outbuf[1024];
   uint64_t start = current_realtime_ns();
   for (int i = 0; i < BENCH_RUNS; i++) {
     calculate_fueling();
@@ -22,13 +21,10 @@ static void do_fuel_calculation_bench() {
   uint64_t end = current_realtime_ns();
 
   uint64_t res = (end - start) / BENCH_RUNS;
-  sprintf(outbuf, "calculate_fueling: %lu ns\r\n", res);
-  console_write(outbuf, strlen(outbuf));
+  printf("calculate_fueling: %lu ns\r\n", res);
 }
 
 static void do_schedule_ignition_event_bench() {
-  char outbuf[1024];
-
   uint64_t start = current_realtime_ns();
   for (int i = 0; i < BENCH_RUNS; i++) {
     config.events[0].start.scheduled = 0;
@@ -40,13 +36,10 @@ static void do_schedule_ignition_event_bench() {
   uint64_t end = current_realtime_ns();
 
   uint64_t res = (end - start) / BENCH_RUNS;
-  sprintf(outbuf, "schedule_event: %lu ns\r\n", res);
-  console_write(outbuf, strlen(outbuf));
+  printf("schedule_event: %lu ns\r\n", res);
 }
 
 static void do_schedule_backward_ignition_event_bench() {
-  char outbuf[1024];
-
   uint64_t start = current_realtime_ns();
   for (int i = 0; i < BENCH_RUNS; i++) {
     schedule_event(&config.events[0]);
@@ -54,13 +47,10 @@ static void do_schedule_backward_ignition_event_bench() {
   uint64_t end = current_realtime_ns();
 
   uint64_t res = (end - start) / BENCH_RUNS;
-  sprintf(outbuf, "backward schedule_event: %lu ns\r\n", res);
-  console_write(outbuf, strlen(outbuf));
+  printf("backward schedule_event: %lu ns\r\n", res);
 }
 
 static void do_sensor_adc_calcs() {
-  char outbuf[1024];
-
   for (int i = 0; i < NUM_SENSORS; i++) {
     config.sensors[i].raw_value = 2048;
   }
@@ -71,14 +61,22 @@ static void do_sensor_adc_calcs() {
   uint64_t end = current_realtime_ns();
 
   uint64_t res = (end - start) / BENCH_RUNS;
-  sprintf(outbuf, "process_sensor(adc): %lu ns\r\n", res);
-  console_write(outbuf, strlen(outbuf));
+  printf("process_sensor(adc): %lu ns\r\n", res);
+}
+
+static void do_buffer_swap_bench() {
+  uint64_t start = current_realtime_ns();
+  for (int i = 0; i < BENCH_RUNS; i++) {
+    scheduler_buffer_swap();
+  }
+  uint64_t end = current_realtime_ns();
+
+  uint64_t res = (end - start) / BENCH_RUNS;
+  printf("buffer_swap: %lu ns\r\n", res);
 }
 
 int main() {
   platform_load_config();
-
-  platform_init(0, NULL);
 
   /* Preparations for all benchmarks */
   config.sensors[SENSOR_IAT].processed_value = 15.0f;
@@ -94,5 +92,6 @@ int main() {
   do_schedule_ignition_event_bench();
   do_schedule_backward_ignition_event_bench();
   do_sensor_adc_calcs();
+  do_buffer_swap_bench();
   return 0;
 }
