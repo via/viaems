@@ -1178,7 +1178,7 @@ size_t console_write(const void *buf, size_t count) {
 }
 
 /* This should only ever be used in an emergency */
-ssize_t _write(int fd, const void *buf, size_t count) {
+ssize_t __attribute__((externally_visible)) _write(int fd, const void *buf, size_t count) {
   (void)fd;
 
   while (count > 0) {

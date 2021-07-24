@@ -18,12 +18,6 @@ OBJS += calculations.o \
 				tasks.o \
 				util.o
 
-ifeq (1,2)
-	OBJS += viaems.o
-else
-	OBJS += benchmark.o
-endif
-
 include targets/${PLATFORM}.mk
 
 DEPS = $(wildcard ${OBJDIR}/*.d)
@@ -46,11 +40,11 @@ $(OBJDIR):
 $(OBJDIR)/%.o: %.c
 	${CC} ${CFLAGS} -MMD -c -o $@ $<
 
-$(OBJDIR)/viaems: ${OBJDIR} ${DESTOBJS} ${OBJDIR}/${TINYCBOR_LIB}
-	${CC} -o $@ ${CFLAGS} ${DESTOBJS} ${LDFLAGS}
+$(OBJDIR)/viaems: ${OBJDIR} ${DESTOBJS} ${OBJDIR}/${TINYCBOR_LIB} ${OBJDIR}/viaems.o
+	${CC} -o $@ ${CFLAGS} ${DESTOBJS} ${OBJDIR}/viaems.o ${LDFLAGS}
 
-$(OBJDIR)/benchmark: ${OBJDIR} ${DESTOBJS} ${OBJDIR}/${TINYCBOR_LIB}
-	${CC} -o $@ ${CFLAGS} ${DESTOBJS} ${LDFLAGS}
+$(OBJDIR)/benchmark: ${OBJDIR} ${DESTOBJS} ${OBJDIR}/${TINYCBOR_LIB} ${OBJDIR}/benchmark.o
+	${CC} -o $@ ${CFLAGS} ${DESTOBJS} ${OBJDIR}/benchmark.o ${LDFLAGS}
 
 ${OBJDIR}/${TINYCBOR_LIB}:
 	$(MAKE) -C ${TINYCBOR_DIR} ${MAKEFLAGS} clean
