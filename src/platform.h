@@ -58,7 +58,6 @@ struct output_buffer {
 };
 timeval_t platform_output_earliest_schedulable_time();
 
-
 #ifdef UNITTEST
 #include <check.h>
 

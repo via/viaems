@@ -7,7 +7,6 @@
 
 #define MAX_EVENTS 16
 
-
 typedef enum {
   DISABLED_EVENT,
   FUEL_EVENT,
@@ -55,7 +54,6 @@ int schedule_callback(struct timed_callback *tcb, timeval_t time);
 void scheduler_callback_timer_execute();
 void initialize_scheduler();
 void invalidate_scheduled_events(struct output_event *, int);
-
 
 #ifdef UNITTEST
 #include <check.h>

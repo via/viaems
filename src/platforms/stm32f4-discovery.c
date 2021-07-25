@@ -173,7 +173,6 @@ static void platform_init_eventtimer() {
   platform_setup_tim8();
 }
 
-
 static void platform_init_pwm() {
 
   gpio_mode_setup(GPIOC, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO6);
@@ -256,14 +255,15 @@ struct output_slot {
 } __attribute__((packed)) __attribute((aligned(4)));
 
 #define NUM_SLOTS 128
-static struct output_slot output_slots[2][NUM_SLOTS] = {0};
+static struct output_slot output_slots[2][NUM_SLOTS] = { 0 };
 static struct output_buffer output_buffers[2] = {
   { .buf = output_slots[0] },
   { .buf = output_slots[1] },
 };
 int current_buffer = 0;
 
-static void platform_output_buffer_unset(struct output_buffer *b, struct sched_entry *s) {
+static void platform_output_buffer_unset(struct output_buffer *b,
+                                         struct sched_entry *s) {
   struct output_slot *slots = b->buf;
 
   int pos = s->time - b->first_time;
@@ -274,7 +274,8 @@ static void platform_output_buffer_unset(struct output_buffer *b, struct sched_e
   }
 }
 
-static void platform_output_buffer_set(struct output_buffer *b, struct sched_entry *s) {
+static void platform_output_buffer_set(struct output_buffer *b,
+                                       struct sched_entry *s) {
   struct output_slot *slots = b->buf;
 
   int pos = s->time - b->first_time;
@@ -326,7 +327,6 @@ static void platform_init_scheduled_outputs() {
 
   nvic_enable_irq(NVIC_DMA2_STREAM1_IRQ);
   nvic_set_priority(NVIC_DMA2_STREAM1_IRQ, 16);
-
 }
 
 void platform_enable_event_logging() {
@@ -1055,7 +1055,6 @@ void tim2_isr() {
 
   stats_finish_timing(STATS_INT_TOTAL_TIME);
 }
-
 
 #include "platforms/buffer-helpers.h"
 void dma2_stream1_isr(void) {

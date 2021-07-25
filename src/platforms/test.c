@@ -92,7 +92,7 @@ void platform_output_buffer_set(struct output_buffer *b,
 }
 
 void platform_output_buffer_unset(struct output_buffer *b,
-                                struct sched_entry *s) {
+                                  struct sched_entry *s) {
   (void)b;
   (void)s;
 }
