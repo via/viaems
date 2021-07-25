@@ -362,7 +362,6 @@ static void check_scheduler_setup() {
   config.decoder.last_trigger_time = 0;
   config.decoder.offset = 0;
   config.decoder.rpm = 6000;
-  config.decoder.tooth_rpm = 6000;
   config.decoder.valid = 1;
   *oev = (struct output_event){
     .type = IGNITION_EVENT,
