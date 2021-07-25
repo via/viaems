@@ -26,6 +26,7 @@
 #include "tasks.h"
 #include "util.h"
 
+#include <stdatomic.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -260,9 +261,20 @@ static struct output_buffer output_buffers[2] = {
   { .buf = output_slots[0] },
   { .buf = output_slots[1] },
 };
-_Atomic int current_buffer = 0;
+int current_buffer = 0;
 
-void platform_output_buffer_set(struct output_buffer *b, struct sched_entry *s) {
+static void platform_output_buffer_unset(struct output_buffer *b, struct sched_entry *s) {
+  struct output_slot *slots = b->buf;
+
+  int pos = s->time - b->first_time;
+  if (s->val) {
+    slots[pos].on &= ~(1 << s->pin);
+  } else {
+    slots[pos].off &= ~(1 << s->pin);
+  }
+}
+
+static void platform_output_buffer_set(struct output_buffer *b, struct sched_entry *s) {
   struct output_slot *slots = b->buf;
 
   int pos = s->time - b->first_time;
@@ -719,6 +731,7 @@ void platform_init_usb() {
 
   usbd_register_set_config_callback(usbd_dev, cdcacm_set_config);
   nvic_enable_irq(NVIC_OTG_FS_IRQ);
+  nvic_set_priority(NVIC_OTG_FS_IRQ, 128);
 }
 
 void platform_init_test_trigger() {
@@ -1043,11 +1056,50 @@ void tim2_isr() {
   stats_finish_timing(STATS_INT_TOTAL_TIME);
 }
 
+static void output_buffer_fired(struct output_buffer *buf) {
+  struct output_event *oev;
+  int i;
+  for (i = 0; i < MAX_EVENTS; ++i) {
+    oev = &config.events[i];
+
+    if (atomic_load_explicit(&oev->start.state, memory_order_relaxed) == SCHED_SUBMITTED &&
+        time_in_range(oev->start.time, buf->first_time, buf->last_time)) {
+      platform_output_buffer_unset(buf, &oev->start);
+      atomic_store_explicit(&oev->start.state, SCHED_FIRED, memory_order_relaxed);
+    }
+    if (atomic_load_explicit(&oev->stop.state, memory_order_relaxed) == SCHED_SUBMITTED &&
+        time_in_range(oev->stop.time, buf->first_time, buf->last_time)) {
+      platform_output_buffer_unset(buf, &oev->stop);
+      atomic_store_explicit(&oev->stop.state, SCHED_FIRED, memory_order_relaxed);
+    }
+  }
+}
+
+static void output_buffer_ready(struct output_buffer *buf) {
+  struct output_event *oev;
+  int i;
+  for (i = 0; i < MAX_EVENTS; ++i) {
+    oev = &config.events[i];
+    /* Is this an event that is scheduled for this time window? */
+    if (atomic_load_explicit(&oev->start.state, memory_order_relaxed) == SCHED_SCHEDULED &&
+        time_in_range(oev->start.time, buf->first_time, buf->last_time)) {
+      platform_output_buffer_set(buf, &oev->start);
+      atomic_store_explicit(&oev->start.state, SCHED_SUBMITTED, memory_order_relaxed);
+    }
+    if (atomic_load_explicit(&oev->stop.state, memory_order_relaxed) == SCHED_SCHEDULED &&
+        time_in_range(oev->stop.time, buf->first_time, buf->last_time)) {
+      platform_output_buffer_set(buf, &oev->stop);
+      atomic_store_explicit(&oev->stop.state, SCHED_SUBMITTED, memory_order_relaxed);
+    }
+  }
+}
+
 void dma2_stream1_isr(void) {
+  set_gpio(4, 1);
   if (dma_get_interrupt_flag(DMA2, DMA_STREAM1, DMA_TCIF)) {
     dma_clear_interrupt_flags(DMA2, DMA_STREAM1, DMA_TCIF);
     int buffer_to_update = current_buffer;
-    scheduler_output_buffer_fired(&output_buffers[buffer_to_update]);
+    output_buffer_fired(&output_buffers[buffer_to_update]);
 
     current_buffer = (current_buffer + 1) % 2;
 
@@ -1057,10 +1109,9 @@ void dma2_stream1_isr(void) {
 
     output_buffers[buffer_to_update].first_time = buffer_start;
     output_buffers[buffer_to_update].last_time = buffer_start + NUM_SLOTS - 1;
-    memset(output_slots[buffer_to_update], 0,
-        sizeof(output_slots[buffer_to_update]));
-    scheduler_output_buffer_ready(&output_buffers[buffer_to_update]);
+    output_buffer_ready(&output_buffers[buffer_to_update]);
   }
+  set_gpio(4, 0);
 }
 
 volatile int interrupt_disables = 0;

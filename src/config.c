@@ -192,15 +192,23 @@ struct table boost_control_pwm __attribute__((section(".configdata"))) = {
 struct config config __attribute__((section(".configdata"))) = {
   .events = {
     {.type=IGNITION_EVENT, .angle=0, .pin=0},
-    {.type=IGNITION_EVENT, .angle=120, .pin=1},
-    {.type=IGNITION_EVENT, .angle=240, .pin=2},
-    {.type=IGNITION_EVENT, .angle=360, .pin=0},
-    {.type=IGNITION_EVENT, .angle=480, .pin=1},
-    {.type=IGNITION_EVENT, .angle=600, .pin=2},
+    {.type=IGNITION_EVENT, .angle=0, .pin=1},
+    {.type=IGNITION_EVENT, .angle=0, .pin=2},
+    {.type=IGNITION_EVENT, .angle=0, .pin=3},
+    {.type=IGNITION_EVENT, .angle=0, .pin=4},
+    {.type=IGNITION_EVENT, .angle=0, .pin=5},
+    {.type=IGNITION_EVENT, .angle=0, .pin=6},
+    {.type=IGNITION_EVENT, .angle=0, .pin=7},
 
-    {.type=FUEL_EVENT, .angle=700, .pin=8},
-    {.type=FUEL_EVENT, .angle=460, .pin=9},
-    {.type=FUEL_EVENT, .angle=220, .pin=10},
+    {.type=IGNITION_EVENT, .angle=0, .pin=8},
+    {.type=IGNITION_EVENT, .angle=0, .pin=9},
+    {.type=IGNITION_EVENT, .angle=0, .pin=10},
+    {.type=IGNITION_EVENT, .angle=0, .pin=11},
+    {.type=IGNITION_EVENT, .angle=0, .pin=12},
+    {.type=IGNITION_EVENT, .angle=0, .pin=13},
+    {.type=IGNITION_EVENT, .angle=0, .pin=14},
+    {.type=IGNITION_EVENT, .angle=0, .pin=15},
+
   },
   .decoder = {
     .type = TOYOTA_24_1_CAS,
