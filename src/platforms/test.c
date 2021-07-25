@@ -50,7 +50,7 @@ timeval_t current_time() {
   return curtime;
 }
 
-uint64_t current_realtime_ns() {
+uint64_t cycle_count() {
   return 0;
 }
 
@@ -140,6 +140,7 @@ size_t console_write(const void *ptr, size_t max) {
   (void)max;
   return 0;
 }
+void platform_benchmark_init() {}
 
 void platform_init() {
   Suite *viaems_suite = suite_create("ViaEMS");

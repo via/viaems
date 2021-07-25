@@ -46,11 +46,14 @@ timeval_t current_time() {
   return curtime;
 }
 
-uint64_t current_realtime_ns() {
-
+uint64_t cycle_count() {
   struct timespec tp;
   clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &tp);
   return (uint64_t)tp.tv_sec * 1000000000 + tp.tv_nsec;
+}
+
+uint64_t cycles_to_ns(uint64_t cycles) {
+  return cycles;
 }
 
 void set_event_timer(timeval_t t) {
@@ -375,6 +378,8 @@ void *platform_timebase_thread(void *_interrupt_fd) {
 }
 
 static int interrupt_pipes[2];
+
+void platform_benchmark_init() {}
 
 void platform_init() {
 

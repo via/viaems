@@ -109,13 +109,13 @@ static void stats_update(stats_field_t type, timeval_t val) {
 }
 
 void stats_start_timing(stats_field_t type) {
-  stats_entries[type]._window = current_realtime_ns();
+  stats_entries[type]._window = cycle_count();
 }
 
 void stats_finish_timing(stats_field_t type) {
 
   timeval_t time;
-  time = current_realtime_ns();
+  time = cycle_count();
   time -= stats_entries[type]._window;
 
   stats_update(type, time / (ticks_per_sec / 1000000));
@@ -123,11 +123,11 @@ void stats_finish_timing(stats_field_t type) {
 
 void stats_increment_counter(stats_field_t type) {
 
-  if (current_realtime_ns() - stats_entries[type]._window > ticks_per_sec) {
+  if (cycle_count() - stats_entries[type]._window > ticks_per_sec) {
     /* We've reached the window edge, calculate and reset */
     stats_update(type, stats_entries[type].counter);
     stats_entries[type].counter = 0;
-    stats_entries[type]._window = current_realtime_ns();
+    stats_entries[type]._window = cycle_count();
   }
   stats_entries[type].counter++;
 }

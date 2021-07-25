@@ -9,6 +9,8 @@
 #include <string.h>
 #include <strings.h>
 
+#include <stdio.h>
+
 #define OUTPUT_BUFFER_LEN (512)
 static struct output_buffer {
   timeval_t start;
@@ -628,6 +630,38 @@ void initialize_scheduler() {
   output_buffers[1].start = output_buffers[0].start + OUTPUT_BUFFER_LEN;
 
   n_callbacks = 0;
+}
+
+void do_buffer_swap_bench() {
+  uint64_t start = cycle_count();
+  scheduler_buffer_swap();
+  uint64_t end = cycle_count();
+
+  printf("best case buffer_swap: %llu ns\r\n", cycles_to_ns(end - start));
+
+  struct output_buffer *obuf =
+    &output_buffers[(current_output_buffer() + 1) % 2];
+
+  for (int i = 0; i < MAX_EVENTS; i++) {
+    struct output_event *oev = &config.events[i];
+    /* Ensure every start and stop event needs to be "fired" and "rescheduled"
+     * */
+    oev->start = (struct sched_entry){
+      .buffer = obuf,
+      .scheduled = 1,
+      .time = obuf->start + 10 + OUTPUT_BUFFER_LEN * 2,
+    };
+    oev->stop = (struct sched_entry){
+      .buffer = obuf,
+      .scheduled = 1,
+      .time = obuf->start + 10 + OUTPUT_BUFFER_LEN * 2,
+    };
+  }
+  start = cycle_count();
+  scheduler_buffer_swap();
+  end = cycle_count();
+
+  printf("worst case buffer_swap: %llu ns\r\n", cycles_to_ns(end - start));
 }
 
 #ifdef UNITTEST
