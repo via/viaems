@@ -18,7 +18,6 @@ int main() {
   initialize_scheduler();
 
   assert(config_valid());
-  set_test_trigger_rpm(5000);
 
   sensors_process(SENSOR_CONST);
   while (1) {
