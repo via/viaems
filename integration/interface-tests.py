@@ -111,7 +111,7 @@ class ViaemsInterfaceTests(unittest.TestCase):
         assert(_leaves_have_types(result['response']))
 
         outputs = result['response']['outputs']
-        assert(len(outputs) == 16)
+        assert(len(outputs) == 24)
         assert(outputs[0]['_type'] == 'output')
 
         sensors = result['response']['sensors']
