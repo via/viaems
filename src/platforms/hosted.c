@@ -305,13 +305,12 @@ timeval_t platform_output_earliest_schedulable_time() {
   return next_buffer.first_time;
 }
 
-#include "platforms/buffer-helpers.h"
 static void do_output_slots() {
   /* Only take action on first slot time */
   if (curtime % MAX_SLOTS == 0) {
     memcpy(current_slots, next_slots, sizeof(current_slots));
     memset(next_slots, 0, sizeof(next_slots));
-    output_buffer_fired(&current_buffer);
+    scheduler_output_buffer_fired(&current_buffer);
     current_buffer = (struct output_buffer){
       .first_time = curtime,
       .last_time = curtime + MAX_SLOTS - 1,
@@ -323,7 +322,7 @@ static void do_output_slots() {
       .buf = next_slots,
     };
 
-    output_buffer_ready(&next_buffer);
+    scheduler_output_buffer_ready(&next_buffer);
   }
 
   uint32_t pos = curtime - current_buffer.first_time;

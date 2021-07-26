@@ -262,7 +262,7 @@ static struct output_buffer output_buffers[2] = {
 };
 int current_buffer = 0;
 
-static void platform_output_buffer_unset(struct output_buffer *b,
+void platform_output_buffer_unset(struct output_buffer *b,
                                          struct sched_entry *s) {
   struct output_slot *slots = b->buf;
 
@@ -274,7 +274,7 @@ static void platform_output_buffer_unset(struct output_buffer *b,
   }
 }
 
-static void platform_output_buffer_set(struct output_buffer *b,
+void platform_output_buffer_set(struct output_buffer *b,
                                        struct sched_entry *s) {
   struct output_slot *slots = b->buf;
 
@@ -1056,15 +1056,17 @@ void tim2_isr() {
   stats_finish_timing(STATS_INT_TOTAL_TIME);
 }
 
-#include "platforms/buffer-helpers.h"
 void dma2_stream1_isr(void) {
-  set_gpio(4, 1);
   if (dma_get_interrupt_flag(DMA2, DMA_STREAM1, DMA_TCIF)) {
     dma_clear_interrupt_flags(DMA2, DMA_STREAM1, DMA_TCIF);
     int buffer_to_update = current_buffer;
-    output_buffer_fired(&output_buffers[buffer_to_update]);
+    scheduler_output_buffer_fired(&output_buffers[buffer_to_update]);
 
     current_buffer = (current_buffer + 1) % 2;
+    if (current_buffer != dma_get_target(DMA2, DMA_STREAM1)) {
+      /* We have overflowed or gone out of sync, abort immediately */
+      abort();
+    }
 
     timeval_t curtime = current_time();
     timeval_t time_since_buffer_start = curtime % NUM_SLOTS;
@@ -1072,9 +1074,8 @@ void dma2_stream1_isr(void) {
 
     output_buffers[buffer_to_update].first_time = buffer_start;
     output_buffers[buffer_to_update].last_time = buffer_start + NUM_SLOTS - 1;
-    output_buffer_ready(&output_buffers[buffer_to_update]);
+    scheduler_output_buffer_ready(&output_buffers[buffer_to_update]);
   }
-  set_gpio(4, 0);
 }
 
 volatile int interrupt_disables = 0;

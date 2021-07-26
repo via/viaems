@@ -50,12 +50,15 @@ void platform_reset_into_bootloader();
 void set_test_trigger_rpm(uint32_t rpm);
 uint32_t get_test_trigger_rpm();
 
-/* New buffer api */
 struct output_buffer {
   void *buf;
   timeval_t first_time;
   timeval_t last_time;
 };
+
+struct sched_entry;
+void platform_output_buffer_unset(struct output_buffer *b, struct sched_entry *s);
+void platform_output_buffer_set(struct output_buffer *b, struct sched_entry *s);
 timeval_t platform_output_earliest_schedulable_time();
 
 #ifdef UNITTEST

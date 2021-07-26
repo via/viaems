@@ -102,7 +102,6 @@ timeval_t platform_output_earliest_schedulable_time() {
   return curtime / 128 * 128 + 128;
 }
 
-#include "platforms/buffer-helpers.h"
 void set_current_time(timeval_t t) {
   /* Swap buffers until we're at time t */
   while (time_before(curtime, t)) {
@@ -113,13 +112,13 @@ void set_current_time(timeval_t t) {
         .last_time = curtime - 1,
         .buf = NULL,
       };
-      output_buffer_ready(&fired);
+      scheduler_output_buffer_ready(&fired);
       struct output_buffer new = {
         .first_time = curtime,
         .last_time = curtime + 128 - 1,
         .buf = NULL,
       };
-      output_buffer_ready(&new);
+      scheduler_output_buffer_ready(&new);
     }
   }
 }
