@@ -263,7 +263,7 @@ static struct output_buffer output_buffers[2] = {
 int current_buffer = 0;
 
 void platform_output_buffer_unset(struct output_buffer *b,
-                                         struct sched_entry *s) {
+                                  struct sched_entry *s) {
   struct output_slot *slots = b->buf;
 
   int pos = s->time - b->first_time;
@@ -275,7 +275,7 @@ void platform_output_buffer_unset(struct output_buffer *b,
 }
 
 void platform_output_buffer_set(struct output_buffer *b,
-                                       struct sched_entry *s) {
+                                struct sched_entry *s) {
   struct output_slot *slots = b->buf;
 
   int pos = s->time - b->first_time;

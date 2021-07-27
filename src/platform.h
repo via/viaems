@@ -57,7 +57,8 @@ struct output_buffer {
 };
 
 struct sched_entry;
-void platform_output_buffer_unset(struct output_buffer *b, struct sched_entry *s);
+void platform_output_buffer_unset(struct output_buffer *b,
+                                  struct sched_entry *s);
 void platform_output_buffer_set(struct output_buffer *b, struct sched_entry *s);
 timeval_t platform_output_earliest_schedulable_time();
 
