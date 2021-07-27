@@ -51,15 +51,23 @@ void set_test_trigger_rpm(uint32_t rpm);
 uint32_t get_test_trigger_rpm();
 
 struct output_buffer {
-  void *buf;
-  timeval_t first_time;
-  timeval_t last_time;
+  void *buf;            /* Platform-specific pointer */
+  timeval_t first_time; /* First time represented by the range */
+  timeval_t last_time;  /*Last time (inclusive) represented by the range */
 };
 
 struct sched_entry;
+/* Disable an entry in a buffer that has been passed to
+ * scheduler_output_buffer_fired */
 void platform_output_buffer_unset(struct output_buffer *b,
                                   struct sched_entry *s);
+/* Enable an entry in a buffer that has been passed to
+ * scheduler_output_buffer_ready */
 void platform_output_buffer_set(struct output_buffer *b, struct sched_entry *s);
+
+/* Returns the earliest time that may still be scheduled.  This can only change
+ * when buffers are swapped, so it is safe to use this value to schedule events
+ * if interrupts are disabled */
 timeval_t platform_output_earliest_schedulable_time();
 
 #ifdef UNITTEST

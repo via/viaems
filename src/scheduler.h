@@ -5,8 +5,6 @@
 #include <stdatomic.h>
 #include <stdbool.h>
 
-#define MAX_EVENTS 24
-
 typedef enum {
   DISABLED_EVENT,
   FUEL_EVENT,

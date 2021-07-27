@@ -11,6 +11,8 @@
 #include "tasks.h"
 #include "util.h"
 
+#define MAX_EVENTS 24
+
 struct config {
   /* Event list */
   struct output_event events[MAX_EVENTS];

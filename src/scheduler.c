@@ -18,7 +18,7 @@ static bool event_has_fired(struct output_event *ev) {
   return (ev->start.state == SCHED_FIRED) && (ev->stop.state == SCHED_FIRED);
 }
 
-/* Returns true if both the start and stop entry have been confirmed to fire */
+/* Returns true if both the start and stop entry are unscheduled */
 static bool event_is_unscheduled(struct output_event *ev) {
   return (ev->start.state == SCHED_UNSCHEDULED) &&
          (ev->stop.state == SCHED_UNSCHEDULED);
