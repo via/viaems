@@ -17,7 +17,8 @@ typedef float degrees_t;
 /* timeval_t is gauranteed to be 32 bits */
 
 timeval_t current_time();
-timeval_t cycle_count();
+uint64_t cycle_count();
+uint64_t cycles_to_ns(uint64_t cycles);
 
 void set_event_timer(timeval_t);
 timeval_t get_event_timer();
@@ -26,6 +27,8 @@ void clear_event_timer();
 void disable_event_timer();
 
 void platform_init();
+/* Benchmark init is minimum necessary to use platform for benchmark */
+void platform_benchmark_init();
 
 void disable_interrupts();
 void enable_interrupts();
