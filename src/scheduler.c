@@ -633,13 +633,14 @@ void initialize_scheduler() {
 /* Used for benchmarking, prepare all events such that they will be retired on
  * the next scheduler swap */
 void bench_set_all_events_fired() {
-  struct output_buffer *obuf = &output_buffers[(current_output_buffer() + 1) % 2];
+  struct output_buffer *obuf =
+    &output_buffers[(current_output_buffer() + 1) % 2];
 
   for (int i = 0; i < MAX_EVENTS; i++) {
     struct output_event *oev = &config.events[i];
     oev->start = (struct sched_entry){
       .buffer = obuf,
-        
+
     };
     oev->stop = (struct sched_entry){
       .buffer = obuf,
@@ -650,7 +651,8 @@ void bench_set_all_events_fired() {
 /* Used for benchmarking, prepare all events such that they will be scheduled
  * into a buffer on the next scheduler swap */
 void bench_set_all_events_ready_to_schedule() {
-  struct output_buffer *obuf = &output_buffers[(current_output_buffer() + 1) % 2];
+  struct output_buffer *obuf =
+    &output_buffers[(current_output_buffer() + 1) % 2];
 
   for (int i = 0; i < MAX_EVENTS; i++) {
     struct output_event *oev = &config.events[i];

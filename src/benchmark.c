@@ -87,7 +87,8 @@ void do_buffer_swap_bench_all_fired() {
   scheduler_buffer_swap();
   uint64_t end = cycle_count();
 
-  printf("worst case 'fired' buffer_swap: %llu ns\r\n", cycles_to_ns(end - start));
+  printf("worst case 'fired' buffer_swap: %llu ns\r\n",
+         cycles_to_ns(end - start));
 }
 
 void do_buffer_swap_bench_all_ready() {
@@ -98,7 +99,8 @@ void do_buffer_swap_bench_all_ready() {
   scheduler_buffer_swap();
   uint64_t end = cycle_count();
 
-  printf("worst case 'ready' buffer_swap: %llu ns\r\n", cycles_to_ns(end - start));
+  printf("worst case 'ready' buffer_swap: %llu ns\r\n",
+         cycles_to_ns(end - start));
 }
 
 int main() {
