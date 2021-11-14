@@ -71,6 +71,34 @@ static void do_sensor_adc_calcs() {
   printf("process_sensor(adc): %llu ns\r\n", (unsigned long long)cycles_to_ns(end - start));
 }
 
+static void do_sensor_single_therm() {
+  platform_load_config();
+  for (int i = 0; i < NUM_SENSORS; i++) {
+    config.sensors[i].source = SENSOR_NONE;
+  }
+  config.sensors[0] = (struct sensor_input){
+    .source = SENSOR_ADC,
+    .method = METHOD_THERM,
+    .therm = {
+      .bias=2490,
+      .a=0.00146167419060305,
+      .b=0.00022887572003919,
+      .c=1.64484831669638E-07,
+    },
+    .fault_config = {
+      .min = 0,
+      .max = 4095,
+    },
+    .raw_value = 10,
+  };
+
+  uint64_t start = cycle_count();
+  sensors_process(SENSOR_ADC);
+  uint64_t end = cycle_count();
+
+  printf("process_sensor(single-therm): %llu ns\r\n", (unsigned long long)cycles_to_ns(end - start));
+}
+
 void do_buffer_swap_bench_best_case() {
   platform_load_config();
 
@@ -120,6 +148,7 @@ int main() {
     do_fuel_calculation_bench();
     do_schedule_ignition_event_bench();
     do_sensor_adc_calcs();
+    do_sensor_single_therm();
     do_buffer_swap_bench_best_case();
     do_buffer_swap_bench_all_fired();
     do_buffer_swap_bench_all_ready();
