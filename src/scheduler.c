@@ -632,36 +632,39 @@ void initialize_scheduler() {
   n_callbacks = 0;
 }
 
-void do_buffer_swap_bench() {
-  uint64_t start = cycle_count();
-  scheduler_buffer_swap();
-  uint64_t end = cycle_count();
-
-  printf("best case buffer_swap: %llu ns\r\n", cycles_to_ns(end - start));
-
-  struct output_buffer *obuf =
-    &output_buffers[(current_output_buffer() + 1) % 2];
+/* Used for benchmarking, prepare all events such that they will be retired on
+ * the next scheduler swap */
+void bench_set_all_events_fired() {
+  struct output_buffer *obuf = &output_buffers[(current_output_buffer() + 1) % 2];
 
   for (int i = 0; i < MAX_EVENTS; i++) {
     struct output_event *oev = &config.events[i];
-    /* Ensure every start and stop event needs to be "fired" and "rescheduled"
-     * */
     oev->start = (struct sched_entry){
       .buffer = obuf,
+        
+    };
+    oev->stop = (struct sched_entry){
+      .buffer = obuf,
+    };
+  }
+}
+
+void bench_set_all_events_ready_to_schedule() {
+  struct output_buffer *obuf = &output_buffers[(current_output_buffer() + 1) % 2];
+
+  for (int i = 0; i < MAX_EVENTS; i++) {
+    struct output_event *oev = &config.events[i];
+    oev->start = (struct sched_entry){
+      .buffer = NULL,
       .scheduled = 1,
       .time = obuf->start + 10 + OUTPUT_BUFFER_LEN * 2,
     };
     oev->stop = (struct sched_entry){
-      .buffer = obuf,
+      .buffer = NULL,
       .scheduled = 1,
       .time = obuf->start + 10 + OUTPUT_BUFFER_LEN * 2,
     };
   }
-  start = cycle_count();
-  scheduler_buffer_swap();
-  end = cycle_count();
-
-  printf("worst case buffer_swap: %llu ns\r\n", cycles_to_ns(end - start));
 }
 
 #ifdef UNITTEST

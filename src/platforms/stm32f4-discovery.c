@@ -778,10 +778,13 @@ void platform_benchmark_init() {
   rcc_clock_setup_pll(&rcc_hse_8mhz_3v3[RCC_CLOCK_3V3_168MHZ]);
   rcc_wait_for_osc_ready(RCC_HSE);
   rcc_periph_clock_enable(RCC_SYSCFG);
+  rcc_periph_clock_enable(RCC_GPIOA);
   rcc_periph_clock_enable(RCC_GPIOE);
+  rcc_periph_clock_enable(RCC_OTGFS);
   gpio_mode_setup(GPIOE, GPIO_MODE_OUTPUT, GPIO_PUPD_PULLDOWN, 0xFFFF);
   trace_setup();
   dwt_enable_cycle_counter();
+  platform_init_usb();
 }
 
 void platform_init() {
@@ -1216,8 +1219,12 @@ size_t console_write(const void *buf, size_t count) {
   /* https://github.com/libopencm3/libopencm3/issues/531
    * We can't let the usb irq be called while writing */
   nvic_disable_irq(NVIC_OTG_FS_IRQ);
+  __asm__("dsb");
+  __asm__("isb");
   rem = usbd_ep_write_packet(usbd_dev, 0x82, buf, rem);
   nvic_enable_irq(NVIC_OTG_FS_IRQ);
+  __asm__("dsb");
+  __asm__("isb");
   return rem;
 }
 
@@ -1234,8 +1241,7 @@ _write(int fd, const char *buf, size_t count) {
   (void)fd;
   size_t pos = 0;
   while (pos < count) {
-    trace_send_blocking(buf[pos]);
-    pos++;
+    pos += console_write(buf + pos, count - pos);
   }
   return count;
 }

@@ -68,4 +68,9 @@ void check_add_buffer_tests(TCase *);
 TCase *setup_scheduler_tests();
 #endif
 
+#ifdef BENCHMARK
+void bench_set_all_events_fired();
+void bench_set_all_events_ready_to_schedule();
+#endif
+
 #endif

@@ -170,7 +170,7 @@ timeval_t init_output_thread(uint32_t *buf0, uint32_t *buf1, uint32_t len) {
   output_slots[0] = (struct slot *)buf0;
   output_slots[1] = (struct slot *)buf1;
   max_slots = len;
-  return 0;
+  return curtime / len * curtime;
 }
 
 int current_output_buffer() {
