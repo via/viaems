@@ -38,11 +38,14 @@ timeval_t current_time() {
   return curtime;
 }
 
-timeval_t cycle_count() {
-
+uint64_t cycle_count() {
   struct timespec tp;
   clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &tp);
-  return (timeval_t)((uint64_t)tp.tv_sec * 1000000000 + tp.tv_nsec);
+  return (uint64_t)tp.tv_sec * 1000000000 + tp.tv_nsec;
+}
+
+uint64_t cycles_to_ns(uint64_t cycles) {
+  return cycles;
 }
 
 void set_event_timer(timeval_t t) {
@@ -128,9 +131,6 @@ void adc_gather() {}
 
 timeval_t last_tx = 0;
 size_t console_write(const void *buf, size_t len) {
-  if (curtime - last_tx < 50) {
-    return 0;
-  }
   struct timespec wait = {
     .tv_nsec = 100000,
   };
@@ -383,6 +383,8 @@ void *platform_timebase_thread(void *_interrupt_fd) {
 }
 
 static int interrupt_pipes[2];
+
+void platform_benchmark_init() {}
 
 void platform_init() {
 
