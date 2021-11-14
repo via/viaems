@@ -9,8 +9,6 @@
 #include <string.h>
 #include <strings.h>
 
-#include <stdio.h>
-
 #define OUTPUT_BUFFER_LEN (512)
 static struct output_buffer {
   timeval_t start;
@@ -649,6 +647,8 @@ void bench_set_all_events_fired() {
   }
 }
 
+/* Used for benchmarking, prepare all events such that they will be scheduled
+ * into a buffer on the next scheduler swap */
 void bench_set_all_events_ready_to_schedule() {
   struct output_buffer *obuf = &output_buffers[(current_output_buffer() + 1) % 2];
 

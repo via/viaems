@@ -4,12 +4,6 @@
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/cm3/scb.h>
 #include <libopencm3/cm3/systick.h>
-
-#include <libopencm3/cm3/itm.h>
-#include <libopencm3/cm3/scs.h>
-#include <libopencm3/cm3/tpiu.h>
-#include <libopencm3/stm32/dbgmcu.h>
-
 #include <libopencm3/stm32/adc.h>
 #include <libopencm3/stm32/dma.h>
 #include <libopencm3/stm32/exti.h>
@@ -750,30 +744,6 @@ static void setup_task_handler() {
   iwdg_start();
 }
 
-static void trace_setup() {
-  /* Enable trace subsystem (we'll use ITM and TPIU). */
-  SCS_DEMCR |= SCS_DEMCR_TRCENA;
-
-  /* Use Manchester code for asynchronous transmission. */
-  TPIU_SPPR = TPIU_SPPR_ASYNC_MANCHESTER;
-  TPIU_ACPR = 840;
-
-  /* Formatter and flush control. */
-  TPIU_FFCR &= ~TPIU_FFCR_ENFCONT;
-
-  /* Enable TRACESWO pin for async mode. */
-  DBGMCU_CR = DBGMCU_CR_TRACE_IOEN | DBGMCU_CR_TRACE_MODE_ASYNC;
-
-  /* Unlock access to ITM registers. */
-  /* FIXME: Magic numbers... Is this Cortex-M3 generic? */
-  *((volatile uint32_t *)0xE0000FB0) = 0xC5ACCE55;
-
-  /* Enable ITM with ID = 1. */
-  ITM_TCR = (1 << 16) | ITM_TCR_SWOENA | ITM_TCR_ITMENA;
-  /* Enable stimulus port 1. */
-  ITM_TER[0] = 1;
-}
-
 void platform_benchmark_init() {
   rcc_clock_setup_pll(&rcc_hse_8mhz_3v3[RCC_CLOCK_3V3_168MHZ]);
   rcc_wait_for_osc_ready(RCC_HSE);
@@ -782,7 +752,6 @@ void platform_benchmark_init() {
   rcc_periph_clock_enable(RCC_GPIOE);
   rcc_periph_clock_enable(RCC_OTGFS);
   gpio_mode_setup(GPIOE, GPIO_MODE_OUTPUT, GPIO_PUPD_PULLDOWN, 0xFFFF);
-  trace_setup();
   dwt_enable_cycle_counter();
   platform_init_usb();
 }
@@ -1228,20 +1197,14 @@ size_t console_write(const void *buf, size_t count) {
   return rem;
 }
 
-void trace_send_blocking(char c) {
-  while (!(ITM_STIM8(0) & ITM_STIM_FIFOREADY))
-    ;
-
-  ITM_STIM8(0) = c;
-}
-
-/* Use ITM to send text from newlib printf */
+/* Use usb to send text from newlib printf */
 ssize_t __attribute__((externally_visible))
 _write(int fd, const char *buf, size_t count) {
   (void)fd;
   size_t pos = 0;
   while (pos < count) {
     pos += console_write(buf + pos, count - pos);
+    usbd_poll(usbd_dev);
   }
   return count;
 }
