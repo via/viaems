@@ -70,14 +70,12 @@
  *   - 0-15 Maps to Port E
  *
  *  nvic priorities:
- *    tim2 (triggers) 32
- *    dma2s1 (buffer swap) 16
- *    dma1s3 (adc) 64
  *    tim6 (test trigger) 0
- *
- *    unset:
- *    otg (usb) 0
- *
+ *    dma2s1 (buffer swap) 16
+ *    tim2 (triggers, callbacks, scheduling, fueling calcs) 32
+ *    dma1s3 (adc) 64
+ *    otg (usb) 128
+ *    systick 128
  */
 
 static int capture_edge_from_config(trigger_edge e) {
