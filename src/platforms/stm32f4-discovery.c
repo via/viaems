@@ -455,9 +455,9 @@ static void platform_init_spi_adc() {
                   SPI_CR1_BAUDRATE_FPCLK_DIV_32,
                   SPI_CR1_CPOL_CLK_TO_0_WHEN_IDLE,
                   SPI_CR1_CPHA_CLK_TRANSITION_1,
-                  SPI_CR1_DFF_16BIT,
                   SPI_CR1_MSBFIRST);
 
+  spi_set_data_size(SPI2, SPI_CR2_DS_16BIT);
   spi_enable_rx_dma(SPI2);
   spi_enable(SPI2);
 
@@ -745,8 +745,7 @@ static void setup_task_handler() {
 }
 
 void platform_benchmark_init() {
-  rcc_clock_setup_pll(&rcc_hse_8mhz_3v3[RCC_CLOCK_3V3_168MHZ]);
-  rcc_wait_for_osc_ready(RCC_HSE);
+  rcc_clock_setup_hse(&rcc_3v3[RCC_CLOCK_3V3_168MHZ], 168);
   rcc_periph_clock_enable(RCC_SYSCFG);
   rcc_periph_clock_enable(RCC_GPIOA);
   rcc_periph_clock_enable(RCC_GPIOE);
@@ -759,7 +758,7 @@ void platform_benchmark_init() {
 void platform_init() {
 
   /* 168 Mhz clock */
-  rcc_clock_setup_pll(&rcc_hse_8mhz_3v3[RCC_CLOCK_3V3_168MHZ]);
+  rcc_clock_setup_hse(&rcc_3v3[RCC_CLOCK_3V3_168MHZ], 168);
 
   /* Enable clocks for subsystems */
   rcc_periph_clock_enable(RCC_GPIOA);
@@ -869,7 +868,7 @@ void platform_reset_into_bootloader() {
   platform_disable_periphs();
 
   /* 168 Mhz clock */
-  rcc_clock_setup_pll(&rcc_hsi_configs[RCC_CLOCK_3V3_168MHZ]);
+  rcc_clock_setup_hse(&rcc_3v3[RCC_CLOCK_3V3_168MHZ], 168);
 
   __asm__ volatile("msr msp, %0" ::"g"(*(volatile uint32_t *)BOOTLOADER_ADDR));
   (*(void (**)())(BOOTLOADER_ADDR + 4))();

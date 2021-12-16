@@ -3,18 +3,22 @@ AR=arm-none-eabi-ar
 LD=arm-none-eabi-ld
 OBJCOPY=arm-none-eabi-objcopy
 
-CM3_LIB=libopencm3_stm32f4.a
+DEVICE=stm32f7
+CM3_LIB=libopencm3_stm32f7.a
 
 OBJS+= ${CM3_LIB}
 OBJS+= stm32f4-discovery.o
 OBJS+= libssp.a libssp_nonshared.a
 
 CFLAGS+= -D TICKRATE=4000000 -DNDEBUG -ffunction-sections -fdata-sections
-CFLAGS+= -I${OPENCM3_DIR}/include -DSTM32F4 -O3
-CFLAGS+= -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mthumb -mcpu=cortex-m4
+CFLAGS+= -I${OPENCM3_DIR}/include -DSTM32F7 -O3
+CFLAGS+= -mfloat-abi=hard -mfpu=fpv5-sp-d16 -mthumb -mcpu=cortex-m7
 
 LDFLAGS+= -lc -lnosys -L ${OBJDIR} -l:${CM3_LIB} -Wl,--gc-sections
 LDFLAGS+= -T src/platforms/stm32f4-discovery.ld -nostartfiles
+
+LDFLAGS+= -nostartfiles
+
 
 ${OBJDIR}/libssp.a:
 	${AR} rcs ${OBJDIR}/libssp.a

@@ -18,6 +18,8 @@ OBJS += calculations.o \
 				tasks.o \
 				util.o
 
+OPENCM3_DIR=$(PWD)/libopencm3
+
 include targets/${PLATFORM}.mk
 
 DEPS = $(wildcard ${OBJDIR}/*.d)
@@ -25,11 +27,10 @@ DEPS = $(wildcard ${OBJDIR}/*.d)
 
 
 GITDESC=$(shell git describe --tags --dirty)
-CFLAGS+=-I src/ -Wall -Wextra -Werror -g -std=c99 -DGIT_DESCRIBE=\"${GITDESC}\"
+CFLAGS+=-I src/ -Wall -Wextra -g -std=c99 -DGIT_DESCRIBE=\"${GITDESC}\"
 CFLAGS+=-I ${TINYCBOR_DIR}/src
 LDFLAGS+= -lm -L${OBJDIR} -l:${TINYCBOR_LIB}
 
-OPENCM3_DIR=$(PWD)/libopencm3
 
 VPATH=src src/platforms
 DESTOBJS = $(addprefix ${OBJDIR}/, ${OBJS})
