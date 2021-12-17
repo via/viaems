@@ -740,12 +740,12 @@ static void setup_task_handler() {
   systick_interrupt_enable();
 
   /* Setup IWDG to reset if we pass 30 mS without an interrupt */
-  iwdg_set_period_ms(30);
-  iwdg_start();
+//  iwdg_set_period_ms(30);
+//  iwdg_start();
 }
 
 void platform_benchmark_init() {
-  rcc_clock_setup_hse(&rcc_3v3[RCC_CLOCK_3V3_168MHZ], 168);
+  rcc_clock_setup_hse(&rcc_3v3[RCC_CLOCK_3V3_168MHZ], 8);
   rcc_periph_clock_enable(RCC_SYSCFG);
   rcc_periph_clock_enable(RCC_GPIOA);
   rcc_periph_clock_enable(RCC_GPIOE);
@@ -758,7 +758,7 @@ void platform_benchmark_init() {
 void platform_init() {
 
   /* 168 Mhz clock */
-  rcc_clock_setup_hse(&rcc_3v3[RCC_CLOCK_3V3_168MHZ], 168);
+  rcc_clock_setup_hse(&rcc_3v3[RCC_CLOCK_3V3_168MHZ], 8);
 
   /* Enable clocks for subsystems */
   rcc_periph_clock_enable(RCC_GPIOA);
