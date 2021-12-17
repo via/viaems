@@ -10,7 +10,7 @@ OBJS+= stm32f4-discovery.o
 OBJS+= libssp.a libssp_nonshared.a
 
 CFLAGS+= -D TICKRATE=4000000 -DNDEBUG -ffunction-sections -fdata-sections
-CFLAGS+= -I${OPENCM3_DIR}/include -DSTM32F7 -Og
+CFLAGS+= -I${OPENCM3_DIR}/include -DSTM32F7 -O3
 CFLAGS+= -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16
 
 LDFLAGS+= -lc -lnosys -L ${OBJDIR} -l:${CM3_LIB} -Wl,--gc-sections

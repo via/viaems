@@ -753,6 +753,7 @@ void platform_benchmark_init() {
   gpio_mode_setup(GPIOE, GPIO_MODE_OUTPUT, GPIO_PUPD_PULLDOWN, 0xFFFF);
   dwt_enable_cycle_counter();
   platform_init_usb();
+  flash_art_enable();
 }
 
 void platform_init() {
