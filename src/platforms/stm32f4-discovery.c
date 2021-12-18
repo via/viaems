@@ -252,7 +252,7 @@ struct output_slot {
   volatile uint16_t off;
 } __attribute__((packed)) __attribute((aligned(4)));
 
-#define NUM_SLOTS 256
+#define NUM_SLOTS 128
 static struct output_slot output_slots[2][NUM_SLOTS] = { 0 };
 static struct output_buffer output_buffers[2] = {
   { .buf = output_slots[0] },
