@@ -750,10 +750,30 @@ void platform_benchmark_init() {
   rcc_periph_clock_enable(RCC_GPIOA);
   rcc_periph_clock_enable(RCC_GPIOE);
   rcc_periph_clock_enable(RCC_OTGFS);
+
+
+#if 0
+   uint32_t ccsidr = SCB_CCSIDR;
+
+                                            /* invalidate D-Cache */
+    uint32_t sets = (ccsidr & (0x7FFFUL << 13)) >> 13;
+    do {
+      uint32_t ways = (ccsidr & (0x3FFUL << 3)) >> 3;
+      do {
+        SCB_DCISW = (sets << 5) |
+                      (ways << 30);
+      } while (ways--);
+    } while(sets--);
+
+  SCB_CCR |= SCB_CCR_DC;
+  SCB_CCR |= SCB_CCR_BP;
+  __asm__("dsb");
+  __asm__("isb");
+#endif
+
   gpio_mode_setup(GPIOE, GPIO_MODE_OUTPUT, GPIO_PUPD_PULLDOWN, 0xFFFF);
   dwt_enable_cycle_counter();
   platform_init_usb();
-  flash_art_enable();
 }
 
 void platform_init() {
