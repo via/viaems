@@ -26,24 +26,15 @@ timeval_t time_from_us(unsigned int us) {
 }
 
 /* True if n is before x */
-int time_before(timeval_t n, timeval_t x) {
+bool time_before(timeval_t n, timeval_t x) {
   signed int res = n - x;
   return (res < 0);
 }
 
-int time_in_range(timeval_t val, timeval_t t1, timeval_t t2) {
-  if (t2 >= t1) {
-    /* No timer wrap */
-    if ((val >= t1) && (val <= t2)) {
-      return 1;
-    }
-  } else {
-    if ((val >= t1) || (val < t2)) {
-      return 1;
-    }
-  }
-  return 0;
+bool time_in_range(timeval_t val, timeval_t t1, timeval_t t2) {
+  return (val - t1) <= (t2 - t1);
 }
+
 timeval_t time_diff(timeval_t later, timeval_t earlier) {
   return later - earlier;
 }
