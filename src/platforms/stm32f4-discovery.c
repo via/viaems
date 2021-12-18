@@ -1236,7 +1236,7 @@ _write(int fd, const char *buf, size_t count) {
   return count;
 }
 
-void _exit(int status) {
+void __attribute__((externally_visible)) _exit(int status)  {
   (void)status;
 
   handle_emergency_shutdown();
