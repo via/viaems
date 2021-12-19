@@ -105,19 +105,18 @@ static void do_sensor_single_therm() {
 void do_output_buffer_bench_one_ready() {
   platform_load_config();
 
-  struct output_buffer *ob = current_output_buffer();
   for (int i = 0; i < MAX_EVENTS; i++) {
     config.events[i].start.state = SCHED_UNSCHEDULED;
     config.events[i].stop.state = SCHED_UNSCHEDULED;
   }
 
   config.events[0].start.state = SCHED_SCHEDULED;
-  config.events[0].start.time = ob->first_time;
+  config.events[0].start.time = 0;
   config.events[0].stop.state = SCHED_SCHEDULED;
-  config.events[0].stop.time = ob->first_time;
+  config.events[0].stop.time = 0;
 
   uint64_t start = cycle_count();
-  platform_recycle_buffer(ob);
+  benchmark_buffer_swap();
   uint64_t end = cycle_count();
 
   printf("output_buffer_one_ready: %llu ns\r\n",
@@ -127,16 +126,15 @@ void do_output_buffer_bench_one_ready() {
 void do_output_buffer_bench_all_ready() {
   platform_load_config();
 
-  struct output_buffer *ob = current_output_buffer();
   for (int i = 0; i < MAX_EVENTS; i++) {
     config.events[i].start.state = SCHED_SCHEDULED;
-    config.events[i].start.time = ob->first_time;
+    config.events[i].start.time = 128;
     config.events[i].stop.state = SCHED_SCHEDULED;
-    config.events[i].stop.time = ob->first_time;
+    config.events[i].stop.time = 128;
   }
 
   uint64_t start = cycle_count();
-  platform_recycle_buffer(ob);
+  benchmark_buffer_swap();
   uint64_t end = cycle_count();
 
   printf("output_buffer_ready: %llu ns\r\n",
@@ -146,16 +144,15 @@ void do_output_buffer_bench_all_ready() {
 void do_output_buffer_bench_all_fired() {
   platform_load_config();
 
-  struct output_buffer *ob = current_output_buffer();
   for (int i = 0; i < MAX_EVENTS; i++) {
     config.events[i].start.state = SCHED_SUBMITTED;
-    config.events[i].start.time = ob->first_time;
+    config.events[i].start.time = 0;
     config.events[i].stop.state = SCHED_SUBMITTED;
-    config.events[i].stop.time = ob->first_time;
+    config.events[i].stop.time = 0;
   }
 
   uint64_t start = cycle_count();
-  platform_recycle_buffer(ob);
+  benchmark_buffer_swap();
   uint64_t end = cycle_count();
 
   printf("output_buffer_fired: %llu ns\r\n",

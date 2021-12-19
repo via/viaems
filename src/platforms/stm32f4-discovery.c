@@ -247,40 +247,38 @@ void set_pwm(int output, float percent) {
   }
 }
 
+#define NUM_SLOTS 128
 struct output_slot {
   volatile uint16_t on;
   volatile uint16_t off;
 } __attribute__((packed)) __attribute((aligned(4)));
 
-#define NUM_SLOTS 128
-static struct output_slot output_slots[2][NUM_SLOTS] = { 0 };
-static struct output_buffer output_buffers[2] = {
-  { .buf = output_slots[0] },
-  { .buf = output_slots[1] },
+struct output_buffer {
+  timeval_t first_time; /* First time represented by the range */
+  timeval_t last_time;  /*Last time (inclusive) represented by the range */
+  struct output_slot slots[NUM_SLOTS];
 };
-int current_buffer = 0;
+
+static struct output_buffer output_buffers[2] = { 0 };
+static int current_buffer = 0;
 
 static void platform_output_buffer_unset(struct output_buffer *b,
                                   const struct sched_entry *s) {
-  struct output_slot *slots = b->buf;
-
   size_t pos = s->time - b->first_time;
   if (s->val) {
-    slots[pos].on &= ~(1 << s->pin);
+    b->slots[pos].on &= ~(1 << s->pin);
   } else {
-    slots[pos].off &= ~(1 << s->pin);
+    b->slots[pos].off &= ~(1 << s->pin);
   }
 }
 
 static void platform_output_buffer_set(struct output_buffer *b,
                                 const struct sched_entry *s) {
-  struct output_slot *slots = b->buf;
-
   size_t pos = s->time - b->first_time;
   if (s->val) {
-    slots[pos].on |= (1 << s->pin);
+    b->slots[pos].on |= (1 << s->pin);
   } else {
-    slots[pos].off |= (1 << s->pin);
+    b->slots[pos].off |= (1 << s->pin);
   }
 }
 
@@ -312,8 +310,8 @@ static void platform_init_scheduled_outputs() {
   dma_set_transfer_mode(DMA2, DMA_STREAM1, DMA_SxCR_DIR_MEM_TO_PERIPHERAL);
   dma_enable_circular_mode(DMA2, DMA_STREAM1);
   dma_set_peripheral_address(DMA2, DMA_STREAM1, (uint32_t)&GPIOD_BSRR);
-  dma_set_memory_address(DMA2, DMA_STREAM1, (uint32_t)output_slots[0]);
-  dma_set_memory_address_1(DMA2, DMA_STREAM1, (uint32_t)output_slots[1]);
+  dma_set_memory_address(DMA2, DMA_STREAM1, (uint32_t)output_buffers[0].slots);
+  dma_set_memory_address_1(DMA2, DMA_STREAM1, (uint32_t)output_buffers[1].slots);
   dma_set_number_of_data(DMA2, DMA_STREAM1, NUM_SLOTS);
   dma_channel_select(DMA2, DMA_STREAM1, DMA_SxCR_CHSEL_7);
   dma_enable_direct_mode(DMA2, DMA_STREAM1);
@@ -1074,8 +1072,10 @@ struct output_buffer *current_output_buffer() {
   return &output_buffers[current_buffer];
 }
 
-void platform_recycle_buffer(struct output_buffer *buf) {
-  /* Retire all stop/stop events in the buffer that were submitted */
+/* Retire all stop/stop events that are in the time range of our "completed"
+ * buffer and were previously submitted by setting them to "fired" and clearing
+ * out the dma bits */
+static void retire_output_buffer(struct output_buffer *buf) {
   for (int i = 0; i < MAX_EVENTS; i++) {
     struct output_event *oev = &config.events[i];
     if (sched_entry_get_state(&oev->start) == SCHED_SUBMITTED &&
@@ -1089,6 +1089,11 @@ void platform_recycle_buffer(struct output_buffer *buf) {
       sched_entry_set_state(&oev->stop, SCHED_FIRED);
     }
   }
+}
+
+/* Any scheduled start/stop event in the time range for the new * buffer can be
+ * "submitted" and the dma bits set */
+static void populate_output_buffer(struct output_buffer *buf) {
 
   for (int i = 0; i < MAX_EVENTS; i++) {
     struct output_event *oev = &config.events[i];
@@ -1105,26 +1110,39 @@ void platform_recycle_buffer(struct output_buffer *buf) {
   }
 }
 
+static void platform_buffer_swap() {
+  struct output_buffer *buf = &output_buffers[current_buffer];
+
+  current_buffer = (current_buffer + 1) % 2;
+  if (current_buffer != dma_get_target(DMA2, DMA_STREAM1)) {
+    /* We have overflowed or gone out of sync, abort immediately */
+    abort();
+  }
+
+  timeval_t curtime = current_time();
+  timeval_t time_since_buffer_start = curtime % NUM_SLOTS;
+  timeval_t buffer_start = curtime - time_since_buffer_start + NUM_SLOTS;
+
+  retire_output_buffer(buf);
+  buf->first_time = buffer_start;
+  buf->last_time = buffer_start + NUM_SLOTS - 1;
+  populate_output_buffer(buf);
+}
+
 void dma2_stream1_isr(void) {
   if (dma_get_interrupt_flag(DMA2, DMA_STREAM1, DMA_TCIF)) {
     dma_clear_interrupt_flags(DMA2, DMA_STREAM1, DMA_TCIF);
-    struct output_buffer *buf = &output_buffers[current_buffer];
-
-    current_buffer = (current_buffer + 1) % 2;
-    if (current_buffer != dma_get_target(DMA2, DMA_STREAM1)) {
-      /* We have overflowed or gone out of sync, abort immediately */
-      abort();
-    }
-
-    timeval_t curtime = current_time();
-    timeval_t time_since_buffer_start = curtime % NUM_SLOTS;
-    timeval_t buffer_start = curtime - time_since_buffer_start + NUM_SLOTS;
-
-    platform_recycle_buffer(buf);
-
-    buf->first_time = buffer_start;
-    buf->last_time = buffer_start + NUM_SLOTS - 1;
+    platform_buffer_swap();
   }
+}
+
+void benchmark_buffer_swap() {
+  current_buffer = 1;
+  output_buffers[0].first_time = 0;
+  output_buffers[0].last_time = NUM_SLOTS - 1;
+  output_buffers[1].first_time = 0;
+  output_buffers[1].last_time = NUM_SLOTS - 1;
+  platform_buffer_swap();
 }
 
 volatile int interrupt_disables = 0;

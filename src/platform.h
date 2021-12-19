@@ -53,19 +53,15 @@ void platform_reset_into_bootloader();
 void set_test_trigger_rpm(uint32_t rpm);
 uint32_t get_test_trigger_rpm();
 
-struct output_buffer {
-  void *buf;            /* Platform-specific pointer */
-  timeval_t first_time; /* First time represented by the range */
-  timeval_t last_time;  /*Last time (inclusive) represented by the range */
-};
-
-
 /* Returns the earliest time that may still be scheduled.  This can only change
  * when buffers are swapped, so it is safe to use this value to schedule events
  * if interrupts are disabled */
-void platform_recycle_buffer(struct output_buffer *);
 timeval_t platform_output_earliest_schedulable_time();
-struct output_buffer *current_output_buffer();
+
+#ifdef BENCHMARK
+/* Explicitly perform a buffer swap */
+void benchmark_buffer_swap();
+#endif
 
 #ifdef UNITTEST
 #include <check.h>
