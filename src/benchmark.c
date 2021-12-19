@@ -102,6 +102,28 @@ static void do_sensor_single_therm() {
          (unsigned long long)cycles_to_ns(end - start));
 }
 
+void do_output_buffer_bench_one_ready() {
+  platform_load_config();
+
+  struct output_buffer *ob = current_output_buffer();
+  for (int i = 0; i < MAX_EVENTS; i++) {
+    config.events[i].start.state = SCHED_UNSCHEDULED;
+    config.events[i].stop.state = SCHED_UNSCHEDULED;
+  }
+
+  config.events[0].start.state = SCHED_SCHEDULED;
+  config.events[0].start.time = ob->first_time;
+  config.events[0].stop.state = SCHED_SCHEDULED;
+  config.events[0].stop.time = ob->first_time;
+
+  uint64_t start = cycle_count();
+  platform_recycle_buffer(ob);
+  uint64_t end = cycle_count();
+
+  printf("output_buffer_one_ready: %llu ns\r\n",
+         (unsigned long long)cycles_to_ns(end - start));
+}
+
 void do_output_buffer_bench_all_ready() {
   platform_load_config();
 
@@ -114,7 +136,7 @@ void do_output_buffer_bench_all_ready() {
   }
 
   uint64_t start = cycle_count();
-  scheduler_output_buffer_ready(ob);
+  platform_recycle_buffer(ob);
   uint64_t end = cycle_count();
 
   printf("output_buffer_ready: %llu ns\r\n",
@@ -133,7 +155,7 @@ void do_output_buffer_bench_all_fired() {
   }
 
   uint64_t start = cycle_count();
-  scheduler_output_buffer_fired(ob);
+  platform_recycle_buffer(ob);
   uint64_t end = cycle_count();
 
   printf("output_buffer_fired: %llu ns\r\n",
@@ -158,6 +180,7 @@ int main() {
     do_sensor_single_therm();
     do_output_buffer_bench_all_fired();
     do_output_buffer_bench_all_ready();
+    do_output_buffer_bench_one_ready();
   } while (1);
   return 0;
 }

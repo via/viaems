@@ -59,18 +59,11 @@ struct output_buffer {
   timeval_t last_time;  /*Last time (inclusive) represented by the range */
 };
 
-struct sched_entry;
-/* Disable an entry in a buffer that has been passed to
- * scheduler_output_buffer_fired */
-void platform_output_buffer_unset(struct output_buffer *b,
-                                  struct sched_entry *s);
-/* Enable an entry in a buffer that has been passed to
- * scheduler_output_buffer_ready */
-void platform_output_buffer_set(struct output_buffer *b, struct sched_entry *s);
 
 /* Returns the earliest time that may still be scheduled.  This can only change
  * when buffers are swapped, so it is safe to use this value to schedule events
  * if interrupts are disabled */
+void platform_recycle_buffer(struct output_buffer *);
 timeval_t platform_output_earliest_schedulable_time();
 struct output_buffer *current_output_buffer();
 

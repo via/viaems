@@ -260,11 +260,11 @@ static struct output_buffer output_buffers[2] = {
 };
 int current_buffer = 0;
 
-void platform_output_buffer_unset(struct output_buffer *b,
-                                  struct sched_entry *s) {
+static void platform_output_buffer_unset(struct output_buffer *b,
+                                  const struct sched_entry *s) {
   struct output_slot *slots = b->buf;
 
-  int pos = s->time - b->first_time;
+  size_t pos = s->time - b->first_time;
   if (s->val) {
     slots[pos].on &= ~(1 << s->pin);
   } else {
@@ -272,11 +272,11 @@ void platform_output_buffer_unset(struct output_buffer *b,
   }
 }
 
-void platform_output_buffer_set(struct output_buffer *b,
-                                struct sched_entry *s) {
+static void platform_output_buffer_set(struct output_buffer *b,
+                                const struct sched_entry *s) {
   struct output_slot *slots = b->buf;
 
-  int pos = s->time - b->first_time;
+  size_t pos = s->time - b->first_time;
   if (s->val) {
     slots[pos].on |= (1 << s->pin);
   } else {
@@ -1074,11 +1074,41 @@ struct output_buffer *current_output_buffer() {
   return &output_buffers[current_buffer];
 }
 
+void platform_recycle_buffer(struct output_buffer *buf) {
+  /* Retire all stop/stop events in the buffer that were submitted */
+  for (int i = 0; i < MAX_EVENTS; i++) {
+    struct output_event *oev = &config.events[i];
+    if (sched_entry_get_state(&oev->start) == SCHED_SUBMITTED &&
+        time_in_range(oev->start.time, buf->first_time, buf->last_time)) {
+      platform_output_buffer_unset(buf, &oev->start);
+      sched_entry_set_state(&oev->start, SCHED_FIRED);
+    }
+    if (sched_entry_get_state(&oev->stop) == SCHED_SUBMITTED &&
+        time_in_range(oev->stop.time, buf->first_time, buf->last_time)) {
+      platform_output_buffer_unset(buf, &oev->stop);
+      sched_entry_set_state(&oev->stop, SCHED_FIRED);
+    }
+  }
+
+  for (int i = 0; i < MAX_EVENTS; i++) {
+    struct output_event *oev = &config.events[i];
+    if (sched_entry_get_state(&oev->start) == SCHED_SCHEDULED &&
+        time_in_range(oev->start.time, buf->first_time, buf->last_time)) {
+      platform_output_buffer_set(buf, &oev->start);
+      sched_entry_set_state(&oev->start, SCHED_SUBMITTED);
+    }
+    if (sched_entry_get_state(&oev->stop) == SCHED_SCHEDULED &&
+        time_in_range(oev->stop.time, buf->first_time, buf->last_time)) {
+      platform_output_buffer_set(buf, &oev->stop);
+      sched_entry_set_state(&oev->stop, SCHED_SUBMITTED);
+    }
+  }
+}
+
 void dma2_stream1_isr(void) {
   if (dma_get_interrupt_flag(DMA2, DMA_STREAM1, DMA_TCIF)) {
     dma_clear_interrupt_flags(DMA2, DMA_STREAM1, DMA_TCIF);
-    int buffer_to_update = current_buffer;
-    scheduler_output_buffer_fired(&output_buffers[buffer_to_update]);
+    struct output_buffer *buf = &output_buffers[current_buffer];
 
     current_buffer = (current_buffer + 1) % 2;
     if (current_buffer != dma_get_target(DMA2, DMA_STREAM1)) {
@@ -1090,9 +1120,10 @@ void dma2_stream1_isr(void) {
     timeval_t time_since_buffer_start = curtime % NUM_SLOTS;
     timeval_t buffer_start = curtime - time_since_buffer_start + NUM_SLOTS;
 
-    output_buffers[buffer_to_update].first_time = buffer_start;
-    output_buffers[buffer_to_update].last_time = buffer_start + NUM_SLOTS - 1;
-    scheduler_output_buffer_ready(&output_buffers[buffer_to_update]);
+    platform_recycle_buffer(buf);
+
+    buf->first_time = buffer_start;
+    buf->last_time = buffer_start + NUM_SLOTS - 1;
   }
 }
 
