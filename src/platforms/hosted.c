@@ -274,63 +274,80 @@ void *platform_interrupt_thread(void *_interrupt_fd) {
 }
 
 #define MAX_SLOTS 128
-struct slot {
-  uint16_t on_mask;
-  uint16_t off_mask;
-} current_slots[MAX_SLOTS], next_slots[MAX_SLOTS];
+static struct sched_entry output_events[64];
+static size_t num_output_events = 0;
+static size_t next_output_event = 0;
 
-void platform_output_buffer_set(struct output_buffer *buf,
-                                struct sched_entry *s) {
-  struct slot *slots = (struct slot *)buf->buf;
+static void clear_output_events() {
+  num_output_events = 0;
+  next_output_event = 0;
+}
 
-  assert(time_in_range(s->time, buf->first_time, buf->last_time));
-  uint32_t pos = s->time - buf->first_time;
-  if (s->val) {
-    slots[pos].on_mask |= (1 << s->pin);
-  } else {
-    slots[pos].off_mask |= (1 << s->pin);
+static void add_output_event(struct sched_entry *se) {
+  output_events[num_output_events] = *se;
+  num_output_events++;
+}
+
+static int output_event_compare(const void *_a, const void *_b) {
+  const struct sched_entry *a = _a;
+  const struct sched_entry *b = _b;
+
+  if (a->time == b->time) {
+    return 0;
   }
+  return time_before(a->time, b->time) ? -1 : 1;
 }
 
-void platform_output_buffer_unset(struct output_buffer *buf,
-                                  struct sched_entry *s) {
-  (void)buf;
-  (void)s;
-}
+void platform_buffer_swap() {
 
-struct output_buffer current_buffer;
-struct output_buffer next_buffer;
+  clear_output_events();
+  for (int i = 0; i < MAX_EVENTS; i++) {
+    struct output_event *oev = &config.events[i];
+    if (sched_entry_get_state(&oev->start) == SCHED_SUBMITTED) {
+      sched_entry_set_state(&oev->start, SCHED_FIRED);
+    }
+    if (sched_entry_get_state(&oev->stop) == SCHED_SUBMITTED) {
+      sched_entry_set_state(&oev->stop, SCHED_FIRED);
+    }
+    if (sched_entry_get_state(&oev->start) == SCHED_SCHEDULED &&
+        time_in_range(oev->start.time, current_time(), current_time() + MAX_SLOTS - 1)) {
+      add_output_event(&oev->start);
+      sched_entry_set_state(&oev->start, SCHED_SUBMITTED);
+    }
+    if (sched_entry_get_state(&oev->stop) == SCHED_SCHEDULED &&
+        time_in_range(oev->stop.time, current_time(), current_time() + MAX_SLOTS - 1)) {
+      add_output_event(&oev->stop);
+      sched_entry_set_state(&oev->stop, SCHED_SUBMITTED);
+    }
+  }
+  qsort(output_events, num_output_events, sizeof(struct sched_entry),
+      output_event_compare);
+}
 
 timeval_t platform_output_earliest_schedulable_time() {
-  return next_buffer.first_time;
+  /* Round down to nearest MAX_SLOTS and then go to next window */
+  return current_time() / MAX_SLOTS * MAX_SLOTS + MAX_SLOTS;
 }
 
 static void do_output_slots() {
   /* Only take action on first slot time */
   if (curtime % MAX_SLOTS == 0) {
-    memcpy(current_slots, next_slots, sizeof(current_slots));
-    memset(next_slots, 0, sizeof(next_slots));
-    scheduler_output_buffer_fired(&current_buffer);
-    current_buffer = (struct output_buffer){
-      .first_time = curtime,
-      .last_time = curtime + MAX_SLOTS - 1,
-      .buf = current_slots,
-    };
-    next_buffer = (struct output_buffer){
-      .first_time = curtime + MAX_SLOTS,
-      .last_time = curtime + MAX_SLOTS + MAX_SLOTS - 1,
-      .buf = next_slots,
-    };
-
-    scheduler_output_buffer_ready(&next_buffer);
+    platform_buffer_swap();
   }
 
-  uint32_t pos = curtime - current_buffer.first_time;
   uint16_t old_outputs = cur_outputs;
-  cur_outputs |= current_slots[pos].on_mask;
-  cur_outputs &= ~current_slots[pos].off_mask;
 
-  if (cur_outputs != old_outputs) {
+  while ((next_output_event < num_output_events) && 
+      (output_events[next_output_event].time == current_time())) {
+    struct sched_entry s = output_events[next_output_event];
+    next_output_event++;
+    if (s.val) {
+      cur_outputs |= (1 << s.pin);
+    } else  {
+      cur_outputs &= ~(1 << s.pin);
+    }
+  }
+  if (old_outputs != cur_outputs) {
     char output[64];
     sprintf(output, "# OUTPUTS %lu %2x\n", (long unsigned)curtime, cur_outputs);
     write(STDERR_FILENO, output, strlen(output));
@@ -339,7 +356,6 @@ static void do_output_slots() {
       .value = cur_outputs,
       .type = EVENT_OUTPUT,
     });
-    old_outputs = cur_outputs;
   }
 }
 
