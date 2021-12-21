@@ -59,8 +59,14 @@ uint32_t get_test_trigger_rpm();
 timeval_t platform_output_earliest_schedulable_time();
 
 #ifdef BENCHMARK
-/* Explicitly perform a buffer swap */
-void benchmark_buffer_swap();
+/* Explicitly perform a buffer swap, generally only used internally by the
+ * platform, but exposed for benchmarking purposes */
+void platform_buffer_swap();
+/* Set initial conditions for benchmarking output buffers. This means the
+ * currently retired time range starts at 0, and the next time range to prepare
+ * starts at N, returns N 
+ */
+timeval_t benchmark_init_output_buffers();
 #endif
 
 #ifdef UNITTEST

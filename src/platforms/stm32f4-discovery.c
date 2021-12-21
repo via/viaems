@@ -1110,39 +1110,43 @@ static void populate_output_buffer(struct output_buffer *buf) {
   }
 }
 
-static void platform_buffer_swap() {
-  struct output_buffer *buf = &output_buffers[current_buffer];
-
-  current_buffer = (current_buffer + 1) % 2;
-  if (current_buffer != dma_get_target(DMA2, DMA_STREAM1)) {
-    /* We have overflowed or gone out of sync, abort immediately */
-    abort();
-  }
-
+static timeval_t start_time_of_current_buffer() {
   timeval_t curtime = current_time();
   timeval_t time_since_buffer_start = curtime % NUM_SLOTS;
-  timeval_t buffer_start = curtime - time_since_buffer_start + NUM_SLOTS;
+  return time_since_buffer_start;
+}
+
+void platform_buffer_swap() {
+  struct output_buffer *buf = &output_buffers[current_buffer];
+  current_buffer = (current_buffer + 1) % 2;
 
   retire_output_buffer(buf);
-  buf->first_time = buffer_start;
-  buf->last_time = buffer_start + NUM_SLOTS - 1;
+
+  buf->first_time = start_time_of_current_buffer() + NUM_SLOTS;
+  buf->last_time = buf->first_time + NUM_SLOTS - 1;
+
   populate_output_buffer(buf);
+}
+
+timeval_t benchmark_init_output_buffers() {
+  current_buffer = 0;
+  output_buffers[0].first_time = 0;
+  output_buffers[0].last_time = NUM_SLOTS - 1;
+  output_buffers[1].first_time = NUM_SLOTS;
+  output_buffers[1].last_time = NUM_SLOTS * 2 - 1;
+  return start_time_of_current_buffer() + NUM_SLOTS;
 }
 
 void dma2_stream1_isr(void) {
   if (dma_get_interrupt_flag(DMA2, DMA_STREAM1, DMA_TCIF)) {
     dma_clear_interrupt_flags(DMA2, DMA_STREAM1, DMA_TCIF);
     platform_buffer_swap();
-  }
-}
 
-void benchmark_buffer_swap() {
-  current_buffer = 1;
-  output_buffers[0].first_time = 0;
-  output_buffers[0].last_time = NUM_SLOTS - 1;
-  output_buffers[1].first_time = 0;
-  output_buffers[1].last_time = NUM_SLOTS - 1;
-  platform_buffer_swap();
+    if (current_buffer != dma_get_target(DMA2, DMA_STREAM1)) {
+      /* We have overflowed or gone out of sync, abort immediately */
+      abort();
+    }
+  }
 }
 
 volatile int interrupt_disables = 0;
