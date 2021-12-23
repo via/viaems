@@ -1113,7 +1113,7 @@ static void populate_output_buffer(struct output_buffer *buf) {
 static timeval_t start_time_of_current_buffer() {
   timeval_t curtime = current_time();
   timeval_t time_since_buffer_start = curtime % NUM_SLOTS;
-  return time_since_buffer_start;
+  return curtime - time_since_buffer_start;
 }
 
 void platform_buffer_swap() {
