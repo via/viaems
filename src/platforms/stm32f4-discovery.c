@@ -78,6 +78,9 @@
  *    systick 128
  */
 
+uint32_t max_interrupt_time = 0;
+uint32_t min_interrupt_time = 50000;
+
 static int capture_edge_from_config(trigger_edge e) {
   switch (e) {
   case RISING_EDGE:
@@ -249,8 +252,8 @@ void set_pwm(int output, float percent) {
 
 #define NUM_SLOTS 128
 struct output_slot {
-  volatile uint16_t on;
-  volatile uint16_t off;
+  uint16_t on;
+  uint16_t off;
 } __attribute__((packed)) __attribute((aligned(4)));
 
 struct output_buffer {
@@ -262,23 +265,21 @@ struct output_buffer {
 static struct output_buffer output_buffers[2] = { 0 };
 static int current_buffer = 0;
 
-static void platform_output_buffer_unset(struct output_buffer *b,
-                                  const struct sched_entry *s) {
-  size_t pos = s->time - b->first_time;
-  if (s->val) {
-    b->slots[pos].on &= ~(1 << s->pin);
+static void platform_output_slot_unset(struct output_slot *slots,
+                                  uint32_t index, uint32_t pin, bool value) {
+  if (value) {
+    slots[index].on &= ~(1 << pin);
   } else {
-    b->slots[pos].off &= ~(1 << s->pin);
+    slots[index].off &= ~(1 << pin);
   }
 }
 
-static void platform_output_buffer_set(struct output_buffer *b,
-                                const struct sched_entry *s) {
-  size_t pos = s->time - b->first_time;
-  if (s->val) {
-    b->slots[pos].on |= (1 << s->pin);
+static void platform_output_slot_set(struct output_slot *slots, uint32_t index,
+                                     uint32_t pin, bool value) {
+  if (value) {
+    slots[index].on |= (1 << pin);
   } else {
-    b->slots[pos].off |= (1 << s->pin);
+    slots[index].off |= (1 << pin);
   }
 }
 
@@ -1076,16 +1077,19 @@ struct output_buffer *current_output_buffer() {
  * buffer and were previously submitted by setting them to "fired" and clearing
  * out the dma bits */
 static void retire_output_buffer(struct output_buffer *buf) {
+  timeval_t offset_from_now;
   for (int i = 0; i < MAX_EVENTS; i++) {
     struct output_event *oev = &config.events[i];
-    if (sched_entry_get_state(&oev->start) == SCHED_SUBMITTED &&
-        time_in_range(oev->start.time, buf->first_time, buf->last_time)) {
-      platform_output_buffer_unset(buf, &oev->start);
+
+    offset_from_now = oev->start.time - buf->first_time;
+    if (sched_entry_get_state(&oev->start) == SCHED_SUBMITTED && offset_from_now < NUM_SLOTS) {
+      platform_output_slot_unset(buf->slots, offset_from_now, oev->start.pin, oev->start.val);
       sched_entry_set_state(&oev->start, SCHED_FIRED);
     }
-    if (sched_entry_get_state(&oev->stop) == SCHED_SUBMITTED &&
-        time_in_range(oev->stop.time, buf->first_time, buf->last_time)) {
-      platform_output_buffer_unset(buf, &oev->stop);
+
+    offset_from_now = oev->stop.time - buf->first_time;
+    if (sched_entry_get_state(&oev->stop) == SCHED_SUBMITTED && offset_from_now < NUM_SLOTS) {
+      platform_output_slot_unset(buf->slots, offset_from_now, oev->stop.pin, oev->stop.val);
       sched_entry_set_state(&oev->stop, SCHED_FIRED);
     }
   }
@@ -1094,17 +1098,17 @@ static void retire_output_buffer(struct output_buffer *buf) {
 /* Any scheduled start/stop event in the time range for the new * buffer can be
  * "submitted" and the dma bits set */
 static void populate_output_buffer(struct output_buffer *buf) {
-
+  timeval_t offset_from_now;
   for (int i = 0; i < MAX_EVENTS; i++) {
     struct output_event *oev = &config.events[i];
-    if (sched_entry_get_state(&oev->start) == SCHED_SCHEDULED &&
-        time_in_range(oev->start.time, buf->first_time, buf->last_time)) {
-      platform_output_buffer_set(buf, &oev->start);
+    offset_from_now = oev->start.time - buf->first_time;
+    if (sched_entry_get_state(&oev->start) == SCHED_SCHEDULED && offset_from_now < NUM_SLOTS) {
+      platform_output_slot_set(buf->slots, offset_from_now, oev->start.pin, oev->start.val);
       sched_entry_set_state(&oev->start, SCHED_SUBMITTED);
     }
-    if (sched_entry_get_state(&oev->stop) == SCHED_SCHEDULED &&
-        time_in_range(oev->stop.time, buf->first_time, buf->last_time)) {
-      platform_output_buffer_set(buf, &oev->stop);
+    offset_from_now = oev->stop.time - buf->first_time;
+    if (sched_entry_get_state(&oev->stop) == SCHED_SCHEDULED && offset_from_now < NUM_SLOTS) {
+      platform_output_slot_set(buf->slots, offset_from_now, oev->stop.pin, oev->stop.val);
       sched_entry_set_state(&oev->stop, SCHED_SUBMITTED);
     }
   }
@@ -1116,7 +1120,7 @@ static timeval_t start_time_of_current_buffer() {
   return curtime - time_since_buffer_start;
 }
 
-void platform_buffer_swap() {
+static void platform_buffer_swap() {
   struct output_buffer *buf = &output_buffers[current_buffer];
   current_buffer = (current_buffer + 1) % 2;
 
@@ -1138,6 +1142,7 @@ timeval_t benchmark_init_output_buffers() {
 }
 
 void dma2_stream1_isr(void) {
+  uint64_t before = cycle_count();
   if (dma_get_interrupt_flag(DMA2, DMA_STREAM1, DMA_TCIF)) {
     dma_clear_interrupt_flags(DMA2, DMA_STREAM1, DMA_TCIF);
     platform_buffer_swap();
@@ -1146,6 +1151,14 @@ void dma2_stream1_isr(void) {
       /* We have overflowed or gone out of sync, abort immediately */
       abort();
     }
+  }
+  uint64_t after = cycle_count();
+  uint32_t time = cycles_to_ns(after - before);
+  if (time > max_interrupt_time) {
+    max_interrupt_time = time;
+  }
+  if (time < min_interrupt_time) {
+    min_interrupt_time = time;
   }
 }
 

@@ -137,7 +137,7 @@ static int schedule_ignition_event(struct output_event *ev,
                                    degrees_t advance,
                                    unsigned int usecs_dwell) {
 
-  (void)usecs_dwell;
+  usecs_dwell = 1;
   timeval_t stop_time;
   timeval_t start_time;
   degrees_t firing_angle;
