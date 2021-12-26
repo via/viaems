@@ -13,7 +13,7 @@ static int fuel_overduty() {
   return time_from_us(calculated_values.fueling_us) >= max_pw;
 }
 
-static int rpm_limit() {
+static bool rpm_exceeds_limit() {
   if (config.decoder.rpm >= config.rpm_stop) {
     calculated_values.rpm_limit_cut = 1;
   }
@@ -23,13 +23,13 @@ static int rpm_limit() {
   return calculated_values.rpm_limit_cut;
 }
 
-int boost_cut() {
+static bool overboost() {
   return (config.sensors[SENSOR_MAP].processed_value >
           config.boost_control.overboost);
 }
 
 bool ignition_cut() {
-  return rpm_limit() || fuel_overduty() || boost_cut();
+  return rpm_exceeds_limit() || fuel_overduty() || overboost();
 }
 
 bool fuel_cut() {

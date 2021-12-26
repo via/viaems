@@ -53,14 +53,13 @@ struct output_event {
   struct timed_callback callback;
 };
 
-void schedule_event(struct output_event *ev);
-void deschedule_event(struct output_event *);
+void schedule_events();
+void invalidate_scheduled_events();
 
 int schedule_callback(struct timed_callback *tcb, timeval_t time);
 
 void scheduler_callback_timer_execute();
 void initialize_scheduler();
-void invalidate_scheduled_events(struct output_event *, int);
 
 #ifdef UNITTEST
 #include <check.h>

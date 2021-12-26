@@ -251,13 +251,13 @@ void decoder_update_scheduling(struct decoder_event *events,
     config.decoder.decode(&config.decoder);
   }
 
-  if (config.decoder.valid) {
+  if (!config.decoder.valid) {
+    invalidate_scheduled_events();
+  } else {
     calculate_ignition();
     calculate_fueling();
     stats_start_timing(STATS_SCHED_TOTAL_TIME);
-    for (unsigned int e = 0; e < MAX_EVENTS; ++e) {
-      schedule_event(&config.events[e]);
-    }
+    schedule_events();
     stats_finish_timing(STATS_SCHED_TOTAL_TIME);
   }
   stats_finish_timing(STATS_SCHEDULE_LATENCY);

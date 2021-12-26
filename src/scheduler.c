@@ -24,13 +24,13 @@ static bool event_is_unscheduled(struct output_event *ev) {
          (ev->stop.state == SCHED_UNSCHEDULED);
 }
 
+
 /* Disables a scheduled entry if it is possible.
  * Returns true for success if it was an entry that was still changable, and
  * false if the entry has already been submitted or fired */
 static bool sched_entry_disable(struct sched_entry *en) {
-
   assert(!interrupts_enabled());
-  assert(en->state != SCHED_UNSCHEDULED);
+
   if (en->state != SCHED_SCHEDULED) {
     return false;
   }
@@ -45,8 +45,8 @@ static bool sched_entry_disable(struct sched_entry *en) {
  * Returns true if the entry is settable and if the specified time is feasible
  * to schedule */
 static bool sched_entry_enable(struct sched_entry *en, timeval_t time) {
-
   assert(!interrupts_enabled());
+
   if ((en->state == SCHED_SUBMITTED) || (en->state == SCHED_FIRED)) {
     return false;
   }
@@ -64,13 +64,14 @@ static bool sched_entry_enable(struct sched_entry *en, timeval_t time) {
 static void reset_fired_event(struct output_event *ev) {
   assert(ev->start.state == SCHED_FIRED);
   assert(ev->stop.state == SCHED_FIRED);
+
   ev->start.state = SCHED_UNSCHEDULED;
   ev->stop.state = SCHED_UNSCHEDULED;
 }
 
 /* Attempt to deschedule an output event. If the start event can't be disabled,
  * do nothing. */
-void deschedule_event(struct output_event *ev) {
+static void deschedule_event(struct output_event *ev) {
   disable_interrupts();
 
   int success = sched_entry_disable(&ev->start);
@@ -80,19 +81,10 @@ void deschedule_event(struct output_event *ev) {
   enable_interrupts();
 }
 
-void invalidate_scheduled_events(struct output_event *evs, int n) {
-  for (int i = 0; i < n; ++i) {
-    if (evs[i].start.state == SCHED_UNSCHEDULED) {
-      continue;
-    }
-    switch (evs[i].type) {
-    case IGNITION_EVENT:
-    case FUEL_EVENT:
-      deschedule_event(&evs[i]);
-      break;
-    default:
-      break;
-    }
+void invalidate_scheduled_events() {
+  for (int i = 0; i < MAX_EVENTS; i++) {
+    struct output_event *ev = &config.events[i];
+    deschedule_event(ev);
   }
 }
 /* Schedules an output event in a hazard-free manner, assuming
@@ -137,7 +129,6 @@ static int schedule_ignition_event(struct output_event *ev,
                                    degrees_t advance,
                                    unsigned int usecs_dwell) {
 
-  usecs_dwell = 1;
   timeval_t stop_time;
   timeval_t start_time;
   degrees_t firing_angle;
@@ -224,42 +215,35 @@ static int schedule_fuel_event(struct output_event *ev,
 
   schedule_output_event_safely(ev, start_time, stop_time);
 
-  /* If the stop event is scheduled, we know we just successfully set a new stop
-   * time for the event, lets also schedule a callback to reschedule it when it
-   * fires immediately.  This allows fuel events to use close to 100% duty cycle
-   * without having to wait until the next trigger for rescheduling */
-  if (ev->stop.state == SCHED_SCHEDULED) {
-    ev->callback.callback = (void (*)(void *))schedule_event;
-    ev->callback.data = ev;
-    schedule_callback(&ev->callback, ev->stop.time);
-  }
-
   return 1;
 }
 
-void schedule_event(struct output_event *ev) {
-  switch (ev->type) {
-  case IGNITION_EVENT:
-    if (ignition_cut() || !config.decoder.valid) {
-      invalidate_scheduled_events(config.events, MAX_EVENTS);
-      return;
-    }
-    schedule_ignition_event(ev,
-                            &config.decoder,
-                            (degrees_t)calculated_values.timing_advance,
-                            calculated_values.dwell_us);
-    break;
+void schedule_events() {
+  for (unsigned int e = 0; e < MAX_EVENTS; ++e) {
+    struct output_event *ev = &config.events[e];
+    switch (ev->type) {
+      case IGNITION_EVENT:
+        if (ignition_cut()) {
+          deschedule_event(ev);
+        } else  {
+          schedule_ignition_event(ev,
+              &config.decoder,
+              (degrees_t)calculated_values.timing_advance,
+              calculated_values.dwell_us);
+        }
+        break;
+          
+      case FUEL_EVENT:
+        if (fuel_cut()) {
+          deschedule_event(ev);
+        } else {
+          schedule_fuel_event(ev, &config.decoder, calculated_values.fueling_us);
+        }
+        break;
 
-  case FUEL_EVENT:
-    if (fuel_cut() || !config.decoder.valid) {
-      invalidate_scheduled_events(config.events, MAX_EVENTS);
-      return;
+      default:
+        break;
     }
-    schedule_fuel_event(ev, &config.decoder, calculated_values.fueling_us);
-    break;
-
-  default:
-    break;
   }
 }
 
