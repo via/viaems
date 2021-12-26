@@ -287,7 +287,7 @@ static void callback_insert(struct timed_callback *tcb) {
   tcb->scheduled = 1;
 }
 
-int schedule_callback(struct timed_callback *tcb, timeval_t time) {
+bool schedule_callback(struct timed_callback *tcb, timeval_t time) {
 
   disable_interrupts();
   if (tcb->scheduled) {
@@ -324,10 +324,6 @@ void scheduler_callback_timer_execute() {
       set_event_timer(callbacks[0]->time);
     }
   }
-}
-
-void initialize_scheduler() {
-  n_callbacks = 0;
 }
 
 #ifdef UNITTEST

@@ -42,6 +42,24 @@ struct timed_callback {
   bool scheduled;
 };
 
+struct fuel_output {
+  degrees_t angle;
+  uint32_t pin;
+
+  struct sched_entry start;
+  struct sched_entry stop;
+  struct timed_callback reschedule_callback;
+};
+
+struct ignition_output {
+  degrees_t angle;
+  uint32_t pin;
+  bool inverted;
+
+  struct sched_entry start;
+  struct sched_entry stop;
+}
+
 struct output_event {
   event_type_t type;
   degrees_t angle;
@@ -53,13 +71,12 @@ struct output_event {
   struct timed_callback callback;
 };
 
-void schedule_events();
-void invalidate_scheduled_events();
+bool schedule_output_event(struct output_event *ev);
+void deschedule_output_event(struct output_event *ev);
 
-int schedule_callback(struct timed_callback *tcb, timeval_t time);
+bool schedule_callback(struct timed_callback *tcb, timeval_t time);
 
 void scheduler_callback_timer_execute();
-void initialize_scheduler();
 
 #ifdef UNITTEST
 #include <check.h>
