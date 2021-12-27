@@ -274,7 +274,12 @@ void *platform_interrupt_thread(void *_interrupt_fd) {
 }
 
 #define MAX_SLOTS 128
-static struct sched_entry output_events[64];
+struct output_change {
+  int value;
+  int pin;
+  timeval_t time;
+};
+static struct output_change output_events[64];
 static size_t num_output_events = 0;
 static size_t next_output_event = 0;
 
@@ -283,14 +288,14 @@ static void clear_output_events() {
   next_output_event = 0;
 }
 
-static void add_output_event(struct sched_entry *se) {
-  output_events[num_output_events] = *se;
+static void add_output_event(struct output_change oc) {
+  output_events[num_output_events] = oc;
   num_output_events++;
 }
 
 static int output_event_compare(const void *_a, const void *_b) {
-  const struct sched_entry *a = _a;
-  const struct sched_entry *b = _b;
+  const struct output_change *a = _a;
+  const struct output_change *b = _b;
 
   if (a->time == b->time) {
     return 0;
@@ -311,12 +316,12 @@ void platform_buffer_swap() {
     }
     if (sched_entry_get_state(&oev->start) == SCHED_SCHEDULED &&
         time_in_range(oev->start.time, current_time(), current_time() + MAX_SLOTS - 1)) {
-      add_output_event(&oev->start);
+      add_output_event((struct output_change){.time = oev->start.time, .value = oev->start.val, .pin = oev->pin});
       sched_entry_set_state(&oev->start, SCHED_SUBMITTED);
     }
     if (sched_entry_get_state(&oev->stop) == SCHED_SCHEDULED &&
         time_in_range(oev->stop.time, current_time(), current_time() + MAX_SLOTS - 1)) {
-      add_output_event(&oev->stop);
+      add_output_event((struct output_change){.time = oev->stop.time, .value = oev->stop.val, .pin = oev->pin});
       sched_entry_set_state(&oev->stop, SCHED_SUBMITTED);
     }
   }
@@ -329,6 +334,7 @@ timeval_t platform_output_earliest_schedulable_time() {
   return current_time() / MAX_SLOTS * MAX_SLOTS + MAX_SLOTS;
 }
 
+int max_interrupt_time, min_interrupt_time;
 static void do_output_slots() {
   /* Only take action on first slot time */
   if (curtime % MAX_SLOTS == 0) {
@@ -339,9 +345,9 @@ static void do_output_slots() {
 
   while ((next_output_event < num_output_events) && 
       (output_events[next_output_event].time == current_time())) {
-    struct sched_entry s = output_events[next_output_event];
+    struct output_change s = output_events[next_output_event];
     next_output_event++;
-    if (s.val) {
+    if (s.value) {
       cur_outputs |= (1 << s.pin);
     } else  {
       cur_outputs &= ~(1 << s.pin);
