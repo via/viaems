@@ -11,7 +11,6 @@
 #include <assert.h>
 #include <stdio.h>
 
-
 int main() {
   platform_load_config();
   decoder_init(&config.decoder);

@@ -24,7 +24,6 @@ static bool event_is_unscheduled(struct output_event *ev) {
          (ev->stop.state == SCHED_UNSCHEDULED);
 }
 
-
 /* Disables a scheduled entry if it is possible.
  * Returns true for success if it was an entry that was still changable, and
  * false if the entry has already been submitted or fired */
@@ -123,9 +122,9 @@ static void schedule_output_event_safely(struct output_event *ev,
 }
 
 static bool schedule_ignition_event(struct output_event *ev,
-                                   struct decoder *d,
-                                   degrees_t advance,
-                                   unsigned int usecs_dwell) {
+                                    struct decoder *d,
+                                    degrees_t advance,
+                                    unsigned int usecs_dwell) {
 
   timeval_t stop_time;
   timeval_t start_time;
@@ -174,8 +173,8 @@ static bool schedule_ignition_event(struct output_event *ev,
 }
 
 static bool schedule_fuel_event(struct output_event *ev,
-                               struct decoder *d,
-                               unsigned int usecs_pw) {
+                                struct decoder *d,
+                                unsigned int usecs_pw) {
 
   timeval_t stop_time;
   timeval_t start_time;
@@ -221,16 +220,17 @@ static bool schedule_fuel_event(struct output_event *ev,
 
 bool schedule_output_event(struct output_event *ev) {
   switch (ev->type) {
-    case IGNITION_EVENT:
-      return schedule_ignition_event(ev,
-          &config.decoder,
-          (degrees_t)calculated_values.timing_advance,
-          calculated_values.dwell_us);
-    case FUEL_EVENT:
-      return schedule_fuel_event(ev, &config.decoder, calculated_values.fueling_us);
+  case IGNITION_EVENT:
+    return schedule_ignition_event(ev,
+                                   &config.decoder,
+                                   (degrees_t)calculated_values.timing_advance,
+                                   calculated_values.dwell_us);
+  case FUEL_EVENT:
+    return schedule_fuel_event(
+      ev, &config.decoder, calculated_values.fueling_us);
 
-    default:
-      return false;
+  default:
+    return false;
   }
 }
 

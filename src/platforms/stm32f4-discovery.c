@@ -266,7 +266,9 @@ static struct output_buffer output_buffers[2] = { 0 };
 static int current_buffer = 0;
 
 static void platform_output_slot_unset(struct output_slot *slots,
-                                  uint32_t index, uint32_t pin, bool value) {
+                                       uint32_t index,
+                                       uint32_t pin,
+                                       bool value) {
   if (value) {
     slots[index].on &= ~(1 << pin);
   } else {
@@ -274,8 +276,10 @@ static void platform_output_slot_unset(struct output_slot *slots,
   }
 }
 
-static void platform_output_slot_set(struct output_slot *slots, uint32_t index,
-                                     uint32_t pin, bool value) {
+static void platform_output_slot_set(struct output_slot *slots,
+                                     uint32_t index,
+                                     uint32_t pin,
+                                     bool value) {
   if (value) {
     slots[index].on |= (1 << pin);
   } else {
@@ -312,7 +316,8 @@ static void platform_init_scheduled_outputs() {
   dma_enable_circular_mode(DMA2, DMA_STREAM1);
   dma_set_peripheral_address(DMA2, DMA_STREAM1, (uint32_t)&GPIOD_BSRR);
   dma_set_memory_address(DMA2, DMA_STREAM1, (uint32_t)output_buffers[0].slots);
-  dma_set_memory_address_1(DMA2, DMA_STREAM1, (uint32_t)output_buffers[1].slots);
+  dma_set_memory_address_1(
+    DMA2, DMA_STREAM1, (uint32_t)output_buffers[1].slots);
   dma_set_number_of_data(DMA2, DMA_STREAM1, NUM_SLOTS);
   dma_channel_select(DMA2, DMA_STREAM1, DMA_SxCR_CHSEL_7);
   dma_enable_direct_mode(DMA2, DMA_STREAM1);
@@ -1082,14 +1087,18 @@ static void retire_output_buffer(struct output_buffer *buf) {
     struct output_event *oev = &config.events[i];
 
     offset_from_now = oev->start.time - buf->first_time;
-    if (sched_entry_get_state(&oev->start) == SCHED_SUBMITTED && offset_from_now < NUM_SLOTS) {
-      platform_output_slot_unset(buf->slots, offset_from_now, oev->pin, oev->start.val);
+    if (sched_entry_get_state(&oev->start) == SCHED_SUBMITTED &&
+        offset_from_now < NUM_SLOTS) {
+      platform_output_slot_unset(
+        buf->slots, offset_from_now, oev->pin, oev->start.val);
       sched_entry_set_state(&oev->start, SCHED_FIRED);
     }
 
     offset_from_now = oev->stop.time - buf->first_time;
-    if (sched_entry_get_state(&oev->stop) == SCHED_SUBMITTED && offset_from_now < NUM_SLOTS) {
-      platform_output_slot_unset(buf->slots, offset_from_now, oev->pin, oev->stop.val);
+    if (sched_entry_get_state(&oev->stop) == SCHED_SUBMITTED &&
+        offset_from_now < NUM_SLOTS) {
+      platform_output_slot_unset(
+        buf->slots, offset_from_now, oev->pin, oev->stop.val);
       sched_entry_set_state(&oev->stop, SCHED_FIRED);
     }
   }
@@ -1102,13 +1111,17 @@ static void populate_output_buffer(struct output_buffer *buf) {
   for (int i = 0; i < MAX_EVENTS; i++) {
     struct output_event *oev = &config.events[i];
     offset_from_now = oev->start.time - buf->first_time;
-    if (sched_entry_get_state(&oev->start) == SCHED_SCHEDULED && offset_from_now < NUM_SLOTS) {
-      platform_output_slot_set(buf->slots, offset_from_now, oev->pin, oev->start.val);
+    if (sched_entry_get_state(&oev->start) == SCHED_SCHEDULED &&
+        offset_from_now < NUM_SLOTS) {
+      platform_output_slot_set(
+        buf->slots, offset_from_now, oev->pin, oev->start.val);
       sched_entry_set_state(&oev->start, SCHED_SUBMITTED);
     }
     offset_from_now = oev->stop.time - buf->first_time;
-    if (sched_entry_get_state(&oev->stop) == SCHED_SCHEDULED && offset_from_now < NUM_SLOTS) {
-      platform_output_slot_set(buf->slots, offset_from_now, oev->pin, oev->stop.val);
+    if (sched_entry_get_state(&oev->stop) == SCHED_SCHEDULED &&
+        offset_from_now < NUM_SLOTS) {
+      platform_output_slot_set(
+        buf->slots, offset_from_now, oev->pin, oev->stop.val);
       sched_entry_set_state(&oev->stop, SCHED_SUBMITTED);
     }
   }
@@ -1302,7 +1315,7 @@ _write(int fd, const char *buf, size_t count) {
   return count;
 }
 
-void __attribute__((externally_visible)) _exit(int status)  {
+void __attribute__((externally_visible)) _exit(int status) {
   (void)status;
 
   handle_emergency_shutdown();

@@ -260,7 +260,6 @@ void decoder_update_scheduling(struct decoder_event *events,
   schedule_outputs();
 }
 
-
 degrees_t current_angle() {
   if (!config.decoder.rpm) {
     return config.decoder.last_trigger_angle;

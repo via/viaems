@@ -26,8 +26,8 @@ extern uint32_t min_interrupt_time;
 
 const struct console_feed_node console_feed_nodes[] = {
   { .id = "cputime", .uint32_fptr = current_time },
-  { .id = "itime", .uint32_ptr = &max_interrupt_time},
-  { .id = "dtime", .uint32_ptr = &min_interrupt_time},
+  { .id = "itime", .uint32_ptr = &max_interrupt_time },
+  { .id = "dtime", .uint32_ptr = &min_interrupt_time },
 
   /* Fueling */
   { .id = "ve", .float_ptr = &calculated_values.ve },
@@ -36,7 +36,6 @@ const struct console_feed_node console_feed_nodes[] = {
   { .id = "temp_enrich_percent", .float_ptr = &calculated_values.ete },
   { .id = "injector_dead_time", .float_ptr = &calculated_values.idt },
   { .id = "accel_enrich_percent", .float_ptr = &calculated_values.tipin },
-
 
   /* Ignition */
   { .id = "advance", .float_ptr = &calculated_values.timing_advance },

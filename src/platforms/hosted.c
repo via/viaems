@@ -315,18 +315,24 @@ void platform_buffer_swap() {
       sched_entry_set_state(&oev->stop, SCHED_FIRED);
     }
     if (sched_entry_get_state(&oev->start) == SCHED_SCHEDULED &&
-        time_in_range(oev->start.time, current_time(), current_time() + MAX_SLOTS - 1)) {
-      add_output_event((struct output_change){.time = oev->start.time, .value = oev->start.val, .pin = oev->pin});
+        time_in_range(
+          oev->start.time, current_time(), current_time() + MAX_SLOTS - 1)) {
+      add_output_event((struct output_change){
+        .time = oev->start.time, .value = oev->start.val, .pin = oev->pin });
       sched_entry_set_state(&oev->start, SCHED_SUBMITTED);
     }
     if (sched_entry_get_state(&oev->stop) == SCHED_SCHEDULED &&
-        time_in_range(oev->stop.time, current_time(), current_time() + MAX_SLOTS - 1)) {
-      add_output_event((struct output_change){.time = oev->stop.time, .value = oev->stop.val, .pin = oev->pin});
+        time_in_range(
+          oev->stop.time, current_time(), current_time() + MAX_SLOTS - 1)) {
+      add_output_event((struct output_change){
+        .time = oev->stop.time, .value = oev->stop.val, .pin = oev->pin });
       sched_entry_set_state(&oev->stop, SCHED_SUBMITTED);
     }
   }
-  qsort(output_events, num_output_events, sizeof(struct sched_entry),
-      output_event_compare);
+  qsort(output_events,
+        num_output_events,
+        sizeof(struct sched_entry),
+        output_event_compare);
 }
 
 timeval_t platform_output_earliest_schedulable_time() {
@@ -343,13 +349,13 @@ static void do_output_slots() {
 
   uint16_t old_outputs = cur_outputs;
 
-  while ((next_output_event < num_output_events) && 
-      (output_events[next_output_event].time == current_time())) {
+  while ((next_output_event < num_output_events) &&
+         (output_events[next_output_event].time == current_time())) {
     struct output_change s = output_events[next_output_event];
     next_output_event++;
     if (s.value) {
       cur_outputs |= (1 << s.pin);
-    } else  {
+    } else {
       cur_outputs &= ~(1 << s.pin);
     }
   }

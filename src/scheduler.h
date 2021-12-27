@@ -26,13 +26,13 @@ struct sched_entry {
 };
 
 static inline sched_state_t sched_entry_get_state(struct sched_entry *s) {
-   return atomic_load_explicit(&s->state, memory_order_relaxed);
+  return atomic_load_explicit(&s->state, memory_order_relaxed);
 }
 
-static inline void sched_entry_set_state(struct sched_entry *s, sched_state_t state) {
-   atomic_store_explicit(&s->state, state, memory_order_relaxed);
+static inline void sched_entry_set_state(struct sched_entry *s,
+                                         sched_state_t state) {
+  atomic_store_explicit(&s->state, state, memory_order_relaxed);
 }
-
 
 struct timed_callback {
   void (*callback)(void *);
