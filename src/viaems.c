@@ -11,21 +11,11 @@
 #include <assert.h>
 #include <stdio.h>
 
-void decoder_updated() {
-  if (!config.decoder.valid) {
-    invalidate_scheduled_events();
-  } else {
-    calculate_ignition();
-    calculate_fueling();
-    schedule_events();
-  }
-
 
 int main() {
   platform_load_config();
   decoder_init(&config.decoder);
   platform_init(0, NULL);
-  initialize_scheduler();
 
   assert(config_valid());
 

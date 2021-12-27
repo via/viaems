@@ -71,7 +71,7 @@ static void reset_fired_event(struct output_event *ev) {
 
 /* Attempt to deschedule an output event. If the start event can't be disabled,
  * do nothing. */
-static void deschedule_event(struct output_event *ev) {
+void deschedule_output_event(struct output_event *ev) {
   disable_interrupts();
 
   int success = sched_entry_disable(&ev->start);
@@ -84,7 +84,7 @@ static void deschedule_event(struct output_event *ev) {
 void invalidate_scheduled_events() {
   for (int i = 0; i < MAX_EVENTS; i++) {
     struct output_event *ev = &config.events[i];
-    deschedule_event(ev);
+    deschedule_output_event(ev);
   }
 }
 /* Schedules an output event in a hazard-free manner, assuming
@@ -94,9 +94,7 @@ static void schedule_output_event_safely(struct output_event *ev,
                                          timeval_t newstart,
                                          timeval_t newstop) {
 
-  ev->start.pin = ev->pin;
   ev->start.val = ev->inverted ? 0 : 1;
-  ev->stop.pin = ev->pin;
   ev->stop.val = ev->inverted ? 1 : 0;
 
   disable_interrupts();
@@ -124,7 +122,7 @@ static void schedule_output_event_safely(struct output_event *ev,
   enable_interrupts();
 }
 
-static int schedule_ignition_event(struct output_event *ev,
+static bool schedule_ignition_event(struct output_event *ev,
                                    struct decoder *d,
                                    degrees_t advance,
                                    unsigned int usecs_dwell) {
@@ -133,8 +131,9 @@ static int schedule_ignition_event(struct output_event *ev,
   timeval_t start_time;
   degrees_t firing_angle;
 
-  if (!d->rpm || !config.decoder.valid) {
-    return 0;
+  if (!d->rpm || !config.decoder.valid || ignition_cut()) {
+    deschedule_output_event(ev);
+    return false;
   }
 
   firing_angle =
@@ -145,11 +144,13 @@ static int schedule_ignition_event(struct output_event *ev,
 
   if (event_has_fired(ev)) {
 
-    /* Don't reschedule until we've passed at least 90*/
+    /* Don't reschedule until we've passed at least 90 degrees. This prevents
+     * repeated firings when dwell advance rapidly decreases */
     if ((time_diff(stop_time, ev->stop.time) <
          time_from_rpm_diff(d->rpm, 90))) {
-      return 0;
+      return false;
     }
+
     reset_fired_event(ev);
   }
 
@@ -159,21 +160,20 @@ static int schedule_ignition_event(struct output_event *ev,
       time_before(ev->stop.time, stop_time) &&
       ((time_diff(stop_time, ev->stop.time) >
         time_from_rpm_diff(d->rpm, 180)))) {
-    return 0;
+    return false;
   }
 
   if (time_diff(start_time, ev->stop.time) <
       time_from_us(config.ignition.min_fire_time_us)) {
     /* Too little time since last fire */
-    return 0;
+    return false;
   }
 
   schedule_output_event_safely(ev, start_time, stop_time);
-
-  return 1;
+  return !event_is_unscheduled(ev);
 }
 
-static int schedule_fuel_event(struct output_event *ev,
+static bool schedule_fuel_event(struct output_event *ev,
                                struct decoder *d,
                                unsigned int usecs_pw) {
 
@@ -181,8 +181,9 @@ static int schedule_fuel_event(struct output_event *ev,
   timeval_t start_time;
   degrees_t firing_angle;
 
-  if (!d->rpm || !config.decoder.valid) {
-    return 0;
+  if (!d->rpm || !config.decoder.valid || fuel_cut()) {
+    deschedule_output_event(ev);
+    return false;
   }
 
   firing_angle =
@@ -193,10 +194,11 @@ static int schedule_fuel_event(struct output_event *ev,
 
   if (event_has_fired(ev)) {
 
-    /* Don't reschedule until we've passed at least 90*/
+    /* Don't reschedule until we've passed at least 90 degrees. This prevents
+     * repeated firings of the output during rapid decreases in pulse width */
     if ((time_diff(stop_time, ev->stop.time) <
          time_from_rpm_diff(d->rpm, 90))) {
-      return 0;
+      return false;
     }
 
     reset_fired_event(ev);
@@ -210,40 +212,25 @@ static int schedule_fuel_event(struct output_event *ev,
       time_before(ev->stop.time, stop_time) &&
       ((time_diff(stop_time, ev->stop.time) >
         time_from_rpm_diff(d->rpm, 180)))) {
-    return 0;
+    return false;
   }
 
   schedule_output_event_safely(ev, start_time, stop_time);
-
-  return 1;
+  return !event_is_unscheduled(ev);
 }
 
-void schedule_events() {
-  for (unsigned int e = 0; e < MAX_EVENTS; ++e) {
-    struct output_event *ev = &config.events[e];
-    switch (ev->type) {
-      case IGNITION_EVENT:
-        if (ignition_cut()) {
-          deschedule_event(ev);
-        } else  {
-          schedule_ignition_event(ev,
-              &config.decoder,
-              (degrees_t)calculated_values.timing_advance,
-              calculated_values.dwell_us);
-        }
-        break;
-          
-      case FUEL_EVENT:
-        if (fuel_cut()) {
-          deschedule_event(ev);
-        } else {
-          schedule_fuel_event(ev, &config.decoder, calculated_values.fueling_us);
-        }
-        break;
+bool schedule_output_event(struct output_event *ev) {
+  switch (ev->type) {
+    case IGNITION_EVENT:
+      return schedule_ignition_event(ev,
+          &config.decoder,
+          (degrees_t)calculated_values.timing_advance,
+          calculated_values.dwell_us);
+    case FUEL_EVENT:
+      return schedule_fuel_event(ev, &config.decoder, calculated_values.fueling_us);
 
-      default:
-        break;
-    }
+    default:
+      return false;
   }
 }
 

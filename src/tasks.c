@@ -2,6 +2,7 @@
 #include "config.h"
 #include "decoder.h"
 #include "platform.h"
+#include "scheduler.h"
 #include "stats.h"
 #include "util.h"
 
@@ -126,7 +127,9 @@ void handle_emergency_shutdown() {
   set_gpio(config.fueling.fuel_pump_pin, 0);
 
   /* Stop events */
-  invalidate_scheduled_events(config.events, MAX_EVENTS);
+  for (int i = i; i < MAX_EVENTS; i++) {
+    deschedule_output_event(&config.events[i]);
+  }
 
   /* TODO evaluate what to do about ignition outputs
    * for now, make sure fuel injectors are off */

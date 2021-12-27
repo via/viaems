@@ -1083,13 +1083,13 @@ static void retire_output_buffer(struct output_buffer *buf) {
 
     offset_from_now = oev->start.time - buf->first_time;
     if (sched_entry_get_state(&oev->start) == SCHED_SUBMITTED && offset_from_now < NUM_SLOTS) {
-      platform_output_slot_unset(buf->slots, offset_from_now, oev->start.pin, oev->start.val);
+      platform_output_slot_unset(buf->slots, offset_from_now, oev->pin, oev->start.val);
       sched_entry_set_state(&oev->start, SCHED_FIRED);
     }
 
     offset_from_now = oev->stop.time - buf->first_time;
     if (sched_entry_get_state(&oev->stop) == SCHED_SUBMITTED && offset_from_now < NUM_SLOTS) {
-      platform_output_slot_unset(buf->slots, offset_from_now, oev->stop.pin, oev->stop.val);
+      platform_output_slot_unset(buf->slots, offset_from_now, oev->pin, oev->stop.val);
       sched_entry_set_state(&oev->stop, SCHED_FIRED);
     }
   }
@@ -1103,12 +1103,12 @@ static void populate_output_buffer(struct output_buffer *buf) {
     struct output_event *oev = &config.events[i];
     offset_from_now = oev->start.time - buf->first_time;
     if (sched_entry_get_state(&oev->start) == SCHED_SCHEDULED && offset_from_now < NUM_SLOTS) {
-      platform_output_slot_set(buf->slots, offset_from_now, oev->start.pin, oev->start.val);
+      platform_output_slot_set(buf->slots, offset_from_now, oev->pin, oev->start.val);
       sched_entry_set_state(&oev->start, SCHED_SUBMITTED);
     }
     offset_from_now = oev->stop.time - buf->first_time;
     if (sched_entry_get_state(&oev->stop) == SCHED_SCHEDULED && offset_from_now < NUM_SLOTS) {
-      platform_output_slot_set(buf->slots, offset_from_now, oev->stop.pin, oev->stop.val);
+      platform_output_slot_set(buf->slots, offset_from_now, oev->pin, oev->stop.val);
       sched_entry_set_state(&oev->stop, SCHED_SUBMITTED);
     }
   }

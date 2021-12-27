@@ -16,7 +16,9 @@ static void invalidate_decoder() {
   config.decoder.state = DECODER_NOSYNC;
   config.decoder.current_triggers_rpm = 0;
   config.decoder.triggers_since_last_sync = 0;
-  invalidate_scheduled_events(config.events, MAX_EVENTS);
+  for (int i = 0; i < MAX_EVENTS; i++) {
+    deschedule_output_event(&config.events[i]);
+  }
 }
 
 static void handle_decoder_expire() {
@@ -227,14 +229,18 @@ void decoder_init(struct decoder *d) {
   expire_event.callback = handle_decoder_expire;
 }
 
+static void schedule_outputs() {
+  calculate_ignition();
+  calculate_fueling();
+
+  for (int i = 0; i < MAX_EVENTS; i++) {
+    schedule_output_event(&config.events[i]);
+  }
+}
+
 /* When decoder has new information, reschedule everything */
 void decoder_update_scheduling(struct decoder_event *events,
                                unsigned int count) {
-  stats_start_timing(STATS_SCHEDULE_LATENCY);
-
-  /* TODO Right now this is a thin wrapper for the new decoder interface.
-   * Convert the decode() functions to work directly off `decoder_event` structs
-   */
   for (struct decoder_event *ev = events; count > 0; count--, ev++) {
     if (ev->trigger == 0) {
       config.decoder.last_t0 = ev->time;
@@ -251,17 +257,9 @@ void decoder_update_scheduling(struct decoder_event *events,
     config.decoder.decode(&config.decoder);
   }
 
-  if (!config.decoder.valid) {
-    invalidate_scheduled_events();
-  } else {
-    calculate_ignition();
-    calculate_fueling();
-    stats_start_timing(STATS_SCHED_TOTAL_TIME);
-    schedule_events();
-    stats_finish_timing(STATS_SCHED_TOTAL_TIME);
-  }
-  stats_finish_timing(STATS_SCHEDULE_LATENCY);
+  schedule_outputs();
 }
+
 
 degrees_t current_angle() {
   if (!config.decoder.rpm) {

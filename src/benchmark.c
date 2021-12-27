@@ -36,7 +36,9 @@ static void do_schedule_ignition_event_bench() {
   calculated_values.dwell_us = 2000;
 
   uint64_t start = cycle_count();
-  schedule_events();
+  for (int i = 0; i < MAX_EVENTS; i++) {
+    schedule_output_event(&config.events[i]);
+  }
   uint64_t end = cycle_count();
   assert(config.events[0].start.state == SCHED_SCHEDULED);
 
@@ -45,7 +47,7 @@ static void do_schedule_ignition_event_bench() {
 
   calculated_values.timing_advance = 25.0f;
   start = cycle_count();
-  schedule_events(&config.events[0]);
+  schedule_output_event(&config.events[0]);
   end = cycle_count();
 
   printf("backward schedule_event: %llu ns\r\n",
@@ -53,7 +55,7 @@ static void do_schedule_ignition_event_bench() {
 
   calculated_values.timing_advance = 15.0f;
   start = cycle_count();
-  schedule_events(&config.events[0]);
+  schedule_output_event(&config.events[0]);
   end = cycle_count();
 
   printf("forward schedule_event: %llu ns\r\n",
@@ -164,7 +166,6 @@ void do_output_buffer_bench_all_fired() {
 
 int main() {
   platform_benchmark_init();
-  initialize_scheduler();
 
   /* Preparations for all benchmarks */
   config.sensors[SENSOR_IAT].processed_value = 15.0f;

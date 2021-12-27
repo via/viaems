@@ -21,7 +21,6 @@ typedef enum {
 
 struct sched_entry {
   timeval_t time;
-  uint8_t pin;
   bool val;
   _Atomic sched_state_t state;
 };
@@ -42,24 +41,6 @@ struct timed_callback {
   bool scheduled;
 };
 
-struct fuel_output {
-  degrees_t angle;
-  uint32_t pin;
-
-  struct sched_entry start;
-  struct sched_entry stop;
-  struct timed_callback reschedule_callback;
-};
-
-struct ignition_output {
-  degrees_t angle;
-  uint32_t pin;
-  bool inverted;
-
-  struct sched_entry start;
-  struct sched_entry stop;
-}
-
 struct output_event {
   event_type_t type;
   degrees_t angle;
@@ -68,7 +49,7 @@ struct output_event {
 
   struct sched_entry start;
   struct sched_entry stop;
-  struct timed_callback callback;
+  struct timed_callback completed;
 };
 
 bool schedule_output_event(struct output_event *ev);
