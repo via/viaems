@@ -727,8 +727,11 @@ uint32_t get_test_trigger_rpm() {
 void set_test_trigger_rpm(uint32_t rpm) {
   test_trigger_rpm = rpm;
   if (rpm > 0) {
-    timeval_t period_ticks = time_from_rpm_diff(test_trigger_rpm, 1);
-    timer_set_period(TIM1, period_ticks);
+    /* The precision of time_from_diff is poor with 1 degree, so we run the TIM1
+     * clock at full speed (168 MHz), and pass in (168 MHz / 4 MHz) degrees in
+     * to get ticks with good precision */
+    timeval_t period_ticks = time_from_rpm_diff(test_trigger_rpm, 42);
+    timer_set_period(TIM1, period_ticks - 1);
     timer_enable_counter(TIM1);
   } else {
     timer_disable_counter(TIM1);
@@ -782,8 +785,8 @@ void platform_init_test_trigger() {
   /* Set up TIM6 to trigger interrupts at a later-determined interval */
   timer_set_counter(TIM1, 0);
   timer_set_mode(TIM1, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
-  timer_set_period(TIM1, 4000);  /* 1 mS */
-  timer_set_prescaler(TIM1, 41); /* 0.25 uS per tick */
+  timer_set_period(TIM1, 4000);
+  timer_set_prescaler(TIM1, 0); /* 168 MHz */
   timer_enable_preload(TIM1);
   timer_continuous_mode(TIM1);
   timer_enable_update_event(TIM1);
