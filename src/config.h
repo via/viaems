@@ -43,8 +43,8 @@ struct config {
   struct cel_config cel;
 
   /* Cutoffs */
-  unsigned int rpm_stop;
-  unsigned int rpm_start;
+  uint32_t rpm_stop;
+  uint32_t rpm_start;
 };
 
 extern struct config config;

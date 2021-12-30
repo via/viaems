@@ -897,6 +897,11 @@ static void render_decoder(struct console_request_context *ctx, void *ptr) {
   render_uint32_map_field(
     ctx, "min-rpm", "minimum RPM for sync", &config.decoder.trigger_min_rpm);
 
+  render_uint32_map_field(
+    ctx, "rpm-limit-stop", "ignition and fuel cut rpm limit", &config.rpm_stop);
+  render_uint32_map_field(
+    ctx, "rpm-limit-start", "rpm limit lower hysteresis", &config.rpm_start);
+
   int type = config.decoder.type;
   render_enum_map_field(
     ctx,
