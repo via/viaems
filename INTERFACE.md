@@ -256,7 +256,7 @@ response (trimmed for display):
                 "description": "angle past TDC to trigger event"
             },
             "inverted": {
-                "_type": "uint32",
+                "_type": "bool",
                 "description": "inverted"
             },
             "pin": {
@@ -280,6 +280,7 @@ response (trimmed for display):
 #### Types
 - `uint32` fields represent an unsigned integer
 - `float` fields represent a single precision floating point value
+- `bool` fields represent a boolean value
 - `string` fields represent a text string, but frequently also represent an
   enumeration value. These fields will also contain a `choices` field that lists
   acceptable string values.
