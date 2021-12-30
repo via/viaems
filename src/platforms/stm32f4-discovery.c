@@ -44,6 +44,7 @@
  *  Trigger 0 - PA0 (TIM2_CH1)
  *  Trigger 1 - PA1 (TIM2_CH2)
  *
+ *  Test trigger uses TIM1 with DMA2 stream 5 channel 6
  *  Test/Out Trigger 0 - PB10
  *  Test/Out Trigger 1 - PB11
  *
@@ -70,7 +71,6 @@
  *   - 0-15 Maps to Port E
  *
  *  nvic priorities:
- *    tim2 (triggers) 32
  *    dma2s1 (buffer swap) 16
  *    dma1s3 (adc) 64
  *    tim6 (test trigger) 0
@@ -718,17 +718,82 @@ void platform_init_usb() {
   nvic_enable_irq(NVIC_OTG_FS_IRQ);
 }
 
+static uint32_t test_trigger_rpm = 0;
+
+uint32_t get_test_trigger_rpm() {
+  return test_trigger_rpm;
+}
+
+void set_test_trigger_rpm(uint32_t rpm) {
+  test_trigger_rpm = rpm;
+  if (rpm > 0) {
+    timeval_t period_ticks = time_from_rpm_diff(test_trigger_rpm, 1);
+    timer_set_period(TIM1, period_ticks);
+    timer_enable_counter(TIM1);
+  } else {
+    timer_disable_counter(TIM1);
+  }
+}
+
+struct test_trigger_output {
+  uint16_t on;
+  uint16_t off;
+} __attribute__((packed)) __attribute((aligned(4)));
+
+static struct test_trigger_output test_trigger_sequence[720];
+
+static void setup_test_trigger_sequence() {
+  memset(test_trigger_sequence, 0, sizeof(test_trigger_sequence));
+
+  for (uint32_t i = 0; i < 720; i++) {
+    if (i % (uint32_t)config.decoder.degrees_per_trigger < 2) {
+      /* First two degrees of every tooth is high, rest low */
+      test_trigger_sequence[i].on = (1 << 10);
+    } else {
+      test_trigger_sequence[i].off = (1 << 10);
+    }
+  }
+
+  /* Cam sync high at 35 degrees */
+  test_trigger_sequence[35].on |= (1 << 11);
+  test_trigger_sequence[36].off |= (1 << 11);
+}
+
+
+// dma1 stream 1 channel 7 - TIM6_UP
 void platform_init_test_trigger() {
+  setup_test_trigger_sequence();
+
+  /* dma1 stream 1, channel 7*/
+  dma_stream_reset(DMA2, DMA_STREAM5);
+  dma_set_priority(DMA2, DMA_STREAM5, DMA_SxCR_PL_HIGH);
+  dma_set_memory_size(DMA2, DMA_STREAM5, DMA_SxCR_MSIZE_32BIT);
+  dma_set_peripheral_size(DMA2, DMA_STREAM5, DMA_SxCR_PSIZE_32BIT);
+  dma_enable_memory_increment_mode(DMA2, DMA_STREAM5);
+  dma_set_transfer_mode(DMA2, DMA_STREAM5, DMA_SxCR_DIR_MEM_TO_PERIPHERAL);
+  dma_enable_circular_mode(DMA2, DMA_STREAM5);
+  dma_set_peripheral_address(DMA2, DMA_STREAM5, (uint32_t)&GPIOB_BSRR);
+  dma_set_memory_address(DMA2, DMA_STREAM5, (uint32_t)test_trigger_sequence);
+  dma_set_number_of_data(DMA2, DMA_STREAM5, 720);
+  dma_channel_select(DMA2, DMA_STREAM5, DMA_SxCR_CHSEL_6);
+
+  dma_enable_stream(DMA2, DMA_STREAM5);
 
   /* Set up TIM6 to trigger interrupts at a later-determined interval */
-  timer_set_mode(TIM6, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
-  timer_set_period(TIM6, 1000);  /* 1 mS */
-  timer_set_prescaler(TIM6, 83); /* 1uS per tick */
-  timer_enable_preload(TIM6);
-  timer_continuous_mode(TIM6);
-  timer_enable_counter(TIM6);
+  timer_set_counter(TIM1, 0);
+  timer_set_mode(TIM1, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
+  timer_set_period(TIM1, 4000);  /* 1 mS */
+  timer_set_prescaler(TIM1, 41); /* 0.25 uS per tick */
+  timer_enable_preload(TIM1);
+  timer_continuous_mode(TIM1);
+  timer_enable_update_event(TIM1);
+  timer_update_on_overflow(TIM1);
+  timer_set_dma_on_update_event(TIM1);
+  TIM1_DIER |= TIM_DIER_UDE; /* Enable update dma */
 
-  timer_enable_irq(TIM6, TIM_DIER_UIE);
+  gpio_mode_setup(GPIOB, GPIO_MODE_OUTPUT, GPIO_PUPD_PULLDOWN, GPIO10);
+  gpio_mode_setup(GPIOB, GPIO_MODE_OUTPUT, GPIO_PUPD_PULLDOWN, GPIO11);
+
 }
 
 static void setup_task_handler() {
@@ -922,70 +987,6 @@ void dma1_stream3_isr(void) {
   start_adc_sampling();
 }
 
-static struct {
-  uint8_t current_tooth;
-  timeval_t last_trigger;
-  int rpm;
-  int last_edge_active; /* Indicates upcoming edge should be falling */
-} test_trigger_config = {};
-
-uint32_t get_test_trigger_rpm() {
-  return test_trigger_config.rpm;
-}
-
-void set_test_trigger_rpm(uint32_t rpm) {
-  test_trigger_config.rpm = rpm;
-
-  if (rpm) {
-    gpio_mode_setup(GPIOB, GPIO_MODE_OUTPUT, GPIO_PUPD_PULLDOWN, GPIO10);
-    gpio_mode_setup(GPIOB, GPIO_MODE_OUTPUT, GPIO_PUPD_PULLDOWN, GPIO11);
-
-    timeval_t period_us =
-      time_from_rpm_diff(test_trigger_config.rpm,
-                         config.decoder.degrees_per_trigger) /
-      time_from_us(1);
-
-    timer_set_period(TIM6, period_us / 2);
-
-    nvic_enable_irq(NVIC_TIM6_DAC_IRQ);
-    nvic_set_priority(NVIC_TIM6_DAC_IRQ,
-                      0); /* Always a fast interrupt, highest priority */
-  } else {
-    nvic_disable_irq(NVIC_TIM6_DAC_IRQ);
-    test_trigger_config.current_tooth = 0;
-  }
-}
-
-static void handle_test_trigger_edge() {
-  test_trigger_config.last_edge_active = !test_trigger_config.last_edge_active;
-
-  gpio_toggle(GPIOB, GPIO10);
-
-  if (test_trigger_config.last_edge_active) {
-    test_trigger_config.current_tooth =
-      (test_trigger_config.current_tooth + 1) % config.decoder.num_triggers;
-
-    /* Toggle the sync line right before *and* right after */
-    if ((test_trigger_config.current_tooth ==
-         config.decoder.num_triggers - 1) ||
-        (test_trigger_config.current_tooth == 0)) {
-      gpio_toggle(GPIOB, GPIO11);
-    }
-  }
-}
-
-void tim6_dac_isr() {
-  stats_increment_counter(STATS_INT_RATE);
-  stats_start_timing(STATS_INT_TESTTRIGGER_TIME);
-
-  if (timer_get_flag(TIM6, TIM_SR_UIF)) {
-    timer_clear_flag(TIM6, TIM_SR_UIF);
-  }
-
-  handle_test_trigger_edge();
-
-  stats_finish_timing(STATS_INT_TESTTRIGGER_TIME);
-}
 
 /* This is now the lowest priority interrupt, with buffer swapping and sensor
  * reading interrupts being higher priority.  Keep scheduled callbacks quick to
