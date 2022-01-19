@@ -9,9 +9,11 @@
 #include "util.h"
 #include <assert.h>
 #include <stdio.h>
+#include "config_builtin.h"
 
 int main() {
-  platform_load_config();
+  restore_config_from_binary(cbor_configuration, sizeof(cbor_configuration));
+
   decoder_init(&config.decoder);
   platform_init(0, NULL);
   initialize_scheduler();

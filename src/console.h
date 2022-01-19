@@ -122,6 +122,7 @@ struct console_feed_node {
   float (*float_fptr)();
 };
 
+bool restore_config_from_binary(const uint8_t *, size_t len);
 void render_description_field(CborEncoder *, const char *desc);
 void render_type_field(CborEncoder *, const char *type);
 

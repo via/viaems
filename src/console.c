@@ -1524,6 +1524,32 @@ void console_process() {
   }
 }
 
+bool restore_config_from_binary(const uint8_t *buf, size_t len) {
+
+  CborParser parser;
+  CborValue value;
+  CborError err = cbor_parser_init(buf, len, 0, &parser, &value);
+  if (err) {
+    return false;
+  }
+
+  /* zero-length output buffer means all response generation fails, but we
+   * aren't going to use it anyway */
+  static uint8_t scratch[0];
+  CborEncoder encoder;
+  cbor_encoder_init(&encoder, temp, sizeof(temp), 0);
+
+  struct console_request_context ctx = {
+    .type = CONSOLE_SET,
+    .response = &encoder,
+    .path = NULL,
+    .is_filtered = false,
+    .value = value,
+  };
+  render_map_object(&ctx, console_toplevel_request, NULL);
+  return true;
+}
+
 #ifdef UNITTEST
 #include <check.h>
 #include <stdarg.h>
