@@ -395,12 +395,19 @@ void exti15_10_isr() {
 #ifdef SPI_TLC2543
 #define SPI_WRITE_COUNT 13
 #else
-#define SPI_WRITE_COUNT 9
+#define SPI_WRITE_COUNT 10
 #endif
 static volatile uint16_t spi_rx_raw_adc[SPI_WRITE_COUNT] = { 0 };
 
 void start_adc_sampling() {
-#ifdef SPI_TLC2543
+#ifdef SPI_MAX11632
+  static const uint16_t spi_tx_list[] = {
+    0x7400, /* Set reference and clock mode */
+    0x8600, 0x8E00, 0x9600, 0x9E00, /* Inputs 1-4 */
+    0xA600, 0xAE00, 0xB600, 0xBE00, /* Inputs 5-8 */
+    0x0000, /* Extra */
+  };
+#elif SPI_TLC2543
   static const uint16_t spi_tx_list[] = {
     0x0C00, 0x1C00, 0x2C00, 0x3C00, 0x4C00, 0x5C00, 0x6C00,
     0x7C00, 0x8C00, 0x9C00, 0xAC00, 0xBC00, /* Check value (Vref+ + Vref-) / 2
@@ -409,7 +416,7 @@ void start_adc_sampling() {
   };
 #else
   static const uint16_t spi_tx_list[] = {
-    0x0400, 0x0C00, 0x1400, 0x1C00, 0x2400, 0x2C00, 0x3400, 0x3C00, 0x3C00,
+    0x, 0x0C00, 0x1400, 0x1C00, 0x2400, 0x2C00, 0x3400, 0x3C00, 0x3C00,
   };
 #endif
 
@@ -907,9 +914,10 @@ void dma1_stream3_isr(void) {
 
   for (int i = 0; i < NUM_SENSORS; ++i) {
     if (config.sensors[i].source == SENSOR_ADC) {
-      int pin = (config.sensors[i].pin + 1) % SPI_WRITE_COUNT;
+      int rx_pos = (config.sensors[i].pin + 1) % SPI_WRITE_COUNT;
       config.sensors[i].fault = fault ? FAULT_CONN : FAULT_NONE;
-      uint16_t adc_value = spi_rx_raw_adc[pin];
+      uint16_t adc_value = ((spi_rx_raw_adc[rx_pos] & 0xFF) << 8) +
+      (spi_rx_raw_adc[rx_pos + 1] >> 8);
 #ifdef SPI_TLC2543
       adc_value >>= 4; /* 12 bit value is left justified */
 #endif
