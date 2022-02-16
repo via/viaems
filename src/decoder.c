@@ -56,7 +56,7 @@ static unsigned int current_rpm_window_size(unsigned int current_triggers,
 /* Update rpm information and validate */
 static void trigger_update_rpm(struct decoder *d) {
   timeval_t diff = d->times[0] - d->times[1];
-  unsigned int slicerpm = rpm_from_time_diff(diff, d->degrees_per_trigger);
+  d->tooth_rpm = rpm_from_time_diff(diff, d->degrees_per_trigger);
   unsigned int rpm_window_size =
     current_rpm_window_size(d->current_triggers_rpm, d->rpm_window_size);
 
@@ -64,9 +64,10 @@ static void trigger_update_rpm(struct decoder *d) {
     /* We have at least two data points to draw an rpm from */
     d->rpm = rpm_from_time_diff(d->times[0] - d->times[rpm_window_size - 1],
                                 d->degrees_per_trigger * (rpm_window_size - 1));
+
     if (d->rpm) {
       unsigned int delta =
-        (d->rpm > slicerpm) ? d->rpm - slicerpm : slicerpm - d->rpm;
+        (d->rpm > d->tooth_rpm) ? d->rpm - d->tooth_rpm : d->tooth_rpm - d->rpm;
       d->trigger_cur_rpm_change = delta / (float)d->rpm;
     }
   } else {
@@ -74,9 +75,9 @@ static void trigger_update_rpm(struct decoder *d) {
   }
 
   /* Check for excessive per-tooth variation */
-  if ((slicerpm <= d->trigger_min_rpm) ||
-      (slicerpm > d->rpm + (d->rpm * d->trigger_max_rpm_change)) ||
-      (slicerpm < d->rpm - (d->rpm * d->trigger_max_rpm_change))) {
+  if ((d->tooth_rpm <= d->trigger_min_rpm) ||
+      (d->tooth_rpm > d->rpm + (d->rpm * d->trigger_max_rpm_change)) ||
+      (d->tooth_rpm < d->rpm - (d->rpm * d->trigger_max_rpm_change))) {
     d->state = DECODER_NOSYNC;
     d->loss = DECODER_VARIATION;
   }
@@ -202,8 +203,7 @@ static void missing_tooth_trigger_update(struct decoder *d, timeval_t t) {
         d->state = DECODER_NOSYNC;
         d->loss = DECODER_TRIGGERCOUNT_HIGH;
       }
-    } else if ((d->triggers_since_last_sync != d->num_triggers - 1) &&
-               !is_acceptable_normal_tooth) {
+    } else if (!is_acceptable_normal_tooth) {
       d->state = DECODER_NOSYNC;
       d->loss = DECODER_TRIGGERCOUNT_LOW;
     }
@@ -294,6 +294,16 @@ static void decode_missing_no_sync(struct decoder *d,
   if (d->state != DECODER_NOSYNC) {
     d->tooth_rpm = missing_tooth_rpm(d);
   }
+
+  if (d->current_triggers_rpm >= d->num_triggers) {
+    if (d->triggers_since_last_sync == 0) {
+      d->rpm = rpm_from_time_diff(d->times[0] - d->times[d->num_triggers - 2],
+                                  d->num_triggers * d->degrees_per_trigger);
+    }
+  } else {
+    d->rpm = d->tooth_rpm;
+  }
+
   if (d->state == DECODER_SYNC) {
     d->valid = 1;
     d->loss = DECODER_NO_LOSS;
@@ -335,7 +345,7 @@ static void decode_missing_with_camsync(struct decoder *d,
   if (d->state != DECODER_NOSYNC) {
     d->tooth_rpm = missing_tooth_rpm(d);
   }
-  if (d->current_triggers_rpm >= MAX_TRIGGERS) {
+  if (d->current_triggers_rpm >= d->num_triggers) {
     if (d->triggers_since_last_sync == 0) {
       d->rpm = rpm_from_time_diff(d->times[0] - d->times[d->num_triggers - 2],
                                   d->num_triggers * d->degrees_per_trigger);
@@ -871,6 +881,7 @@ START_TEST(check_missing_tooth_rpm_after_gap) {
 
   ck_assert_int_eq(config.decoder.valid, 1);
   ck_assert_int_eq(config.decoder.last_trigger_angle, 0);
+  ck_assert(config.decoder.state == DECODER_SYNC);
   ck_assert_int_eq(
     config.decoder.rpm,
     rpm_from_time_diff(25000, config.decoder.degrees_per_trigger));

@@ -5,7 +5,13 @@
 #define MAX_TRIGGERS 36
 
 typedef enum {
+  /* Trigger wheel is N even teeth that add to 720 degrees.  This decoder is
+   * only useful for low-resolution wheels, such as a Ford TFI */
   TRIGGER_EVEN_NOSYNC,
+
+  /* Cam (if adds to 720) or crank (if adds to 360) wheel with N even teeth
+   * and a second wheel on a cam.  Cam pulse indicates that next tooth angle
+   * is 0 degrees */
   TRIGGER_EVEN_CAMSYNC,
 
   /* Trigger wheel is N teeth with a single missing tooth. The first tooth after

@@ -80,7 +80,7 @@ static struct {
   struct logged_event events[32];
   volatile uint32_t read;
   volatile uint32_t write;
-} event_log = { .enabled = 1 };
+} event_log = { 0 };
 
 static struct logged_event get_logged_event() {
   if (!event_log.enabled || (event_log.read == event_log.write)) {
@@ -767,8 +767,7 @@ static void render_table_axis_values(struct console_request_context *ctx,
     }
     axis->num = len;
   }
-  for (int i = 0; i < (axis->num > MAX_AXIS_SIZE ? MAX_AXIS_SIZE : axis->num);
-       i++) {
+  for (int i = 0; (i < axis->num) && (i < MAX_AXIS_SIZE); i++) {
     struct console_request_context deeper;
     if (descend_array_field(ctx, &deeper, i)) {
       render_float_object(&deeper, "axis value", &axis->values[i]);
@@ -905,16 +904,16 @@ static void render_decoder(struct console_request_context *ctx, void *ptr) {
     ctx, "rpm-limit-start", "rpm limit lower hysteresis", &config.rpm_start);
 
   int type = config.decoder.type;
-  render_enum_map_field(
-    ctx,
-    "trigger-type",
-    "Primary trigger decoder method",
-    (struct console_enum_mapping[]){ { TRIGGER_EVEN_NOSYNC, "even" },
-                                     { TRIGGER_EVEN_CAMSYNC, "even+camsync" },
-                                     { TRIGGER_MISSING_NOSYNC, "missing" },
-                                     { TRIGGER_MISSING_CAMSYNC, "missing+camsync" },
-                                     { 0, NULL } },
-    &type);
+  render_enum_map_field(ctx,
+                        "trigger-type",
+                        "Primary trigger decoder method",
+                        (struct console_enum_mapping[]){
+                          { TRIGGER_EVEN_NOSYNC, "even" },
+                          { TRIGGER_EVEN_CAMSYNC, "even+camsync" },
+                          { TRIGGER_MISSING_NOSYNC, "missing" },
+                          { TRIGGER_MISSING_CAMSYNC, "missing+camsync" },
+                          { 0, NULL } },
+                        &type);
   config.decoder.type = type;
 }
 
