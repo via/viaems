@@ -915,6 +915,26 @@ static void render_decoder(struct console_request_context *ctx, void *ptr) {
                           { 0, NULL } },
                         &type);
   config.decoder.type = type;
+
+  render_uint32_map_field(ctx,
+                          "num-triggers",
+                          "number of teeth on primary wheel",
+                          &config.decoder.num_triggers);
+  render_float_map_field(ctx,
+                         "degrees-per-trigger",
+                         "angle a single tooth represents",
+                         &config.decoder.degrees_per_trigger);
+
+  render_uint32_map_field(
+    ctx,
+    "min-triggers-rpm",
+    "minimum teeth required to generate rpm for even tooth wheel",
+    &config.decoder.required_triggers_rpm);
+
+  render_uint32_map_field(ctx,
+                          "rpm-window-size",
+                          "rpm average window for even tooth wheel",
+                          &config.decoder.rpm_window_size);
 }
 
 static void output_console_renderer(struct console_request_context *ctx,
