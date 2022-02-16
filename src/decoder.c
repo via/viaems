@@ -40,8 +40,9 @@ static void push_time(struct decoder *d, timeval_t t) {
   d->times[0] = t;
 }
 
-static unsigned int current_rpm_window_size(unsigned int current_triggers,
-                                            unsigned int normal_window_size) {
+static unsigned int even_tooth_rpm_window_size(
+  unsigned int current_triggers,
+  unsigned int normal_window_size) {
 
   /* Use the minimum of rpm_window_size and current previous triggers so that
    * rpm is valid in case our window size is larger than required trigger
@@ -54,11 +55,12 @@ static unsigned int current_rpm_window_size(unsigned int current_triggers,
 }
 
 /* Update rpm information and validate */
-static void trigger_update_rpm(struct decoder *d) {
+static void even_tooth_trigger_update_rpm(struct decoder *d) {
   timeval_t diff = d->times[0] - d->times[1];
   d->tooth_rpm = rpm_from_time_diff(diff, d->degrees_per_trigger);
+
   unsigned int rpm_window_size =
-    current_rpm_window_size(d->current_triggers_rpm, d->rpm_window_size);
+    even_tooth_rpm_window_size(d->current_triggers_rpm, d->rpm_window_size);
 
   if (rpm_window_size > 1) {
     /* We have at least two data points to draw an rpm from */
@@ -118,8 +120,66 @@ static void even_tooth_trigger_update(struct decoder *d, timeval_t t) {
   }
 
   if (d->state == DECODER_RPM || d->state == DECODER_SYNC) {
-    trigger_update_rpm(d);
+    even_tooth_trigger_update_rpm(d);
   }
+}
+
+static void even_tooth_sync_update(struct decoder *d) {
+  if (d->state == DECODER_RPM) {
+    d->state = DECODER_SYNC;
+    d->loss = DECODER_NO_LOSS;
+    d->last_trigger_angle = 0;
+  } else if (d->state == DECODER_SYNC) {
+    if (d->triggers_since_last_sync == d->num_triggers) {
+      d->state = DECODER_SYNC;
+      d->loss = DECODER_NO_LOSS;
+      d->last_trigger_angle = 0;
+    } else {
+      d->state = DECODER_NOSYNC;
+      d->loss = DECODER_TRIGGERCOUNT_LOW;
+    }
+  }
+  d->triggers_since_last_sync = 0;
+}
+
+static void decode_even_with_camsync(struct decoder *d,
+                                     struct decoder_event *ev) {
+  decoder_state oldstate = d->state;
+
+  if (ev->trigger == 0) {
+    even_tooth_trigger_update(d, ev->time);
+  } else if (ev->trigger == 1) {
+    even_tooth_sync_update(d);
+  }
+
+  if (d->state == DECODER_SYNC) {
+    d->valid = 1;
+    d->loss = DECODER_NO_LOSS;
+  } else {
+    if (oldstate == DECODER_SYNC) {
+      /* We lost sync */
+      invalidate_decoder();
+    }
+  }
+}
+
+static void decode_even_no_sync(struct decoder *d, struct decoder_event *ev) {
+  decoder_state oldstate = d->state;
+  even_tooth_trigger_update(d, ev->time);
+  if (d->state == DECODER_RPM || d->state == DECODER_SYNC) {
+    d->state = DECODER_SYNC;
+    d->loss = DECODER_NO_LOSS;
+    d->valid = 1;
+    d->last_trigger_time = ev->time;
+    d->triggers_since_last_sync = 0; /* There is no sync */
+    ;
+  } else {
+    if (oldstate == DECODER_SYNC) {
+      /* We lost sync */
+      invalidate_decoder();
+    }
+  }
+  stats_finish_timing(STATS_DECODE_TIME);
 }
 
 static uint32_t missing_tooth_rpm(struct decoder *d) {
@@ -223,64 +283,6 @@ static void missing_tooth_trigger_update(struct decoder *d, timeval_t t) {
       (timeval_t)(expected_time * (1.0f + d->trigger_max_rpm_change));
     set_expire_event(d->expiration);
   }
-}
-
-static void even_tooth_sync_update(struct decoder *d) {
-  if (d->state == DECODER_RPM) {
-    d->state = DECODER_SYNC;
-    d->loss = DECODER_NO_LOSS;
-    d->last_trigger_angle = 0;
-  } else if (d->state == DECODER_SYNC) {
-    if (d->triggers_since_last_sync == d->num_triggers) {
-      d->state = DECODER_SYNC;
-      d->loss = DECODER_NO_LOSS;
-      d->last_trigger_angle = 0;
-    } else {
-      d->state = DECODER_NOSYNC;
-      d->loss = DECODER_TRIGGERCOUNT_LOW;
-    }
-  }
-  d->triggers_since_last_sync = 0;
-}
-
-static void decode_even_with_camsync(struct decoder *d,
-                                     struct decoder_event *ev) {
-  decoder_state oldstate = d->state;
-
-  if (ev->trigger == 0) {
-    even_tooth_trigger_update(d, ev->time);
-  } else if (ev->trigger == 1) {
-    even_tooth_sync_update(d);
-  }
-
-  if (d->state == DECODER_SYNC) {
-    d->valid = 1;
-    d->loss = DECODER_NO_LOSS;
-  } else {
-    if (oldstate == DECODER_SYNC) {
-      /* We lost sync */
-      invalidate_decoder();
-    }
-  }
-}
-
-static void decode_even_no_sync(struct decoder *d, struct decoder_event *ev) {
-  decoder_state oldstate = d->state;
-  even_tooth_trigger_update(d, ev->time);
-  if (d->state == DECODER_RPM || d->state == DECODER_SYNC) {
-    d->state = DECODER_SYNC;
-    d->loss = DECODER_NO_LOSS;
-    d->valid = 1;
-    d->last_trigger_time = ev->time;
-    d->triggers_since_last_sync = 0; /* There is no sync */
-    ;
-  } else {
-    if (oldstate == DECODER_SYNC) {
-      /* We lost sync */
-      invalidate_decoder();
-    }
-  }
-  stats_finish_timing(STATS_DECODE_TIME);
 }
 
 static void decode_missing_no_sync(struct decoder *d,
@@ -1185,7 +1187,7 @@ START_TEST(check_update_rpm_single_point) {
     .trigger_max_rpm_change = 0.5,
   };
 
-  trigger_update_rpm(&d);
+  even_tooth_trigger_update_rpm(&d);
   ck_assert_int_eq(d.rpm, 0);
   ck_assert_int_eq(d.state, DECODER_NOSYNC);
 }
@@ -1201,7 +1203,7 @@ START_TEST(check_update_rpm_sufficient_points) {
     .trigger_max_rpm_change = 0.5,
   };
 
-  trigger_update_rpm(&d);
+  even_tooth_trigger_update_rpm(&d);
   ck_assert_int_eq(d.rpm, rpm_from_time_diff(100, d.degrees_per_trigger));
 }
 END_TEST
@@ -1216,7 +1218,7 @@ START_TEST(check_update_rpm_window_larger) {
     .trigger_max_rpm_change = 0.5,
   };
 
-  trigger_update_rpm(&d);
+  even_tooth_trigger_update_rpm(&d);
   ck_assert_int_eq(d.rpm, rpm_from_time_diff(100, d.degrees_per_trigger));
 }
 END_TEST
@@ -1231,7 +1233,7 @@ START_TEST(check_update_rpm_window_smaller) {
     .trigger_max_rpm_change = 0.5,
   };
 
-  trigger_update_rpm(&d);
+  even_tooth_trigger_update_rpm(&d);
   ck_assert_int_eq(d.rpm, rpm_from_time_diff(100, d.degrees_per_trigger));
 }
 END_TEST
