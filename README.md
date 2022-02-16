@@ -23,6 +23,7 @@ Features:
 1. [Decoding](#decoding)
     1. [EEC-IV TFI](#eec-iv-tfi)
     2. [Toyota CAS](#toyota-241-cas)
+    3. [36-1 Crank plus Cam Sync](#36-1-crank-trigger-plus-cam-sync)
 2. [Static Configuration](#static-configuration)
     1. [Frequency and Trigger Inputs](#frequency-and-trigger-inputs)
     2. [Events](#events)
@@ -36,10 +37,11 @@ Features:
     1. [STM32F4](#stm32f4)
 
 ## Decoding
-Currently the only two decoders styles implemented are a generic N+1 cam/crank decoder,
-and an N tooth cam/crank decoder (useful only for batch injection and
-distributor ignition).  There are preset implementations of these for a Toyota
-24+1 CAS, and the Ford TFI.  
+Currently the only two decoders styles implemented are even-tooth and
+missing-tooth wheels.  Wheels of each type are supported on both cam and
+crankshaft, and both support an optional cam sync input.  Without the cam sync,
+the even tooth decoder is only really useful for batch injection and
+distributor ignition on low resolution wheels such as the Ford TFI.
 
 ### EEC-IV TFI
 EEE-IV TFI modules came in a few flavors. Currently only the
@@ -50,12 +52,27 @@ filtered 50% duty cycle square wave formed from a rotating vane and hall
 effect sensor inside the distributor.  Without a SPOUT signal from the
 ECM, the module will fall-back on firing the coil on the rising edge of
 PIP, which will still drive the engine in fixed-timing, fixed-dwell
-mode.  
+mode. 
+
+This decoder is configured with even tooth and no cam sync, with 90 degrees per
+trigger.  Without a sync, the phase of the decoder is random, so this can only
+be used with per-cylinder ingition events and a distributor.
+
 
 ### Toyota 24+1 CAS
 This is the standard Mk3 Toyota Supra cam angle sensor.  It has 24 tooth on a
 primary wheel and 1 tooth on a secondary wheel, both gear driven by the exhaust
-cam.
+cam. 
+
+This wheel is configured with even tooth with a cam sync, 30 degrees per
+trigger, and 24 triggers
+
+### 36-1 Crank Trigger plus Cam Sync
+The cam pulse could be provided, for example, by the Toyota 24+1 CAS's second
+input, with a new wheel on the crankshaft for higher precision timing. This
+decoder is configured with missing tooth with a cam sync, 10 degrees per
+trigger, and 36 triggers.  Note that the missing tooth trigger count includes
+the missing tooth.
 
 ## Static Configuration
 See the runtime configuration section for details on the runtime control
