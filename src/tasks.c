@@ -171,29 +171,19 @@ START_TEST(check_tasks_handle_fuel_pump) {
   handle_fuel_pump();
   ck_assert_int_eq(get_gpio(1), 0);
 
-  /* Get RPM sync */
+  /* Have a recent trigger */
   config.decoder.state = DECODER_RPM;
-  handle_fuel_pump();
-  ck_assert_int_eq(get_gpio(1), 1);
-
-  /* Wait 10 more seconds, should still be on */
-  set_current_time(time_from_us(18000000));
-  handle_fuel_pump();
-  ck_assert_int_eq(get_gpio(1), 1);
-
-  /* Lose RPM sync */
-  config.decoder.state = DECODER_NOSYNC;
-  set_current_time(time_from_us(19000000));
+  config.decoder.last_trigger_time = current_time() - 500000;
   handle_fuel_pump();
   ck_assert_int_eq(get_gpio(1), 1);
 
   /* Keep waiting, should shut off */
-  set_current_time(time_from_us(25000000));
+  set_current_time(time_from_us(15000000));
   handle_fuel_pump();
   ck_assert_int_eq(get_gpio(1), 0);
 
   /* Keep waiting, should stay shut off */
-  set_current_time(time_from_us(40000000));
+  set_current_time(time_from_us(200000000));
   handle_fuel_pump();
   ck_assert_int_eq(get_gpio(1), 0);
 }
