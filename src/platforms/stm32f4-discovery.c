@@ -744,6 +744,18 @@ static void setup_task_handler() {
   iwdg_start();
 }
 
+void platform_benchmark_init() {
+  rcc_clock_setup_pll(&rcc_hse_8mhz_3v3[RCC_CLOCK_3V3_168MHZ]);
+  rcc_wait_for_osc_ready(RCC_HSE);
+  rcc_periph_clock_enable(RCC_SYSCFG);
+  rcc_periph_clock_enable(RCC_GPIOA);
+  rcc_periph_clock_enable(RCC_GPIOE);
+  rcc_periph_clock_enable(RCC_OTGFS);
+  gpio_mode_setup(GPIOE, GPIO_MODE_OUTPUT, GPIO_PUPD_PULLDOWN, 0xFFFF);
+  dwt_enable_cycle_counter();
+  platform_init_usb();
+}
+
 void platform_init() {
 
   /* 168 Mhz clock */
@@ -865,8 +877,12 @@ void platform_reset_into_bootloader() {
     ;
 }
 
-uint32_t cycle_count() {
+uint64_t cycle_count() {
   return dwt_read_cycle_counter();
+}
+
+uint64_t cycles_to_ns(uint64_t cycles) {
+  return cycles * 1000 / 168;
 }
 
 /* Sensor sampling complete
@@ -1191,22 +1207,23 @@ size_t console_write(const void *buf, size_t count) {
   /* https://github.com/libopencm3/libopencm3/issues/531
    * We can't let the usb irq be called while writing */
   nvic_disable_irq(NVIC_OTG_FS_IRQ);
+  __asm__("dsb");
+  __asm__("isb");
   rem = usbd_ep_write_packet(usbd_dev, 0x82, buf, rem);
   nvic_enable_irq(NVIC_OTG_FS_IRQ);
+  __asm__("dsb");
+  __asm__("isb");
   return rem;
 }
 
-/* This should only ever be used in an emergency */
-ssize_t _write(int fd, const void *buf, size_t count) {
+/* Use usb to send text from newlib printf */
+ssize_t __attribute__((externally_visible))
+_write(int fd, const char *buf, size_t count) {
   (void)fd;
-
-  while (count > 0) {
-    size_t written = console_write(buf, count);
-    if (written == 0) {
-      return 0;
-    }
-    buf += written;
-    count -= written;
+  size_t pos = 0;
+  while (pos < count) {
+    pos += console_write(buf + pos, count - pos);
+    usbd_poll(usbd_dev);
   }
   return count;
 }
