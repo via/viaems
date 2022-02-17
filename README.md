@@ -21,9 +21,8 @@ Features:
 - Check Engine / Malfunction Indicator control
 
 1. [Decoding](#decoding)
-    1. [EEC-IV TFI](#eec-iv-tfi)
-    2. [Toyota CAS](#toyota-241-cas)
-    3. [36-1 Crank plus Cam Sync](#36-1-crank-trigger-plus-cam-sync)
+    1. [Even Teeth](#even-teeth)
+    2. [Missing Teeth](#missing-teeth)
 2. [Static Configuration](#static-configuration)
     1. [Frequency and Trigger Inputs](#frequency-and-trigger-inputs)
     2. [Events](#events)
