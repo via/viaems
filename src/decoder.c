@@ -601,6 +601,8 @@ START_TEST(check_tfi_decoder_startup_normal) {
   validate_decoder_sequence(entries);
 
   ck_assert_int_eq(config.decoder.last_trigger_angle, 90);
+  ck_assert(config.decoder.rpm != 0);
+  ck_assert(config.decoder.tooth_rpm != 0);
 
   free_trigger_list(entries);
 }
@@ -661,6 +663,7 @@ END_TEST
 /* Gets decoder up to sync, plus an additional trigger */
 static void cam_nplusone_normal_startup_to_sync(
   struct decoder_event **entries) {
+
   /* Triggers to get RPM */
   for (unsigned int i = 0; i < config.decoder.required_triggers_rpm - 1; ++i) {
     add_trigger_event(entries, 25000, 0);
@@ -692,6 +695,9 @@ START_TEST(check_cam_nplusone_startup_normal) {
 
   ck_assert_int_eq(config.decoder.last_trigger_angle,
                    3 * config.decoder.degrees_per_trigger);
+
+  ck_assert(config.decoder.rpm != 0);
+  ck_assert(config.decoder.tooth_rpm != 0);
 
   free_trigger_list(entries);
 }
@@ -858,6 +864,8 @@ START_TEST(check_missing_tooth_startup_normal) {
   ck_assert_int_eq(config.decoder.valid, 1);
   ck_assert_int_eq(config.decoder.last_trigger_angle,
                    config.decoder.degrees_per_trigger);
+  ck_assert(config.decoder.rpm != 0);
+  ck_assert(config.decoder.tooth_rpm != 0);
   free_trigger_list(entries);
 }
 END_TEST
