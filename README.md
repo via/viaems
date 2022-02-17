@@ -23,6 +23,7 @@ Features:
 1. [Decoding](#decoding)
     1. [EEC-IV TFI](#eec-iv-tfi)
     2. [Toyota CAS](#toyota-241-cas)
+    3. [36-1 Crank plus Cam Sync](#36-1-crank-trigger-plus-cam-sync)
 2. [Static Configuration](#static-configuration)
     1. [Frequency and Trigger Inputs](#frequency-and-trigger-inputs)
     2. [Events](#events)
@@ -36,26 +37,41 @@ Features:
     1. [STM32F4](#stm32f4)
 
 ## Decoding
-Currently the only two decoders styles implemented are a generic N+1 cam/crank decoder,
-and an N tooth cam/crank decoder (useful only for batch injection and
-distributor ignition).  There are preset implementations of these for a Toyota
-24+1 CAS, and the Ford TFI.  
+Currently the only two decoders styles implemented are even-tooth and
+missing-tooth wheels.  Wheels of each type are supported on both cam and
+crankshaft, and both support an optional cam sync input. Each wheel
+configuration has a tooth count and an angle per tooth.  For a cam wheel it is
+expected that this totals up to 720 degrees -- for example a 24 tooth wheel on
+the cam is 24 total teeth with 30 degrees per tooth.  A crank wheel totals 360
+degrees. Without a cam sync, the current wheel angle has a random phase at the
+granularity of the wheel.
 
-### EEC-IV TFI
-EEE-IV TFI modules came in a few flavors. Currently only the
-Grey(Pushstart) mounted-on-distributor varient is supported.  This
-module controls dwell based on RPM, and allows ECM timing control via
-the SPOUT signal.  The module outputs a PIP signal, which is a clean
-filtered 50% duty cycle square wave formed from a rotating vane and hall
-effect sensor inside the distributor.  Without a SPOUT signal from the
-ECM, the module will fall-back on firing the coil on the rising edge of
-PIP, which will still drive the engine in fixed-timing, fixed-dwell
-mode.  
+### Even Teeth
+This decoder is configured with a tooth count and angle per tooth. Two
+decoder-specific options:
+- `rpm-window-size` - RPM for table lookups is derived from an average this many
+  teeth
+- `min-triggers-rpm` - Number of teeth to have passed since sync-loss to
+  re-establish an rpm, before (optionally) waiting for a cam sync pulse.
 
-### Toyota 24+1 CAS
-This is the standard Mk3 Toyota Supra cam angle sensor.  It has 24 tooth on a
-primary wheel and 1 tooth on a secondary wheel, both gear driven by the exhaust
-cam.
+This wheel can be used without a cam sync, but will have random phase to the
+granularity of the wheel, and is only useful on low resolution wheels. For
+example, a Ford TFI distributor has a rising edge per cylinder: It would be
+configured with 8 teeth, 90 degrees per tooth.  An ignition event could be
+configured for each cylinder, and the random angle is not an issue due to the
+use of a distributor.
+
+An example of a even tooth wheel with a cam sync is the Toyota 24+1 cam angle
+sensor - 24 cam teeth, 30 degrees per tooth, and an additional 1-tooth wheel.
+The first tooth past the cam sync is at 0 degrees.
+
+### Missing Teeth
+
+This decoder is configured with a tooth count and angle per tooth.  The tooth
+count includes the missing tooth, so a 36-1 wheel is 36 teeth. If the wheel is
+crank-mounted without a cam sync, cam phase will be unknown and events should be
+symmetric around 360 degrees (batch injection and wasted spark). The first tooth
+after the gap is at 0 degrees.
 
 ## Static Configuration
 See the runtime configuration section for details on the runtime control

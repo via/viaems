@@ -4,13 +4,28 @@
 #include "platform.h"
 #define MAX_TRIGGERS 36
 
-struct decoder;
-typedef void (*decoder_func)(struct decoder *);
-
 typedef enum {
-  FORD_TFI,
-  TOYOTA_24_1_CAS,
-} trigger_type;
+  /* Trigger wheel is N even teeth that add to 720 degrees.  This decoder is
+   * only useful for low-resolution wheels, such as a Ford TFI */
+  TRIGGER_EVEN_NOSYNC,
+
+  /* Cam (if adds to 720) or crank (if adds to 360) wheel with N even teeth
+   * and a second wheel on a cam.  Cam pulse indicates that next tooth angle
+   * is 0 degrees */
+  TRIGGER_EVEN_CAMSYNC,
+
+  /* Trigger wheel is N teeth with a single missing tooth. The first tooth after
+   * the gap is 0 degrees.  This decoder can provide sequential scheduling
+   * configured to add to 720 degrees */
+  TRIGGER_MISSING_NOSYNC,
+
+  /* Trigger wheel identical to `TRIGGER_MISSING_NOSYNC`, but is expected to
+   * always be a crank wheel adding to 360 degrees, with a second single tooth
+   * wheel indicating the cam phase.  The crank cycle (measured from tooth 1 to
+   * tooth 1) with the cam sync is the first crank cycle, 0-360. The first
+   * tooth 1 *after* a cam sync is angle 360. */
+  TRIGGER_MISSING_CAMSYNC,
+} decoder_type;
 
 typedef enum {
   DECODER_NOSYNC,
@@ -28,27 +43,22 @@ typedef enum {
 } decoder_loss_reason;
 
 struct decoder {
-  /* Unsafe interrupt-written vars */
-  timeval_t last_t0;
-  timeval_t last_t1;
-  uint32_t needs_decoding_t0;
-  uint32_t needs_decoding_t1;
-
-  /* Safe, only handled in main loop */
-  decoder_func decode;
   uint32_t valid;
   uint32_t rpm;
+  uint32_t tooth_rpm;
   timeval_t last_trigger_time;
   degrees_t last_trigger_angle;
   timeval_t expiration;
 
   /* Configuration */
-  trigger_type type;
+  decoder_type type;
   degrees_t offset;
+
   float trigger_max_rpm_change;
   float trigger_cur_rpm_change;
   uint32_t trigger_min_rpm;
   uint32_t required_triggers_rpm;
+
   uint32_t num_triggers;
   degrees_t degrees_per_trigger;
   uint32_t rpm_window_size;
@@ -70,7 +80,7 @@ struct decoder_event {
   timeval_t time;
 #ifdef UNITTEST
   decoder_state state;
-  int valid;
+  uint32_t valid;
   decoder_loss_reason reason;
   struct decoder_event *next;
 #endif

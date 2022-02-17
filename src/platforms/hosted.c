@@ -224,8 +224,10 @@ struct event {
 };
 
 static void do_test_trigger(int interrupt_fd) {
+  static bool camsync = true;
   static timeval_t last_trigger_time = 0;
   static int trigger = 0;
+  static int cycle = 0;
 
   if (!test_trigger_rpm) {
     return;
@@ -238,20 +240,24 @@ static void do_test_trigger(int interrupt_fd) {
   }
   last_trigger_time = curtime;
 
-  struct event ev = { .type = TRIGGER0, .time = curtime };
-  if (write(interrupt_fd, &ev, sizeof(ev)) < 0) {
-    perror("write");
-    exit(3);
-  }
-
   trigger++;
-  if (trigger == 24) {
-    struct event ev = { .type = TRIGGER1, .time = curtime };
+  if (trigger == 36) {
+    trigger = 0;
+    camsync = !camsync;
+    cycle += 1;
+  } else {
+    if (trigger == 30 && camsync && cycle < 8) {
+      struct event ev = { .type = TRIGGER1, .time = curtime };
+      if (write(interrupt_fd, &ev, sizeof(ev)) < 0) {
+        perror("write");
+        exit(3);
+      }
+    }
+    struct event ev = { .type = TRIGGER0, .time = curtime };
     if (write(interrupt_fd, &ev, sizeof(ev)) < 0) {
       perror("write");
-      exit(4);
+      exit(3);
     }
-    trigger = 0;
   }
 }
 
