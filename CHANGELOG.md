@@ -1,4 +1,4 @@
-### master (unreleased)
+### 1.4.0 (2022 Feb 16)
 This introduces a breaking change with interface software.
 
 - New console and logging interface, as defined in INTERFACE.md. 
