@@ -868,9 +868,6 @@ void platform_reset_into_bootloader() {
 
   platform_disable_periphs();
 
-  /* 168 Mhz clock */
-  rcc_clock_setup_pll(&rcc_hsi_configs[RCC_CLOCK_3V3_168MHZ]);
-
   __asm__ volatile("msr msp, %0" ::"g"(*(volatile uint32_t *)BOOTLOADER_ADDR));
   (*(void (**)())(BOOTLOADER_ADDR + 4))();
   while (1)
