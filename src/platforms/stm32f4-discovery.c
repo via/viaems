@@ -1250,6 +1250,7 @@ void platform_save_config() {
   int n_sectors, conf_bytes;
 
   handle_emergency_shutdown();
+  platform_disable_periphs();
   /* Flash erase takes longer than our watchdog */
   iwdg_set_period_ms(5000);
 
@@ -1269,7 +1270,6 @@ void platform_save_config() {
   }
 
   flash_lock();
-  platform_disable_periphs();
   reset_handler();
 }
 
