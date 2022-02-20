@@ -21,6 +21,7 @@ static uint32_t render_loss_reason() {
   return (uint32_t)config.decoder.loss;
 };
 
+extern float goertzel_result;
 const struct console_feed_node console_feed_nodes[] = {
   { .id = "cputime", .uint32_fptr = current_time },
 
@@ -54,6 +55,8 @@ const struct console_feed_node console_feed_nodes[] = {
     .float_ptr = &config.sensors[SENSOR_EGO].processed_value },
   { .id = "sensor.frp",
     .float_ptr = &config.sensors[SENSOR_FRP].processed_value },
+  { .id = "sensor.goertzel",
+    .float_ptr = &goertzel_result },
 
   { .id = "sensor_faults", .uint32_fptr = sensor_fault_status },
 

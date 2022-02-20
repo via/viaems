@@ -26,6 +26,7 @@
 #include "tasks.h"
 #include "util.h"
 
+#include <math.h>
 #include <stdatomic.h>
 #include <stdlib.h>
 #include <string.h>
@@ -391,6 +392,52 @@ void exti15_10_isr() {
   show_scheduled_outputs();
 }
 
+struct goertzel {
+  uint32_t width;
+  uint32_t freq;
+  float w;
+  float cr;
+
+
+  uint32_t n_samples;
+  float sprev;
+  float sprev2;
+};
+
+static struct goertzel grt = {0};
+
+static void init_goertzel() {
+  grt.width = 64,
+  grt.freq = 13,
+  grt.w = 2.0f * 3.14159f * (float)grt.freq / (float)grt.width,
+  grt.cr = cosf(grt.w); 
+
+  grt.n_samples = 0;
+  grt.sprev = 0.0f;
+  grt.sprev2 = 0.0f;
+
+};
+
+float goertzel_result;
+static void goertzel_add_sample(float sample) {
+
+  grt.n_samples += 1;
+  float s = sample + grt.cr * 2 * grt.sprev - grt.sprev2;
+  grt.sprev2 = grt.sprev;
+  grt.sprev = s;
+
+  if (grt.n_samples == 64) {
+    goertzel_result = grt.sprev * grt.sprev + 
+                      grt.sprev2 * grt.sprev2 -
+                      grt.sprev * grt.sprev2 * grt.cr * 2;
+
+    grt.n_samples = 0;
+    grt.sprev = 0;
+    grt.sprev2 = 0;
+  }
+}
+
+
 /* We use TIM7 to control the sample rate.  It is set up to trigger a DMA event
  * on counter update to TX on SPI2.  When the full 16 bits is transmitted and
  * the SPI RX buffer is filled, the RX DMA event will fill, and populate
@@ -413,9 +460,9 @@ void exti15_10_isr() {
 #ifdef SPI_TLC2543
 #define SPI_WRITE_COUNT 13
 #else
-#define SPI_WRITE_COUNT 9
+#define SPI_WRITE_COUNT 14
 #endif
-static volatile uint16_t spi_rx_raw_adc[SPI_WRITE_COUNT] = { 0 };
+static uint16_t spi_rx_raw_adc[2][SPI_WRITE_COUNT] = { 0 };
 
 void start_adc_sampling() {
 #ifdef SPI_TLC2543
@@ -427,7 +474,13 @@ void start_adc_sampling() {
   };
 #else
   static const uint16_t spi_tx_list[] = {
-    0x0400, 0x0C00, 0x1400, 0x1C00, 0x2400, 0x2C00, 0x3400, 0x3C00, 0x3C00,
+    0x0400, 0x3C00,
+    0x0C00, 0x3C00,
+    0x1400, 0x3C00,
+    0x1C00, 0x3C00,
+    0x2400, 0x3C00,
+    0x2C00, 0x3C00,
+    0x3400, 0x3C00,
   };
 #endif
 
@@ -444,6 +497,7 @@ void start_adc_sampling() {
   dma_set_transfer_mode(DMA1, DMA_STREAM2, DMA_SxCR_DIR_MEM_TO_PERIPHERAL);
   dma_set_peripheral_address(DMA1, DMA_STREAM2, (uint32_t)&SPI2_DR);
   dma_set_memory_address(DMA1, DMA_STREAM2, (uint32_t)spi_tx_list);
+  dma_enable_circular_mode(DMA1, DMA_STREAM2);
   dma_set_number_of_data(
     DMA1, DMA_STREAM2, sizeof(spi_tx_list) / sizeof(spi_tx_list[0]));
   dma_channel_select(DMA1, DMA_STREAM2, DMA_SxCR_CHSEL_1);
@@ -458,6 +512,8 @@ void start_adc_sampling() {
 }
 
 static void platform_init_spi_adc() {
+  init_goertzel();
+
   /* Configure SPI output */
   gpio_mode_setup(
     GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO13 | GPIO14 | GPIO15);
@@ -483,13 +539,15 @@ static void platform_init_spi_adc() {
   dma_enable_stream(DMA1, DMA_STREAM3);
   dma_stream_reset(DMA1, DMA_STREAM3);
   dma_set_priority(DMA1, DMA_STREAM3, DMA_SxCR_PL_LOW);
+  dma_enable_double_buffer_mode(DMA1, DMA_STREAM3);
   dma_set_memory_size(DMA1, DMA_STREAM3, DMA_SxCR_MSIZE_16BIT);
   dma_set_peripheral_size(DMA1, DMA_STREAM3, DMA_SxCR_PSIZE_16BIT);
   dma_enable_memory_increment_mode(DMA1, DMA_STREAM3);
   dma_set_transfer_mode(DMA1, DMA_STREAM3, DMA_SxCR_DIR_PERIPHERAL_TO_MEM);
   dma_set_peripheral_address(DMA1, DMA_STREAM3, (uint32_t)&SPI2_DR);
   dma_enable_circular_mode(DMA1, DMA_STREAM3);
-  dma_set_memory_address(DMA1, DMA_STREAM3, (uint32_t)spi_rx_raw_adc);
+  dma_set_memory_address(DMA1, DMA_STREAM3, (uint32_t)spi_rx_raw_adc[0]);
+  dma_set_memory_address_1(DMA1, DMA_STREAM3, (uint32_t)spi_rx_raw_adc[1]);
   dma_set_number_of_data(DMA1, DMA_STREAM3, SPI_WRITE_COUNT);
   dma_channel_select(DMA1, DMA_STREAM3, DMA_SxCR_CHSEL_0);
   dma_enable_direct_mode(DMA1, DMA_STREAM3);
@@ -912,10 +970,6 @@ void dma1_stream3_isr(void) {
   }
   dma_clear_interrupt_flags(DMA1, DMA_STREAM3, DMA_TCIF);
 
-  /* CS high */
-  gpio_set(GPIOB, GPIO12);
-  timer_disable_counter(TIM7);
-
   int fault = 0;
 #ifdef SPI_TLC2543
   if (((spi_rx_raw_adc[12] >> 4) > (2048 + 10)) ||
@@ -924,11 +978,22 @@ void dma1_stream3_isr(void) {
   }
 #endif
 
+
+  uint16_t *spi_rx_raw = spi_rx_raw_adc[(dma_get_target(DMA1, DMA_STREAM3) + 1) % 2];
+
+  goertzel_add_sample(spi_rx_raw[0]);
+  goertzel_add_sample(spi_rx_raw[2]);
+  goertzel_add_sample(spi_rx_raw[4]);
+  goertzel_add_sample(spi_rx_raw[6]);
+  goertzel_add_sample(spi_rx_raw[8]);
+  goertzel_add_sample(spi_rx_raw[10]);
+  goertzel_add_sample(spi_rx_raw[12]);
+
   for (int i = 0; i < NUM_SENSORS; ++i) {
     if (config.sensors[i].source == SENSOR_ADC) {
-      int pin = (config.sensors[i].pin + 1) % SPI_WRITE_COUNT;
+      int pin = (config.sensors[i].pin * 2 + 1) % SPI_WRITE_COUNT;
       config.sensors[i].fault = fault ? FAULT_CONN : FAULT_NONE;
-      uint16_t adc_value = spi_rx_raw_adc[pin];
+      uint16_t adc_value = spi_rx_raw[pin];
 #ifdef SPI_TLC2543
       adc_value >>= 4; /* 12 bit value is left justified */
 #endif
@@ -937,8 +1002,6 @@ void dma1_stream3_isr(void) {
   }
 
   sensors_process(SENSOR_ADC);
-
-  start_adc_sampling();
 }
 
 static struct {
