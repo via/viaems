@@ -5,7 +5,9 @@
 
 struct boost_control_config {
   struct table *pwm_duty_vs_rpm;
-  float threshhold_kpa;
+  float enable_threshold_kpa;
+  float control_threshold_kpa;
+  float control_threshold_tps;
   uint32_t pin;
   float overboost;
 };

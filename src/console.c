@@ -1147,9 +1147,18 @@ static void render_boost_control(struct console_request_context *ctx,
   render_uint32_map_field(
     ctx, "pin", "GPIO pin for boost control output", &config.boost_control.pin);
   render_float_map_field(ctx,
-                         "threshold",
-                         "Boost low threshold to enable boost control",
-                         &config.boost_control.threshhold_kpa);
+                         "enable-threshold",
+                         "MAP low threshold to enable boost control",
+                         &config.boost_control.enable_threshold_kpa);
+  render_float_map_field(
+    ctx,
+    "control-threshold",
+    "MAP low threshold to keep valve open if TPS setting is met",
+    &config.boost_control.control_threshold_kpa);
+  render_float_map_field(ctx,
+                         "control-threshold-tps",
+                         "TPS threshold for valve-wide-open mode",
+                         &config.boost_control.control_threshold_tps);
   render_float_map_field(ctx,
                          "overboost",
                          "High threshold for boost cut (kpa)",
