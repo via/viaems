@@ -40,6 +40,8 @@ struct calculated_values {
   float timing_advance;
   uint32_t dwell_us;
   uint32_t rpm_limit_cut;
+  uint32_t boost_cut;
+  uint32_t fuel_overduty_cut;
 
   /* Fueling */
   uint32_t fueling_us;

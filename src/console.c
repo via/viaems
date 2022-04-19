@@ -31,10 +31,16 @@ const struct console_feed_node console_feed_nodes[] = {
   { .id = "temp_enrich_percent", .float_ptr = &calculated_values.ete },
   { .id = "injector_dead_time", .float_ptr = &calculated_values.idt },
   { .id = "accel_enrich_percent", .float_ptr = &calculated_values.tipin },
+  { .id = "airmass_per_cycle",
+    .float_ptr = &calculated_values.airmass_per_cycle },
 
   /* Ignition */
   { .id = "advance", .float_ptr = &calculated_values.timing_advance },
   { .id = "dwell", .uint32_ptr = &calculated_values.dwell_us },
+  { .id = "rpm_cut", .uint32_ptr = &calculated_values.rpm_limit_cut },
+  { .id = "boost_cut", .uint32_ptr = &calculated_values.boost_cut },
+  { .id = "fuel_overduty_cut",
+    .uint32_ptr = &calculated_values.fuel_overduty_cut },
 
   { .id = "sensor.map",
     .float_ptr = &config.sensors[SENSOR_MAP].processed_value },
