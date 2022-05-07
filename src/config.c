@@ -287,7 +287,7 @@ struct config config __attribute__((section(".configdata"))) = {
     .pwm_duty_vs_rpm = &boost_control_pwm,
     .enable_threshold_kpa = 90.0,
     .control_threshold_kpa = 190.0,
-    .control_threshold_tps = 90.0,
+    .control_threshold_tps = 105.0,
     .pin = 1,
     .overboost = 260.0,
   },
