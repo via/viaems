@@ -30,14 +30,18 @@ static void handle_fuel_pump() {
 
 static void handle_boost_control() {
   float duty;
-  if ((config.sensors[SENSOR_MAP].processed_value <
-       config.boost_control.threshhold_kpa)) {
-    if (config.sensors[SENSOR_TPS].processed_value > 90.0f) {
-      duty = 100.0f;
-    } else {
-      duty = 0.0f;
-    }
+  float map = config.sensors[SENSOR_MAP].processed_value;
+  float tps = config.sensors[SENSOR_TPS].processed_value;
+  if (map < config.boost_control.enable_threshold_kpa) {
+    /* Below the "enable" threshold, keep the valve off */
+    duty = 0.0f;
+  } else if (map < config.boost_control.control_threshold_kpa &&
+             tps > config.boost_control.control_threshold_tps) {
+    /* Above "enable", but below "control", and WOT, so keep wastegate at
+     * atmostpheric pressure to improve spool time */
+    duty = 100.0f;
   } else {
+    /* We are controlling the wastegate with PWM */
     duty = interpolate_table_oneaxis(config.boost_control.pwm_duty_vs_rpm,
                                      config.decoder.rpm);
   }
