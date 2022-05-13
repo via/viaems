@@ -26,6 +26,9 @@ struct config {
   /* Frequency inputs */
   struct freq_input freq_inputs[4];
 
+  /* Knock */
+  struct knock_input knock[2];
+
   /* Tables */
   struct table *timing;
   struct table *ve;

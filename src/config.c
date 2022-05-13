@@ -217,6 +217,9 @@ struct config config __attribute__((section(".configdata"))) = {
     [2] = {.edge = RISING_EDGE, .type = FREQ},
     [3] = {.edge = RISING_EDGE, .type = FREQ},
   },
+  .knock = {
+    { .freq = 7000 },
+  },
   .sensors = {
     [SENSOR_BRV] = {.pin=0, .source=SENSOR_ADC, .method=METHOD_LINEAR,
       .range={.min=0, .max=24.5}, .lag=80,

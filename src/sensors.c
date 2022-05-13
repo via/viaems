@@ -158,6 +158,38 @@ uint32_t sensor_fault_status() {
   return faults;
 }
 
+static void reset_goertzel(struct goertzel *grt) {
+  grt->n_samples = 0;
+  grt->sprev = 0.0f;
+  grt->sprev2 = 0.0f;
+}
+
+#define GOERTZEL_WIDTH 64
+#define GOERTZEL_SAMPLERATE 35000
+struct goertzel goertzel_filters[2];
+
+void configure_knock(struct knock_input *ki, struct goertzel *grt) {
+  reset_goertzel(grt);
+  grt->w = 2.0f * 3.14159f * ki->freq / (float)GOERTZEL_SAMPLERATE;
+  grt->cr = cosf(grt->w); 
+};
+
+void knock_add_sample(struct goertzel *grt, float sample) {
+
+  grt->n_samples += 1;
+  float s = sample + grt->cr * 2 * grt->sprev - grt->sprev2;
+  grt->sprev2 = grt->sprev;
+  grt->sprev = s;
+
+  if (grt->n_samples == GOERTZEL_WIDTH) {
+    grt->result = grt->sprev * grt->sprev + 
+                      grt->sprev2 * grt->sprev2 -
+                      grt->sprev * grt->sprev2 * grt->cr * 2;
+
+    reset_goertzel(grt);
+  }
+}
+
 #ifdef UNITTEST
 #include <check.h>
 

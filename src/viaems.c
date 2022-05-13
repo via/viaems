@@ -16,6 +16,8 @@ int main() {
   decoder_init(&config.decoder);
   platform_init(0, NULL);
   initialize_scheduler();
+  configure_knock(&config.knock[0], &goertzel_filters[0]);
+  configure_knock(&config.knock[1], &goertzel_filters[1]);
 
   assert(config_valid());
 

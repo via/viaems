@@ -99,6 +99,24 @@ struct freq_input {
   freq_type type;
 };
 
+struct knock_input {
+  float freq;
+};
+
+struct goertzel {
+  float w;
+  float cr;
+
+  uint32_t n_samples;
+  float sprev;
+  float sprev2;
+  float result;
+};
+
+extern struct goertzel goertzel_filters[2];
+
+void configure_knock(struct knock_input *ki, struct goertzel *grt);
+void knock_add_sample(struct goertzel *grt, float sample);
 void sensors_process(sensor_source source);
 uint32_t sensor_fault_status();
 

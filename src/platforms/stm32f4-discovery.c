@@ -392,49 +392,41 @@ void exti15_10_isr() {
   show_scheduled_outputs();
 }
 
-struct goertzel {
-  uint32_t width;
-  uint32_t freq;
-  float w;
-  float cr;
 
+void adc_isr(void) {
+  set_gpio(4, 1);
+  knock_add_sample(&goertzel_filters[0], adc_read_injected(ADC1, 3));
+  knock_add_sample(&goertzel_filters[1], adc_read_injected(ADC1, 4));
+  ADC1_SR &= ~(ADC_SR_JEOC);
+  set_gpio(4, 0);
+}
 
-  uint32_t n_samples;
-  float sprev;
-  float sprev2;
-};
-
-static struct goertzel grt = {0};
-
-static void init_goertzel() {
-  grt.width = 64,
-  grt.freq = 13,
-  grt.w = 2.0f * 3.14159f * (float)grt.freq / (float)grt.width,
-  grt.cr = cosf(grt.w); 
-
-  grt.n_samples = 0;
-  grt.sprev = 0.0f;
-  grt.sprev2 = 0.0f;
-
-};
-
-float goertzel_result;
-static void goertzel_add_sample(float sample) {
-
-  grt.n_samples += 1;
-  float s = sample + grt.cr * 2 * grt.sprev - grt.sprev2;
-  grt.sprev2 = grt.sprev;
-  grt.sprev = s;
-
-  if (grt.n_samples == 64) {
-    goertzel_result = grt.sprev * grt.sprev + 
-                      grt.sprev2 * grt.sprev2 -
-                      grt.sprev * grt.sprev2 * grt.cr * 2;
-
-    grt.n_samples = 0;
-    grt.sprev = 0;
-    grt.sprev2 = 0;
-  }
+void init_knock() {
+  adc_power_off(ADC1);
+  adc_enable_scan_mode(ADC1);
+  adc_set_sample_time_on_all_channels(ADC1, ADC_SMPR_SMP_15CYC);
+  adc_disable_automatic_injected_group_conversion(ADC1);
+  adc_enable_eoc_interrupt_injected(ADC1);
+  adc_eoc_after_group(ADC1);
+  adc_enable_external_trigger_injected(ADC1, ADC_CR2_JEXTSEL_TIM1_TRGO, ADC_CR2_JEXTEN_BOTH_EDGES);
+  adc_power_on(ADC1);
+  
+  uint8_t sequence[] = {0, 1, 2, 3};
+  adc_set_injected_sequence(ADC1, sizeof(sequence), sequence);
+  
+  gpio_mode_setup(GPIOA, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO2);
+  nvic_enable_irq(NVIC_ADC_IRQ);
+  nvic_set_priority(NVIC_ADC_IRQ, 0);
+  
+  timer_set_counter(TIM1, 0);
+  timer_set_mode(TIM1, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
+  timer_set_period(TIM1, 4800); /* 35 KHz */
+  timer_set_prescaler(TIM1, 0); /* 168 MHz */
+  timer_enable_preload(TIM1);
+  timer_continuous_mode(TIM1);
+  timer_update_on_overflow(TIM1);
+  timer_set_master_mode(TIM1, TIM_CR2_MMS_UPDATE);
+  timer_enable_counter(TIM1);
 }
 
 
@@ -844,6 +836,7 @@ void platform_init() {
   rcc_periph_clock_enable(RCC_TIM8);
   rcc_periph_clock_enable(RCC_SPI2);
   rcc_periph_clock_enable(RCC_OTGFS);
+  rcc_periph_clock_enable(RCC_ADC1);
 
   /* Wait for clock to spin up */
   rcc_wait_for_osc_ready(RCC_HSE);
@@ -855,6 +848,7 @@ void platform_init() {
   platform_init_spi_adc();
   platform_init_pwm();
   platform_init_usb();
+  init_knock();
 
   for (int i = 0; i < NUM_SENSORS; ++i) {
     if (config.sensors[i].source == SENSOR_DIGITAL) {
