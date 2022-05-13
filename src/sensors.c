@@ -171,7 +171,7 @@ struct goertzel goertzel_filters[2];
 void configure_knock(struct knock_input *ki, struct goertzel *grt) {
   reset_goertzel(grt);
   grt->w = 2.0f * 3.14159f * ki->freq / (float)GOERTZEL_SAMPLERATE;
-  grt->cr = cosf(grt->w); 
+  grt->cr = cosf(grt->w);
 };
 
 void knock_add_sample(struct goertzel *grt, float sample) {
@@ -182,9 +182,8 @@ void knock_add_sample(struct goertzel *grt, float sample) {
   grt->sprev = s;
 
   if (grt->n_samples == GOERTZEL_WIDTH) {
-    grt->result = grt->sprev * grt->sprev + 
-                      grt->sprev2 * grt->sprev2 -
-                      grt->sprev * grt->sprev2 * grt->cr * 2;
+    grt->result = grt->sprev * grt->sprev + grt->sprev2 * grt->sprev2 -
+                  grt->sprev * grt->sprev2 * grt->cr * 2;
 
     reset_goertzel(grt);
   }

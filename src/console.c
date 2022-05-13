@@ -61,10 +61,8 @@ const struct console_feed_node console_feed_nodes[] = {
     .float_ptr = &config.sensors[SENSOR_EGO].processed_value },
   { .id = "sensor.frp",
     .float_ptr = &config.sensors[SENSOR_FRP].processed_value },
-  { .id = "knock.raw1",
-    .float_ptr = &goertzel_filters[0].result },
-  { .id = "knock.raw2",
-    .float_ptr = &goertzel_filters[1].result },
+  { .id = "knock.raw1", .float_ptr = &goertzel_filters[0].result },
+  { .id = "knock.raw2", .float_ptr = &goertzel_filters[1].result },
 
   { .id = "sensor_faults", .uint32_fptr = sensor_fault_status },
 

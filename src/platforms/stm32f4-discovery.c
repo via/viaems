@@ -392,7 +392,6 @@ void exti15_10_isr() {
   show_scheduled_outputs();
 }
 
-
 void adc_isr(void) {
   set_gpio(4, 1);
   knock_add_sample(&goertzel_filters[0], adc_read_injected(ADC1, 3));
@@ -408,16 +407,17 @@ void init_knock() {
   adc_disable_automatic_injected_group_conversion(ADC1);
   adc_enable_eoc_interrupt_injected(ADC1);
   adc_eoc_after_group(ADC1);
-  adc_enable_external_trigger_injected(ADC1, ADC_CR2_JEXTSEL_TIM1_TRGO, ADC_CR2_JEXTEN_BOTH_EDGES);
+  adc_enable_external_trigger_injected(
+    ADC1, ADC_CR2_JEXTSEL_TIM1_TRGO, ADC_CR2_JEXTEN_BOTH_EDGES);
   adc_power_on(ADC1);
-  
-  uint8_t sequence[] = {0, 1, 2, 3};
+
+  uint8_t sequence[] = { 0, 1, 2, 3 };
   adc_set_injected_sequence(ADC1, sizeof(sequence), sequence);
-  
+
   gpio_mode_setup(GPIOA, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO2);
   nvic_enable_irq(NVIC_ADC_IRQ);
   nvic_set_priority(NVIC_ADC_IRQ, 0);
-  
+
   timer_set_counter(TIM1, 0);
   timer_set_mode(TIM1, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
   timer_set_period(TIM1, 4800); /* 35 KHz */
@@ -428,7 +428,6 @@ void init_knock() {
   timer_set_master_mode(TIM1, TIM_CR2_MMS_UPDATE);
   timer_enable_counter(TIM1);
 }
-
 
 /* We use TIM7 to control the sample rate.  It is set up to trigger a DMA event
  * on counter update to TX on SPI2.  When the full 16 bits is transmitted and
