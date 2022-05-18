@@ -253,6 +253,10 @@ static void configure_usart1() {
 }
 
 
+static void setup_caches() {
+  *((uint32_t *)0xE000EF50) = 0; /* Invalidate I-cache */
+  SCB->CCR |= SCB_CCR_IC; /* Enable I-Cache */
+}
 void platform_init() {
   lowlevel_init();
 
@@ -265,8 +269,11 @@ void platform_init() {
 
   GPIOC->MODER = GPIOC_MODER_MODE0_VAL(1) | GPIOC_MODER_MODE1_VAL(1) | GPIOC_MODER_MODE2_VAL(1);
   GPIOC->PUPDR = GPIOC_PUPDR_PUPD0_VAL(2) | GPIOC_PUPDR_PUPD1_VAL(2) | GPIOC_PUPDR_PUPD2_VAL(2);
+  GPIOC->OSPEEDR = GPIOC_OSPEEDR_OSPEED0_VAL(3) | GPIOC_OSPEEDR_OSPEED1_VAL(3) | GPIOC_OSPEEDR_OSPEED2_VAL(3);
 
   GPIOC->ODR = 0x2;
 
+  setup_caches();
   configure_usart1();
+  setup_tim8();
 }

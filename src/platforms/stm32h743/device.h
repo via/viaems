@@ -146,11 +146,11 @@ enum IRQ_NUMBER {
   WKUP_IRQ = 149, /* WKUP1 to WKUP6 pins */
 };
 struct COMP1 {
-  volatile const uint32_t SR;
-  volatile uint32_t ICFR;
-  volatile uint32_t OR;
-  volatile uint32_t CFGR1;
-  volatile uint32_t CFGR2;
+    volatile const uint32_t SR;
+    volatile uint32_t ICFR;
+    volatile uint32_t OR;
+    volatile uint32_t CFGR1;
+    volatile uint32_t CFGR2;
 };
 #define COMP1_SR_C1VAL          (0x1UL << 0) 
 #define COMP1_SR_C1VAL_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -216,11 +216,14 @@ struct COMP1 {
 #define COMP1_CFGR2_LOCK_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
 
 #define COMP1  ((struct COMP1*)(0x58003800UL))
+
+
+
 struct CRS {
-  volatile uint32_t CR;
-  volatile uint32_t CFGR;
-  volatile const uint32_t ISR;
-  volatile uint32_t ICR;
+    volatile uint32_t CR;
+    volatile uint32_t CFGR;
+    volatile const uint32_t ISR;
+    volatile uint32_t ICR;
 };
 #define CRS_CR_SYNCOKIE          (0x1UL << 0) 
 #define CRS_CR_SYNCOKIE_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -276,27 +279,30 @@ struct CRS {
 #define CRS_ICR_ESYNCC_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
 
 #define CRS  ((struct CRS*)(0x40008400UL))
+
+
+
 struct DAC {
-  volatile uint32_t CR;
-  volatile uint32_t SWTRGR;
-  volatile uint32_t DHR12R1;
-  volatile uint32_t DHR12L1;
-  volatile uint32_t DHR8R1;
-  volatile uint32_t DHR12R2;
-  volatile uint32_t DHR12L2;
-  volatile uint32_t DHR8R2;
-  volatile uint32_t DHR12RD;
-  volatile uint32_t DHR12LD;
-  volatile uint32_t DHR8RD;
-  volatile const uint32_t DOR1;
-  volatile const uint32_t DOR2;
-  volatile uint32_t SR;
-  volatile uint32_t CCR;
-  volatile uint32_t MCR;
-  volatile uint32_t SHSR1;
-  volatile uint32_t SHSR2;
-  volatile uint32_t SHHR;
-  volatile uint32_t SHRR;
+    volatile uint32_t CR;
+    volatile uint32_t SWTRGR;
+    volatile uint32_t DHR12R1;
+    volatile uint32_t DHR12L1;
+    volatile uint32_t DHR8R1;
+    volatile uint32_t DHR12R2;
+    volatile uint32_t DHR12L2;
+    volatile uint32_t DHR8R2;
+    volatile uint32_t DHR12RD;
+    volatile uint32_t DHR12LD;
+    volatile uint32_t DHR8RD;
+    volatile const uint32_t DOR1;
+    volatile const uint32_t DOR2;
+    volatile uint32_t SR;
+    volatile uint32_t CCR;
+    volatile uint32_t MCR;
+    volatile uint32_t SHSR1;
+    volatile uint32_t SHSR2;
+    volatile uint32_t SHHR;
+    volatile uint32_t SHRR;
 };
 #define DAC_CR_EN1          (0x1UL << 0) 
 #define DAC_CR_EN1_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -396,48 +402,51 @@ struct DAC {
 #define DAC_SHRR_TREFRESH2_VAL(X) (((uint32_t)(X) & 0xFFUL) << 16)
 
 #define DAC  ((struct DAC*)(0x40007400UL))
+
+
+
 struct BDMA {
-  volatile const uint32_t ISR;
-  volatile uint32_t IFCR;
-  volatile uint32_t CCR1;
-  volatile uint32_t CNDTR1;
-  volatile uint32_t CPAR1;
-  volatile uint32_t CMAR1;
-  const volatile uint32_t RESERVED28[1];
-  volatile uint32_t CCR2;
-  volatile uint32_t CNDTR2;
-  volatile uint32_t CPAR2;
-  volatile uint32_t CMAR2;
-  const volatile uint32_t RESERVED48[1];
-  volatile uint32_t CCR3;
-  volatile uint32_t CNDTR3;
-  volatile uint32_t CPAR3;
-  volatile uint32_t CMAR3;
-  const volatile uint32_t RESERVED68[1];
-  volatile uint32_t CCR4;
-  volatile uint32_t CNDTR4;
-  volatile uint32_t CPAR4;
-  volatile uint32_t CMAR4;
-  const volatile uint32_t RESERVED88[1];
-  volatile uint32_t CCR5;
-  volatile uint32_t CNDTR5;
-  volatile uint32_t CPAR5;
-  volatile uint32_t CMAR5;
-  const volatile uint32_t RESERVED108[1];
-  volatile uint32_t CCR6;
-  volatile uint32_t CNDTR6;
-  volatile uint32_t CPAR6;
-  volatile uint32_t CMAR6;
-  const volatile uint32_t RESERVED128[1];
-  volatile uint32_t CCR7;
-  volatile uint32_t CNDTR7;
-  volatile uint32_t CPAR7;
-  volatile uint32_t CMAR7;
-  const volatile uint32_t RESERVED148[1];
-  volatile uint32_t CCR8;
-  volatile uint32_t CNDTR8;
-  volatile uint32_t CPAR8;
-  volatile uint32_t CMAR8;
+    volatile const uint32_t ISR;
+    volatile uint32_t IFCR;
+    volatile uint32_t CCR1;
+    volatile uint32_t CNDTR1;
+    volatile uint32_t CPAR1;
+    volatile uint32_t CMAR1;
+    volatile const uint32_t RESERVED_24;
+    volatile uint32_t CCR2;
+    volatile uint32_t CNDTR2;
+    volatile uint32_t CPAR2;
+    volatile uint32_t CMAR2;
+    volatile const uint32_t RESERVED_44;
+    volatile uint32_t CCR3;
+    volatile uint32_t CNDTR3;
+    volatile uint32_t CPAR3;
+    volatile uint32_t CMAR3;
+    volatile const uint32_t RESERVED_64;
+    volatile uint32_t CCR4;
+    volatile uint32_t CNDTR4;
+    volatile uint32_t CPAR4;
+    volatile uint32_t CMAR4;
+    volatile const uint32_t RESERVED_84;
+    volatile uint32_t CCR5;
+    volatile uint32_t CNDTR5;
+    volatile uint32_t CPAR5;
+    volatile uint32_t CMAR5;
+    volatile const uint32_t RESERVED_104;
+    volatile uint32_t CCR6;
+    volatile uint32_t CNDTR6;
+    volatile uint32_t CPAR6;
+    volatile uint32_t CMAR6;
+    volatile const uint32_t RESERVED_124;
+    volatile uint32_t CCR7;
+    volatile uint32_t CNDTR7;
+    volatile uint32_t CPAR7;
+    volatile uint32_t CMAR7;
+    volatile const uint32_t RESERVED_144;
+    volatile uint32_t CCR8;
+    volatile uint32_t CNDTR8;
+    volatile uint32_t CPAR8;
+    volatile uint32_t CMAR8;
 };
 #define BDMA_ISR_GIF1          (0x1UL << 0) 
 #define BDMA_ISR_GIF1_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -809,27 +818,30 @@ struct BDMA {
 #define BDMA_CMAR8_MA_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
 
 #define BDMA  ((struct BDMA*)(0x58025400UL))
+
+
+
 struct DMA2D {
-  volatile uint32_t CR;
-  volatile const uint32_t ISR;
-  volatile uint32_t IFCR;
-  volatile uint32_t FGMAR;
-  volatile uint32_t FGOR;
-  volatile uint32_t BGMAR;
-  volatile uint32_t BGOR;
-  volatile uint32_t FGPFCCR;
-  volatile uint32_t FGCOLR;
-  volatile uint32_t BGPFCCR;
-  volatile uint32_t BGCOLR;
-  volatile uint32_t FGCMAR;
-  volatile uint32_t BGCMAR;
-  volatile uint32_t OPFCCR;
-  volatile uint32_t OCOLR;
-  volatile uint32_t OMAR;
-  volatile uint32_t OOR;
-  volatile uint32_t NLR;
-  volatile uint32_t LWR;
-  volatile uint32_t AMTCR;
+    volatile uint32_t CR;
+    volatile const uint32_t ISR;
+    volatile uint32_t IFCR;
+    volatile uint32_t FGMAR;
+    volatile uint32_t FGOR;
+    volatile uint32_t BGMAR;
+    volatile uint32_t BGOR;
+    volatile uint32_t FGPFCCR;
+    volatile uint32_t FGCOLR;
+    volatile uint32_t BGPFCCR;
+    volatile uint32_t BGCOLR;
+    volatile uint32_t FGCMAR;
+    volatile uint32_t BGCMAR;
+    volatile uint32_t OPFCCR;
+    volatile uint32_t OCOLR;
+    volatile uint32_t OMAR;
+    volatile uint32_t OOR;
+    volatile uint32_t NLR;
+    volatile uint32_t LWR;
+    volatile uint32_t AMTCR;
 };
 #define DMA2D_CR_START          (0x1UL << 0) 
 #define DMA2D_CR_START_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -963,30 +975,33 @@ struct DMA2D {
 #define DMA2D_AMTCR_DT_VAL(X) (((uint32_t)(X) & 0xFFUL) << 8)
 
 #define DMA2D  ((struct DMA2D*)(0x52001000UL))
+
+
+
 struct DMAMUX2 {
-  volatile uint32_t C0CR;
-  volatile uint32_t C1CR;
-  volatile uint32_t C2CR;
-  volatile uint32_t C3CR;
-  volatile uint32_t C4CR;
-  volatile uint32_t C5CR;
-  volatile uint32_t C6CR;
-  volatile uint32_t C7CR;
-  const volatile uint32_t RESERVED128[24];
-  volatile const uint32_t CSR;
-  volatile uint32_t CFR;
-  const volatile uint32_t RESERVED256[30];
-  volatile uint32_t RG0CR;
-  volatile uint32_t RG1CR;
-  volatile uint32_t RG2CR;
-  volatile uint32_t RG3CR;
-  volatile uint32_t RG4CR;
-  volatile uint32_t RG5CR;
-  volatile uint32_t RG6CR;
-  volatile uint32_t RG7CR;
-  const volatile uint32_t RESERVED320[8];
-  volatile const uint32_t RGSR;
-  volatile uint32_t RGCFR;
+    volatile uint32_t C0CR;
+    volatile uint32_t C1CR;
+    volatile uint32_t C2CR;
+    volatile uint32_t C3CR;
+    volatile uint32_t C4CR;
+    volatile uint32_t C5CR;
+    volatile uint32_t C6CR;
+    volatile uint32_t C7CR;
+    volatile const uint32_t RESERVED_32[24];
+    volatile const uint32_t CSR;
+    volatile uint32_t CFR;
+    volatile const uint32_t RESERVED_136[30];
+    volatile uint32_t RG0CR;
+    volatile uint32_t RG1CR;
+    volatile uint32_t RG2CR;
+    volatile uint32_t RG3CR;
+    volatile uint32_t RG4CR;
+    volatile uint32_t RG5CR;
+    volatile uint32_t RG6CR;
+    volatile uint32_t RG7CR;
+    volatile const uint32_t RESERVED_288[8];
+    volatile const uint32_t RGSR;
+    volatile uint32_t RGCFR;
 };
 #define DMAMUX2_C0CR_DMAREQ_ID          (0xFFUL << 0) 
 #define DMAMUX2_C0CR_DMAREQ_ID_VAL(X) (((uint32_t)(X) & 0xFFUL) << 0)
@@ -1100,6 +1115,10 @@ struct DMAMUX2 {
 #define DMAMUX2_C7CR_NBREQ_VAL(X) (((uint32_t)(X) & 0x1FUL) << 19)
 #define DMAMUX2_C7CR_SYNC_ID          (0x1FUL << 24) 
 #define DMAMUX2_C7CR_SYNC_ID_VAL(X) (((uint32_t)(X) & 0x1FUL) << 24)
+#define DMAMUX2_CSR_SOF          (0xFFFFUL << 0) 
+#define DMAMUX2_CSR_SOF_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
+#define DMAMUX2_CFR_CSOF          (0xFFFFUL << 0) 
+#define DMAMUX2_CFR_CSOF_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 #define DMAMUX2_RG0CR_SIG_ID          (0x1FUL << 0) 
 #define DMAMUX2_RG0CR_SIG_ID_VAL(X) (((uint32_t)(X) & 0x1FUL) << 0)
 #define DMAMUX2_RG0CR_OIE          (0x1UL << 8) 
@@ -1184,44 +1203,43 @@ struct DMAMUX2 {
 #define DMAMUX2_RGSR_OF_VAL(X) (((uint32_t)(X) & 0xFFUL) << 0)
 #define DMAMUX2_RGCFR_COF          (0xFFUL << 0) 
 #define DMAMUX2_RGCFR_COF_VAL(X) (((uint32_t)(X) & 0xFFUL) << 0)
-#define DMAMUX2_CSR_SOF          (0xFFFFUL << 0) 
-#define DMAMUX2_CSR_SOF_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
-#define DMAMUX2_CFR_CSOF          (0xFFFFUL << 0) 
-#define DMAMUX2_CFR_CSOF_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 
 #define DMAMUX2  ((struct DMAMUX2*)(0x58025800UL))
+
+
+
 struct FMC {
-  volatile uint32_t BCR1;
-  volatile uint32_t BTR1;
-  volatile uint32_t BCR2;
-  volatile uint32_t BTR2;
-  volatile uint32_t BCR3;
-  volatile uint32_t BTR3;
-  volatile uint32_t BCR4;
-  volatile uint32_t BTR4;
-  const volatile uint32_t RESERVED128[24];
-  volatile uint32_t PCR;
-  volatile uint32_t SR;
-  volatile uint32_t PMEM;
-  volatile uint32_t PATT;
-  const volatile uint32_t RESERVED148[1];
-  volatile const uint32_t ECCR;
-  const volatile uint32_t RESERVED260[27];
-  volatile uint32_t BWTR1;
-  const volatile uint32_t RESERVED268[1];
-  volatile uint32_t BWTR2;
-  const volatile uint32_t RESERVED276[1];
-  volatile uint32_t BWTR3;
-  const volatile uint32_t RESERVED284[1];
-  volatile uint32_t BWTR4;
-  const volatile uint32_t RESERVED320[8];
-  volatile uint32_t SDCR1;
-  volatile uint32_t SDCR2;
-  volatile uint32_t SDTR1;
-  volatile uint32_t SDTR2;
-  volatile uint32_t SDCMR;
-  volatile uint32_t SDRTR;
-  volatile const uint32_t SDSR;
+    volatile uint32_t BCR1;
+    volatile uint32_t BTR1;
+    volatile uint32_t BCR2;
+    volatile uint32_t BTR2;
+    volatile uint32_t BCR3;
+    volatile uint32_t BTR3;
+    volatile uint32_t BCR4;
+    volatile uint32_t BTR4;
+    volatile const uint32_t RESERVED_32[24];
+    volatile uint32_t PCR;
+    volatile uint32_t SR;
+    volatile uint32_t PMEM;
+    volatile uint32_t PATT;
+    volatile const uint32_t RESERVED_144;
+    volatile const uint32_t ECCR;
+    volatile const uint32_t RESERVED_152[27];
+    volatile uint32_t BWTR1;
+    volatile const uint32_t RESERVED_264;
+    volatile uint32_t BWTR2;
+    volatile const uint32_t RESERVED_272;
+    volatile uint32_t BWTR3;
+    volatile const uint32_t RESERVED_280;
+    volatile uint32_t BWTR4;
+    volatile const uint32_t RESERVED_288[8];
+    volatile uint32_t SDCR1;
+    volatile uint32_t SDCR2;
+    volatile uint32_t SDTR1;
+    volatile uint32_t SDTR2;
+    volatile uint32_t SDCMR;
+    volatile uint32_t SDRTR;
+    volatile const uint32_t SDSR;
 };
 #define FMC_BCR1_MBKEN          (0x1UL << 0) 
 #define FMC_BCR1_MBKEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -1597,13 +1615,16 @@ struct FMC {
 #define FMC_SDSR_MODES2_VAL(X) (((uint32_t)(X) & 0x3UL) << 3)
 
 #define FMC  ((struct FMC*)(0x52004000UL))
+
+
+
 struct CEC {
-  volatile uint32_t CR;
-  volatile uint32_t CFGR;
-  volatile uint32_t TXDR;
-  volatile const uint32_t RXDR;
-  volatile uint32_t ISR;
-  volatile uint32_t IER;
+    volatile uint32_t CR;
+    volatile uint32_t CFGR;
+    volatile uint32_t TXDR;
+    volatile const uint32_t RXDR;
+    volatile uint32_t ISR;
+    volatile uint32_t IER;
 };
 #define CEC_CR_CECEN          (0x1UL << 0) 
 #define CEC_CR_CECEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -1687,78 +1708,81 @@ struct CEC {
 #define CEC_IER_TXACKIE_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
 
 #define CEC  ((struct CEC*)(0x40006C00UL))
+
+
+
 struct HSEM {
-  volatile uint32_t HSEM_R0;
-  volatile uint32_t HSEM_R1;
-  volatile uint32_t HSEM_R2;
-  volatile uint32_t HSEM_R3;
-  volatile uint32_t HSEM_R4;
-  volatile uint32_t HSEM_R5;
-  volatile uint32_t HSEM_R6;
-  volatile uint32_t HSEM_R7;
-  volatile uint32_t HSEM_R8;
-  volatile uint32_t HSEM_R9;
-  volatile uint32_t HSEM_R10;
-  volatile uint32_t HSEM_R11;
-  volatile uint32_t HSEM_R12;
-  volatile uint32_t HSEM_R13;
-  volatile uint32_t HSEM_R14;
-  volatile uint32_t HSEM_R15;
-  volatile uint32_t HSEM_R16;
-  volatile uint32_t HSEM_R17;
-  volatile uint32_t HSEM_R18;
-  volatile uint32_t HSEM_R19;
-  volatile uint32_t HSEM_R20;
-  volatile uint32_t HSEM_R21;
-  volatile uint32_t HSEM_R22;
-  volatile uint32_t HSEM_R23;
-  volatile uint32_t HSEM_R24;
-  volatile uint32_t HSEM_R25;
-  volatile uint32_t HSEM_R26;
-  volatile uint32_t HSEM_R27;
-  volatile uint32_t HSEM_R28;
-  volatile uint32_t HSEM_R29;
-  volatile uint32_t HSEM_R30;
-  volatile uint32_t HSEM_R31;
-  volatile const uint32_t HSEM_RLR0;
-  volatile const uint32_t HSEM_RLR1;
-  volatile const uint32_t HSEM_RLR2;
-  volatile const uint32_t HSEM_RLR3;
-  volatile const uint32_t HSEM_RLR4;
-  volatile const uint32_t HSEM_RLR5;
-  volatile const uint32_t HSEM_RLR6;
-  volatile const uint32_t HSEM_RLR7;
-  volatile const uint32_t HSEM_RLR8;
-  volatile const uint32_t HSEM_RLR9;
-  volatile const uint32_t HSEM_RLR10;
-  volatile const uint32_t HSEM_RLR11;
-  volatile const uint32_t HSEM_RLR12;
-  volatile const uint32_t HSEM_RLR13;
-  volatile const uint32_t HSEM_RLR14;
-  volatile const uint32_t HSEM_RLR15;
-  volatile const uint32_t HSEM_RLR16;
-  volatile const uint32_t HSEM_RLR17;
-  volatile const uint32_t HSEM_RLR18;
-  volatile const uint32_t HSEM_RLR19;
-  volatile const uint32_t HSEM_RLR20;
-  volatile const uint32_t HSEM_RLR21;
-  volatile const uint32_t HSEM_RLR22;
-  volatile const uint32_t HSEM_RLR23;
-  volatile const uint32_t HSEM_RLR24;
-  volatile const uint32_t HSEM_RLR25;
-  volatile const uint32_t HSEM_RLR26;
-  volatile const uint32_t HSEM_RLR27;
-  volatile const uint32_t HSEM_RLR28;
-  volatile const uint32_t HSEM_RLR29;
-  volatile const uint32_t HSEM_RLR30;
-  volatile const uint32_t HSEM_RLR31;
-  volatile uint32_t HSEM_IER;
-  volatile const uint32_t HSEM_ICR;
-  volatile const uint32_t HSEM_ISR;
-  volatile const uint32_t HSEM_MISR;
-  const volatile uint32_t RESERVED320[12];
-  volatile uint32_t HSEM_CR;
-  volatile uint32_t HSEM_KEYR;
+    volatile uint32_t HSEM_R0;
+    volatile uint32_t HSEM_R1;
+    volatile uint32_t HSEM_R2;
+    volatile uint32_t HSEM_R3;
+    volatile uint32_t HSEM_R4;
+    volatile uint32_t HSEM_R5;
+    volatile uint32_t HSEM_R6;
+    volatile uint32_t HSEM_R7;
+    volatile uint32_t HSEM_R8;
+    volatile uint32_t HSEM_R9;
+    volatile uint32_t HSEM_R10;
+    volatile uint32_t HSEM_R11;
+    volatile uint32_t HSEM_R12;
+    volatile uint32_t HSEM_R13;
+    volatile uint32_t HSEM_R14;
+    volatile uint32_t HSEM_R15;
+    volatile uint32_t HSEM_R16;
+    volatile uint32_t HSEM_R17;
+    volatile uint32_t HSEM_R18;
+    volatile uint32_t HSEM_R19;
+    volatile uint32_t HSEM_R20;
+    volatile uint32_t HSEM_R21;
+    volatile uint32_t HSEM_R22;
+    volatile uint32_t HSEM_R23;
+    volatile uint32_t HSEM_R24;
+    volatile uint32_t HSEM_R25;
+    volatile uint32_t HSEM_R26;
+    volatile uint32_t HSEM_R27;
+    volatile uint32_t HSEM_R28;
+    volatile uint32_t HSEM_R29;
+    volatile uint32_t HSEM_R30;
+    volatile uint32_t HSEM_R31;
+    volatile const uint32_t HSEM_RLR0;
+    volatile const uint32_t HSEM_RLR1;
+    volatile const uint32_t HSEM_RLR2;
+    volatile const uint32_t HSEM_RLR3;
+    volatile const uint32_t HSEM_RLR4;
+    volatile const uint32_t HSEM_RLR5;
+    volatile const uint32_t HSEM_RLR6;
+    volatile const uint32_t HSEM_RLR7;
+    volatile const uint32_t HSEM_RLR8;
+    volatile const uint32_t HSEM_RLR9;
+    volatile const uint32_t HSEM_RLR10;
+    volatile const uint32_t HSEM_RLR11;
+    volatile const uint32_t HSEM_RLR12;
+    volatile const uint32_t HSEM_RLR13;
+    volatile const uint32_t HSEM_RLR14;
+    volatile const uint32_t HSEM_RLR15;
+    volatile const uint32_t HSEM_RLR16;
+    volatile const uint32_t HSEM_RLR17;
+    volatile const uint32_t HSEM_RLR18;
+    volatile const uint32_t HSEM_RLR19;
+    volatile const uint32_t HSEM_RLR20;
+    volatile const uint32_t HSEM_RLR21;
+    volatile const uint32_t HSEM_RLR22;
+    volatile const uint32_t HSEM_RLR23;
+    volatile const uint32_t HSEM_RLR24;
+    volatile const uint32_t HSEM_RLR25;
+    volatile const uint32_t HSEM_RLR26;
+    volatile const uint32_t HSEM_RLR27;
+    volatile const uint32_t HSEM_RLR28;
+    volatile const uint32_t HSEM_RLR29;
+    volatile const uint32_t HSEM_RLR30;
+    volatile const uint32_t HSEM_RLR31;
+    volatile uint32_t HSEM_IER;
+    volatile const uint32_t HSEM_ICR;
+    volatile const uint32_t HSEM_ISR;
+    volatile const uint32_t HSEM_MISR;
+    volatile const uint32_t RESERVED_272[12];
+    volatile uint32_t HSEM_CR;
+    volatile uint32_t HSEM_KEYR;
 };
 #define HSEM_HSEM_R0_PROCID          (0xFFUL << 0) 
 #define HSEM_HSEM_R0_PROCID_VAL(X) (((uint32_t)(X) & 0xFFUL) << 0)
@@ -2408,18 +2432,21 @@ struct HSEM {
 #define HSEM_HSEM_KEYR_KEY_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 16)
 
 #define HSEM  ((struct HSEM*)(0x58026400UL))
+
+
+
 struct I2C1 {
-  volatile uint32_t CR1;
-  volatile uint32_t CR2;
-  volatile uint32_t OAR1;
-  volatile uint32_t OAR2;
-  volatile uint32_t TIMINGR;
-  volatile uint32_t TIMEOUTR;
-  volatile uint32_t ISR;
-  volatile uint32_t ICR;
-  volatile const uint32_t PECR;
-  volatile const uint32_t RXDR;
-  volatile uint32_t TXDR;
+    volatile uint32_t CR1;
+    volatile uint32_t CR2;
+    volatile uint32_t OAR1;
+    volatile uint32_t OAR2;
+    volatile uint32_t TIMINGR;
+    volatile uint32_t TIMEOUTR;
+    volatile uint32_t ISR;
+    volatile uint32_t ICR;
+    volatile const uint32_t PECR;
+    volatile const uint32_t RXDR;
+    volatile uint32_t TXDR;
 };
 #define I2C1_CR1_PE          (0x1UL << 0) 
 #define I2C1_CR1_PE_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -2593,18 +2620,21 @@ struct I2C1 {
 #define I2C1_TXDR_TXDATA_VAL(X) (((uint32_t)(X) & 0xFFUL) << 0)
 
 #define I2C1  ((struct I2C1*)(0x40005400UL))
+
+
+
 struct I2C2 {
-  volatile uint32_t CR1;
-  volatile uint32_t CR2;
-  volatile uint32_t OAR1;
-  volatile uint32_t OAR2;
-  volatile uint32_t TIMINGR;
-  volatile uint32_t TIMEOUTR;
-  volatile uint32_t ISR;
-  volatile uint32_t ICR;
-  volatile const uint32_t PECR;
-  volatile const uint32_t RXDR;
-  volatile uint32_t TXDR;
+    volatile uint32_t CR1;
+    volatile uint32_t CR2;
+    volatile uint32_t OAR1;
+    volatile uint32_t OAR2;
+    volatile uint32_t TIMINGR;
+    volatile uint32_t TIMEOUTR;
+    volatile uint32_t ISR;
+    volatile uint32_t ICR;
+    volatile const uint32_t PECR;
+    volatile const uint32_t RXDR;
+    volatile uint32_t TXDR;
 };
 #define I2C2_CR1_PE          (0x1UL << 0) 
 #define I2C2_CR1_PE_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -2778,18 +2808,21 @@ struct I2C2 {
 #define I2C2_TXDR_TXDATA_VAL(X) (((uint32_t)(X) & 0xFFUL) << 0)
 
 #define I2C2  ((struct I2C2*)(0x40005800UL))
+
+
+
 struct I2C3 {
-  volatile uint32_t CR1;
-  volatile uint32_t CR2;
-  volatile uint32_t OAR1;
-  volatile uint32_t OAR2;
-  volatile uint32_t TIMINGR;
-  volatile uint32_t TIMEOUTR;
-  volatile uint32_t ISR;
-  volatile uint32_t ICR;
-  volatile const uint32_t PECR;
-  volatile const uint32_t RXDR;
-  volatile uint32_t TXDR;
+    volatile uint32_t CR1;
+    volatile uint32_t CR2;
+    volatile uint32_t OAR1;
+    volatile uint32_t OAR2;
+    volatile uint32_t TIMINGR;
+    volatile uint32_t TIMEOUTR;
+    volatile uint32_t ISR;
+    volatile uint32_t ICR;
+    volatile const uint32_t PECR;
+    volatile const uint32_t RXDR;
+    volatile uint32_t TXDR;
 };
 #define I2C3_CR1_PE          (0x1UL << 0) 
 #define I2C3_CR1_PE_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -2963,18 +2996,21 @@ struct I2C3 {
 #define I2C3_TXDR_TXDATA_VAL(X) (((uint32_t)(X) & 0xFFUL) << 0)
 
 #define I2C3  ((struct I2C3*)(0x40005C00UL))
+
+
+
 struct I2C4 {
-  volatile uint32_t CR1;
-  volatile uint32_t CR2;
-  volatile uint32_t OAR1;
-  volatile uint32_t OAR2;
-  volatile uint32_t TIMINGR;
-  volatile uint32_t TIMEOUTR;
-  volatile uint32_t ISR;
-  volatile uint32_t ICR;
-  volatile const uint32_t PECR;
-  volatile const uint32_t RXDR;
-  volatile uint32_t TXDR;
+    volatile uint32_t CR1;
+    volatile uint32_t CR2;
+    volatile uint32_t OAR1;
+    volatile uint32_t OAR2;
+    volatile uint32_t TIMINGR;
+    volatile uint32_t TIMEOUTR;
+    volatile uint32_t ISR;
+    volatile uint32_t ICR;
+    volatile const uint32_t PECR;
+    volatile const uint32_t RXDR;
+    volatile uint32_t TXDR;
 };
 #define I2C4_CR1_PE          (0x1UL << 0) 
 #define I2C4_CR1_PE_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -3148,17 +3184,20 @@ struct I2C4 {
 #define I2C4_TXDR_TXDATA_VAL(X) (((uint32_t)(X) & 0xFFUL) << 0)
 
 #define I2C4  ((struct I2C4*)(0x58001C00UL))
+
+
+
 struct GPIOA {
-  volatile uint32_t MODER;
-  volatile uint32_t OTYPER;
-  volatile uint32_t OSPEEDR;
-  volatile uint32_t PUPDR;
-  volatile const uint32_t IDR;
-  volatile uint32_t ODR;
-  volatile uint32_t BSRR;
-  volatile uint32_t LCKR;
-  volatile uint32_t AFRL;
-  volatile uint32_t AFRH;
+    volatile uint32_t MODER;
+    volatile uint32_t OTYPER;
+    volatile uint32_t OSPEEDR;
+    volatile uint32_t PUPDR;
+    volatile const uint32_t IDR;
+    volatile uint32_t ODR;
+    volatile uint32_t BSRR;
+    volatile uint32_t LCKR;
+    volatile uint32_t AFRL;
+    volatile uint32_t AFRH;
 };
 #define GPIOA_MODER_MODE0          (0x3UL << 0) 
 #define GPIOA_MODER_MODE0_VAL(X) (((uint32_t)(X) & 0x3UL) << 0)
@@ -3484,17 +3523,20 @@ struct GPIOA {
 #define GPIOA_AFRH_AFSEL15_VAL(X) (((uint32_t)(X) & 0xFUL) << 28)
 
 #define GPIOA  ((struct GPIOA*)(0x58020000UL))
+
+
+
 struct GPIOB {
-  volatile uint32_t MODER;
-  volatile uint32_t OTYPER;
-  volatile uint32_t OSPEEDR;
-  volatile uint32_t PUPDR;
-  volatile const uint32_t IDR;
-  volatile uint32_t ODR;
-  volatile uint32_t BSRR;
-  volatile uint32_t LCKR;
-  volatile uint32_t AFRL;
-  volatile uint32_t AFRH;
+    volatile uint32_t MODER;
+    volatile uint32_t OTYPER;
+    volatile uint32_t OSPEEDR;
+    volatile uint32_t PUPDR;
+    volatile const uint32_t IDR;
+    volatile uint32_t ODR;
+    volatile uint32_t BSRR;
+    volatile uint32_t LCKR;
+    volatile uint32_t AFRL;
+    volatile uint32_t AFRH;
 };
 #define GPIOB_MODER_MODE0          (0x3UL << 0) 
 #define GPIOB_MODER_MODE0_VAL(X) (((uint32_t)(X) & 0x3UL) << 0)
@@ -3820,17 +3862,20 @@ struct GPIOB {
 #define GPIOB_AFRH_AFSEL15_VAL(X) (((uint32_t)(X) & 0xFUL) << 28)
 
 #define GPIOB  ((struct GPIOB*)(0x58020400UL))
+
+
+
 struct GPIOC {
-  volatile uint32_t MODER;
-  volatile uint32_t OTYPER;
-  volatile uint32_t OSPEEDR;
-  volatile uint32_t PUPDR;
-  volatile const uint32_t IDR;
-  volatile uint32_t ODR;
-  volatile uint32_t BSRR;
-  volatile uint32_t LCKR;
-  volatile uint32_t AFRL;
-  volatile uint32_t AFRH;
+    volatile uint32_t MODER;
+    volatile uint32_t OTYPER;
+    volatile uint32_t OSPEEDR;
+    volatile uint32_t PUPDR;
+    volatile const uint32_t IDR;
+    volatile uint32_t ODR;
+    volatile uint32_t BSRR;
+    volatile uint32_t LCKR;
+    volatile uint32_t AFRL;
+    volatile uint32_t AFRH;
 };
 #define GPIOC_MODER_MODE0          (0x3UL << 0) 
 #define GPIOC_MODER_MODE0_VAL(X) (((uint32_t)(X) & 0x3UL) << 0)
@@ -4156,17 +4201,20 @@ struct GPIOC {
 #define GPIOC_AFRH_AFSEL15_VAL(X) (((uint32_t)(X) & 0xFUL) << 28)
 
 #define GPIOC  ((struct GPIOC*)(0x58020800UL))
+
+
+
 struct GPIOD {
-  volatile uint32_t MODER;
-  volatile uint32_t OTYPER;
-  volatile uint32_t OSPEEDR;
-  volatile uint32_t PUPDR;
-  volatile const uint32_t IDR;
-  volatile uint32_t ODR;
-  volatile uint32_t BSRR;
-  volatile uint32_t LCKR;
-  volatile uint32_t AFRL;
-  volatile uint32_t AFRH;
+    volatile uint32_t MODER;
+    volatile uint32_t OTYPER;
+    volatile uint32_t OSPEEDR;
+    volatile uint32_t PUPDR;
+    volatile const uint32_t IDR;
+    volatile uint32_t ODR;
+    volatile uint32_t BSRR;
+    volatile uint32_t LCKR;
+    volatile uint32_t AFRL;
+    volatile uint32_t AFRH;
 };
 #define GPIOD_MODER_MODE0          (0x3UL << 0) 
 #define GPIOD_MODER_MODE0_VAL(X) (((uint32_t)(X) & 0x3UL) << 0)
@@ -4492,17 +4540,20 @@ struct GPIOD {
 #define GPIOD_AFRH_AFSEL15_VAL(X) (((uint32_t)(X) & 0xFUL) << 28)
 
 #define GPIOD  ((struct GPIOD*)(0x58020C00UL))
+
+
+
 struct GPIOE {
-  volatile uint32_t MODER;
-  volatile uint32_t OTYPER;
-  volatile uint32_t OSPEEDR;
-  volatile uint32_t PUPDR;
-  volatile const uint32_t IDR;
-  volatile uint32_t ODR;
-  volatile uint32_t BSRR;
-  volatile uint32_t LCKR;
-  volatile uint32_t AFRL;
-  volatile uint32_t AFRH;
+    volatile uint32_t MODER;
+    volatile uint32_t OTYPER;
+    volatile uint32_t OSPEEDR;
+    volatile uint32_t PUPDR;
+    volatile const uint32_t IDR;
+    volatile uint32_t ODR;
+    volatile uint32_t BSRR;
+    volatile uint32_t LCKR;
+    volatile uint32_t AFRL;
+    volatile uint32_t AFRH;
 };
 #define GPIOE_MODER_MODE0          (0x3UL << 0) 
 #define GPIOE_MODER_MODE0_VAL(X) (((uint32_t)(X) & 0x3UL) << 0)
@@ -4828,17 +4879,20 @@ struct GPIOE {
 #define GPIOE_AFRH_AFSEL15_VAL(X) (((uint32_t)(X) & 0xFUL) << 28)
 
 #define GPIOE  ((struct GPIOE*)(0x58021000UL))
+
+
+
 struct GPIOF {
-  volatile uint32_t MODER;
-  volatile uint32_t OTYPER;
-  volatile uint32_t OSPEEDR;
-  volatile uint32_t PUPDR;
-  volatile const uint32_t IDR;
-  volatile uint32_t ODR;
-  volatile uint32_t BSRR;
-  volatile uint32_t LCKR;
-  volatile uint32_t AFRL;
-  volatile uint32_t AFRH;
+    volatile uint32_t MODER;
+    volatile uint32_t OTYPER;
+    volatile uint32_t OSPEEDR;
+    volatile uint32_t PUPDR;
+    volatile const uint32_t IDR;
+    volatile uint32_t ODR;
+    volatile uint32_t BSRR;
+    volatile uint32_t LCKR;
+    volatile uint32_t AFRL;
+    volatile uint32_t AFRH;
 };
 #define GPIOF_MODER_MODE0          (0x3UL << 0) 
 #define GPIOF_MODER_MODE0_VAL(X) (((uint32_t)(X) & 0x3UL) << 0)
@@ -5164,17 +5218,20 @@ struct GPIOF {
 #define GPIOF_AFRH_AFSEL15_VAL(X) (((uint32_t)(X) & 0xFUL) << 28)
 
 #define GPIOF  ((struct GPIOF*)(0x58021400UL))
+
+
+
 struct GPIOG {
-  volatile uint32_t MODER;
-  volatile uint32_t OTYPER;
-  volatile uint32_t OSPEEDR;
-  volatile uint32_t PUPDR;
-  volatile const uint32_t IDR;
-  volatile uint32_t ODR;
-  volatile uint32_t BSRR;
-  volatile uint32_t LCKR;
-  volatile uint32_t AFRL;
-  volatile uint32_t AFRH;
+    volatile uint32_t MODER;
+    volatile uint32_t OTYPER;
+    volatile uint32_t OSPEEDR;
+    volatile uint32_t PUPDR;
+    volatile const uint32_t IDR;
+    volatile uint32_t ODR;
+    volatile uint32_t BSRR;
+    volatile uint32_t LCKR;
+    volatile uint32_t AFRL;
+    volatile uint32_t AFRH;
 };
 #define GPIOG_MODER_MODE0          (0x3UL << 0) 
 #define GPIOG_MODER_MODE0_VAL(X) (((uint32_t)(X) & 0x3UL) << 0)
@@ -5500,17 +5557,20 @@ struct GPIOG {
 #define GPIOG_AFRH_AFSEL15_VAL(X) (((uint32_t)(X) & 0xFUL) << 28)
 
 #define GPIOG  ((struct GPIOG*)(0x58021800UL))
+
+
+
 struct GPIOH {
-  volatile uint32_t MODER;
-  volatile uint32_t OTYPER;
-  volatile uint32_t OSPEEDR;
-  volatile uint32_t PUPDR;
-  volatile const uint32_t IDR;
-  volatile uint32_t ODR;
-  volatile uint32_t BSRR;
-  volatile uint32_t LCKR;
-  volatile uint32_t AFRL;
-  volatile uint32_t AFRH;
+    volatile uint32_t MODER;
+    volatile uint32_t OTYPER;
+    volatile uint32_t OSPEEDR;
+    volatile uint32_t PUPDR;
+    volatile const uint32_t IDR;
+    volatile uint32_t ODR;
+    volatile uint32_t BSRR;
+    volatile uint32_t LCKR;
+    volatile uint32_t AFRL;
+    volatile uint32_t AFRH;
 };
 #define GPIOH_MODER_MODE0          (0x3UL << 0) 
 #define GPIOH_MODER_MODE0_VAL(X) (((uint32_t)(X) & 0x3UL) << 0)
@@ -5836,17 +5896,20 @@ struct GPIOH {
 #define GPIOH_AFRH_AFSEL15_VAL(X) (((uint32_t)(X) & 0xFUL) << 28)
 
 #define GPIOH  ((struct GPIOH*)(0x58021C00UL))
+
+
+
 struct GPIOI {
-  volatile uint32_t MODER;
-  volatile uint32_t OTYPER;
-  volatile uint32_t OSPEEDR;
-  volatile uint32_t PUPDR;
-  volatile const uint32_t IDR;
-  volatile uint32_t ODR;
-  volatile uint32_t BSRR;
-  volatile uint32_t LCKR;
-  volatile uint32_t AFRL;
-  volatile uint32_t AFRH;
+    volatile uint32_t MODER;
+    volatile uint32_t OTYPER;
+    volatile uint32_t OSPEEDR;
+    volatile uint32_t PUPDR;
+    volatile const uint32_t IDR;
+    volatile uint32_t ODR;
+    volatile uint32_t BSRR;
+    volatile uint32_t LCKR;
+    volatile uint32_t AFRL;
+    volatile uint32_t AFRH;
 };
 #define GPIOI_MODER_MODE0          (0x3UL << 0) 
 #define GPIOI_MODER_MODE0_VAL(X) (((uint32_t)(X) & 0x3UL) << 0)
@@ -6172,17 +6235,20 @@ struct GPIOI {
 #define GPIOI_AFRH_AFSEL15_VAL(X) (((uint32_t)(X) & 0xFUL) << 28)
 
 #define GPIOI  ((struct GPIOI*)(0x58022000UL))
+
+
+
 struct GPIOJ {
-  volatile uint32_t MODER;
-  volatile uint32_t OTYPER;
-  volatile uint32_t OSPEEDR;
-  volatile uint32_t PUPDR;
-  volatile const uint32_t IDR;
-  volatile uint32_t ODR;
-  volatile uint32_t BSRR;
-  volatile uint32_t LCKR;
-  volatile uint32_t AFRL;
-  volatile uint32_t AFRH;
+    volatile uint32_t MODER;
+    volatile uint32_t OTYPER;
+    volatile uint32_t OSPEEDR;
+    volatile uint32_t PUPDR;
+    volatile const uint32_t IDR;
+    volatile uint32_t ODR;
+    volatile uint32_t BSRR;
+    volatile uint32_t LCKR;
+    volatile uint32_t AFRL;
+    volatile uint32_t AFRH;
 };
 #define GPIOJ_MODER_MODE0          (0x3UL << 0) 
 #define GPIOJ_MODER_MODE0_VAL(X) (((uint32_t)(X) & 0x3UL) << 0)
@@ -6508,17 +6574,20 @@ struct GPIOJ {
 #define GPIOJ_AFRH_AFSEL15_VAL(X) (((uint32_t)(X) & 0xFUL) << 28)
 
 #define GPIOJ  ((struct GPIOJ*)(0x58022400UL))
+
+
+
 struct GPIOK {
-  volatile uint32_t MODER;
-  volatile uint32_t OTYPER;
-  volatile uint32_t OSPEEDR;
-  volatile uint32_t PUPDR;
-  volatile const uint32_t IDR;
-  volatile uint32_t ODR;
-  volatile uint32_t BSRR;
-  volatile uint32_t LCKR;
-  volatile uint32_t AFRL;
-  volatile uint32_t AFRH;
+    volatile uint32_t MODER;
+    volatile uint32_t OTYPER;
+    volatile uint32_t OSPEEDR;
+    volatile uint32_t PUPDR;
+    volatile const uint32_t IDR;
+    volatile uint32_t ODR;
+    volatile uint32_t BSRR;
+    volatile uint32_t LCKR;
+    volatile uint32_t AFRL;
+    volatile uint32_t AFRH;
 };
 #define GPIOK_MODER_MODE0          (0x3UL << 0) 
 #define GPIOK_MODER_MODE0_VAL(X) (((uint32_t)(X) & 0x3UL) << 0)
@@ -6844,22 +6913,25 @@ struct GPIOK {
 #define GPIOK_AFRH_AFSEL15_VAL(X) (((uint32_t)(X) & 0xFUL) << 28)
 
 #define GPIOK  ((struct GPIOK*)(0x58022800UL))
+
+
+
 struct JPEG {
-  volatile uint32_t CONFR0;
-  volatile uint32_t CONFR1;
-  volatile uint32_t CONFR2;
-  volatile uint32_t CONFR3;
-  volatile uint32_t CONFRN1;
-  volatile uint32_t CONFRN2;
-  volatile uint32_t CONFRN3;
-  volatile uint32_t CONFRN4;
-  const volatile uint32_t RESERVED48[4];
-  volatile uint32_t CR;
-  volatile const uint32_t SR;
-  volatile uint32_t CFR;
-  const volatile uint32_t RESERVED64[1];
-  volatile uint32_t DIR;
-  volatile const uint32_t DOR;
+    volatile uint32_t CONFR0;
+    volatile uint32_t CONFR1;
+    volatile uint32_t CONFR2;
+    volatile uint32_t CONFR3;
+    volatile uint32_t CONFRN1;
+    volatile uint32_t CONFRN2;
+    volatile uint32_t CONFRN3;
+    volatile uint32_t CONFRN4;
+    volatile const uint32_t RESERVED_32[4];
+    volatile uint32_t CR;
+    volatile const uint32_t SR;
+    volatile uint32_t CFR;
+    volatile const uint32_t RESERVED_60;
+    volatile uint32_t DIR;
+    volatile const uint32_t DOR;
 };
 #define JPEG_CONFR0_START          (0x1UL << 0) 
 #define JPEG_CONFR0_START_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -6973,248 +7045,251 @@ struct JPEG {
 #define JPEG_DOR_DATAOUT_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
 
 #define JPEG  ((struct JPEG*)(0x52003000UL))
+
+
+
 struct MDMA {
-  volatile const uint32_t MDMA_GISR0;
-  const volatile uint32_t RESERVED64[15];
-  volatile const uint32_t MDMA_C0ISR;
-  volatile uint32_t MDMA_C0IFCR;
-  volatile const uint32_t MDMA_C0ESR;
-  volatile uint32_t MDMA_C0CR;
-  volatile uint32_t MDMA_C0TCR;
-  volatile uint32_t MDMA_C0BNDTR;
-  volatile uint32_t MDMA_C0SAR;
-  volatile uint32_t MDMA_C0DAR;
-  volatile uint32_t MDMA_C0BRUR;
-  volatile uint32_t MDMA_C0LAR;
-  volatile uint32_t MDMA_C0TBR;
-  const volatile uint32_t RESERVED112[1];
-  volatile uint32_t MDMA_C0MAR;
-  volatile uint32_t MDMA_C0MDR;
-  const volatile uint32_t RESERVED128[2];
-  volatile const uint32_t MDMA_C1ISR;
-  volatile uint32_t MDMA_C1IFCR;
-  volatile const uint32_t MDMA_C1ESR;
-  volatile uint32_t MDMA_C1CR;
-  volatile uint32_t MDMA_C1TCR;
-  volatile uint32_t MDMA_C1BNDTR;
-  volatile uint32_t MDMA_C1SAR;
-  volatile uint32_t MDMA_C1DAR;
-  volatile uint32_t MDMA_C1BRUR;
-  volatile uint32_t MDMA_C1LAR;
-  volatile uint32_t MDMA_C1TBR;
-  const volatile uint32_t RESERVED176[1];
-  volatile uint32_t MDMA_C1MAR;
-  volatile uint32_t MDMA_C1MDR;
-  const volatile uint32_t RESERVED192[2];
-  volatile const uint32_t MDMA_C2ISR;
-  volatile uint32_t MDMA_C2IFCR;
-  volatile const uint32_t MDMA_C2ESR;
-  volatile uint32_t MDMA_C2CR;
-  volatile uint32_t MDMA_C2TCR;
-  volatile uint32_t MDMA_C2BNDTR;
-  volatile uint32_t MDMA_C2SAR;
-  volatile uint32_t MDMA_C2DAR;
-  volatile uint32_t MDMA_C2BRUR;
-  volatile uint32_t MDMA_C2LAR;
-  volatile uint32_t MDMA_C2TBR;
-  const volatile uint32_t RESERVED240[1];
-  volatile uint32_t MDMA_C2MAR;
-  volatile uint32_t MDMA_C2MDR;
-  const volatile uint32_t RESERVED256[2];
-  volatile const uint32_t MDMA_C3ISR;
-  volatile uint32_t MDMA_C3IFCR;
-  volatile const uint32_t MDMA_C3ESR;
-  volatile uint32_t MDMA_C3CR;
-  volatile uint32_t MDMA_C3TCR;
-  volatile uint32_t MDMA_C3BNDTR;
-  volatile uint32_t MDMA_C3SAR;
-  volatile uint32_t MDMA_C3DAR;
-  volatile uint32_t MDMA_C3BRUR;
-  volatile uint32_t MDMA_C3LAR;
-  volatile uint32_t MDMA_C3TBR;
-  const volatile uint32_t RESERVED304[1];
-  volatile uint32_t MDMA_C3MAR;
-  volatile uint32_t MDMA_C3MDR;
-  const volatile uint32_t RESERVED320[2];
-  volatile const uint32_t MDMA_C4ISR;
-  volatile uint32_t MDMA_C4IFCR;
-  volatile const uint32_t MDMA_C4ESR;
-  volatile uint32_t MDMA_C4CR;
-  volatile uint32_t MDMA_C4TCR;
-  volatile uint32_t MDMA_C4BNDTR;
-  volatile uint32_t MDMA_C4SAR;
-  volatile uint32_t MDMA_C4DAR;
-  volatile uint32_t MDMA_C4BRUR;
-  volatile uint32_t MDMA_C4LAR;
-  volatile uint32_t MDMA_C4TBR;
-  const volatile uint32_t RESERVED368[1];
-  volatile uint32_t MDMA_C4MAR;
-  volatile uint32_t MDMA_C4MDR;
-  const volatile uint32_t RESERVED384[2];
-  volatile const uint32_t MDMA_C5ISR;
-  volatile uint32_t MDMA_C5IFCR;
-  volatile const uint32_t MDMA_C5ESR;
-  volatile uint32_t MDMA_C5CR;
-  volatile uint32_t MDMA_C5TCR;
-  volatile uint32_t MDMA_C5BNDTR;
-  volatile uint32_t MDMA_C5SAR;
-  volatile uint32_t MDMA_C5DAR;
-  volatile uint32_t MDMA_C5BRUR;
-  volatile uint32_t MDMA_C5LAR;
-  volatile uint32_t MDMA_C5TBR;
-  const volatile uint32_t RESERVED432[1];
-  volatile uint32_t MDMA_C5MAR;
-  volatile uint32_t MDMA_C5MDR;
-  const volatile uint32_t RESERVED448[2];
-  volatile const uint32_t MDMA_C6ISR;
-  volatile uint32_t MDMA_C6IFCR;
-  volatile const uint32_t MDMA_C6ESR;
-  volatile uint32_t MDMA_C6CR;
-  volatile uint32_t MDMA_C6TCR;
-  volatile uint32_t MDMA_C6BNDTR;
-  volatile uint32_t MDMA_C6SAR;
-  volatile uint32_t MDMA_C6DAR;
-  volatile uint32_t MDMA_C6BRUR;
-  volatile uint32_t MDMA_C6LAR;
-  volatile uint32_t MDMA_C6TBR;
-  const volatile uint32_t RESERVED496[1];
-  volatile uint32_t MDMA_C6MAR;
-  volatile uint32_t MDMA_C6MDR;
-  const volatile uint32_t RESERVED512[2];
-  volatile const uint32_t MDMA_C7ISR;
-  volatile uint32_t MDMA_C7IFCR;
-  volatile const uint32_t MDMA_C7ESR;
-  volatile uint32_t MDMA_C7CR;
-  volatile uint32_t MDMA_C7TCR;
-  volatile uint32_t MDMA_C7BNDTR;
-  volatile uint32_t MDMA_C7SAR;
-  volatile uint32_t MDMA_C7DAR;
-  volatile uint32_t MDMA_C7BRUR;
-  volatile uint32_t MDMA_C7LAR;
-  volatile uint32_t MDMA_C7TBR;
-  const volatile uint32_t RESERVED560[1];
-  volatile uint32_t MDMA_C7MAR;
-  volatile uint32_t MDMA_C7MDR;
-  const volatile uint32_t RESERVED576[2];
-  volatile const uint32_t MDMA_C8ISR;
-  volatile uint32_t MDMA_C8IFCR;
-  volatile const uint32_t MDMA_C8ESR;
-  volatile uint32_t MDMA_C8CR;
-  volatile uint32_t MDMA_C8TCR;
-  volatile uint32_t MDMA_C8BNDTR;
-  volatile uint32_t MDMA_C8SAR;
-  volatile uint32_t MDMA_C8DAR;
-  volatile uint32_t MDMA_C8BRUR;
-  volatile uint32_t MDMA_C8LAR;
-  volatile uint32_t MDMA_C8TBR;
-  const volatile uint32_t RESERVED624[1];
-  volatile uint32_t MDMA_C8MAR;
-  volatile uint32_t MDMA_C8MDR;
-  const volatile uint32_t RESERVED640[2];
-  volatile const uint32_t MDMA_C9ISR;
-  volatile uint32_t MDMA_C9IFCR;
-  volatile const uint32_t MDMA_C9ESR;
-  volatile uint32_t MDMA_C9CR;
-  volatile uint32_t MDMA_C9TCR;
-  volatile uint32_t MDMA_C9BNDTR;
-  volatile uint32_t MDMA_C9SAR;
-  volatile uint32_t MDMA_C9DAR;
-  volatile uint32_t MDMA_C9BRUR;
-  volatile uint32_t MDMA_C9LAR;
-  volatile uint32_t MDMA_C9TBR;
-  const volatile uint32_t RESERVED688[1];
-  volatile uint32_t MDMA_C9MAR;
-  volatile uint32_t MDMA_C9MDR;
-  const volatile uint32_t RESERVED704[2];
-  volatile const uint32_t MDMA_C10ISR;
-  volatile uint32_t MDMA_C10IFCR;
-  volatile const uint32_t MDMA_C10ESR;
-  volatile uint32_t MDMA_C10CR;
-  volatile uint32_t MDMA_C10TCR;
-  volatile uint32_t MDMA_C10BNDTR;
-  volatile uint32_t MDMA_C10SAR;
-  volatile uint32_t MDMA_C10DAR;
-  volatile uint32_t MDMA_C10BRUR;
-  volatile uint32_t MDMA_C10LAR;
-  volatile uint32_t MDMA_C10TBR;
-  const volatile uint32_t RESERVED752[1];
-  volatile uint32_t MDMA_C10MAR;
-  volatile uint32_t MDMA_C10MDR;
-  const volatile uint32_t RESERVED768[2];
-  volatile const uint32_t MDMA_C11ISR;
-  volatile uint32_t MDMA_C11IFCR;
-  volatile const uint32_t MDMA_C11ESR;
-  volatile uint32_t MDMA_C11CR;
-  volatile uint32_t MDMA_C11TCR;
-  volatile uint32_t MDMA_C11BNDTR;
-  volatile uint32_t MDMA_C11SAR;
-  volatile uint32_t MDMA_C11DAR;
-  volatile uint32_t MDMA_C11BRUR;
-  volatile uint32_t MDMA_C11LAR;
-  volatile uint32_t MDMA_C11TBR;
-  const volatile uint32_t RESERVED816[1];
-  volatile uint32_t MDMA_C11MAR;
-  volatile uint32_t MDMA_C11MDR;
-  const volatile uint32_t RESERVED832[2];
-  volatile const uint32_t MDMA_C12ISR;
-  volatile uint32_t MDMA_C12IFCR;
-  volatile const uint32_t MDMA_C12ESR;
-  volatile uint32_t MDMA_C12CR;
-  volatile uint32_t MDMA_C12TCR;
-  volatile uint32_t MDMA_C12BNDTR;
-  volatile uint32_t MDMA_C12SAR;
-  volatile uint32_t MDMA_C12DAR;
-  volatile uint32_t MDMA_C12BRUR;
-  volatile uint32_t MDMA_C12LAR;
-  volatile uint32_t MDMA_C12TBR;
-  const volatile uint32_t RESERVED880[1];
-  volatile uint32_t MDMA_C12MAR;
-  volatile uint32_t MDMA_C12MDR;
-  const volatile uint32_t RESERVED896[2];
-  volatile const uint32_t MDMA_C13ISR;
-  volatile uint32_t MDMA_C13IFCR;
-  volatile const uint32_t MDMA_C13ESR;
-  volatile uint32_t MDMA_C13CR;
-  volatile uint32_t MDMA_C13TCR;
-  volatile uint32_t MDMA_C13BNDTR;
-  volatile uint32_t MDMA_C13SAR;
-  volatile uint32_t MDMA_C13DAR;
-  volatile uint32_t MDMA_C13BRUR;
-  volatile uint32_t MDMA_C13LAR;
-  volatile uint32_t MDMA_C13TBR;
-  const volatile uint32_t RESERVED944[1];
-  volatile uint32_t MDMA_C13MAR;
-  volatile uint32_t MDMA_C13MDR;
-  const volatile uint32_t RESERVED960[2];
-  volatile const uint32_t MDMA_C14ISR;
-  volatile uint32_t MDMA_C14IFCR;
-  volatile const uint32_t MDMA_C14ESR;
-  volatile uint32_t MDMA_C14CR;
-  volatile uint32_t MDMA_C14TCR;
-  volatile uint32_t MDMA_C14BNDTR;
-  volatile uint32_t MDMA_C14SAR;
-  volatile uint32_t MDMA_C14DAR;
-  volatile uint32_t MDMA_C14BRUR;
-  volatile uint32_t MDMA_C14LAR;
-  volatile uint32_t MDMA_C14TBR;
-  const volatile uint32_t RESERVED1008[1];
-  volatile uint32_t MDMA_C14MAR;
-  volatile uint32_t MDMA_C14MDR;
-  const volatile uint32_t RESERVED1024[2];
-  volatile const uint32_t MDMA_C15ISR;
-  volatile uint32_t MDMA_C15IFCR;
-  volatile const uint32_t MDMA_C15ESR;
-  volatile uint32_t MDMA_C15CR;
-  volatile uint32_t MDMA_C15TCR;
-  volatile uint32_t MDMA_C15BNDTR;
-  volatile uint32_t MDMA_C15SAR;
-  volatile uint32_t MDMA_C15DAR;
-  volatile uint32_t MDMA_C15BRUR;
-  volatile uint32_t MDMA_C15LAR;
-  volatile uint32_t MDMA_C15TBR;
-  const volatile uint32_t RESERVED1072[1];
-  volatile uint32_t MDMA_C15MAR;
-  volatile uint32_t MDMA_C15MDR;
+    volatile const uint32_t MDMA_GISR0;
+    volatile const uint32_t RESERVED_4[15];
+    volatile const uint32_t MDMA_C0ISR;
+    volatile uint32_t MDMA_C0IFCR;
+    volatile const uint32_t MDMA_C0ESR;
+    volatile uint32_t MDMA_C0CR;
+    volatile uint32_t MDMA_C0TCR;
+    volatile uint32_t MDMA_C0BNDTR;
+    volatile uint32_t MDMA_C0SAR;
+    volatile uint32_t MDMA_C0DAR;
+    volatile uint32_t MDMA_C0BRUR;
+    volatile uint32_t MDMA_C0LAR;
+    volatile uint32_t MDMA_C0TBR;
+    volatile const uint32_t RESERVED_108;
+    volatile uint32_t MDMA_C0MAR;
+    volatile uint32_t MDMA_C0MDR;
+    volatile const uint32_t RESERVED_120[2];
+    volatile const uint32_t MDMA_C1ISR;
+    volatile uint32_t MDMA_C1IFCR;
+    volatile const uint32_t MDMA_C1ESR;
+    volatile uint32_t MDMA_C1CR;
+    volatile uint32_t MDMA_C1TCR;
+    volatile uint32_t MDMA_C1BNDTR;
+    volatile uint32_t MDMA_C1SAR;
+    volatile uint32_t MDMA_C1DAR;
+    volatile uint32_t MDMA_C1BRUR;
+    volatile uint32_t MDMA_C1LAR;
+    volatile uint32_t MDMA_C1TBR;
+    volatile const uint32_t RESERVED_172;
+    volatile uint32_t MDMA_C1MAR;
+    volatile uint32_t MDMA_C1MDR;
+    volatile const uint32_t RESERVED_184[2];
+    volatile const uint32_t MDMA_C2ISR;
+    volatile uint32_t MDMA_C2IFCR;
+    volatile const uint32_t MDMA_C2ESR;
+    volatile uint32_t MDMA_C2CR;
+    volatile uint32_t MDMA_C2TCR;
+    volatile uint32_t MDMA_C2BNDTR;
+    volatile uint32_t MDMA_C2SAR;
+    volatile uint32_t MDMA_C2DAR;
+    volatile uint32_t MDMA_C2BRUR;
+    volatile uint32_t MDMA_C2LAR;
+    volatile uint32_t MDMA_C2TBR;
+    volatile const uint32_t RESERVED_236;
+    volatile uint32_t MDMA_C2MAR;
+    volatile uint32_t MDMA_C2MDR;
+    volatile const uint32_t RESERVED_248[2];
+    volatile const uint32_t MDMA_C3ISR;
+    volatile uint32_t MDMA_C3IFCR;
+    volatile const uint32_t MDMA_C3ESR;
+    volatile uint32_t MDMA_C3CR;
+    volatile uint32_t MDMA_C3TCR;
+    volatile uint32_t MDMA_C3BNDTR;
+    volatile uint32_t MDMA_C3SAR;
+    volatile uint32_t MDMA_C3DAR;
+    volatile uint32_t MDMA_C3BRUR;
+    volatile uint32_t MDMA_C3LAR;
+    volatile uint32_t MDMA_C3TBR;
+    volatile const uint32_t RESERVED_300;
+    volatile uint32_t MDMA_C3MAR;
+    volatile uint32_t MDMA_C3MDR;
+    volatile const uint32_t RESERVED_312[2];
+    volatile const uint32_t MDMA_C4ISR;
+    volatile uint32_t MDMA_C4IFCR;
+    volatile const uint32_t MDMA_C4ESR;
+    volatile uint32_t MDMA_C4CR;
+    volatile uint32_t MDMA_C4TCR;
+    volatile uint32_t MDMA_C4BNDTR;
+    volatile uint32_t MDMA_C4SAR;
+    volatile uint32_t MDMA_C4DAR;
+    volatile uint32_t MDMA_C4BRUR;
+    volatile uint32_t MDMA_C4LAR;
+    volatile uint32_t MDMA_C4TBR;
+    volatile const uint32_t RESERVED_364;
+    volatile uint32_t MDMA_C4MAR;
+    volatile uint32_t MDMA_C4MDR;
+    volatile const uint32_t RESERVED_376[2];
+    volatile const uint32_t MDMA_C5ISR;
+    volatile uint32_t MDMA_C5IFCR;
+    volatile const uint32_t MDMA_C5ESR;
+    volatile uint32_t MDMA_C5CR;
+    volatile uint32_t MDMA_C5TCR;
+    volatile uint32_t MDMA_C5BNDTR;
+    volatile uint32_t MDMA_C5SAR;
+    volatile uint32_t MDMA_C5DAR;
+    volatile uint32_t MDMA_C5BRUR;
+    volatile uint32_t MDMA_C5LAR;
+    volatile uint32_t MDMA_C5TBR;
+    volatile const uint32_t RESERVED_428;
+    volatile uint32_t MDMA_C5MAR;
+    volatile uint32_t MDMA_C5MDR;
+    volatile const uint32_t RESERVED_440[2];
+    volatile const uint32_t MDMA_C6ISR;
+    volatile uint32_t MDMA_C6IFCR;
+    volatile const uint32_t MDMA_C6ESR;
+    volatile uint32_t MDMA_C6CR;
+    volatile uint32_t MDMA_C6TCR;
+    volatile uint32_t MDMA_C6BNDTR;
+    volatile uint32_t MDMA_C6SAR;
+    volatile uint32_t MDMA_C6DAR;
+    volatile uint32_t MDMA_C6BRUR;
+    volatile uint32_t MDMA_C6LAR;
+    volatile uint32_t MDMA_C6TBR;
+    volatile const uint32_t RESERVED_492;
+    volatile uint32_t MDMA_C6MAR;
+    volatile uint32_t MDMA_C6MDR;
+    volatile const uint32_t RESERVED_504[2];
+    volatile const uint32_t MDMA_C7ISR;
+    volatile uint32_t MDMA_C7IFCR;
+    volatile const uint32_t MDMA_C7ESR;
+    volatile uint32_t MDMA_C7CR;
+    volatile uint32_t MDMA_C7TCR;
+    volatile uint32_t MDMA_C7BNDTR;
+    volatile uint32_t MDMA_C7SAR;
+    volatile uint32_t MDMA_C7DAR;
+    volatile uint32_t MDMA_C7BRUR;
+    volatile uint32_t MDMA_C7LAR;
+    volatile uint32_t MDMA_C7TBR;
+    volatile const uint32_t RESERVED_556;
+    volatile uint32_t MDMA_C7MAR;
+    volatile uint32_t MDMA_C7MDR;
+    volatile const uint32_t RESERVED_568[2];
+    volatile const uint32_t MDMA_C8ISR;
+    volatile uint32_t MDMA_C8IFCR;
+    volatile const uint32_t MDMA_C8ESR;
+    volatile uint32_t MDMA_C8CR;
+    volatile uint32_t MDMA_C8TCR;
+    volatile uint32_t MDMA_C8BNDTR;
+    volatile uint32_t MDMA_C8SAR;
+    volatile uint32_t MDMA_C8DAR;
+    volatile uint32_t MDMA_C8BRUR;
+    volatile uint32_t MDMA_C8LAR;
+    volatile uint32_t MDMA_C8TBR;
+    volatile const uint32_t RESERVED_620;
+    volatile uint32_t MDMA_C8MAR;
+    volatile uint32_t MDMA_C8MDR;
+    volatile const uint32_t RESERVED_632[2];
+    volatile const uint32_t MDMA_C9ISR;
+    volatile uint32_t MDMA_C9IFCR;
+    volatile const uint32_t MDMA_C9ESR;
+    volatile uint32_t MDMA_C9CR;
+    volatile uint32_t MDMA_C9TCR;
+    volatile uint32_t MDMA_C9BNDTR;
+    volatile uint32_t MDMA_C9SAR;
+    volatile uint32_t MDMA_C9DAR;
+    volatile uint32_t MDMA_C9BRUR;
+    volatile uint32_t MDMA_C9LAR;
+    volatile uint32_t MDMA_C9TBR;
+    volatile const uint32_t RESERVED_684;
+    volatile uint32_t MDMA_C9MAR;
+    volatile uint32_t MDMA_C9MDR;
+    volatile const uint32_t RESERVED_696[2];
+    volatile const uint32_t MDMA_C10ISR;
+    volatile uint32_t MDMA_C10IFCR;
+    volatile const uint32_t MDMA_C10ESR;
+    volatile uint32_t MDMA_C10CR;
+    volatile uint32_t MDMA_C10TCR;
+    volatile uint32_t MDMA_C10BNDTR;
+    volatile uint32_t MDMA_C10SAR;
+    volatile uint32_t MDMA_C10DAR;
+    volatile uint32_t MDMA_C10BRUR;
+    volatile uint32_t MDMA_C10LAR;
+    volatile uint32_t MDMA_C10TBR;
+    volatile const uint32_t RESERVED_748;
+    volatile uint32_t MDMA_C10MAR;
+    volatile uint32_t MDMA_C10MDR;
+    volatile const uint32_t RESERVED_760[2];
+    volatile const uint32_t MDMA_C11ISR;
+    volatile uint32_t MDMA_C11IFCR;
+    volatile const uint32_t MDMA_C11ESR;
+    volatile uint32_t MDMA_C11CR;
+    volatile uint32_t MDMA_C11TCR;
+    volatile uint32_t MDMA_C11BNDTR;
+    volatile uint32_t MDMA_C11SAR;
+    volatile uint32_t MDMA_C11DAR;
+    volatile uint32_t MDMA_C11BRUR;
+    volatile uint32_t MDMA_C11LAR;
+    volatile uint32_t MDMA_C11TBR;
+    volatile const uint32_t RESERVED_812;
+    volatile uint32_t MDMA_C11MAR;
+    volatile uint32_t MDMA_C11MDR;
+    volatile const uint32_t RESERVED_824[2];
+    volatile const uint32_t MDMA_C12ISR;
+    volatile uint32_t MDMA_C12IFCR;
+    volatile const uint32_t MDMA_C12ESR;
+    volatile uint32_t MDMA_C12CR;
+    volatile uint32_t MDMA_C12TCR;
+    volatile uint32_t MDMA_C12BNDTR;
+    volatile uint32_t MDMA_C12SAR;
+    volatile uint32_t MDMA_C12DAR;
+    volatile uint32_t MDMA_C12BRUR;
+    volatile uint32_t MDMA_C12LAR;
+    volatile uint32_t MDMA_C12TBR;
+    volatile const uint32_t RESERVED_876;
+    volatile uint32_t MDMA_C12MAR;
+    volatile uint32_t MDMA_C12MDR;
+    volatile const uint32_t RESERVED_888[2];
+    volatile const uint32_t MDMA_C13ISR;
+    volatile uint32_t MDMA_C13IFCR;
+    volatile const uint32_t MDMA_C13ESR;
+    volatile uint32_t MDMA_C13CR;
+    volatile uint32_t MDMA_C13TCR;
+    volatile uint32_t MDMA_C13BNDTR;
+    volatile uint32_t MDMA_C13SAR;
+    volatile uint32_t MDMA_C13DAR;
+    volatile uint32_t MDMA_C13BRUR;
+    volatile uint32_t MDMA_C13LAR;
+    volatile uint32_t MDMA_C13TBR;
+    volatile const uint32_t RESERVED_940;
+    volatile uint32_t MDMA_C13MAR;
+    volatile uint32_t MDMA_C13MDR;
+    volatile const uint32_t RESERVED_952[2];
+    volatile const uint32_t MDMA_C14ISR;
+    volatile uint32_t MDMA_C14IFCR;
+    volatile const uint32_t MDMA_C14ESR;
+    volatile uint32_t MDMA_C14CR;
+    volatile uint32_t MDMA_C14TCR;
+    volatile uint32_t MDMA_C14BNDTR;
+    volatile uint32_t MDMA_C14SAR;
+    volatile uint32_t MDMA_C14DAR;
+    volatile uint32_t MDMA_C14BRUR;
+    volatile uint32_t MDMA_C14LAR;
+    volatile uint32_t MDMA_C14TBR;
+    volatile const uint32_t RESERVED_1004;
+    volatile uint32_t MDMA_C14MAR;
+    volatile uint32_t MDMA_C14MDR;
+    volatile const uint32_t RESERVED_1016[2];
+    volatile const uint32_t MDMA_C15ISR;
+    volatile uint32_t MDMA_C15IFCR;
+    volatile const uint32_t MDMA_C15ESR;
+    volatile uint32_t MDMA_C15CR;
+    volatile uint32_t MDMA_C15TCR;
+    volatile uint32_t MDMA_C15BNDTR;
+    volatile uint32_t MDMA_C15SAR;
+    volatile uint32_t MDMA_C15DAR;
+    volatile uint32_t MDMA_C15BRUR;
+    volatile uint32_t MDMA_C15LAR;
+    volatile uint32_t MDMA_C15TBR;
+    volatile const uint32_t RESERVED_1068;
+    volatile uint32_t MDMA_C15MAR;
+    volatile uint32_t MDMA_C15MDR;
 };
 #define MDMA_MDMA_GISR0_GIF0          (0x1UL << 0) 
 #define MDMA_MDMA_GISR0_GIF0_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -9042,20 +9117,23 @@ struct MDMA {
 #define MDMA_MDMA_C15MDR_MDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
 
 #define MDMA  ((struct MDMA*)(0x52000000UL))
+
+
+
 struct QUADSPI {
-  volatile uint32_t CR;
-  volatile uint32_t DCR;
-  volatile const uint32_t SR;
-  volatile uint32_t FCR;
-  volatile uint32_t DLR;
-  volatile uint32_t CCR;
-  volatile uint32_t AR;
-  volatile uint32_t ABR;
-  volatile uint32_t DR;
-  volatile uint32_t PSMKR;
-  volatile uint32_t PSMAR;
-  volatile uint32_t PIR;
-  volatile uint32_t LPTR;
+    volatile uint32_t CR;
+    volatile uint32_t DCR;
+    volatile const uint32_t SR;
+    volatile uint32_t FCR;
+    volatile uint32_t DLR;
+    volatile uint32_t CCR;
+    volatile uint32_t AR;
+    volatile uint32_t ABR;
+    volatile uint32_t DR;
+    volatile uint32_t PSMKR;
+    volatile uint32_t PSMAR;
+    volatile uint32_t PIR;
+    volatile uint32_t LPTR;
 };
 #define QUADSPI_CR_EN          (0x1UL << 0) 
 #define QUADSPI_CR_EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -9159,10 +9237,13 @@ struct QUADSPI {
 #define QUADSPI_LPTR_TIMEOUT_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 
 #define QUADSPI  ((struct QUADSPI*)(0x52005000UL))
+
+
+
 struct RNG {
-  volatile uint32_t CR;
-  volatile uint32_t SR;
-  volatile const uint32_t DR;
+    volatile uint32_t CR;
+    volatile uint32_t SR;
+    volatile const uint32_t DR;
 };
 #define RNG_CR_RNGEN          (0x1UL << 2) 
 #define RNG_CR_RNGEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
@@ -9184,59 +9265,62 @@ struct RNG {
 #define RNG_DR_RNDATA_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
 
 #define RNG  ((struct RNG*)(0x48021800UL))
+
+
+
 struct RTC {
-  volatile uint32_t RTC_TR;
-  volatile uint32_t RTC_DR;
-  volatile uint32_t RTC_CR;
-  volatile uint32_t RTC_ISR;
-  volatile uint32_t RTC_PRER;
-  volatile uint32_t RTC_WUTR;
-  const volatile uint32_t RESERVED28[1];
-  volatile uint32_t RTC_ALRMAR;
-  volatile uint32_t RTC_ALRMBR;
-  volatile uint32_t RTC_WPR;
-  volatile const uint32_t RTC_SSR;
-  volatile uint32_t RTC_SHIFTR;
-  volatile const uint32_t RTC_TSTR;
-  volatile const uint32_t RTC_TSDR;
-  volatile const uint32_t RTC_TSSSR;
-  volatile uint32_t RTC_CALR;
-  volatile uint32_t RTC_TAMPCR;
-  volatile uint32_t RTC_ALRMASSR;
-  volatile uint32_t RTC_ALRMBSSR;
-  volatile uint32_t RTC_OR;
-  volatile uint32_t RTC_BKP0R;
-  volatile uint32_t RTC_BKP1R;
-  volatile uint32_t RTC_BKP2R;
-  volatile uint32_t RTC_BKP3R;
-  volatile uint32_t RTC_BKP4R;
-  volatile uint32_t RTC_BKP5R;
-  volatile uint32_t RTC_BKP6R;
-  volatile uint32_t RTC_BKP7R;
-  volatile uint32_t RTC_BKP8R;
-  volatile uint32_t RTC_BKP9R;
-  volatile uint32_t RTC_BKP10R;
-  volatile uint32_t RTC_BKP11R;
-  volatile uint32_t RTC_BKP12R;
-  volatile uint32_t RTC_BKP13R;
-  volatile uint32_t RTC_BKP14R;
-  volatile uint32_t RTC_BKP15R;
-  volatile uint32_t RTC_BKP16R;
-  volatile uint32_t RTC_BKP17R;
-  volatile uint32_t RTC_BKP18R;
-  volatile uint32_t RTC_BKP19R;
-  volatile uint32_t RTC_BKP20R;
-  volatile uint32_t RTC_BKP21R;
-  volatile uint32_t RTC_BKP22R;
-  volatile uint32_t RTC_BKP23R;
-  volatile uint32_t RTC_BKP24R;
-  volatile uint32_t RTC_BKP25R;
-  volatile uint32_t RTC_BKP26R;
-  volatile uint32_t RTC_BKP27R;
-  volatile uint32_t RTC_BKP28R;
-  volatile uint32_t RTC_BKP29R;
-  volatile uint32_t RTC_BKP30R;
-  volatile uint32_t RTC_BKP31R;
+    volatile uint32_t RTC_TR;
+    volatile uint32_t RTC_DR;
+    volatile uint32_t RTC_CR;
+    volatile uint32_t RTC_ISR;
+    volatile uint32_t RTC_PRER;
+    volatile uint32_t RTC_WUTR;
+    volatile const uint32_t RESERVED_24;
+    volatile uint32_t RTC_ALRMAR;
+    volatile uint32_t RTC_ALRMBR;
+    volatile uint32_t RTC_WPR;
+    volatile const uint32_t RTC_SSR;
+    volatile uint32_t RTC_SHIFTR;
+    volatile const uint32_t RTC_TSTR;
+    volatile const uint32_t RTC_TSDR;
+    volatile const uint32_t RTC_TSSSR;
+    volatile uint32_t RTC_CALR;
+    volatile uint32_t RTC_TAMPCR;
+    volatile uint32_t RTC_ALRMASSR;
+    volatile uint32_t RTC_ALRMBSSR;
+    volatile uint32_t RTC_OR;
+    volatile uint32_t RTC_BKP0R;
+    volatile uint32_t RTC_BKP1R;
+    volatile uint32_t RTC_BKP2R;
+    volatile uint32_t RTC_BKP3R;
+    volatile uint32_t RTC_BKP4R;
+    volatile uint32_t RTC_BKP5R;
+    volatile uint32_t RTC_BKP6R;
+    volatile uint32_t RTC_BKP7R;
+    volatile uint32_t RTC_BKP8R;
+    volatile uint32_t RTC_BKP9R;
+    volatile uint32_t RTC_BKP10R;
+    volatile uint32_t RTC_BKP11R;
+    volatile uint32_t RTC_BKP12R;
+    volatile uint32_t RTC_BKP13R;
+    volatile uint32_t RTC_BKP14R;
+    volatile uint32_t RTC_BKP15R;
+    volatile uint32_t RTC_BKP16R;
+    volatile uint32_t RTC_BKP17R;
+    volatile uint32_t RTC_BKP18R;
+    volatile uint32_t RTC_BKP19R;
+    volatile uint32_t RTC_BKP20R;
+    volatile uint32_t RTC_BKP21R;
+    volatile uint32_t RTC_BKP22R;
+    volatile uint32_t RTC_BKP23R;
+    volatile uint32_t RTC_BKP24R;
+    volatile uint32_t RTC_BKP25R;
+    volatile uint32_t RTC_BKP26R;
+    volatile uint32_t RTC_BKP27R;
+    volatile uint32_t RTC_BKP28R;
+    volatile uint32_t RTC_BKP29R;
+    volatile uint32_t RTC_BKP30R;
+    volatile uint32_t RTC_BKP31R;
 };
 #define RTC_RTC_TR_SU          (0xFUL << 0) 
 #define RTC_RTC_TR_SU_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
@@ -9498,6 +9582,10 @@ struct RTC {
 #define RTC_RTC_ALRMBSSR_SS_VAL(X) (((uint32_t)(X) & 0x7FFFUL) << 0)
 #define RTC_RTC_ALRMBSSR_MASKSS          (0xFUL << 24) 
 #define RTC_RTC_ALRMBSSR_MASKSS_VAL(X) (((uint32_t)(X) & 0xFUL) << 24)
+#define RTC_RTC_OR_RTC_ALARM_TYPE          (0x1UL << 0) 
+#define RTC_RTC_OR_RTC_ALARM_TYPE_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define RTC_RTC_OR_RTC_OUT_RMP          (0x1UL << 1) 
+#define RTC_RTC_OR_RTC_OUT_RMP_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
 #define RTC_RTC_BKP0R_BKP          (0xFFFFFFFFUL << 0) 
 #define RTC_RTC_BKP0R_BKP_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
 #define RTC_RTC_BKP1R_BKP          (0xFFFFFFFFUL << 0) 
@@ -9530,10 +9618,6 @@ struct RTC {
 #define RTC_RTC_BKP14R_BKP_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
 #define RTC_RTC_BKP15R_BKP          (0xFFFFFFFFUL << 0) 
 #define RTC_RTC_BKP15R_BKP_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
-#define RTC_RTC_OR_RTC_ALARM_TYPE          (0x1UL << 0) 
-#define RTC_RTC_OR_RTC_ALARM_TYPE_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define RTC_RTC_OR_RTC_OUT_RMP          (0x1UL << 1) 
-#define RTC_RTC_OR_RTC_OUT_RMP_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
 #define RTC_RTC_BKP16R_BKP          (0xFFFFFFFFUL << 0) 
 #define RTC_RTC_BKP16R_BKP_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
 #define RTC_RTC_BKP17R_BKP          (0xFFFFFFFFUL << 0) 
@@ -9568,26 +9652,29 @@ struct RTC {
 #define RTC_RTC_BKP31R_BKP_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
 
 #define RTC  ((struct RTC*)(0x58004000UL))
+
+
+
 struct SAI4 {
-  volatile uint32_t SAI_GCR;
-  volatile uint32_t SAI_ACR1;
-  volatile uint32_t SAI_ACR2;
-  volatile uint32_t SAI_AFRCR;
-  volatile uint32_t SAI_ASLOTR;
-  volatile uint32_t SAI_AIM;
-  volatile const uint32_t SAI_ASR;
-  volatile uint32_t SAI_ACLRFR;
-  volatile uint32_t SAI_ADR;
-  volatile uint32_t SAI_BCR1;
-  volatile uint32_t SAI_BCR2;
-  volatile uint32_t SAI_BFRCR;
-  volatile uint32_t SAI_BSLOTR;
-  volatile uint32_t SAI_BIM;
-  volatile const uint32_t SAI_BSR;
-  volatile uint32_t SAI_BCLRFR;
-  volatile uint32_t SAI_BDR;
-  volatile uint32_t SAI_PDMCR;
-  volatile uint32_t SAI_PDMDLY;
+    volatile uint32_t SAI_GCR;
+    volatile uint32_t SAI_ACR1;
+    volatile uint32_t SAI_ACR2;
+    volatile uint32_t SAI_AFRCR;
+    volatile uint32_t SAI_ASLOTR;
+    volatile uint32_t SAI_AIM;
+    volatile const uint32_t SAI_ASR;
+    volatile uint32_t SAI_ACLRFR;
+    volatile uint32_t SAI_ADR;
+    volatile uint32_t SAI_BCR1;
+    volatile uint32_t SAI_BCR2;
+    volatile uint32_t SAI_BFRCR;
+    volatile uint32_t SAI_BSLOTR;
+    volatile uint32_t SAI_BIM;
+    volatile const uint32_t SAI_BSR;
+    volatile uint32_t SAI_BCLRFR;
+    volatile uint32_t SAI_BDR;
+    volatile uint32_t SAI_PDMCR;
+    volatile uint32_t SAI_PDMDLY;
 };
 #define SAI4_SAI_GCR_SYNCOUT          (0x3UL << 4) 
 #define SAI4_SAI_GCR_SYNCOUT_VAL(X) (((uint32_t)(X) & 0x3UL) << 4)
@@ -9831,26 +9918,29 @@ struct SAI4 {
 #define SAI4_SAI_PDMDLY_DLYM4R_VAL(X) (((uint32_t)(X) & 0x7UL) << 28)
 
 #define SAI4  ((struct SAI4*)(0x58005400UL))
+
+
+
 struct SAI1 {
-  volatile uint32_t SAI_GCR;
-  volatile uint32_t SAI_ACR1;
-  volatile uint32_t SAI_ACR2;
-  volatile uint32_t SAI_AFRCR;
-  volatile uint32_t SAI_ASLOTR;
-  volatile uint32_t SAI_AIM;
-  volatile const uint32_t SAI_ASR;
-  volatile uint32_t SAI_ACLRFR;
-  volatile uint32_t SAI_ADR;
-  volatile uint32_t SAI_BCR1;
-  volatile uint32_t SAI_BCR2;
-  volatile uint32_t SAI_BFRCR;
-  volatile uint32_t SAI_BSLOTR;
-  volatile uint32_t SAI_BIM;
-  volatile const uint32_t SAI_BSR;
-  volatile uint32_t SAI_BCLRFR;
-  volatile uint32_t SAI_BDR;
-  volatile uint32_t SAI_PDMCR;
-  volatile uint32_t SAI_PDMDLY;
+    volatile uint32_t SAI_GCR;
+    volatile uint32_t SAI_ACR1;
+    volatile uint32_t SAI_ACR2;
+    volatile uint32_t SAI_AFRCR;
+    volatile uint32_t SAI_ASLOTR;
+    volatile uint32_t SAI_AIM;
+    volatile const uint32_t SAI_ASR;
+    volatile uint32_t SAI_ACLRFR;
+    volatile uint32_t SAI_ADR;
+    volatile uint32_t SAI_BCR1;
+    volatile uint32_t SAI_BCR2;
+    volatile uint32_t SAI_BFRCR;
+    volatile uint32_t SAI_BSLOTR;
+    volatile uint32_t SAI_BIM;
+    volatile const uint32_t SAI_BSR;
+    volatile uint32_t SAI_BCLRFR;
+    volatile uint32_t SAI_BDR;
+    volatile uint32_t SAI_PDMCR;
+    volatile uint32_t SAI_PDMDLY;
 };
 #define SAI1_SAI_GCR_SYNCOUT          (0x3UL << 4) 
 #define SAI1_SAI_GCR_SYNCOUT_VAL(X) (((uint32_t)(X) & 0x3UL) << 4)
@@ -10094,26 +10184,29 @@ struct SAI1 {
 #define SAI1_SAI_PDMDLY_DLYM4R_VAL(X) (((uint32_t)(X) & 0x7UL) << 28)
 
 #define SAI1  ((struct SAI1*)(0x40015800UL))
+
+
+
 struct SAI2 {
-  volatile uint32_t SAI_GCR;
-  volatile uint32_t SAI_ACR1;
-  volatile uint32_t SAI_ACR2;
-  volatile uint32_t SAI_AFRCR;
-  volatile uint32_t SAI_ASLOTR;
-  volatile uint32_t SAI_AIM;
-  volatile const uint32_t SAI_ASR;
-  volatile uint32_t SAI_ACLRFR;
-  volatile uint32_t SAI_ADR;
-  volatile uint32_t SAI_BCR1;
-  volatile uint32_t SAI_BCR2;
-  volatile uint32_t SAI_BFRCR;
-  volatile uint32_t SAI_BSLOTR;
-  volatile uint32_t SAI_BIM;
-  volatile const uint32_t SAI_BSR;
-  volatile uint32_t SAI_BCLRFR;
-  volatile uint32_t SAI_BDR;
-  volatile uint32_t SAI_PDMCR;
-  volatile uint32_t SAI_PDMDLY;
+    volatile uint32_t SAI_GCR;
+    volatile uint32_t SAI_ACR1;
+    volatile uint32_t SAI_ACR2;
+    volatile uint32_t SAI_AFRCR;
+    volatile uint32_t SAI_ASLOTR;
+    volatile uint32_t SAI_AIM;
+    volatile const uint32_t SAI_ASR;
+    volatile uint32_t SAI_ACLRFR;
+    volatile uint32_t SAI_ADR;
+    volatile uint32_t SAI_BCR1;
+    volatile uint32_t SAI_BCR2;
+    volatile uint32_t SAI_BFRCR;
+    volatile uint32_t SAI_BSLOTR;
+    volatile uint32_t SAI_BIM;
+    volatile const uint32_t SAI_BSR;
+    volatile uint32_t SAI_BCLRFR;
+    volatile uint32_t SAI_BDR;
+    volatile uint32_t SAI_PDMCR;
+    volatile uint32_t SAI_PDMDLY;
 };
 #define SAI2_SAI_GCR_SYNCOUT          (0x3UL << 4) 
 #define SAI2_SAI_GCR_SYNCOUT_VAL(X) (((uint32_t)(X) & 0x3UL) << 4)
@@ -10357,26 +10450,29 @@ struct SAI2 {
 #define SAI2_SAI_PDMDLY_DLYM4R_VAL(X) (((uint32_t)(X) & 0x7UL) << 28)
 
 #define SAI2  ((struct SAI2*)(0x40015C00UL))
+
+
+
 struct SAI3 {
-  volatile uint32_t SAI_GCR;
-  volatile uint32_t SAI_ACR1;
-  volatile uint32_t SAI_ACR2;
-  volatile uint32_t SAI_AFRCR;
-  volatile uint32_t SAI_ASLOTR;
-  volatile uint32_t SAI_AIM;
-  volatile const uint32_t SAI_ASR;
-  volatile uint32_t SAI_ACLRFR;
-  volatile uint32_t SAI_ADR;
-  volatile uint32_t SAI_BCR1;
-  volatile uint32_t SAI_BCR2;
-  volatile uint32_t SAI_BFRCR;
-  volatile uint32_t SAI_BSLOTR;
-  volatile uint32_t SAI_BIM;
-  volatile const uint32_t SAI_BSR;
-  volatile uint32_t SAI_BCLRFR;
-  volatile uint32_t SAI_BDR;
-  volatile uint32_t SAI_PDMCR;
-  volatile uint32_t SAI_PDMDLY;
+    volatile uint32_t SAI_GCR;
+    volatile uint32_t SAI_ACR1;
+    volatile uint32_t SAI_ACR2;
+    volatile uint32_t SAI_AFRCR;
+    volatile uint32_t SAI_ASLOTR;
+    volatile uint32_t SAI_AIM;
+    volatile const uint32_t SAI_ASR;
+    volatile uint32_t SAI_ACLRFR;
+    volatile uint32_t SAI_ADR;
+    volatile uint32_t SAI_BCR1;
+    volatile uint32_t SAI_BCR2;
+    volatile uint32_t SAI_BFRCR;
+    volatile uint32_t SAI_BSLOTR;
+    volatile uint32_t SAI_BIM;
+    volatile const uint32_t SAI_BSR;
+    volatile uint32_t SAI_BCLRFR;
+    volatile uint32_t SAI_BDR;
+    volatile uint32_t SAI_PDMCR;
+    volatile uint32_t SAI_PDMDLY;
 };
 #define SAI3_SAI_GCR_SYNCOUT          (0x3UL << 4) 
 #define SAI3_SAI_GCR_SYNCOUT_VAL(X) (((uint32_t)(X) & 0x3UL) << 4)
@@ -10620,34 +10716,37 @@ struct SAI3 {
 #define SAI3_SAI_PDMDLY_DLYM4R_VAL(X) (((uint32_t)(X) & 0x7UL) << 28)
 
 #define SAI3  ((struct SAI3*)(0x40016000UL))
+
+
+
 struct SDMMC1 {
-  volatile uint32_t POWER;
-  volatile uint32_t CLKCR;
-  volatile uint32_t ARGR;
-  volatile uint32_t CMDR;
-  volatile const uint32_t RESPCMDR;
-  volatile const uint32_t RESP1R;
-  volatile const uint32_t RESP2R;
-  volatile const uint32_t RESP3R;
-  volatile const uint32_t RESP4R;
-  volatile uint32_t DTIMER;
-  volatile uint32_t DLENR;
-  volatile uint32_t DCTRL;
-  volatile const uint32_t DCNTR;
-  volatile const uint32_t STAR;
-  volatile uint32_t ICR;
-  volatile uint32_t MASKR;
-  volatile uint32_t ACKTIMER;
-  const volatile uint32_t RESERVED80[3];
-  volatile uint32_t IDMACTRLR;
-  volatile uint32_t IDMABSIZER;
-  volatile uint32_t IDMABASE0R;
-  volatile uint32_t IDMABASE1R;
-  const volatile uint32_t RESERVED128[8];
-  volatile uint32_t FIFOR;
-  const volatile uint32_t RESERVED1012[220];
-  volatile const uint32_t VER;
-  volatile const uint32_t ID;
+    volatile uint32_t POWER;
+    volatile uint32_t CLKCR;
+    volatile uint32_t ARGR;
+    volatile uint32_t CMDR;
+    volatile const uint32_t RESPCMDR;
+    volatile const uint32_t RESP1R;
+    volatile const uint32_t RESP2R;
+    volatile const uint32_t RESP3R;
+    volatile const uint32_t RESP4R;
+    volatile uint32_t DTIMER;
+    volatile uint32_t DLENR;
+    volatile uint32_t DCTRL;
+    volatile const uint32_t DCNTR;
+    volatile const uint32_t STAR;
+    volatile uint32_t ICR;
+    volatile uint32_t MASKR;
+    volatile uint32_t ACKTIMER;
+    volatile const uint32_t RESERVED_68[3];
+    volatile uint32_t IDMACTRLR;
+    volatile uint32_t IDMABSIZER;
+    volatile uint32_t IDMABASE0R;
+    volatile uint32_t IDMABASE1R;
+    volatile const uint32_t RESERVED_96[8];
+    volatile uint32_t FIFOR;
+    volatile const uint32_t RESERVED_132[220];
+    volatile const uint32_t VER;
+    volatile const uint32_t ID;
 };
 #define SDMMC1_POWER_PWRCTRL          (0x3UL << 0) 
 #define SDMMC1_POWER_PWRCTRL_VAL(X) (((uint32_t)(X) & 0x3UL) << 0)
@@ -10697,6 +10796,8 @@ struct SDMMC1 {
 #define SDMMC1_CMDR_BOOTEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
 #define SDMMC1_CMDR_CMDSUSPEND          (0x1UL << 16) 
 #define SDMMC1_CMDR_CMDSUSPEND_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
+#define SDMMC1_RESPCMDR_RESPCMD          (0x3FUL << 0) 
+#define SDMMC1_RESPCMDR_RESPCMD_VAL(X) (((uint32_t)(X) & 0x3FUL) << 0)
 #define SDMMC1_RESP1R_CARDSTATUS1          (0xFFFFFFFFUL << 0) 
 #define SDMMC1_RESP1R_CARDSTATUS1_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
 #define SDMMC1_RESP2R_CARDSTATUS2          (0xFFFFFFFFUL << 0) 
@@ -10897,38 +10998,39 @@ struct SDMMC1 {
 #define SDMMC1_VER_MAJREV_VAL(X) (((uint32_t)(X) & 0xFUL) << 4)
 #define SDMMC1_ID_IP_ID          (0xFFFFFFFFUL << 0) 
 #define SDMMC1_ID_IP_ID_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
-#define SDMMC1_RESPCMDR_RESPCMD          (0x3FUL << 0) 
-#define SDMMC1_RESPCMDR_RESPCMD_VAL(X) (((uint32_t)(X) & 0x3FUL) << 0)
 
 #define SDMMC1  ((struct SDMMC1*)(0x52007000UL))
+
+
+
 struct SDMMC2 {
-  volatile uint32_t POWER;
-  volatile uint32_t CLKCR;
-  volatile uint32_t ARGR;
-  volatile uint32_t CMDR;
-  volatile const uint32_t RESPCMDR;
-  volatile const uint32_t RESP1R;
-  volatile const uint32_t RESP2R;
-  volatile const uint32_t RESP3R;
-  volatile const uint32_t RESP4R;
-  volatile uint32_t DTIMER;
-  volatile uint32_t DLENR;
-  volatile uint32_t DCTRL;
-  volatile const uint32_t DCNTR;
-  volatile const uint32_t STAR;
-  volatile uint32_t ICR;
-  volatile uint32_t MASKR;
-  volatile uint32_t ACKTIMER;
-  const volatile uint32_t RESERVED80[3];
-  volatile uint32_t IDMACTRLR;
-  volatile uint32_t IDMABSIZER;
-  volatile uint32_t IDMABASE0R;
-  volatile uint32_t IDMABASE1R;
-  const volatile uint32_t RESERVED128[8];
-  volatile uint32_t FIFOR;
-  const volatile uint32_t RESERVED1012[220];
-  volatile const uint32_t VER;
-  volatile const uint32_t ID;
+    volatile uint32_t POWER;
+    volatile uint32_t CLKCR;
+    volatile uint32_t ARGR;
+    volatile uint32_t CMDR;
+    volatile const uint32_t RESPCMDR;
+    volatile const uint32_t RESP1R;
+    volatile const uint32_t RESP2R;
+    volatile const uint32_t RESP3R;
+    volatile const uint32_t RESP4R;
+    volatile uint32_t DTIMER;
+    volatile uint32_t DLENR;
+    volatile uint32_t DCTRL;
+    volatile const uint32_t DCNTR;
+    volatile const uint32_t STAR;
+    volatile uint32_t ICR;
+    volatile uint32_t MASKR;
+    volatile uint32_t ACKTIMER;
+    volatile const uint32_t RESERVED_68[3];
+    volatile uint32_t IDMACTRLR;
+    volatile uint32_t IDMABSIZER;
+    volatile uint32_t IDMABASE0R;
+    volatile uint32_t IDMABASE1R;
+    volatile const uint32_t RESERVED_96[8];
+    volatile uint32_t FIFOR;
+    volatile const uint32_t RESERVED_132[220];
+    volatile const uint32_t VER;
+    volatile const uint32_t ID;
 };
 #define SDMMC2_POWER_PWRCTRL          (0x3UL << 0) 
 #define SDMMC2_POWER_PWRCTRL_VAL(X) (((uint32_t)(X) & 0x3UL) << 0)
@@ -10978,6 +11080,8 @@ struct SDMMC2 {
 #define SDMMC2_CMDR_BOOTEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
 #define SDMMC2_CMDR_CMDSUSPEND          (0x1UL << 16) 
 #define SDMMC2_CMDR_CMDSUSPEND_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
+#define SDMMC2_RESPCMDR_RESPCMD          (0x3FUL << 0) 
+#define SDMMC2_RESPCMDR_RESPCMD_VAL(X) (((uint32_t)(X) & 0x3FUL) << 0)
 #define SDMMC2_RESP1R_CARDSTATUS1          (0xFFFFFFFFUL << 0) 
 #define SDMMC2_RESP1R_CARDSTATUS1_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
 #define SDMMC2_RESP2R_CARDSTATUS2          (0xFFFFFFFFUL << 0) 
@@ -11178,13 +11282,14 @@ struct SDMMC2 {
 #define SDMMC2_VER_MAJREV_VAL(X) (((uint32_t)(X) & 0xFUL) << 4)
 #define SDMMC2_ID_IP_ID          (0xFFFFFFFFUL << 0) 
 #define SDMMC2_ID_IP_ID_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
-#define SDMMC2_RESPCMDR_RESPCMD          (0x3FUL << 0) 
-#define SDMMC2_RESPCMDR_RESPCMD_VAL(X) (((uint32_t)(X) & 0x3FUL) << 0)
 
 #define SDMMC2  ((struct SDMMC2*)(0x48022400UL))
+
+
+
 struct VREFBUF {
-  volatile uint32_t CSR;
-  volatile uint32_t CCR;
+    volatile uint32_t CSR;
+    volatile uint32_t CCR;
 };
 #define VREFBUF_CSR_ENVR          (0x1UL << 0) 
 #define VREFBUF_CSR_ENVR_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -11198,12 +11303,15 @@ struct VREFBUF {
 #define VREFBUF_CCR_TRIM_VAL(X) (((uint32_t)(X) & 0x3FUL) << 0)
 
 #define VREFBUF  ((struct VREFBUF*)(0x58003C00UL))
+
+
+
 struct IWDG {
-  volatile uint32_t KR;
-  volatile uint32_t PR;
-  volatile uint32_t RLR;
-  volatile const uint32_t SR;
-  volatile uint32_t WINR;
+    volatile uint32_t KR;
+    volatile uint32_t PR;
+    volatile uint32_t RLR;
+    volatile const uint32_t SR;
+    volatile uint32_t WINR;
 };
 #define IWDG_KR_KEY          (0xFFFFUL << 0) 
 #define IWDG_KR_KEY_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
@@ -11221,10 +11329,13 @@ struct IWDG {
 #define IWDG_WINR_WIN_VAL(X) (((uint32_t)(X) & 0xFFFUL) << 0)
 
 #define IWDG  ((struct IWDG*)(0x58004800UL))
+
+
+
 struct WWDG {
-  volatile uint32_t CR;
-  volatile uint32_t CFR;
-  volatile uint32_t SR;
+    volatile uint32_t CR;
+    volatile uint32_t CFR;
+    volatile uint32_t SR;
 };
 #define WWDG_CR_T          (0x7FUL << 0) 
 #define WWDG_CR_T_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
@@ -11240,18 +11351,21 @@ struct WWDG {
 #define WWDG_SR_EWIF_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 
 #define WWDG  ((struct WWDG*)(0x50003000UL))
+
+
+
 struct PWR {
-  volatile uint32_t CR1;
-  volatile const uint32_t CSR1;
-  volatile uint32_t CR2;
-  volatile uint32_t CR3;
-  volatile uint32_t CPUCR;
-  const volatile uint32_t RESERVED24[1];
-  volatile uint32_t D3CR;
-  const volatile uint32_t RESERVED32[1];
-  volatile uint32_t WKUPCR;
-  volatile uint32_t WKUPFR;
-  volatile uint32_t WKUPEPR;
+    volatile uint32_t CR1;
+    volatile const uint32_t CSR1;
+    volatile uint32_t CR2;
+    volatile uint32_t CR3;
+    volatile uint32_t CPUCR;
+    volatile const uint32_t RESERVED_20;
+    volatile uint32_t D3CR;
+    volatile const uint32_t RESERVED_28;
+    volatile uint32_t WKUPCR;
+    volatile uint32_t WKUPFR;
+    volatile uint32_t WKUPEPR;
 };
 #define PWR_CR1_LPDS          (0x1UL << 0) 
 #define PWR_CR1_LPDS_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -11381,24 +11495,27 @@ struct PWR {
 #define PWR_WKUPEPR_WKUPPUPD6_VAL(X) (((uint32_t)(X) & 0x3UL) << 26)
 
 #define PWR  ((struct PWR*)(0x58024800UL))
+
+
+
 struct SPI1 {
-  volatile uint32_t CR1;
-  volatile uint32_t CR2;
-  volatile uint32_t CFG1;
-  volatile uint32_t CFG2;
-  volatile uint32_t IER;
-  volatile const uint32_t SR;
-  volatile uint32_t IFCR;
-  const volatile uint32_t RESERVED32[1];
-  volatile uint32_t TXDR;
-  const volatile uint32_t RESERVED48[3];
-  volatile const uint32_t RXDR;
-  const volatile uint32_t RESERVED64[3];
-  volatile uint32_t CRCPOLY;
-  volatile uint32_t TXCRC;
-  volatile uint32_t RXCRC;
-  volatile uint32_t UDRDR;
-  volatile uint32_t CGFR;
+    volatile uint32_t CR1;
+    volatile uint32_t CR2;
+    volatile uint32_t CFG1;
+    volatile uint32_t CFG2;
+    volatile uint32_t IER;
+    volatile const uint32_t SR;
+    volatile uint32_t IFCR;
+    volatile const uint32_t RESERVED_28;
+    volatile uint32_t TXDR;
+    volatile const uint32_t RESERVED_36[3];
+    volatile const uint32_t RXDR;
+    volatile const uint32_t RESERVED_52[3];
+    volatile uint32_t CRCPOLY;
+    volatile uint32_t TXCRC;
+    volatile uint32_t RXCRC;
+    volatile uint32_t UDRDR;
+    volatile uint32_t CGFR;
 };
 #define SPI1_CR1_IOLOCK          (0x1UL << 16) 
 #define SPI1_CR1_IOLOCK_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
@@ -11582,24 +11699,27 @@ struct SPI1 {
 #define SPI1_CGFR_I2SMOD_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 
 #define SPI1  ((struct SPI1*)(0x40013000UL))
+
+
+
 struct SPI2 {
-  volatile uint32_t CR1;
-  volatile uint32_t CR2;
-  volatile uint32_t CFG1;
-  volatile uint32_t CFG2;
-  volatile uint32_t IER;
-  volatile const uint32_t SR;
-  volatile uint32_t IFCR;
-  const volatile uint32_t RESERVED32[1];
-  volatile uint32_t TXDR;
-  const volatile uint32_t RESERVED48[3];
-  volatile const uint32_t RXDR;
-  const volatile uint32_t RESERVED64[3];
-  volatile uint32_t CRCPOLY;
-  volatile uint32_t TXCRC;
-  volatile uint32_t RXCRC;
-  volatile uint32_t UDRDR;
-  volatile uint32_t CGFR;
+    volatile uint32_t CR1;
+    volatile uint32_t CR2;
+    volatile uint32_t CFG1;
+    volatile uint32_t CFG2;
+    volatile uint32_t IER;
+    volatile const uint32_t SR;
+    volatile uint32_t IFCR;
+    volatile const uint32_t RESERVED_28;
+    volatile uint32_t TXDR;
+    volatile const uint32_t RESERVED_36[3];
+    volatile const uint32_t RXDR;
+    volatile const uint32_t RESERVED_52[3];
+    volatile uint32_t CRCPOLY;
+    volatile uint32_t TXCRC;
+    volatile uint32_t RXCRC;
+    volatile uint32_t UDRDR;
+    volatile uint32_t CGFR;
 };
 #define SPI2_CR1_IOLOCK          (0x1UL << 16) 
 #define SPI2_CR1_IOLOCK_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
@@ -11783,24 +11903,27 @@ struct SPI2 {
 #define SPI2_CGFR_I2SMOD_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 
 #define SPI2  ((struct SPI2*)(0x40003800UL))
+
+
+
 struct SPI3 {
-  volatile uint32_t CR1;
-  volatile uint32_t CR2;
-  volatile uint32_t CFG1;
-  volatile uint32_t CFG2;
-  volatile uint32_t IER;
-  volatile const uint32_t SR;
-  volatile uint32_t IFCR;
-  const volatile uint32_t RESERVED32[1];
-  volatile uint32_t TXDR;
-  const volatile uint32_t RESERVED48[3];
-  volatile const uint32_t RXDR;
-  const volatile uint32_t RESERVED64[3];
-  volatile uint32_t CRCPOLY;
-  volatile uint32_t TXCRC;
-  volatile uint32_t RXCRC;
-  volatile uint32_t UDRDR;
-  volatile uint32_t CGFR;
+    volatile uint32_t CR1;
+    volatile uint32_t CR2;
+    volatile uint32_t CFG1;
+    volatile uint32_t CFG2;
+    volatile uint32_t IER;
+    volatile const uint32_t SR;
+    volatile uint32_t IFCR;
+    volatile const uint32_t RESERVED_28;
+    volatile uint32_t TXDR;
+    volatile const uint32_t RESERVED_36[3];
+    volatile const uint32_t RXDR;
+    volatile const uint32_t RESERVED_52[3];
+    volatile uint32_t CRCPOLY;
+    volatile uint32_t TXCRC;
+    volatile uint32_t RXCRC;
+    volatile uint32_t UDRDR;
+    volatile uint32_t CGFR;
 };
 #define SPI3_CR1_IOLOCK          (0x1UL << 16) 
 #define SPI3_CR1_IOLOCK_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
@@ -11984,24 +12107,27 @@ struct SPI3 {
 #define SPI3_CGFR_I2SMOD_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 
 #define SPI3  ((struct SPI3*)(0x40003C00UL))
+
+
+
 struct SPI4 {
-  volatile uint32_t CR1;
-  volatile uint32_t CR2;
-  volatile uint32_t CFG1;
-  volatile uint32_t CFG2;
-  volatile uint32_t IER;
-  volatile const uint32_t SR;
-  volatile uint32_t IFCR;
-  const volatile uint32_t RESERVED32[1];
-  volatile uint32_t TXDR;
-  const volatile uint32_t RESERVED48[3];
-  volatile const uint32_t RXDR;
-  const volatile uint32_t RESERVED64[3];
-  volatile uint32_t CRCPOLY;
-  volatile uint32_t TXCRC;
-  volatile uint32_t RXCRC;
-  volatile uint32_t UDRDR;
-  volatile uint32_t CGFR;
+    volatile uint32_t CR1;
+    volatile uint32_t CR2;
+    volatile uint32_t CFG1;
+    volatile uint32_t CFG2;
+    volatile uint32_t IER;
+    volatile const uint32_t SR;
+    volatile uint32_t IFCR;
+    volatile const uint32_t RESERVED_28;
+    volatile uint32_t TXDR;
+    volatile const uint32_t RESERVED_36[3];
+    volatile const uint32_t RXDR;
+    volatile const uint32_t RESERVED_52[3];
+    volatile uint32_t CRCPOLY;
+    volatile uint32_t TXCRC;
+    volatile uint32_t RXCRC;
+    volatile uint32_t UDRDR;
+    volatile uint32_t CGFR;
 };
 #define SPI4_CR1_IOLOCK          (0x1UL << 16) 
 #define SPI4_CR1_IOLOCK_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
@@ -12185,24 +12311,27 @@ struct SPI4 {
 #define SPI4_CGFR_I2SMOD_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 
 #define SPI4  ((struct SPI4*)(0x40013400UL))
+
+
+
 struct SPI5 {
-  volatile uint32_t CR1;
-  volatile uint32_t CR2;
-  volatile uint32_t CFG1;
-  volatile uint32_t CFG2;
-  volatile uint32_t IER;
-  volatile const uint32_t SR;
-  volatile uint32_t IFCR;
-  const volatile uint32_t RESERVED32[1];
-  volatile uint32_t TXDR;
-  const volatile uint32_t RESERVED48[3];
-  volatile const uint32_t RXDR;
-  const volatile uint32_t RESERVED64[3];
-  volatile uint32_t CRCPOLY;
-  volatile uint32_t TXCRC;
-  volatile uint32_t RXCRC;
-  volatile uint32_t UDRDR;
-  volatile uint32_t CGFR;
+    volatile uint32_t CR1;
+    volatile uint32_t CR2;
+    volatile uint32_t CFG1;
+    volatile uint32_t CFG2;
+    volatile uint32_t IER;
+    volatile const uint32_t SR;
+    volatile uint32_t IFCR;
+    volatile const uint32_t RESERVED_28;
+    volatile uint32_t TXDR;
+    volatile const uint32_t RESERVED_36[3];
+    volatile const uint32_t RXDR;
+    volatile const uint32_t RESERVED_52[3];
+    volatile uint32_t CRCPOLY;
+    volatile uint32_t TXCRC;
+    volatile uint32_t RXCRC;
+    volatile uint32_t UDRDR;
+    volatile uint32_t CGFR;
 };
 #define SPI5_CR1_IOLOCK          (0x1UL << 16) 
 #define SPI5_CR1_IOLOCK_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
@@ -12386,24 +12515,27 @@ struct SPI5 {
 #define SPI5_CGFR_I2SMOD_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 
 #define SPI5  ((struct SPI5*)(0x40015000UL))
+
+
+
 struct SPI6 {
-  volatile uint32_t CR1;
-  volatile uint32_t CR2;
-  volatile uint32_t CFG1;
-  volatile uint32_t CFG2;
-  volatile uint32_t IER;
-  volatile const uint32_t SR;
-  volatile uint32_t IFCR;
-  const volatile uint32_t RESERVED32[1];
-  volatile uint32_t TXDR;
-  const volatile uint32_t RESERVED48[3];
-  volatile const uint32_t RXDR;
-  const volatile uint32_t RESERVED64[3];
-  volatile uint32_t CRCPOLY;
-  volatile uint32_t TXCRC;
-  volatile uint32_t RXCRC;
-  volatile uint32_t UDRDR;
-  volatile uint32_t CGFR;
+    volatile uint32_t CR1;
+    volatile uint32_t CR2;
+    volatile uint32_t CFG1;
+    volatile uint32_t CFG2;
+    volatile uint32_t IER;
+    volatile const uint32_t SR;
+    volatile uint32_t IFCR;
+    volatile const uint32_t RESERVED_28;
+    volatile uint32_t TXDR;
+    volatile const uint32_t RESERVED_36[3];
+    volatile const uint32_t RXDR;
+    volatile const uint32_t RESERVED_52[3];
+    volatile uint32_t CRCPOLY;
+    volatile uint32_t TXCRC;
+    volatile uint32_t RXCRC;
+    volatile uint32_t UDRDR;
+    volatile uint32_t CGFR;
 };
 #define SPI6_CR1_IOLOCK          (0x1UL << 16) 
 #define SPI6_CR1_IOLOCK_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
@@ -12587,53 +12719,57 @@ struct SPI6 {
 #define SPI6_CGFR_I2SMOD_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 
 #define SPI6  ((struct SPI6*)(0x58001400UL))
+
+
+
 struct LTDC {
-  volatile uint32_t SSCR;
-  volatile uint32_t BPCR;
-  volatile uint32_t AWCR;
-  volatile uint32_t TWCR;
-  volatile uint32_t GCR;
-  const volatile uint32_t RESERVED36[2];
-  volatile uint32_t SRCR;
-  const volatile uint32_t RESERVED44[1];
-  volatile uint32_t BCCR;
-  const volatile uint32_t RESERVED52[1];
-  volatile uint32_t IER;
-  volatile const uint32_t ISR;
-  volatile uint32_t ICR;
-  volatile uint32_t LIPCR;
-  volatile const uint32_t CPSR;
-  volatile const uint32_t CDSR;
-  const volatile uint32_t RESERVED132[14];
-  volatile uint32_t L1CR;
-  volatile uint32_t L1WHPCR;
-  volatile uint32_t L1WVPCR;
-  volatile uint32_t L1CKCR;
-  volatile uint32_t L1PFCR;
-  volatile uint32_t L1CACR;
-  volatile uint32_t L1DCCR;
-  volatile uint32_t L1BFCR;
-  const volatile uint32_t RESERVED172[2];
-  volatile uint32_t L1CFBAR;
-  volatile uint32_t L1CFBLR;
-  volatile uint32_t L1CFBLNR;
-  const volatile uint32_t RESERVED196[3];
-  volatile uint32_t L1CLUTWR;
-  const volatile uint32_t RESERVED260[15];
-  volatile uint32_t L2CR;
-  volatile uint32_t L2WHPCR;
-  volatile uint32_t L2WVPCR;
-  volatile uint32_t L2CKCR;
-  volatile uint32_t L2PFCR;
-  volatile uint32_t L2CACR;
-  volatile uint32_t L2DCCR;
-  volatile uint32_t L2BFCR;
-  const volatile uint32_t RESERVED300[2];
-  volatile uint32_t L2CFBAR;
-  volatile uint32_t L2CFBLR;
-  volatile uint32_t L2CFBLNR;
-  const volatile uint32_t RESERVED324[3];
-  volatile uint32_t L2CLUTWR;
+    volatile const uint32_t RESERVED_0[2];
+    volatile uint32_t SSCR;
+    volatile uint32_t BPCR;
+    volatile uint32_t AWCR;
+    volatile uint32_t TWCR;
+    volatile uint32_t GCR;
+    volatile const uint32_t RESERVED_28[2];
+    volatile uint32_t SRCR;
+    volatile const uint32_t RESERVED_40;
+    volatile uint32_t BCCR;
+    volatile const uint32_t RESERVED_48;
+    volatile uint32_t IER;
+    volatile const uint32_t ISR;
+    volatile uint32_t ICR;
+    volatile uint32_t LIPCR;
+    volatile const uint32_t CPSR;
+    volatile const uint32_t CDSR;
+    volatile const uint32_t RESERVED_76[14];
+    volatile uint32_t L1CR;
+    volatile uint32_t L1WHPCR;
+    volatile uint32_t L1WVPCR;
+    volatile uint32_t L1CKCR;
+    volatile uint32_t L1PFCR;
+    volatile uint32_t L1CACR;
+    volatile uint32_t L1DCCR;
+    volatile uint32_t L1BFCR;
+    volatile const uint32_t RESERVED_164[2];
+    volatile uint32_t L1CFBAR;
+    volatile uint32_t L1CFBLR;
+    volatile uint32_t L1CFBLNR;
+    volatile const uint32_t RESERVED_184[3];
+    volatile uint32_t L1CLUTWR;
+    volatile const uint32_t RESERVED_200[15];
+    volatile uint32_t L2CR;
+    volatile uint32_t L2WHPCR;
+    volatile uint32_t L2WVPCR;
+    volatile uint32_t L2CKCR;
+    volatile uint32_t L2PFCR;
+    volatile uint32_t L2CACR;
+    volatile uint32_t L2DCCR;
+    volatile uint32_t L2BFCR;
+    volatile const uint32_t RESERVED_292[2];
+    volatile uint32_t L2CFBAR;
+    volatile uint32_t L2CFBLR;
+    volatile uint32_t L2CFBLNR;
+    volatile const uint32_t RESERVED_312[3];
+    volatile uint32_t L2CLUTWR;
 };
 #define LTDC_SSCR_HSW          (0x3FFUL << 16) 
 #define LTDC_SSCR_HSW_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 16)
@@ -12823,20 +12959,25 @@ struct LTDC {
 #define LTDC_L2CLUTWR_BLUE_VAL(X) (((uint32_t)(X) & 0xFFUL) << 0)
 
 #define LTDC  ((struct LTDC*)(0x50001000UL))
+
+
+
 struct SPDIFRX {
-  volatile uint32_t CR;
-  volatile uint32_t IMR;
-  volatile const uint32_t SR;
-  volatile uint32_t IFCR;
-  volatile const uint32_t DR_00;
-  volatile const uint32_t DR_01;
-  volatile const uint32_t DR_10;
-  volatile const uint32_t CSR;
-  volatile const uint32_t DIR;
-  const volatile uint32_t RESERVED1012[246];
-  volatile const uint32_t VERR;
-  volatile const uint32_t IDR;
-  volatile const uint32_t SIDR;
+    volatile uint32_t CR;
+    volatile uint32_t IMR;
+    volatile const uint32_t SR;
+    volatile uint32_t IFCR;
+  union {
+      volatile const uint32_t DR_00;
+      volatile const uint32_t DR_01;
+      volatile const uint32_t DR_10;
+  };
+    volatile const uint32_t CSR;
+    volatile const uint32_t DIR;
+    volatile const uint32_t RESERVED_28[246];
+    volatile const uint32_t VERR;
+    volatile const uint32_t IDR;
+    volatile const uint32_t SIDR;
 };
 #define SPDIFRX_CR_SPDIFRXEN          (0x3UL << 0) 
 #define SPDIFRX_CR_SPDIFRXEN_VAL(X) (((uint32_t)(X) & 0x3UL) << 0)
@@ -12922,6 +13063,22 @@ struct SPDIFRX {
 #define SPDIFRX_DR_00_C_VAL(X) (((uint32_t)(X) & 0x1UL) << 27)
 #define SPDIFRX_DR_00_PT          (0x3UL << 28) 
 #define SPDIFRX_DR_00_PT_VAL(X) (((uint32_t)(X) & 0x3UL) << 28)
+#define SPDIFRX_DR_01_PE          (0x1UL << 0) 
+#define SPDIFRX_DR_01_PE_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define SPDIFRX_DR_01_V          (0x1UL << 1) 
+#define SPDIFRX_DR_01_V_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define SPDIFRX_DR_01_U          (0x1UL << 2) 
+#define SPDIFRX_DR_01_U_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
+#define SPDIFRX_DR_01_C          (0x1UL << 3) 
+#define SPDIFRX_DR_01_C_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define SPDIFRX_DR_01_PT          (0x3UL << 4) 
+#define SPDIFRX_DR_01_PT_VAL(X) (((uint32_t)(X) & 0x3UL) << 4)
+#define SPDIFRX_DR_01_DR          (0xFFFFFFUL << 8) 
+#define SPDIFRX_DR_01_DR_VAL(X) (((uint32_t)(X) & 0xFFFFFFUL) << 8)
+#define SPDIFRX_DR_10_DRNL1          (0xFFFFUL << 0) 
+#define SPDIFRX_DR_10_DRNL1_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
+#define SPDIFRX_DR_10_DRNL2          (0xFFFFUL << 16) 
+#define SPDIFRX_DR_10_DRNL2_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 16)
 #define SPDIFRX_CSR_USR          (0xFFFFUL << 0) 
 #define SPDIFRX_CSR_USR_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 #define SPDIFRX_CSR_CS          (0xFFUL << 16) 
@@ -12940,64 +13097,51 @@ struct SPDIFRX {
 #define SPDIFRX_IDR_ID_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
 #define SPDIFRX_SIDR_SID          (0xFFFFFFFFUL << 0) 
 #define SPDIFRX_SIDR_SID_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
-#define SPDIFRX_DR_01_PE          (0x1UL << 0) 
-#define SPDIFRX_DR_01_PE_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define SPDIFRX_DR_01_V          (0x1UL << 1) 
-#define SPDIFRX_DR_01_V_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define SPDIFRX_DR_01_U          (0x1UL << 2) 
-#define SPDIFRX_DR_01_U_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
-#define SPDIFRX_DR_01_C          (0x1UL << 3) 
-#define SPDIFRX_DR_01_C_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define SPDIFRX_DR_01_PT          (0x3UL << 4) 
-#define SPDIFRX_DR_01_PT_VAL(X) (((uint32_t)(X) & 0x3UL) << 4)
-#define SPDIFRX_DR_01_DR          (0xFFFFFFUL << 8) 
-#define SPDIFRX_DR_01_DR_VAL(X) (((uint32_t)(X) & 0xFFFFFFUL) << 8)
-#define SPDIFRX_DR_10_DRNL1          (0xFFFFUL << 0) 
-#define SPDIFRX_DR_10_DRNL1_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
-#define SPDIFRX_DR_10_DRNL2          (0xFFFFUL << 16) 
-#define SPDIFRX_DR_10_DRNL2_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 16)
 
 #define SPDIFRX  ((struct SPDIFRX*)(0x40004000UL))
+
+
+
 struct ADC3 {
-  volatile uint32_t ISR;
-  volatile uint32_t IER;
-  volatile uint32_t CR;
-  volatile uint32_t CFGR;
-  volatile uint32_t CFGR2;
-  volatile uint32_t SMPR1;
-  volatile uint32_t SMPR2;
-  volatile uint32_t PCSEL;
-  volatile uint32_t LTR1;
-  volatile uint32_t LHTR1;
-  const volatile uint32_t RESERVED48[2];
-  volatile uint32_t SQR1;
-  volatile uint32_t SQR2;
-  volatile uint32_t SQR3;
-  volatile uint32_t SQR4;
-  volatile const uint32_t DR;
-  const volatile uint32_t RESERVED76[2];
-  volatile uint32_t JSQR;
-  const volatile uint32_t RESERVED96[4];
-  volatile uint32_t OFR1;
-  volatile uint32_t OFR2;
-  volatile uint32_t OFR3;
-  volatile uint32_t OFR4;
-  const volatile uint32_t RESERVED128[4];
-  volatile const uint32_t JDR1;
-  volatile const uint32_t JDR2;
-  volatile const uint32_t JDR3;
-  volatile const uint32_t JDR4;
-  const volatile uint32_t RESERVED160[4];
-  volatile uint32_t AWD2CR;
-  volatile uint32_t AWD3CR;
-  const volatile uint32_t RESERVED176[2];
-  volatile uint32_t LTR2;
-  volatile uint32_t HTR2;
-  volatile uint32_t LTR3;
-  volatile uint32_t HTR3;
-  volatile uint32_t DIFSEL;
-  volatile uint32_t CALFACT;
-  volatile uint32_t CALFACT2;
+    volatile uint32_t ISR;
+    volatile uint32_t IER;
+    volatile uint32_t CR;
+    volatile uint32_t CFGR;
+    volatile uint32_t CFGR2;
+    volatile uint32_t SMPR1;
+    volatile uint32_t SMPR2;
+    volatile uint32_t PCSEL;
+    volatile uint32_t LTR1;
+    volatile uint32_t LHTR1;
+    volatile const uint32_t RESERVED_40[2];
+    volatile uint32_t SQR1;
+    volatile uint32_t SQR2;
+    volatile uint32_t SQR3;
+    volatile uint32_t SQR4;
+    volatile const uint32_t DR;
+    volatile const uint32_t RESERVED_68[2];
+    volatile uint32_t JSQR;
+    volatile const uint32_t RESERVED_80[4];
+    volatile uint32_t OFR1;
+    volatile uint32_t OFR2;
+    volatile uint32_t OFR3;
+    volatile uint32_t OFR4;
+    volatile const uint32_t RESERVED_112[4];
+    volatile const uint32_t JDR1;
+    volatile const uint32_t JDR2;
+    volatile const uint32_t JDR3;
+    volatile const uint32_t JDR4;
+    volatile const uint32_t RESERVED_144[4];
+    volatile uint32_t AWD2CR;
+    volatile uint32_t AWD3CR;
+    volatile const uint32_t RESERVED_168[2];
+    volatile uint32_t LTR2;
+    volatile uint32_t HTR2;
+    volatile uint32_t LTR3;
+    volatile uint32_t HTR3;
+    volatile uint32_t DIFSEL;
+    volatile uint32_t CALFACT;
+    volatile uint32_t CALFACT2;
 };
 #define ADC3_ISR_JQOVF          (0x1UL << 10) 
 #define ADC3_ISR_JQOVF_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
@@ -13173,6 +13317,8 @@ struct ADC3 {
 #define ADC3_SMPR2_SMP11_VAL(X) (((uint32_t)(X) & 0x7UL) << 3)
 #define ADC3_SMPR2_SMP10          (0x7UL << 0) 
 #define ADC3_SMPR2_SMP10_VAL(X) (((uint32_t)(X) & 0x7UL) << 0)
+#define ADC3_PCSEL_PCSEL          (0xFFFFFUL << 0) 
+#define ADC3_PCSEL_PCSEL_VAL(X) (((uint32_t)(X) & 0xFFFFFUL) << 0)
 #define ADC3_LTR1_LTR1          (0x3FFFFFFUL << 0) 
 #define ADC3_LTR1_LTR1_VAL(X) (((uint32_t)(X) & 0x3FFFFFFUL) << 0)
 #define ADC3_LHTR1_LHTR1          (0x3FFFFFFUL << 0) 
@@ -13263,14 +13409,6 @@ struct ADC3 {
 #define ADC3_AWD2CR_AWD2CH_VAL(X) (((uint32_t)(X) & 0xFFFFFUL) << 0)
 #define ADC3_AWD3CR_AWD3CH          (0xFFFFFUL << 1) 
 #define ADC3_AWD3CR_AWD3CH_VAL(X) (((uint32_t)(X) & 0xFFFFFUL) << 1)
-#define ADC3_DIFSEL_DIFSEL          (0xFFFFFUL << 0) 
-#define ADC3_DIFSEL_DIFSEL_VAL(X) (((uint32_t)(X) & 0xFFFFFUL) << 0)
-#define ADC3_CALFACT_CALFACT_D          (0x7FFUL << 16) 
-#define ADC3_CALFACT_CALFACT_D_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 16)
-#define ADC3_CALFACT_CALFACT_S          (0x7FFUL << 0) 
-#define ADC3_CALFACT_CALFACT_S_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
-#define ADC3_PCSEL_PCSEL          (0xFFFFFUL << 0) 
-#define ADC3_PCSEL_PCSEL_VAL(X) (((uint32_t)(X) & 0xFFFFFUL) << 0)
 #define ADC3_LTR2_LTR2          (0x3FFFFFFUL << 0) 
 #define ADC3_LTR2_LTR2_VAL(X) (((uint32_t)(X) & 0x3FFFFFFUL) << 0)
 #define ADC3_HTR2_HTR2          (0x3FFFFFFUL << 0) 
@@ -13279,50 +13417,59 @@ struct ADC3 {
 #define ADC3_LTR3_LTR3_VAL(X) (((uint32_t)(X) & 0x3FFFFFFUL) << 0)
 #define ADC3_HTR3_HTR3          (0x3FFFFFFUL << 0) 
 #define ADC3_HTR3_HTR3_VAL(X) (((uint32_t)(X) & 0x3FFFFFFUL) << 0)
+#define ADC3_DIFSEL_DIFSEL          (0xFFFFFUL << 0) 
+#define ADC3_DIFSEL_DIFSEL_VAL(X) (((uint32_t)(X) & 0xFFFFFUL) << 0)
+#define ADC3_CALFACT_CALFACT_D          (0x7FFUL << 16) 
+#define ADC3_CALFACT_CALFACT_D_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 16)
+#define ADC3_CALFACT_CALFACT_S          (0x7FFUL << 0) 
+#define ADC3_CALFACT_CALFACT_S_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
 #define ADC3_CALFACT2_LINCALFACT          (0x3FFFFFFFUL << 0) 
 #define ADC3_CALFACT2_LINCALFACT_VAL(X) (((uint32_t)(X) & 0x3FFFFFFFUL) << 0)
 
 #define ADC3  ((struct ADC3*)(0x58026000UL))
+
+
+
 struct ADC1 {
-  volatile uint32_t ISR;
-  volatile uint32_t IER;
-  volatile uint32_t CR;
-  volatile uint32_t CFGR;
-  volatile uint32_t CFGR2;
-  volatile uint32_t SMPR1;
-  volatile uint32_t SMPR2;
-  volatile uint32_t PCSEL;
-  volatile uint32_t LTR1;
-  volatile uint32_t LHTR1;
-  const volatile uint32_t RESERVED48[2];
-  volatile uint32_t SQR1;
-  volatile uint32_t SQR2;
-  volatile uint32_t SQR3;
-  volatile uint32_t SQR4;
-  volatile const uint32_t DR;
-  const volatile uint32_t RESERVED76[2];
-  volatile uint32_t JSQR;
-  const volatile uint32_t RESERVED96[4];
-  volatile uint32_t OFR1;
-  volatile uint32_t OFR2;
-  volatile uint32_t OFR3;
-  volatile uint32_t OFR4;
-  const volatile uint32_t RESERVED128[4];
-  volatile const uint32_t JDR1;
-  volatile const uint32_t JDR2;
-  volatile const uint32_t JDR3;
-  volatile const uint32_t JDR4;
-  const volatile uint32_t RESERVED160[4];
-  volatile uint32_t AWD2CR;
-  volatile uint32_t AWD3CR;
-  const volatile uint32_t RESERVED176[2];
-  volatile uint32_t LTR2;
-  volatile uint32_t HTR2;
-  volatile uint32_t LTR3;
-  volatile uint32_t HTR3;
-  volatile uint32_t DIFSEL;
-  volatile uint32_t CALFACT;
-  volatile uint32_t CALFACT2;
+    volatile uint32_t ISR;
+    volatile uint32_t IER;
+    volatile uint32_t CR;
+    volatile uint32_t CFGR;
+    volatile uint32_t CFGR2;
+    volatile uint32_t SMPR1;
+    volatile uint32_t SMPR2;
+    volatile uint32_t PCSEL;
+    volatile uint32_t LTR1;
+    volatile uint32_t LHTR1;
+    volatile const uint32_t RESERVED_40[2];
+    volatile uint32_t SQR1;
+    volatile uint32_t SQR2;
+    volatile uint32_t SQR3;
+    volatile uint32_t SQR4;
+    volatile const uint32_t DR;
+    volatile const uint32_t RESERVED_68[2];
+    volatile uint32_t JSQR;
+    volatile const uint32_t RESERVED_80[4];
+    volatile uint32_t OFR1;
+    volatile uint32_t OFR2;
+    volatile uint32_t OFR3;
+    volatile uint32_t OFR4;
+    volatile const uint32_t RESERVED_112[4];
+    volatile const uint32_t JDR1;
+    volatile const uint32_t JDR2;
+    volatile const uint32_t JDR3;
+    volatile const uint32_t JDR4;
+    volatile const uint32_t RESERVED_144[4];
+    volatile uint32_t AWD2CR;
+    volatile uint32_t AWD3CR;
+    volatile const uint32_t RESERVED_168[2];
+    volatile uint32_t LTR2;
+    volatile uint32_t HTR2;
+    volatile uint32_t LTR3;
+    volatile uint32_t HTR3;
+    volatile uint32_t DIFSEL;
+    volatile uint32_t CALFACT;
+    volatile uint32_t CALFACT2;
 };
 #define ADC1_ISR_JQOVF          (0x1UL << 10) 
 #define ADC1_ISR_JQOVF_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
@@ -13498,6 +13645,8 @@ struct ADC1 {
 #define ADC1_SMPR2_SMP11_VAL(X) (((uint32_t)(X) & 0x7UL) << 3)
 #define ADC1_SMPR2_SMP10          (0x7UL << 0) 
 #define ADC1_SMPR2_SMP10_VAL(X) (((uint32_t)(X) & 0x7UL) << 0)
+#define ADC1_PCSEL_PCSEL          (0xFFFFFUL << 0) 
+#define ADC1_PCSEL_PCSEL_VAL(X) (((uint32_t)(X) & 0xFFFFFUL) << 0)
 #define ADC1_LTR1_LTR1          (0x3FFFFFFUL << 0) 
 #define ADC1_LTR1_LTR1_VAL(X) (((uint32_t)(X) & 0x3FFFFFFUL) << 0)
 #define ADC1_LHTR1_LHTR1          (0x3FFFFFFUL << 0) 
@@ -13588,14 +13737,6 @@ struct ADC1 {
 #define ADC1_AWD2CR_AWD2CH_VAL(X) (((uint32_t)(X) & 0xFFFFFUL) << 0)
 #define ADC1_AWD3CR_AWD3CH          (0xFFFFFUL << 1) 
 #define ADC1_AWD3CR_AWD3CH_VAL(X) (((uint32_t)(X) & 0xFFFFFUL) << 1)
-#define ADC1_DIFSEL_DIFSEL          (0xFFFFFUL << 0) 
-#define ADC1_DIFSEL_DIFSEL_VAL(X) (((uint32_t)(X) & 0xFFFFFUL) << 0)
-#define ADC1_CALFACT_CALFACT_D          (0x7FFUL << 16) 
-#define ADC1_CALFACT_CALFACT_D_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 16)
-#define ADC1_CALFACT_CALFACT_S          (0x7FFUL << 0) 
-#define ADC1_CALFACT_CALFACT_S_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
-#define ADC1_PCSEL_PCSEL          (0xFFFFFUL << 0) 
-#define ADC1_PCSEL_PCSEL_VAL(X) (((uint32_t)(X) & 0xFFFFFUL) << 0)
 #define ADC1_LTR2_LTR2          (0x3FFFFFFUL << 0) 
 #define ADC1_LTR2_LTR2_VAL(X) (((uint32_t)(X) & 0x3FFFFFFUL) << 0)
 #define ADC1_HTR2_HTR2          (0x3FFFFFFUL << 0) 
@@ -13604,50 +13745,59 @@ struct ADC1 {
 #define ADC1_LTR3_LTR3_VAL(X) (((uint32_t)(X) & 0x3FFFFFFUL) << 0)
 #define ADC1_HTR3_HTR3          (0x3FFFFFFUL << 0) 
 #define ADC1_HTR3_HTR3_VAL(X) (((uint32_t)(X) & 0x3FFFFFFUL) << 0)
+#define ADC1_DIFSEL_DIFSEL          (0xFFFFFUL << 0) 
+#define ADC1_DIFSEL_DIFSEL_VAL(X) (((uint32_t)(X) & 0xFFFFFUL) << 0)
+#define ADC1_CALFACT_CALFACT_D          (0x7FFUL << 16) 
+#define ADC1_CALFACT_CALFACT_D_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 16)
+#define ADC1_CALFACT_CALFACT_S          (0x7FFUL << 0) 
+#define ADC1_CALFACT_CALFACT_S_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
 #define ADC1_CALFACT2_LINCALFACT          (0x3FFFFFFFUL << 0) 
 #define ADC1_CALFACT2_LINCALFACT_VAL(X) (((uint32_t)(X) & 0x3FFFFFFFUL) << 0)
 
 #define ADC1  ((struct ADC1*)(0x40022000UL))
+
+
+
 struct ADC2 {
-  volatile uint32_t ISR;
-  volatile uint32_t IER;
-  volatile uint32_t CR;
-  volatile uint32_t CFGR;
-  volatile uint32_t CFGR2;
-  volatile uint32_t SMPR1;
-  volatile uint32_t SMPR2;
-  volatile uint32_t PCSEL;
-  volatile uint32_t LTR1;
-  volatile uint32_t LHTR1;
-  const volatile uint32_t RESERVED48[2];
-  volatile uint32_t SQR1;
-  volatile uint32_t SQR2;
-  volatile uint32_t SQR3;
-  volatile uint32_t SQR4;
-  volatile const uint32_t DR;
-  const volatile uint32_t RESERVED76[2];
-  volatile uint32_t JSQR;
-  const volatile uint32_t RESERVED96[4];
-  volatile uint32_t OFR1;
-  volatile uint32_t OFR2;
-  volatile uint32_t OFR3;
-  volatile uint32_t OFR4;
-  const volatile uint32_t RESERVED128[4];
-  volatile const uint32_t JDR1;
-  volatile const uint32_t JDR2;
-  volatile const uint32_t JDR3;
-  volatile const uint32_t JDR4;
-  const volatile uint32_t RESERVED160[4];
-  volatile uint32_t AWD2CR;
-  volatile uint32_t AWD3CR;
-  const volatile uint32_t RESERVED176[2];
-  volatile uint32_t LTR2;
-  volatile uint32_t HTR2;
-  volatile uint32_t LTR3;
-  volatile uint32_t HTR3;
-  volatile uint32_t DIFSEL;
-  volatile uint32_t CALFACT;
-  volatile uint32_t CALFACT2;
+    volatile uint32_t ISR;
+    volatile uint32_t IER;
+    volatile uint32_t CR;
+    volatile uint32_t CFGR;
+    volatile uint32_t CFGR2;
+    volatile uint32_t SMPR1;
+    volatile uint32_t SMPR2;
+    volatile uint32_t PCSEL;
+    volatile uint32_t LTR1;
+    volatile uint32_t LHTR1;
+    volatile const uint32_t RESERVED_40[2];
+    volatile uint32_t SQR1;
+    volatile uint32_t SQR2;
+    volatile uint32_t SQR3;
+    volatile uint32_t SQR4;
+    volatile const uint32_t DR;
+    volatile const uint32_t RESERVED_68[2];
+    volatile uint32_t JSQR;
+    volatile const uint32_t RESERVED_80[4];
+    volatile uint32_t OFR1;
+    volatile uint32_t OFR2;
+    volatile uint32_t OFR3;
+    volatile uint32_t OFR4;
+    volatile const uint32_t RESERVED_112[4];
+    volatile const uint32_t JDR1;
+    volatile const uint32_t JDR2;
+    volatile const uint32_t JDR3;
+    volatile const uint32_t JDR4;
+    volatile const uint32_t RESERVED_144[4];
+    volatile uint32_t AWD2CR;
+    volatile uint32_t AWD3CR;
+    volatile const uint32_t RESERVED_168[2];
+    volatile uint32_t LTR2;
+    volatile uint32_t HTR2;
+    volatile uint32_t LTR3;
+    volatile uint32_t HTR3;
+    volatile uint32_t DIFSEL;
+    volatile uint32_t CALFACT;
+    volatile uint32_t CALFACT2;
 };
 #define ADC2_ISR_JQOVF          (0x1UL << 10) 
 #define ADC2_ISR_JQOVF_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
@@ -13823,6 +13973,8 @@ struct ADC2 {
 #define ADC2_SMPR2_SMP11_VAL(X) (((uint32_t)(X) & 0x7UL) << 3)
 #define ADC2_SMPR2_SMP10          (0x7UL << 0) 
 #define ADC2_SMPR2_SMP10_VAL(X) (((uint32_t)(X) & 0x7UL) << 0)
+#define ADC2_PCSEL_PCSEL          (0xFFFFFUL << 0) 
+#define ADC2_PCSEL_PCSEL_VAL(X) (((uint32_t)(X) & 0xFFFFFUL) << 0)
 #define ADC2_LTR1_LTR1          (0x3FFFFFFUL << 0) 
 #define ADC2_LTR1_LTR1_VAL(X) (((uint32_t)(X) & 0x3FFFFFFUL) << 0)
 #define ADC2_LHTR1_LHTR1          (0x3FFFFFFUL << 0) 
@@ -13913,14 +14065,6 @@ struct ADC2 {
 #define ADC2_AWD2CR_AWD2CH_VAL(X) (((uint32_t)(X) & 0xFFFFFUL) << 0)
 #define ADC2_AWD3CR_AWD3CH          (0xFFFFFUL << 1) 
 #define ADC2_AWD3CR_AWD3CH_VAL(X) (((uint32_t)(X) & 0xFFFFFUL) << 1)
-#define ADC2_DIFSEL_DIFSEL          (0xFFFFFUL << 0) 
-#define ADC2_DIFSEL_DIFSEL_VAL(X) (((uint32_t)(X) & 0xFFFFFUL) << 0)
-#define ADC2_CALFACT_CALFACT_D          (0x7FFUL << 16) 
-#define ADC2_CALFACT_CALFACT_D_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 16)
-#define ADC2_CALFACT_CALFACT_S          (0x7FFUL << 0) 
-#define ADC2_CALFACT_CALFACT_S_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
-#define ADC2_PCSEL_PCSEL          (0xFFFFFUL << 0) 
-#define ADC2_PCSEL_PCSEL_VAL(X) (((uint32_t)(X) & 0xFFFFFUL) << 0)
 #define ADC2_LTR2_LTR2          (0x3FFFFFFUL << 0) 
 #define ADC2_LTR2_LTR2_VAL(X) (((uint32_t)(X) & 0x3FFFFFFUL) << 0)
 #define ADC2_HTR2_HTR2          (0x3FFFFFFUL << 0) 
@@ -13929,16 +14073,25 @@ struct ADC2 {
 #define ADC2_LTR3_LTR3_VAL(X) (((uint32_t)(X) & 0x3FFFFFFUL) << 0)
 #define ADC2_HTR3_HTR3          (0x3FFFFFFUL << 0) 
 #define ADC2_HTR3_HTR3_VAL(X) (((uint32_t)(X) & 0x3FFFFFFUL) << 0)
+#define ADC2_DIFSEL_DIFSEL          (0xFFFFFUL << 0) 
+#define ADC2_DIFSEL_DIFSEL_VAL(X) (((uint32_t)(X) & 0xFFFFFUL) << 0)
+#define ADC2_CALFACT_CALFACT_D          (0x7FFUL << 16) 
+#define ADC2_CALFACT_CALFACT_D_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 16)
+#define ADC2_CALFACT_CALFACT_S          (0x7FFUL << 0) 
+#define ADC2_CALFACT_CALFACT_S_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
 #define ADC2_CALFACT2_LINCALFACT          (0x3FFFFFFFUL << 0) 
 #define ADC2_CALFACT2_LINCALFACT_VAL(X) (((uint32_t)(X) & 0x3FFFFFFFUL) << 0)
 
 #define ADC2  ((struct ADC2*)(0x40022100UL))
+
+
+
 struct ADC3_Common {
-  volatile const uint32_t CSR;
-  const volatile uint32_t RESERVED8[1];
-  volatile uint32_t CCR;
-  volatile const uint32_t CDR;
-  volatile const uint32_t CDR2;
+    volatile const uint32_t CSR;
+    volatile const uint32_t RESERVED_4;
+    volatile uint32_t CCR;
+    volatile const uint32_t CDR;
+    volatile const uint32_t CDR2;
 };
 #define ADC3_Common_CSR_ADRDY_MST          (0x1UL << 0) 
 #define ADC3_Common_CSR_ADRDY_MST_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -14008,12 +14161,15 @@ struct ADC3_Common {
 #define ADC3_Common_CDR2_RDATA_ALT_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
 
 #define ADC3_Common  ((struct ADC3_Common*)(0x58026300UL))
+
+
+
 struct ADC12_Common {
-  volatile const uint32_t CSR;
-  const volatile uint32_t RESERVED8[1];
-  volatile uint32_t CCR;
-  volatile const uint32_t CDR;
-  volatile const uint32_t CDR2;
+    volatile const uint32_t CSR;
+    volatile const uint32_t RESERVED_4;
+    volatile uint32_t CCR;
+    volatile const uint32_t CDR;
+    volatile const uint32_t CDR2;
 };
 #define ADC12_Common_CSR_ADRDY_MST          (0x1UL << 0) 
 #define ADC12_Common_CSR_ADRDY_MST_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -14083,38 +14239,41 @@ struct ADC12_Common {
 #define ADC12_Common_CDR2_RDATA_ALT_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
 
 #define ADC12_Common  ((struct ADC12_Common*)(0x40022300UL))
+
+
+
 struct DMAMUX1 {
-  volatile uint32_t C0CR;
-  volatile uint32_t C1CR;
-  volatile uint32_t C2CR;
-  volatile uint32_t C3CR;
-  volatile uint32_t C4CR;
-  volatile uint32_t C5CR;
-  volatile uint32_t C6CR;
-  volatile uint32_t C7CR;
-  volatile uint32_t C8CR;
-  volatile uint32_t C9CR;
-  volatile uint32_t C10CR;
-  volatile uint32_t C11CR;
-  volatile uint32_t C12CR;
-  volatile uint32_t C13CR;
-  volatile uint32_t C14CR;
-  volatile uint32_t C15CR;
-  const volatile uint32_t RESERVED128[16];
-  volatile const uint32_t CSR;
-  volatile uint32_t CFR;
-  const volatile uint32_t RESERVED256[30];
-  volatile uint32_t RG0CR;
-  volatile uint32_t RG1CR;
-  volatile uint32_t RG2CR;
-  volatile uint32_t RG3CR;
-  volatile uint32_t RG4CR;
-  volatile uint32_t RG5CR;
-  volatile uint32_t RG6CR;
-  volatile uint32_t RG7CR;
-  const volatile uint32_t RESERVED320[8];
-  volatile const uint32_t RGSR;
-  volatile uint32_t RGCFR;
+    volatile uint32_t C0CR;
+    volatile uint32_t C1CR;
+    volatile uint32_t C2CR;
+    volatile uint32_t C3CR;
+    volatile uint32_t C4CR;
+    volatile uint32_t C5CR;
+    volatile uint32_t C6CR;
+    volatile uint32_t C7CR;
+    volatile uint32_t C8CR;
+    volatile uint32_t C9CR;
+    volatile uint32_t C10CR;
+    volatile uint32_t C11CR;
+    volatile uint32_t C12CR;
+    volatile uint32_t C13CR;
+    volatile uint32_t C14CR;
+    volatile uint32_t C15CR;
+    volatile const uint32_t RESERVED_64[16];
+    volatile const uint32_t CSR;
+    volatile uint32_t CFR;
+    volatile const uint32_t RESERVED_136[30];
+    volatile uint32_t RG0CR;
+    volatile uint32_t RG1CR;
+    volatile uint32_t RG2CR;
+    volatile uint32_t RG3CR;
+    volatile uint32_t RG4CR;
+    volatile uint32_t RG5CR;
+    volatile uint32_t RG6CR;
+    volatile uint32_t RG7CR;
+    volatile const uint32_t RESERVED_288[8];
+    volatile const uint32_t RGSR;
+    volatile uint32_t RGCFR;
 };
 #define DMAMUX1_C0CR_DMAREQ_ID          (0xFFUL << 0) 
 #define DMAMUX1_C0CR_DMAREQ_ID_VAL(X) (((uint32_t)(X) & 0xFFUL) << 0)
@@ -14340,6 +14499,10 @@ struct DMAMUX1 {
 #define DMAMUX1_C15CR_NBREQ_VAL(X) (((uint32_t)(X) & 0x1FUL) << 19)
 #define DMAMUX1_C15CR_SYNC_ID          (0x1FUL << 24) 
 #define DMAMUX1_C15CR_SYNC_ID_VAL(X) (((uint32_t)(X) & 0x1FUL) << 24)
+#define DMAMUX1_CSR_SOF          (0xFFFFUL << 0) 
+#define DMAMUX1_CSR_SOF_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
+#define DMAMUX1_CFR_CSOF          (0xFFFFUL << 0) 
+#define DMAMUX1_CFR_CSOF_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 #define DMAMUX1_RG0CR_SIG_ID          (0x1FUL << 0) 
 #define DMAMUX1_RG0CR_SIG_ID_VAL(X) (((uint32_t)(X) & 0x1FUL) << 0)
 #define DMAMUX1_RG0CR_OIE          (0x1UL << 8) 
@@ -14424,18 +14587,17 @@ struct DMAMUX1 {
 #define DMAMUX1_RGSR_OF_VAL(X) (((uint32_t)(X) & 0xFFUL) << 0)
 #define DMAMUX1_RGCFR_COF          (0xFFUL << 0) 
 #define DMAMUX1_RGCFR_COF_VAL(X) (((uint32_t)(X) & 0xFFUL) << 0)
-#define DMAMUX1_CSR_SOF          (0xFFFFUL << 0) 
-#define DMAMUX1_CSR_SOF_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
-#define DMAMUX1_CFR_CSOF          (0xFFFFUL << 0) 
-#define DMAMUX1_CFR_CSOF_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 
 #define DMAMUX1  ((struct DMAMUX1*)(0x40020800UL))
+
+
+
 struct CRC {
-  volatile uint32_t DR;
-  volatile uint32_t IDR;
-  volatile uint32_t CR;
-  volatile uint32_t INIT;
-  volatile uint32_t POL;
+    volatile uint32_t DR;
+    volatile uint32_t IDR;
+    volatile uint32_t CR;
+    volatile uint32_t INIT;
+    volatile uint32_t POL;
 };
 #define CRC_DR_DR          (0xFFFFFFFFUL << 0) 
 #define CRC_DR_DR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
@@ -14455,92 +14617,95 @@ struct CRC {
 #define CRC_POL_POL_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
 
 #define CRC  ((struct CRC*)(0x58024C00UL))
+
+
+
 struct RCC {
-  volatile uint32_t CR;
-  volatile uint32_t ICSCR;
-  volatile const uint32_t CRRCR;
-  const volatile uint32_t RESERVED16[1];
-  volatile uint32_t CFGR;
-  const volatile uint32_t RESERVED24[1];
-  volatile uint32_t D1CFGR;
-  volatile uint32_t D2CFGR;
-  volatile uint32_t D3CFGR;
-  const volatile uint32_t RESERVED40[1];
-  volatile uint32_t PLLCKSELR;
-  volatile uint32_t PLLCFGR;
-  volatile uint32_t PLL1DIVR;
-  volatile uint32_t PLL1FRACR;
-  volatile uint32_t PLL2DIVR;
-  volatile uint32_t PLL2FRACR;
-  volatile uint32_t PLL3DIVR;
-  volatile uint32_t PLL3FRACR;
-  const volatile uint32_t RESERVED76[1];
-  volatile uint32_t D1CCIPR;
-  volatile uint32_t D2CCIP1R;
-  volatile uint32_t D2CCIP2R;
-  volatile uint32_t D3CCIPR;
-  const volatile uint32_t RESERVED96[1];
-  volatile uint32_t CIER;
-  volatile uint32_t CIFR;
-  volatile uint32_t CICR;
-  const volatile uint32_t RESERVED112[1];
-  volatile uint32_t BDCR;
-  volatile uint32_t CSR;
-  const volatile uint32_t RESERVED124[1];
-  volatile uint32_t AHB3RSTR;
-  volatile uint32_t AHB1RSTR;
-  volatile uint32_t AHB2RSTR;
-  volatile uint32_t AHB4RSTR;
-  volatile uint32_t APB3RSTR;
-  volatile uint32_t APB1LRSTR;
-  volatile uint32_t APB1HRSTR;
-  volatile uint32_t APB2RSTR;
-  volatile uint32_t APB4RSTR;
-  volatile uint32_t GCR;
-  const volatile uint32_t RESERVED168[1];
-  volatile uint32_t D3AMR;
-  const volatile uint32_t RESERVED208[9];
-  volatile uint32_t RSR;
-  volatile uint32_t AHB3ENR;
-  volatile uint32_t AHB1ENR;
-  volatile uint32_t AHB2ENR;
-  volatile uint32_t AHB4ENR;
-  volatile uint32_t APB3ENR;
-  volatile uint32_t APB1LENR;
-  volatile uint32_t APB1HENR;
-  volatile uint32_t APB2ENR;
-  volatile uint32_t APB4ENR;
-  const volatile uint32_t RESERVED252[1];
-  volatile uint32_t AHB3LPENR;
-  volatile uint32_t AHB1LPENR;
-  volatile uint32_t AHB2LPENR;
-  volatile uint32_t AHB4LPENR;
-  volatile uint32_t APB3LPENR;
-  volatile uint32_t APB1LLPENR;
-  volatile uint32_t APB1HLPENR;
-  volatile uint32_t APB2LPENR;
-  volatile uint32_t APB4LPENR;
-  const volatile uint32_t RESERVED304[4];
-  volatile uint32_t C1_RSR;
-  volatile uint32_t C1_AHB3ENR;
-  volatile uint32_t C1_AHB1ENR;
-  volatile uint32_t C1_AHB2ENR;
-  volatile uint32_t C1_AHB4ENR;
-  volatile uint32_t C1_APB3ENR;
-  volatile uint32_t C1_APB1LENR;
-  volatile uint32_t C1_APB1HENR;
-  volatile uint32_t C1_APB2ENR;
-  volatile uint32_t C1_APB4ENR;
-  const volatile uint32_t RESERVED348[1];
-  volatile uint32_t C1_AHB3LPENR;
-  volatile uint32_t C1_AHB1LPENR;
-  volatile uint32_t C1_AHB2LPENR;
-  volatile uint32_t C1_AHB4LPENR;
-  volatile uint32_t C1_APB3LPENR;
-  volatile uint32_t C1_APB1LLPENR;
-  volatile uint32_t C1_APB1HLPENR;
-  volatile uint32_t C1_APB2LPENR;
-  volatile uint32_t C1_APB4LPENR;
+    volatile uint32_t CR;
+    volatile uint32_t ICSCR;
+    volatile const uint32_t CRRCR;
+    volatile const uint32_t RESERVED_12;
+    volatile uint32_t CFGR;
+    volatile const uint32_t RESERVED_20;
+    volatile uint32_t D1CFGR;
+    volatile uint32_t D2CFGR;
+    volatile uint32_t D3CFGR;
+    volatile const uint32_t RESERVED_36;
+    volatile uint32_t PLLCKSELR;
+    volatile uint32_t PLLCFGR;
+    volatile uint32_t PLL1DIVR;
+    volatile uint32_t PLL1FRACR;
+    volatile uint32_t PLL2DIVR;
+    volatile uint32_t PLL2FRACR;
+    volatile uint32_t PLL3DIVR;
+    volatile uint32_t PLL3FRACR;
+    volatile const uint32_t RESERVED_72;
+    volatile uint32_t D1CCIPR;
+    volatile uint32_t D2CCIP1R;
+    volatile uint32_t D2CCIP2R;
+    volatile uint32_t D3CCIPR;
+    volatile const uint32_t RESERVED_92;
+    volatile uint32_t CIER;
+    volatile uint32_t CIFR;
+    volatile uint32_t CICR;
+    volatile const uint32_t RESERVED_108;
+    volatile uint32_t BDCR;
+    volatile uint32_t CSR;
+    volatile const uint32_t RESERVED_120;
+    volatile uint32_t AHB3RSTR;
+    volatile uint32_t AHB1RSTR;
+    volatile uint32_t AHB2RSTR;
+    volatile uint32_t AHB4RSTR;
+    volatile uint32_t APB3RSTR;
+    volatile uint32_t APB1LRSTR;
+    volatile uint32_t APB1HRSTR;
+    volatile uint32_t APB2RSTR;
+    volatile uint32_t APB4RSTR;
+    volatile uint32_t GCR;
+    volatile const uint32_t RESERVED_164;
+    volatile uint32_t D3AMR;
+    volatile const uint32_t RESERVED_172[9];
+    volatile uint32_t RSR;
+    volatile uint32_t AHB3ENR;
+    volatile uint32_t AHB1ENR;
+    volatile uint32_t AHB2ENR;
+    volatile uint32_t AHB4ENR;
+    volatile uint32_t APB3ENR;
+    volatile uint32_t APB1LENR;
+    volatile uint32_t APB1HENR;
+    volatile uint32_t APB2ENR;
+    volatile uint32_t APB4ENR;
+    volatile const uint32_t RESERVED_248;
+    volatile uint32_t AHB3LPENR;
+    volatile uint32_t AHB1LPENR;
+    volatile uint32_t AHB2LPENR;
+    volatile uint32_t AHB4LPENR;
+    volatile uint32_t APB3LPENR;
+    volatile uint32_t APB1LLPENR;
+    volatile uint32_t APB1HLPENR;
+    volatile uint32_t APB2LPENR;
+    volatile uint32_t APB4LPENR;
+    volatile const uint32_t RESERVED_288[4];
+    volatile uint32_t C1_RSR;
+    volatile uint32_t C1_AHB3ENR;
+    volatile uint32_t C1_AHB1ENR;
+    volatile uint32_t C1_AHB2ENR;
+    volatile uint32_t C1_AHB4ENR;
+    volatile uint32_t C1_APB3ENR;
+    volatile uint32_t C1_APB1LENR;
+    volatile uint32_t C1_APB1HENR;
+    volatile uint32_t C1_APB2ENR;
+    volatile uint32_t C1_APB4ENR;
+    volatile const uint32_t RESERVED_344;
+    volatile uint32_t C1_AHB3LPENR;
+    volatile uint32_t C1_AHB1LPENR;
+    volatile uint32_t C1_AHB2LPENR;
+    volatile uint32_t C1_AHB4LPENR;
+    volatile uint32_t C1_APB3LPENR;
+    volatile uint32_t C1_APB1LLPENR;
+    volatile uint32_t C1_APB1HLPENR;
+    volatile uint32_t C1_APB2LPENR;
+    volatile uint32_t C1_APB4LPENR;
 };
 #define RCC_CR_HSION          (0x1UL << 0) 
 #define RCC_CR_HSION_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -15078,40 +15243,6 @@ struct RCC {
 #define RCC_RSR_WWDG1RSTF_VAL(X) (((uint32_t)(X) & 0x1UL) << 28)
 #define RCC_RSR_LPWRRSTF          (0x1UL << 30) 
 #define RCC_RSR_LPWRRSTF_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
-#define RCC_C1_RSR_RMVF          (0x1UL << 16) 
-#define RCC_C1_RSR_RMVF_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
-#define RCC_C1_RSR_CPURSTF          (0x1UL << 17) 
-#define RCC_C1_RSR_CPURSTF_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
-#define RCC_C1_RSR_D1RSTF          (0x1UL << 19) 
-#define RCC_C1_RSR_D1RSTF_VAL(X) (((uint32_t)(X) & 0x1UL) << 19)
-#define RCC_C1_RSR_D2RSTF          (0x1UL << 20) 
-#define RCC_C1_RSR_D2RSTF_VAL(X) (((uint32_t)(X) & 0x1UL) << 20)
-#define RCC_C1_RSR_BORRSTF          (0x1UL << 21) 
-#define RCC_C1_RSR_BORRSTF_VAL(X) (((uint32_t)(X) & 0x1UL) << 21)
-#define RCC_C1_RSR_PINRSTF          (0x1UL << 22) 
-#define RCC_C1_RSR_PINRSTF_VAL(X) (((uint32_t)(X) & 0x1UL) << 22)
-#define RCC_C1_RSR_PORRSTF          (0x1UL << 23) 
-#define RCC_C1_RSR_PORRSTF_VAL(X) (((uint32_t)(X) & 0x1UL) << 23)
-#define RCC_C1_RSR_SFTRSTF          (0x1UL << 24) 
-#define RCC_C1_RSR_SFTRSTF_VAL(X) (((uint32_t)(X) & 0x1UL) << 24)
-#define RCC_C1_RSR_IWDG1RSTF          (0x1UL << 26) 
-#define RCC_C1_RSR_IWDG1RSTF_VAL(X) (((uint32_t)(X) & 0x1UL) << 26)
-#define RCC_C1_RSR_WWDG1RSTF          (0x1UL << 28) 
-#define RCC_C1_RSR_WWDG1RSTF_VAL(X) (((uint32_t)(X) & 0x1UL) << 28)
-#define RCC_C1_RSR_LPWRRSTF          (0x1UL << 30) 
-#define RCC_C1_RSR_LPWRRSTF_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
-#define RCC_C1_AHB3ENR_MDMAEN          (0x1UL << 0) 
-#define RCC_C1_AHB3ENR_MDMAEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define RCC_C1_AHB3ENR_DMA2DEN          (0x1UL << 4) 
-#define RCC_C1_AHB3ENR_DMA2DEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define RCC_C1_AHB3ENR_JPGDECEN          (0x1UL << 5) 
-#define RCC_C1_AHB3ENR_JPGDECEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
-#define RCC_C1_AHB3ENR_FMCEN          (0x1UL << 12) 
-#define RCC_C1_AHB3ENR_FMCEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
-#define RCC_C1_AHB3ENR_QSPIEN          (0x1UL << 14) 
-#define RCC_C1_AHB3ENR_QSPIEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 14)
-#define RCC_C1_AHB3ENR_SDMMC1EN          (0x1UL << 16) 
-#define RCC_C1_AHB3ENR_SDMMC1EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
 #define RCC_AHB3ENR_MDMAEN          (0x1UL << 0) 
 #define RCC_AHB3ENR_MDMAEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define RCC_AHB3ENR_DMA2DEN          (0x1UL << 4) 
@@ -15146,42 +15277,6 @@ struct RCC {
 #define RCC_AHB1ENR_USB2OTGEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 27)
 #define RCC_AHB1ENR_USB2ULPIEN          (0x1UL << 28) 
 #define RCC_AHB1ENR_USB2ULPIEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 28)
-#define RCC_C1_AHB1ENR_DMA1EN          (0x1UL << 0) 
-#define RCC_C1_AHB1ENR_DMA1EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define RCC_C1_AHB1ENR_DMA2EN          (0x1UL << 1) 
-#define RCC_C1_AHB1ENR_DMA2EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define RCC_C1_AHB1ENR_ADC12EN          (0x1UL << 5) 
-#define RCC_C1_AHB1ENR_ADC12EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
-#define RCC_C1_AHB1ENR_ETH1MACEN          (0x1UL << 15) 
-#define RCC_C1_AHB1ENR_ETH1MACEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
-#define RCC_C1_AHB1ENR_ETH1TXEN          (0x1UL << 16) 
-#define RCC_C1_AHB1ENR_ETH1TXEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
-#define RCC_C1_AHB1ENR_ETH1RXEN          (0x1UL << 17) 
-#define RCC_C1_AHB1ENR_ETH1RXEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
-#define RCC_C1_AHB1ENR_USB1OTGEN          (0x1UL << 25) 
-#define RCC_C1_AHB1ENR_USB1OTGEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 25)
-#define RCC_C1_AHB1ENR_USB1ULPIEN          (0x1UL << 26) 
-#define RCC_C1_AHB1ENR_USB1ULPIEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 26)
-#define RCC_C1_AHB1ENR_USB2OTGEN          (0x1UL << 27) 
-#define RCC_C1_AHB1ENR_USB2OTGEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 27)
-#define RCC_C1_AHB1ENR_USB2ULPIEN          (0x1UL << 28) 
-#define RCC_C1_AHB1ENR_USB2ULPIEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 28)
-#define RCC_C1_AHB2ENR_CAMITFEN          (0x1UL << 0) 
-#define RCC_C1_AHB2ENR_CAMITFEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define RCC_C1_AHB2ENR_CRYPTEN          (0x1UL << 4) 
-#define RCC_C1_AHB2ENR_CRYPTEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define RCC_C1_AHB2ENR_HASHEN          (0x1UL << 5) 
-#define RCC_C1_AHB2ENR_HASHEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
-#define RCC_C1_AHB2ENR_RNGEN          (0x1UL << 6) 
-#define RCC_C1_AHB2ENR_RNGEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define RCC_C1_AHB2ENR_SDMMC2EN          (0x1UL << 9) 
-#define RCC_C1_AHB2ENR_SDMMC2EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define RCC_C1_AHB2ENR_SRAM1EN          (0x1UL << 29) 
-#define RCC_C1_AHB2ENR_SRAM1EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
-#define RCC_C1_AHB2ENR_SRAM2EN          (0x1UL << 30) 
-#define RCC_C1_AHB2ENR_SRAM2EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
-#define RCC_C1_AHB2ENR_SRAM3EN          (0x1UL << 31) 
-#define RCC_C1_AHB2ENR_SRAM3EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
 #define RCC_AHB2ENR_CAMITFEN          (0x1UL << 0) 
 #define RCC_AHB2ENR_CAMITFEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define RCC_AHB2ENR_CRYPTEN          (0x1UL << 4) 
@@ -15230,42 +15325,6 @@ struct RCC {
 #define RCC_AHB4ENR_HSEMEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 25)
 #define RCC_AHB4ENR_BKPRAMEN          (0x1UL << 28) 
 #define RCC_AHB4ENR_BKPRAMEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 28)
-#define RCC_C1_AHB4ENR_GPIOAEN          (0x1UL << 0) 
-#define RCC_C1_AHB4ENR_GPIOAEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define RCC_C1_AHB4ENR_GPIOBEN          (0x1UL << 1) 
-#define RCC_C1_AHB4ENR_GPIOBEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define RCC_C1_AHB4ENR_GPIOCEN          (0x1UL << 2) 
-#define RCC_C1_AHB4ENR_GPIOCEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
-#define RCC_C1_AHB4ENR_GPIODEN          (0x1UL << 3) 
-#define RCC_C1_AHB4ENR_GPIODEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define RCC_C1_AHB4ENR_GPIOEEN          (0x1UL << 4) 
-#define RCC_C1_AHB4ENR_GPIOEEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define RCC_C1_AHB4ENR_GPIOFEN          (0x1UL << 5) 
-#define RCC_C1_AHB4ENR_GPIOFEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
-#define RCC_C1_AHB4ENR_GPIOGEN          (0x1UL << 6) 
-#define RCC_C1_AHB4ENR_GPIOGEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define RCC_C1_AHB4ENR_GPIOHEN          (0x1UL << 7) 
-#define RCC_C1_AHB4ENR_GPIOHEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define RCC_C1_AHB4ENR_GPIOIEN          (0x1UL << 8) 
-#define RCC_C1_AHB4ENR_GPIOIEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define RCC_C1_AHB4ENR_GPIOJEN          (0x1UL << 9) 
-#define RCC_C1_AHB4ENR_GPIOJEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define RCC_C1_AHB4ENR_GPIOKEN          (0x1UL << 10) 
-#define RCC_C1_AHB4ENR_GPIOKEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
-#define RCC_C1_AHB4ENR_CRCEN          (0x1UL << 19) 
-#define RCC_C1_AHB4ENR_CRCEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 19)
-#define RCC_C1_AHB4ENR_BDMAEN          (0x1UL << 21) 
-#define RCC_C1_AHB4ENR_BDMAEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 21)
-#define RCC_C1_AHB4ENR_ADC3EN          (0x1UL << 24) 
-#define RCC_C1_AHB4ENR_ADC3EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 24)
-#define RCC_C1_AHB4ENR_HSEMEN          (0x1UL << 25) 
-#define RCC_C1_AHB4ENR_HSEMEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 25)
-#define RCC_C1_AHB4ENR_BKPRAMEN          (0x1UL << 28) 
-#define RCC_C1_AHB4ENR_BKPRAMEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 28)
-#define RCC_C1_APB3ENR_LTDCEN          (0x1UL << 3) 
-#define RCC_C1_APB3ENR_LTDCEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define RCC_C1_APB3ENR_WWDG1EN          (0x1UL << 6) 
-#define RCC_C1_APB3ENR_WWDG1EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
 #define RCC_APB3ENR_LTDCEN          (0x1UL << 3) 
 #define RCC_APB3ENR_LTDCEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
 #define RCC_APB3ENR_WWDG1EN          (0x1UL << 6) 
@@ -15318,54 +15377,6 @@ struct RCC {
 #define RCC_APB1LENR_USART7EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define RCC_APB1LENR_USART8EN          (0x1UL << 31) 
 #define RCC_APB1LENR_USART8EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define RCC_C1_APB1LENR_TIM2EN          (0x1UL << 0) 
-#define RCC_C1_APB1LENR_TIM2EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define RCC_C1_APB1LENR_TIM3EN          (0x1UL << 1) 
-#define RCC_C1_APB1LENR_TIM3EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define RCC_C1_APB1LENR_TIM4EN          (0x1UL << 2) 
-#define RCC_C1_APB1LENR_TIM4EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
-#define RCC_C1_APB1LENR_TIM5EN          (0x1UL << 3) 
-#define RCC_C1_APB1LENR_TIM5EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define RCC_C1_APB1LENR_TIM6EN          (0x1UL << 4) 
-#define RCC_C1_APB1LENR_TIM6EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define RCC_C1_APB1LENR_TIM7EN          (0x1UL << 5) 
-#define RCC_C1_APB1LENR_TIM7EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
-#define RCC_C1_APB1LENR_TIM12EN          (0x1UL << 6) 
-#define RCC_C1_APB1LENR_TIM12EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define RCC_C1_APB1LENR_TIM13EN          (0x1UL << 7) 
-#define RCC_C1_APB1LENR_TIM13EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define RCC_C1_APB1LENR_TIM14EN          (0x1UL << 8) 
-#define RCC_C1_APB1LENR_TIM14EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define RCC_C1_APB1LENR_LPTIM1EN          (0x1UL << 9) 
-#define RCC_C1_APB1LENR_LPTIM1EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define RCC_C1_APB1LENR_SPI2EN          (0x1UL << 14) 
-#define RCC_C1_APB1LENR_SPI2EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 14)
-#define RCC_C1_APB1LENR_SPI3EN          (0x1UL << 15) 
-#define RCC_C1_APB1LENR_SPI3EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
-#define RCC_C1_APB1LENR_SPDIFRXEN          (0x1UL << 16) 
-#define RCC_C1_APB1LENR_SPDIFRXEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
-#define RCC_C1_APB1LENR_USART2EN          (0x1UL << 17) 
-#define RCC_C1_APB1LENR_USART2EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
-#define RCC_C1_APB1LENR_USART3EN          (0x1UL << 18) 
-#define RCC_C1_APB1LENR_USART3EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 18)
-#define RCC_C1_APB1LENR_UART4EN          (0x1UL << 19) 
-#define RCC_C1_APB1LENR_UART4EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 19)
-#define RCC_C1_APB1LENR_UART5EN          (0x1UL << 20) 
-#define RCC_C1_APB1LENR_UART5EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 20)
-#define RCC_C1_APB1LENR_I2C1EN          (0x1UL << 21) 
-#define RCC_C1_APB1LENR_I2C1EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 21)
-#define RCC_C1_APB1LENR_I2C2EN          (0x1UL << 22) 
-#define RCC_C1_APB1LENR_I2C2EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 22)
-#define RCC_C1_APB1LENR_I2C3EN          (0x1UL << 23) 
-#define RCC_C1_APB1LENR_I2C3EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 23)
-#define RCC_C1_APB1LENR_HDMICECEN          (0x1UL << 27) 
-#define RCC_C1_APB1LENR_HDMICECEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 27)
-#define RCC_C1_APB1LENR_DAC12EN          (0x1UL << 29) 
-#define RCC_C1_APB1LENR_DAC12EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
-#define RCC_C1_APB1LENR_USART7EN          (0x1UL << 30) 
-#define RCC_C1_APB1LENR_USART7EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
-#define RCC_C1_APB1LENR_USART8EN          (0x1UL << 31) 
-#define RCC_C1_APB1LENR_USART8EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
 #define RCC_APB1HENR_CRSEN          (0x1UL << 1) 
 #define RCC_APB1HENR_CRSEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
 #define RCC_APB1HENR_SWPEN          (0x1UL << 2) 
@@ -15376,46 +15387,6 @@ struct RCC {
 #define RCC_APB1HENR_MDIOSEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
 #define RCC_APB1HENR_FDCANEN          (0x1UL << 8) 
 #define RCC_APB1HENR_FDCANEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define RCC_C1_APB1HENR_CRSEN          (0x1UL << 1) 
-#define RCC_C1_APB1HENR_CRSEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define RCC_C1_APB1HENR_SWPEN          (0x1UL << 2) 
-#define RCC_C1_APB1HENR_SWPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
-#define RCC_C1_APB1HENR_OPAMPEN          (0x1UL << 4) 
-#define RCC_C1_APB1HENR_OPAMPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define RCC_C1_APB1HENR_MDIOSEN          (0x1UL << 5) 
-#define RCC_C1_APB1HENR_MDIOSEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
-#define RCC_C1_APB1HENR_FDCANEN          (0x1UL << 8) 
-#define RCC_C1_APB1HENR_FDCANEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define RCC_C1_APB2ENR_TIM1EN          (0x1UL << 0) 
-#define RCC_C1_APB2ENR_TIM1EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define RCC_C1_APB2ENR_TIM8EN          (0x1UL << 1) 
-#define RCC_C1_APB2ENR_TIM8EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define RCC_C1_APB2ENR_USART1EN          (0x1UL << 4) 
-#define RCC_C1_APB2ENR_USART1EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define RCC_C1_APB2ENR_USART6EN          (0x1UL << 5) 
-#define RCC_C1_APB2ENR_USART6EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
-#define RCC_C1_APB2ENR_SPI1EN          (0x1UL << 12) 
-#define RCC_C1_APB2ENR_SPI1EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
-#define RCC_C1_APB2ENR_SPI4EN          (0x1UL << 13) 
-#define RCC_C1_APB2ENR_SPI4EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 13)
-#define RCC_C1_APB2ENR_TIM16EN          (0x1UL << 17) 
-#define RCC_C1_APB2ENR_TIM16EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
-#define RCC_C1_APB2ENR_TIM15EN          (0x1UL << 16) 
-#define RCC_C1_APB2ENR_TIM15EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
-#define RCC_C1_APB2ENR_TIM17EN          (0x1UL << 18) 
-#define RCC_C1_APB2ENR_TIM17EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 18)
-#define RCC_C1_APB2ENR_SPI5EN          (0x1UL << 20) 
-#define RCC_C1_APB2ENR_SPI5EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 20)
-#define RCC_C1_APB2ENR_SAI1EN          (0x1UL << 22) 
-#define RCC_C1_APB2ENR_SAI1EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 22)
-#define RCC_C1_APB2ENR_SAI2EN          (0x1UL << 23) 
-#define RCC_C1_APB2ENR_SAI2EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 23)
-#define RCC_C1_APB2ENR_SAI3EN          (0x1UL << 24) 
-#define RCC_C1_APB2ENR_SAI3EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 24)
-#define RCC_C1_APB2ENR_DFSDM1EN          (0x1UL << 28) 
-#define RCC_C1_APB2ENR_DFSDM1EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 28)
-#define RCC_C1_APB2ENR_HRTIMEN          (0x1UL << 29) 
-#define RCC_C1_APB2ENR_HRTIMEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
 #define RCC_APB2ENR_TIM1EN          (0x1UL << 0) 
 #define RCC_APB2ENR_TIM1EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define RCC_APB2ENR_TIM8EN          (0x1UL << 1) 
@@ -15470,52 +15441,6 @@ struct RCC {
 #define RCC_APB4ENR_RTCAPBEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
 #define RCC_APB4ENR_SAI4EN          (0x1UL << 21) 
 #define RCC_APB4ENR_SAI4EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 21)
-#define RCC_C1_APB4ENR_SYSCFGEN          (0x1UL << 1) 
-#define RCC_C1_APB4ENR_SYSCFGEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define RCC_C1_APB4ENR_LPUART1EN          (0x1UL << 3) 
-#define RCC_C1_APB4ENR_LPUART1EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define RCC_C1_APB4ENR_SPI6EN          (0x1UL << 5) 
-#define RCC_C1_APB4ENR_SPI6EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
-#define RCC_C1_APB4ENR_I2C4EN          (0x1UL << 7) 
-#define RCC_C1_APB4ENR_I2C4EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define RCC_C1_APB4ENR_LPTIM2EN          (0x1UL << 9) 
-#define RCC_C1_APB4ENR_LPTIM2EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define RCC_C1_APB4ENR_LPTIM3EN          (0x1UL << 10) 
-#define RCC_C1_APB4ENR_LPTIM3EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
-#define RCC_C1_APB4ENR_LPTIM4EN          (0x1UL << 11) 
-#define RCC_C1_APB4ENR_LPTIM4EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
-#define RCC_C1_APB4ENR_LPTIM5EN          (0x1UL << 12) 
-#define RCC_C1_APB4ENR_LPTIM5EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
-#define RCC_C1_APB4ENR_COMP12EN          (0x1UL << 14) 
-#define RCC_C1_APB4ENR_COMP12EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 14)
-#define RCC_C1_APB4ENR_VREFEN          (0x1UL << 15) 
-#define RCC_C1_APB4ENR_VREFEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
-#define RCC_C1_APB4ENR_RTCAPBEN          (0x1UL << 16) 
-#define RCC_C1_APB4ENR_RTCAPBEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
-#define RCC_C1_APB4ENR_SAI4EN          (0x1UL << 21) 
-#define RCC_C1_APB4ENR_SAI4EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 21)
-#define RCC_C1_AHB3LPENR_MDMALPEN          (0x1UL << 0) 
-#define RCC_C1_AHB3LPENR_MDMALPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define RCC_C1_AHB3LPENR_DMA2DLPEN          (0x1UL << 4) 
-#define RCC_C1_AHB3LPENR_DMA2DLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define RCC_C1_AHB3LPENR_JPGDECLPEN          (0x1UL << 5) 
-#define RCC_C1_AHB3LPENR_JPGDECLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
-#define RCC_C1_AHB3LPENR_FLITFLPEN          (0x1UL << 8) 
-#define RCC_C1_AHB3LPENR_FLITFLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define RCC_C1_AHB3LPENR_FMCLPEN          (0x1UL << 12) 
-#define RCC_C1_AHB3LPENR_FMCLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
-#define RCC_C1_AHB3LPENR_QSPILPEN          (0x1UL << 14) 
-#define RCC_C1_AHB3LPENR_QSPILPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 14)
-#define RCC_C1_AHB3LPENR_SDMMC1LPEN          (0x1UL << 16) 
-#define RCC_C1_AHB3LPENR_SDMMC1LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
-#define RCC_C1_AHB3LPENR_D1DTCM1LPEN          (0x1UL << 28) 
-#define RCC_C1_AHB3LPENR_D1DTCM1LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 28)
-#define RCC_C1_AHB3LPENR_DTCM2LPEN          (0x1UL << 29) 
-#define RCC_C1_AHB3LPENR_DTCM2LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
-#define RCC_C1_AHB3LPENR_ITCMLPEN          (0x1UL << 30) 
-#define RCC_C1_AHB3LPENR_ITCMLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
-#define RCC_C1_AHB3LPENR_AXISRAMLPEN          (0x1UL << 31) 
-#define RCC_C1_AHB3LPENR_AXISRAMLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
 #define RCC_AHB3LPENR_MDMALPEN          (0x1UL << 0) 
 #define RCC_AHB3LPENR_MDMALPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define RCC_AHB3LPENR_DMA2DLPEN          (0x1UL << 4) 
@@ -15558,42 +15483,6 @@ struct RCC {
 #define RCC_AHB1LPENR_USB2OTGHSLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 27)
 #define RCC_AHB1LPENR_USB2OTGHSULPILPEN          (0x1UL << 28) 
 #define RCC_AHB1LPENR_USB2OTGHSULPILPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 28)
-#define RCC_C1_AHB1LPENR_DMA1LPEN          (0x1UL << 0) 
-#define RCC_C1_AHB1LPENR_DMA1LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define RCC_C1_AHB1LPENR_DMA2LPEN          (0x1UL << 1) 
-#define RCC_C1_AHB1LPENR_DMA2LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define RCC_C1_AHB1LPENR_ADC12LPEN          (0x1UL << 5) 
-#define RCC_C1_AHB1LPENR_ADC12LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
-#define RCC_C1_AHB1LPENR_ETH1MACLPEN          (0x1UL << 15) 
-#define RCC_C1_AHB1LPENR_ETH1MACLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
-#define RCC_C1_AHB1LPENR_ETH1TXLPEN          (0x1UL << 16) 
-#define RCC_C1_AHB1LPENR_ETH1TXLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
-#define RCC_C1_AHB1LPENR_ETH1RXLPEN          (0x1UL << 17) 
-#define RCC_C1_AHB1LPENR_ETH1RXLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
-#define RCC_C1_AHB1LPENR_USB1OTGLPEN          (0x1UL << 25) 
-#define RCC_C1_AHB1LPENR_USB1OTGLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 25)
-#define RCC_C1_AHB1LPENR_USB1ULPILPEN          (0x1UL << 26) 
-#define RCC_C1_AHB1LPENR_USB1ULPILPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 26)
-#define RCC_C1_AHB1LPENR_USB2OTGLPEN          (0x1UL << 27) 
-#define RCC_C1_AHB1LPENR_USB2OTGLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 27)
-#define RCC_C1_AHB1LPENR_USB2ULPILPEN          (0x1UL << 28) 
-#define RCC_C1_AHB1LPENR_USB2ULPILPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 28)
-#define RCC_C1_AHB2LPENR_CAMITFLPEN          (0x1UL << 0) 
-#define RCC_C1_AHB2LPENR_CAMITFLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define RCC_C1_AHB2LPENR_CRYPTLPEN          (0x1UL << 4) 
-#define RCC_C1_AHB2LPENR_CRYPTLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define RCC_C1_AHB2LPENR_HASHLPEN          (0x1UL << 5) 
-#define RCC_C1_AHB2LPENR_HASHLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
-#define RCC_C1_AHB2LPENR_SDMMC2LPEN          (0x1UL << 9) 
-#define RCC_C1_AHB2LPENR_SDMMC2LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define RCC_C1_AHB2LPENR_RNGLPEN          (0x1UL << 6) 
-#define RCC_C1_AHB2LPENR_RNGLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define RCC_C1_AHB2LPENR_SRAM1LPEN          (0x1UL << 29) 
-#define RCC_C1_AHB2LPENR_SRAM1LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
-#define RCC_C1_AHB2LPENR_SRAM2LPEN          (0x1UL << 30) 
-#define RCC_C1_AHB2LPENR_SRAM2LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
-#define RCC_C1_AHB2LPENR_SRAM3LPEN          (0x1UL << 31) 
-#define RCC_C1_AHB2LPENR_SRAM3LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
 #define RCC_AHB2LPENR_CAMITFLPEN          (0x1UL << 0) 
 #define RCC_AHB2LPENR_CAMITFLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define RCC_AHB2LPENR_CRYPTLPEN          (0x1UL << 4) 
@@ -15642,42 +15531,6 @@ struct RCC {
 #define RCC_AHB4LPENR_BKPRAMLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 28)
 #define RCC_AHB4LPENR_SRAM4LPEN          (0x1UL << 29) 
 #define RCC_AHB4LPENR_SRAM4LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
-#define RCC_C1_AHB4LPENR_GPIOALPEN          (0x1UL << 0) 
-#define RCC_C1_AHB4LPENR_GPIOALPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define RCC_C1_AHB4LPENR_GPIOBLPEN          (0x1UL << 1) 
-#define RCC_C1_AHB4LPENR_GPIOBLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define RCC_C1_AHB4LPENR_GPIOCLPEN          (0x1UL << 2) 
-#define RCC_C1_AHB4LPENR_GPIOCLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
-#define RCC_C1_AHB4LPENR_GPIODLPEN          (0x1UL << 3) 
-#define RCC_C1_AHB4LPENR_GPIODLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define RCC_C1_AHB4LPENR_GPIOELPEN          (0x1UL << 4) 
-#define RCC_C1_AHB4LPENR_GPIOELPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define RCC_C1_AHB4LPENR_GPIOFLPEN          (0x1UL << 5) 
-#define RCC_C1_AHB4LPENR_GPIOFLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
-#define RCC_C1_AHB4LPENR_GPIOGLPEN          (0x1UL << 6) 
-#define RCC_C1_AHB4LPENR_GPIOGLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define RCC_C1_AHB4LPENR_GPIOHLPEN          (0x1UL << 7) 
-#define RCC_C1_AHB4LPENR_GPIOHLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define RCC_C1_AHB4LPENR_GPIOILPEN          (0x1UL << 8) 
-#define RCC_C1_AHB4LPENR_GPIOILPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define RCC_C1_AHB4LPENR_GPIOJLPEN          (0x1UL << 9) 
-#define RCC_C1_AHB4LPENR_GPIOJLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define RCC_C1_AHB4LPENR_GPIOKLPEN          (0x1UL << 10) 
-#define RCC_C1_AHB4LPENR_GPIOKLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
-#define RCC_C1_AHB4LPENR_CRCLPEN          (0x1UL << 19) 
-#define RCC_C1_AHB4LPENR_CRCLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 19)
-#define RCC_C1_AHB4LPENR_BDMALPEN          (0x1UL << 21) 
-#define RCC_C1_AHB4LPENR_BDMALPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 21)
-#define RCC_C1_AHB4LPENR_ADC3LPEN          (0x1UL << 24) 
-#define RCC_C1_AHB4LPENR_ADC3LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 24)
-#define RCC_C1_AHB4LPENR_BKPRAMLPEN          (0x1UL << 28) 
-#define RCC_C1_AHB4LPENR_BKPRAMLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 28)
-#define RCC_C1_AHB4LPENR_SRAM4LPEN          (0x1UL << 29) 
-#define RCC_C1_AHB4LPENR_SRAM4LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
-#define RCC_C1_APB3LPENR_LTDCLPEN          (0x1UL << 3) 
-#define RCC_C1_APB3LPENR_LTDCLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define RCC_C1_APB3LPENR_WWDG1LPEN          (0x1UL << 6) 
-#define RCC_C1_APB3LPENR_WWDG1LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
 #define RCC_APB3LPENR_LTDCLPEN          (0x1UL << 3) 
 #define RCC_APB3LPENR_LTDCLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
 #define RCC_APB3LPENR_WWDG1LPEN          (0x1UL << 6) 
@@ -15730,6 +15583,382 @@ struct RCC {
 #define RCC_APB1LLPENR_USART7LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define RCC_APB1LLPENR_USART8LPEN          (0x1UL << 31) 
 #define RCC_APB1LLPENR_USART8LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define RCC_APB1HLPENR_CRSLPEN          (0x1UL << 1) 
+#define RCC_APB1HLPENR_CRSLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define RCC_APB1HLPENR_SWPLPEN          (0x1UL << 2) 
+#define RCC_APB1HLPENR_SWPLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
+#define RCC_APB1HLPENR_OPAMPLPEN          (0x1UL << 4) 
+#define RCC_APB1HLPENR_OPAMPLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define RCC_APB1HLPENR_MDIOSLPEN          (0x1UL << 5) 
+#define RCC_APB1HLPENR_MDIOSLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
+#define RCC_APB1HLPENR_FDCANLPEN          (0x1UL << 8) 
+#define RCC_APB1HLPENR_FDCANLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define RCC_APB2LPENR_TIM1LPEN          (0x1UL << 0) 
+#define RCC_APB2LPENR_TIM1LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define RCC_APB2LPENR_TIM8LPEN          (0x1UL << 1) 
+#define RCC_APB2LPENR_TIM8LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define RCC_APB2LPENR_USART1LPEN          (0x1UL << 4) 
+#define RCC_APB2LPENR_USART1LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define RCC_APB2LPENR_USART6LPEN          (0x1UL << 5) 
+#define RCC_APB2LPENR_USART6LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
+#define RCC_APB2LPENR_SPI1LPEN          (0x1UL << 12) 
+#define RCC_APB2LPENR_SPI1LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
+#define RCC_APB2LPENR_SPI4LPEN          (0x1UL << 13) 
+#define RCC_APB2LPENR_SPI4LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 13)
+#define RCC_APB2LPENR_TIM15LPEN          (0x1UL << 16) 
+#define RCC_APB2LPENR_TIM15LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
+#define RCC_APB2LPENR_TIM16LPEN          (0x1UL << 17) 
+#define RCC_APB2LPENR_TIM16LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
+#define RCC_APB2LPENR_TIM17LPEN          (0x1UL << 18) 
+#define RCC_APB2LPENR_TIM17LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 18)
+#define RCC_APB2LPENR_SPI5LPEN          (0x1UL << 20) 
+#define RCC_APB2LPENR_SPI5LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 20)
+#define RCC_APB2LPENR_SAI1LPEN          (0x1UL << 22) 
+#define RCC_APB2LPENR_SAI1LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 22)
+#define RCC_APB2LPENR_SAI2LPEN          (0x1UL << 23) 
+#define RCC_APB2LPENR_SAI2LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 23)
+#define RCC_APB2LPENR_SAI3LPEN          (0x1UL << 24) 
+#define RCC_APB2LPENR_SAI3LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 24)
+#define RCC_APB2LPENR_DFSDM1LPEN          (0x1UL << 28) 
+#define RCC_APB2LPENR_DFSDM1LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 28)
+#define RCC_APB2LPENR_HRTIMLPEN          (0x1UL << 29) 
+#define RCC_APB2LPENR_HRTIMLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
+#define RCC_APB4LPENR_SYSCFGLPEN          (0x1UL << 1) 
+#define RCC_APB4LPENR_SYSCFGLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define RCC_APB4LPENR_LPUART1LPEN          (0x1UL << 3) 
+#define RCC_APB4LPENR_LPUART1LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define RCC_APB4LPENR_SPI6LPEN          (0x1UL << 5) 
+#define RCC_APB4LPENR_SPI6LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
+#define RCC_APB4LPENR_I2C4LPEN          (0x1UL << 7) 
+#define RCC_APB4LPENR_I2C4LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define RCC_APB4LPENR_LPTIM2LPEN          (0x1UL << 9) 
+#define RCC_APB4LPENR_LPTIM2LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define RCC_APB4LPENR_LPTIM3LPEN          (0x1UL << 10) 
+#define RCC_APB4LPENR_LPTIM3LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
+#define RCC_APB4LPENR_LPTIM4LPEN          (0x1UL << 11) 
+#define RCC_APB4LPENR_LPTIM4LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
+#define RCC_APB4LPENR_LPTIM5LPEN          (0x1UL << 12) 
+#define RCC_APB4LPENR_LPTIM5LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
+#define RCC_APB4LPENR_COMP12LPEN          (0x1UL << 14) 
+#define RCC_APB4LPENR_COMP12LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 14)
+#define RCC_APB4LPENR_VREFLPEN          (0x1UL << 15) 
+#define RCC_APB4LPENR_VREFLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
+#define RCC_APB4LPENR_RTCAPBLPEN          (0x1UL << 16) 
+#define RCC_APB4LPENR_RTCAPBLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
+#define RCC_APB4LPENR_SAI4LPEN          (0x1UL << 21) 
+#define RCC_APB4LPENR_SAI4LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 21)
+#define RCC_C1_RSR_RMVF          (0x1UL << 16) 
+#define RCC_C1_RSR_RMVF_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
+#define RCC_C1_RSR_CPURSTF          (0x1UL << 17) 
+#define RCC_C1_RSR_CPURSTF_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
+#define RCC_C1_RSR_D1RSTF          (0x1UL << 19) 
+#define RCC_C1_RSR_D1RSTF_VAL(X) (((uint32_t)(X) & 0x1UL) << 19)
+#define RCC_C1_RSR_D2RSTF          (0x1UL << 20) 
+#define RCC_C1_RSR_D2RSTF_VAL(X) (((uint32_t)(X) & 0x1UL) << 20)
+#define RCC_C1_RSR_BORRSTF          (0x1UL << 21) 
+#define RCC_C1_RSR_BORRSTF_VAL(X) (((uint32_t)(X) & 0x1UL) << 21)
+#define RCC_C1_RSR_PINRSTF          (0x1UL << 22) 
+#define RCC_C1_RSR_PINRSTF_VAL(X) (((uint32_t)(X) & 0x1UL) << 22)
+#define RCC_C1_RSR_PORRSTF          (0x1UL << 23) 
+#define RCC_C1_RSR_PORRSTF_VAL(X) (((uint32_t)(X) & 0x1UL) << 23)
+#define RCC_C1_RSR_SFTRSTF          (0x1UL << 24) 
+#define RCC_C1_RSR_SFTRSTF_VAL(X) (((uint32_t)(X) & 0x1UL) << 24)
+#define RCC_C1_RSR_IWDG1RSTF          (0x1UL << 26) 
+#define RCC_C1_RSR_IWDG1RSTF_VAL(X) (((uint32_t)(X) & 0x1UL) << 26)
+#define RCC_C1_RSR_WWDG1RSTF          (0x1UL << 28) 
+#define RCC_C1_RSR_WWDG1RSTF_VAL(X) (((uint32_t)(X) & 0x1UL) << 28)
+#define RCC_C1_RSR_LPWRRSTF          (0x1UL << 30) 
+#define RCC_C1_RSR_LPWRRSTF_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
+#define RCC_C1_AHB3ENR_MDMAEN          (0x1UL << 0) 
+#define RCC_C1_AHB3ENR_MDMAEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define RCC_C1_AHB3ENR_DMA2DEN          (0x1UL << 4) 
+#define RCC_C1_AHB3ENR_DMA2DEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define RCC_C1_AHB3ENR_JPGDECEN          (0x1UL << 5) 
+#define RCC_C1_AHB3ENR_JPGDECEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
+#define RCC_C1_AHB3ENR_FMCEN          (0x1UL << 12) 
+#define RCC_C1_AHB3ENR_FMCEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
+#define RCC_C1_AHB3ENR_QSPIEN          (0x1UL << 14) 
+#define RCC_C1_AHB3ENR_QSPIEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 14)
+#define RCC_C1_AHB3ENR_SDMMC1EN          (0x1UL << 16) 
+#define RCC_C1_AHB3ENR_SDMMC1EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
+#define RCC_C1_AHB1ENR_DMA1EN          (0x1UL << 0) 
+#define RCC_C1_AHB1ENR_DMA1EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define RCC_C1_AHB1ENR_DMA2EN          (0x1UL << 1) 
+#define RCC_C1_AHB1ENR_DMA2EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define RCC_C1_AHB1ENR_ADC12EN          (0x1UL << 5) 
+#define RCC_C1_AHB1ENR_ADC12EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
+#define RCC_C1_AHB1ENR_ETH1MACEN          (0x1UL << 15) 
+#define RCC_C1_AHB1ENR_ETH1MACEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
+#define RCC_C1_AHB1ENR_ETH1TXEN          (0x1UL << 16) 
+#define RCC_C1_AHB1ENR_ETH1TXEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
+#define RCC_C1_AHB1ENR_ETH1RXEN          (0x1UL << 17) 
+#define RCC_C1_AHB1ENR_ETH1RXEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
+#define RCC_C1_AHB1ENR_USB1OTGEN          (0x1UL << 25) 
+#define RCC_C1_AHB1ENR_USB1OTGEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 25)
+#define RCC_C1_AHB1ENR_USB1ULPIEN          (0x1UL << 26) 
+#define RCC_C1_AHB1ENR_USB1ULPIEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 26)
+#define RCC_C1_AHB1ENR_USB2OTGEN          (0x1UL << 27) 
+#define RCC_C1_AHB1ENR_USB2OTGEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 27)
+#define RCC_C1_AHB1ENR_USB2ULPIEN          (0x1UL << 28) 
+#define RCC_C1_AHB1ENR_USB2ULPIEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 28)
+#define RCC_C1_AHB2ENR_CAMITFEN          (0x1UL << 0) 
+#define RCC_C1_AHB2ENR_CAMITFEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define RCC_C1_AHB2ENR_CRYPTEN          (0x1UL << 4) 
+#define RCC_C1_AHB2ENR_CRYPTEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define RCC_C1_AHB2ENR_HASHEN          (0x1UL << 5) 
+#define RCC_C1_AHB2ENR_HASHEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
+#define RCC_C1_AHB2ENR_RNGEN          (0x1UL << 6) 
+#define RCC_C1_AHB2ENR_RNGEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define RCC_C1_AHB2ENR_SDMMC2EN          (0x1UL << 9) 
+#define RCC_C1_AHB2ENR_SDMMC2EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define RCC_C1_AHB2ENR_SRAM1EN          (0x1UL << 29) 
+#define RCC_C1_AHB2ENR_SRAM1EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
+#define RCC_C1_AHB2ENR_SRAM2EN          (0x1UL << 30) 
+#define RCC_C1_AHB2ENR_SRAM2EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
+#define RCC_C1_AHB2ENR_SRAM3EN          (0x1UL << 31) 
+#define RCC_C1_AHB2ENR_SRAM3EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define RCC_C1_AHB4ENR_GPIOAEN          (0x1UL << 0) 
+#define RCC_C1_AHB4ENR_GPIOAEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define RCC_C1_AHB4ENR_GPIOBEN          (0x1UL << 1) 
+#define RCC_C1_AHB4ENR_GPIOBEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define RCC_C1_AHB4ENR_GPIOCEN          (0x1UL << 2) 
+#define RCC_C1_AHB4ENR_GPIOCEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
+#define RCC_C1_AHB4ENR_GPIODEN          (0x1UL << 3) 
+#define RCC_C1_AHB4ENR_GPIODEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define RCC_C1_AHB4ENR_GPIOEEN          (0x1UL << 4) 
+#define RCC_C1_AHB4ENR_GPIOEEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define RCC_C1_AHB4ENR_GPIOFEN          (0x1UL << 5) 
+#define RCC_C1_AHB4ENR_GPIOFEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
+#define RCC_C1_AHB4ENR_GPIOGEN          (0x1UL << 6) 
+#define RCC_C1_AHB4ENR_GPIOGEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define RCC_C1_AHB4ENR_GPIOHEN          (0x1UL << 7) 
+#define RCC_C1_AHB4ENR_GPIOHEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define RCC_C1_AHB4ENR_GPIOIEN          (0x1UL << 8) 
+#define RCC_C1_AHB4ENR_GPIOIEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define RCC_C1_AHB4ENR_GPIOJEN          (0x1UL << 9) 
+#define RCC_C1_AHB4ENR_GPIOJEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define RCC_C1_AHB4ENR_GPIOKEN          (0x1UL << 10) 
+#define RCC_C1_AHB4ENR_GPIOKEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
+#define RCC_C1_AHB4ENR_CRCEN          (0x1UL << 19) 
+#define RCC_C1_AHB4ENR_CRCEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 19)
+#define RCC_C1_AHB4ENR_BDMAEN          (0x1UL << 21) 
+#define RCC_C1_AHB4ENR_BDMAEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 21)
+#define RCC_C1_AHB4ENR_ADC3EN          (0x1UL << 24) 
+#define RCC_C1_AHB4ENR_ADC3EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 24)
+#define RCC_C1_AHB4ENR_HSEMEN          (0x1UL << 25) 
+#define RCC_C1_AHB4ENR_HSEMEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 25)
+#define RCC_C1_AHB4ENR_BKPRAMEN          (0x1UL << 28) 
+#define RCC_C1_AHB4ENR_BKPRAMEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 28)
+#define RCC_C1_APB3ENR_LTDCEN          (0x1UL << 3) 
+#define RCC_C1_APB3ENR_LTDCEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define RCC_C1_APB3ENR_WWDG1EN          (0x1UL << 6) 
+#define RCC_C1_APB3ENR_WWDG1EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define RCC_C1_APB1LENR_TIM2EN          (0x1UL << 0) 
+#define RCC_C1_APB1LENR_TIM2EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define RCC_C1_APB1LENR_TIM3EN          (0x1UL << 1) 
+#define RCC_C1_APB1LENR_TIM3EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define RCC_C1_APB1LENR_TIM4EN          (0x1UL << 2) 
+#define RCC_C1_APB1LENR_TIM4EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
+#define RCC_C1_APB1LENR_TIM5EN          (0x1UL << 3) 
+#define RCC_C1_APB1LENR_TIM5EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define RCC_C1_APB1LENR_TIM6EN          (0x1UL << 4) 
+#define RCC_C1_APB1LENR_TIM6EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define RCC_C1_APB1LENR_TIM7EN          (0x1UL << 5) 
+#define RCC_C1_APB1LENR_TIM7EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
+#define RCC_C1_APB1LENR_TIM12EN          (0x1UL << 6) 
+#define RCC_C1_APB1LENR_TIM12EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define RCC_C1_APB1LENR_TIM13EN          (0x1UL << 7) 
+#define RCC_C1_APB1LENR_TIM13EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define RCC_C1_APB1LENR_TIM14EN          (0x1UL << 8) 
+#define RCC_C1_APB1LENR_TIM14EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define RCC_C1_APB1LENR_LPTIM1EN          (0x1UL << 9) 
+#define RCC_C1_APB1LENR_LPTIM1EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define RCC_C1_APB1LENR_SPI2EN          (0x1UL << 14) 
+#define RCC_C1_APB1LENR_SPI2EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 14)
+#define RCC_C1_APB1LENR_SPI3EN          (0x1UL << 15) 
+#define RCC_C1_APB1LENR_SPI3EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
+#define RCC_C1_APB1LENR_SPDIFRXEN          (0x1UL << 16) 
+#define RCC_C1_APB1LENR_SPDIFRXEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
+#define RCC_C1_APB1LENR_USART2EN          (0x1UL << 17) 
+#define RCC_C1_APB1LENR_USART2EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
+#define RCC_C1_APB1LENR_USART3EN          (0x1UL << 18) 
+#define RCC_C1_APB1LENR_USART3EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 18)
+#define RCC_C1_APB1LENR_UART4EN          (0x1UL << 19) 
+#define RCC_C1_APB1LENR_UART4EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 19)
+#define RCC_C1_APB1LENR_UART5EN          (0x1UL << 20) 
+#define RCC_C1_APB1LENR_UART5EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 20)
+#define RCC_C1_APB1LENR_I2C1EN          (0x1UL << 21) 
+#define RCC_C1_APB1LENR_I2C1EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 21)
+#define RCC_C1_APB1LENR_I2C2EN          (0x1UL << 22) 
+#define RCC_C1_APB1LENR_I2C2EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 22)
+#define RCC_C1_APB1LENR_I2C3EN          (0x1UL << 23) 
+#define RCC_C1_APB1LENR_I2C3EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 23)
+#define RCC_C1_APB1LENR_HDMICECEN          (0x1UL << 27) 
+#define RCC_C1_APB1LENR_HDMICECEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 27)
+#define RCC_C1_APB1LENR_DAC12EN          (0x1UL << 29) 
+#define RCC_C1_APB1LENR_DAC12EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
+#define RCC_C1_APB1LENR_USART7EN          (0x1UL << 30) 
+#define RCC_C1_APB1LENR_USART7EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
+#define RCC_C1_APB1LENR_USART8EN          (0x1UL << 31) 
+#define RCC_C1_APB1LENR_USART8EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define RCC_C1_APB1HENR_CRSEN          (0x1UL << 1) 
+#define RCC_C1_APB1HENR_CRSEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define RCC_C1_APB1HENR_SWPEN          (0x1UL << 2) 
+#define RCC_C1_APB1HENR_SWPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
+#define RCC_C1_APB1HENR_OPAMPEN          (0x1UL << 4) 
+#define RCC_C1_APB1HENR_OPAMPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define RCC_C1_APB1HENR_MDIOSEN          (0x1UL << 5) 
+#define RCC_C1_APB1HENR_MDIOSEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
+#define RCC_C1_APB1HENR_FDCANEN          (0x1UL << 8) 
+#define RCC_C1_APB1HENR_FDCANEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define RCC_C1_APB2ENR_TIM1EN          (0x1UL << 0) 
+#define RCC_C1_APB2ENR_TIM1EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define RCC_C1_APB2ENR_TIM8EN          (0x1UL << 1) 
+#define RCC_C1_APB2ENR_TIM8EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define RCC_C1_APB2ENR_USART1EN          (0x1UL << 4) 
+#define RCC_C1_APB2ENR_USART1EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define RCC_C1_APB2ENR_USART6EN          (0x1UL << 5) 
+#define RCC_C1_APB2ENR_USART6EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
+#define RCC_C1_APB2ENR_SPI1EN          (0x1UL << 12) 
+#define RCC_C1_APB2ENR_SPI1EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
+#define RCC_C1_APB2ENR_SPI4EN          (0x1UL << 13) 
+#define RCC_C1_APB2ENR_SPI4EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 13)
+#define RCC_C1_APB2ENR_TIM16EN          (0x1UL << 17) 
+#define RCC_C1_APB2ENR_TIM16EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
+#define RCC_C1_APB2ENR_TIM15EN          (0x1UL << 16) 
+#define RCC_C1_APB2ENR_TIM15EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
+#define RCC_C1_APB2ENR_TIM17EN          (0x1UL << 18) 
+#define RCC_C1_APB2ENR_TIM17EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 18)
+#define RCC_C1_APB2ENR_SPI5EN          (0x1UL << 20) 
+#define RCC_C1_APB2ENR_SPI5EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 20)
+#define RCC_C1_APB2ENR_SAI1EN          (0x1UL << 22) 
+#define RCC_C1_APB2ENR_SAI1EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 22)
+#define RCC_C1_APB2ENR_SAI2EN          (0x1UL << 23) 
+#define RCC_C1_APB2ENR_SAI2EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 23)
+#define RCC_C1_APB2ENR_SAI3EN          (0x1UL << 24) 
+#define RCC_C1_APB2ENR_SAI3EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 24)
+#define RCC_C1_APB2ENR_DFSDM1EN          (0x1UL << 28) 
+#define RCC_C1_APB2ENR_DFSDM1EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 28)
+#define RCC_C1_APB2ENR_HRTIMEN          (0x1UL << 29) 
+#define RCC_C1_APB2ENR_HRTIMEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
+#define RCC_C1_APB4ENR_SYSCFGEN          (0x1UL << 1) 
+#define RCC_C1_APB4ENR_SYSCFGEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define RCC_C1_APB4ENR_LPUART1EN          (0x1UL << 3) 
+#define RCC_C1_APB4ENR_LPUART1EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define RCC_C1_APB4ENR_SPI6EN          (0x1UL << 5) 
+#define RCC_C1_APB4ENR_SPI6EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
+#define RCC_C1_APB4ENR_I2C4EN          (0x1UL << 7) 
+#define RCC_C1_APB4ENR_I2C4EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define RCC_C1_APB4ENR_LPTIM2EN          (0x1UL << 9) 
+#define RCC_C1_APB4ENR_LPTIM2EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define RCC_C1_APB4ENR_LPTIM3EN          (0x1UL << 10) 
+#define RCC_C1_APB4ENR_LPTIM3EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
+#define RCC_C1_APB4ENR_LPTIM4EN          (0x1UL << 11) 
+#define RCC_C1_APB4ENR_LPTIM4EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
+#define RCC_C1_APB4ENR_LPTIM5EN          (0x1UL << 12) 
+#define RCC_C1_APB4ENR_LPTIM5EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
+#define RCC_C1_APB4ENR_COMP12EN          (0x1UL << 14) 
+#define RCC_C1_APB4ENR_COMP12EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 14)
+#define RCC_C1_APB4ENR_VREFEN          (0x1UL << 15) 
+#define RCC_C1_APB4ENR_VREFEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
+#define RCC_C1_APB4ENR_RTCAPBEN          (0x1UL << 16) 
+#define RCC_C1_APB4ENR_RTCAPBEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
+#define RCC_C1_APB4ENR_SAI4EN          (0x1UL << 21) 
+#define RCC_C1_APB4ENR_SAI4EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 21)
+#define RCC_C1_AHB3LPENR_MDMALPEN          (0x1UL << 0) 
+#define RCC_C1_AHB3LPENR_MDMALPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define RCC_C1_AHB3LPENR_DMA2DLPEN          (0x1UL << 4) 
+#define RCC_C1_AHB3LPENR_DMA2DLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define RCC_C1_AHB3LPENR_JPGDECLPEN          (0x1UL << 5) 
+#define RCC_C1_AHB3LPENR_JPGDECLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
+#define RCC_C1_AHB3LPENR_FLITFLPEN          (0x1UL << 8) 
+#define RCC_C1_AHB3LPENR_FLITFLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define RCC_C1_AHB3LPENR_FMCLPEN          (0x1UL << 12) 
+#define RCC_C1_AHB3LPENR_FMCLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
+#define RCC_C1_AHB3LPENR_QSPILPEN          (0x1UL << 14) 
+#define RCC_C1_AHB3LPENR_QSPILPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 14)
+#define RCC_C1_AHB3LPENR_SDMMC1LPEN          (0x1UL << 16) 
+#define RCC_C1_AHB3LPENR_SDMMC1LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
+#define RCC_C1_AHB3LPENR_D1DTCM1LPEN          (0x1UL << 28) 
+#define RCC_C1_AHB3LPENR_D1DTCM1LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 28)
+#define RCC_C1_AHB3LPENR_DTCM2LPEN          (0x1UL << 29) 
+#define RCC_C1_AHB3LPENR_DTCM2LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
+#define RCC_C1_AHB3LPENR_ITCMLPEN          (0x1UL << 30) 
+#define RCC_C1_AHB3LPENR_ITCMLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
+#define RCC_C1_AHB3LPENR_AXISRAMLPEN          (0x1UL << 31) 
+#define RCC_C1_AHB3LPENR_AXISRAMLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define RCC_C1_AHB1LPENR_DMA1LPEN          (0x1UL << 0) 
+#define RCC_C1_AHB1LPENR_DMA1LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define RCC_C1_AHB1LPENR_DMA2LPEN          (0x1UL << 1) 
+#define RCC_C1_AHB1LPENR_DMA2LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define RCC_C1_AHB1LPENR_ADC12LPEN          (0x1UL << 5) 
+#define RCC_C1_AHB1LPENR_ADC12LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
+#define RCC_C1_AHB1LPENR_ETH1MACLPEN          (0x1UL << 15) 
+#define RCC_C1_AHB1LPENR_ETH1MACLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
+#define RCC_C1_AHB1LPENR_ETH1TXLPEN          (0x1UL << 16) 
+#define RCC_C1_AHB1LPENR_ETH1TXLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
+#define RCC_C1_AHB1LPENR_ETH1RXLPEN          (0x1UL << 17) 
+#define RCC_C1_AHB1LPENR_ETH1RXLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
+#define RCC_C1_AHB1LPENR_USB1OTGLPEN          (0x1UL << 25) 
+#define RCC_C1_AHB1LPENR_USB1OTGLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 25)
+#define RCC_C1_AHB1LPENR_USB1ULPILPEN          (0x1UL << 26) 
+#define RCC_C1_AHB1LPENR_USB1ULPILPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 26)
+#define RCC_C1_AHB1LPENR_USB2OTGLPEN          (0x1UL << 27) 
+#define RCC_C1_AHB1LPENR_USB2OTGLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 27)
+#define RCC_C1_AHB1LPENR_USB2ULPILPEN          (0x1UL << 28) 
+#define RCC_C1_AHB1LPENR_USB2ULPILPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 28)
+#define RCC_C1_AHB2LPENR_CAMITFLPEN          (0x1UL << 0) 
+#define RCC_C1_AHB2LPENR_CAMITFLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define RCC_C1_AHB2LPENR_CRYPTLPEN          (0x1UL << 4) 
+#define RCC_C1_AHB2LPENR_CRYPTLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define RCC_C1_AHB2LPENR_HASHLPEN          (0x1UL << 5) 
+#define RCC_C1_AHB2LPENR_HASHLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
+#define RCC_C1_AHB2LPENR_SDMMC2LPEN          (0x1UL << 9) 
+#define RCC_C1_AHB2LPENR_SDMMC2LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define RCC_C1_AHB2LPENR_RNGLPEN          (0x1UL << 6) 
+#define RCC_C1_AHB2LPENR_RNGLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define RCC_C1_AHB2LPENR_SRAM1LPEN          (0x1UL << 29) 
+#define RCC_C1_AHB2LPENR_SRAM1LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
+#define RCC_C1_AHB2LPENR_SRAM2LPEN          (0x1UL << 30) 
+#define RCC_C1_AHB2LPENR_SRAM2LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
+#define RCC_C1_AHB2LPENR_SRAM3LPEN          (0x1UL << 31) 
+#define RCC_C1_AHB2LPENR_SRAM3LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define RCC_C1_AHB4LPENR_GPIOALPEN          (0x1UL << 0) 
+#define RCC_C1_AHB4LPENR_GPIOALPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define RCC_C1_AHB4LPENR_GPIOBLPEN          (0x1UL << 1) 
+#define RCC_C1_AHB4LPENR_GPIOBLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define RCC_C1_AHB4LPENR_GPIOCLPEN          (0x1UL << 2) 
+#define RCC_C1_AHB4LPENR_GPIOCLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
+#define RCC_C1_AHB4LPENR_GPIODLPEN          (0x1UL << 3) 
+#define RCC_C1_AHB4LPENR_GPIODLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define RCC_C1_AHB4LPENR_GPIOELPEN          (0x1UL << 4) 
+#define RCC_C1_AHB4LPENR_GPIOELPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define RCC_C1_AHB4LPENR_GPIOFLPEN          (0x1UL << 5) 
+#define RCC_C1_AHB4LPENR_GPIOFLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
+#define RCC_C1_AHB4LPENR_GPIOGLPEN          (0x1UL << 6) 
+#define RCC_C1_AHB4LPENR_GPIOGLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define RCC_C1_AHB4LPENR_GPIOHLPEN          (0x1UL << 7) 
+#define RCC_C1_AHB4LPENR_GPIOHLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define RCC_C1_AHB4LPENR_GPIOILPEN          (0x1UL << 8) 
+#define RCC_C1_AHB4LPENR_GPIOILPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define RCC_C1_AHB4LPENR_GPIOJLPEN          (0x1UL << 9) 
+#define RCC_C1_AHB4LPENR_GPIOJLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define RCC_C1_AHB4LPENR_GPIOKLPEN          (0x1UL << 10) 
+#define RCC_C1_AHB4LPENR_GPIOKLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
+#define RCC_C1_AHB4LPENR_CRCLPEN          (0x1UL << 19) 
+#define RCC_C1_AHB4LPENR_CRCLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 19)
+#define RCC_C1_AHB4LPENR_BDMALPEN          (0x1UL << 21) 
+#define RCC_C1_AHB4LPENR_BDMALPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 21)
+#define RCC_C1_AHB4LPENR_ADC3LPEN          (0x1UL << 24) 
+#define RCC_C1_AHB4LPENR_ADC3LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 24)
+#define RCC_C1_AHB4LPENR_BKPRAMLPEN          (0x1UL << 28) 
+#define RCC_C1_AHB4LPENR_BKPRAMLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 28)
+#define RCC_C1_AHB4LPENR_SRAM4LPEN          (0x1UL << 29) 
+#define RCC_C1_AHB4LPENR_SRAM4LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
+#define RCC_C1_APB3LPENR_LTDCLPEN          (0x1UL << 3) 
+#define RCC_C1_APB3LPENR_LTDCLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define RCC_C1_APB3LPENR_WWDG1LPEN          (0x1UL << 6) 
+#define RCC_C1_APB3LPENR_WWDG1LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
 #define RCC_C1_APB1LLPENR_TIM2LPEN          (0x1UL << 0) 
 #define RCC_C1_APB1LLPENR_TIM2LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define RCC_C1_APB1LLPENR_TIM3LPEN          (0x1UL << 1) 
@@ -15788,46 +16017,6 @@ struct RCC {
 #define RCC_C1_APB1HLPENR_MDIOSLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
 #define RCC_C1_APB1HLPENR_FDCANLPEN          (0x1UL << 8) 
 #define RCC_C1_APB1HLPENR_FDCANLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define RCC_APB1HLPENR_CRSLPEN          (0x1UL << 1) 
-#define RCC_APB1HLPENR_CRSLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define RCC_APB1HLPENR_SWPLPEN          (0x1UL << 2) 
-#define RCC_APB1HLPENR_SWPLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
-#define RCC_APB1HLPENR_OPAMPLPEN          (0x1UL << 4) 
-#define RCC_APB1HLPENR_OPAMPLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define RCC_APB1HLPENR_MDIOSLPEN          (0x1UL << 5) 
-#define RCC_APB1HLPENR_MDIOSLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
-#define RCC_APB1HLPENR_FDCANLPEN          (0x1UL << 8) 
-#define RCC_APB1HLPENR_FDCANLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define RCC_APB2LPENR_TIM1LPEN          (0x1UL << 0) 
-#define RCC_APB2LPENR_TIM1LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define RCC_APB2LPENR_TIM8LPEN          (0x1UL << 1) 
-#define RCC_APB2LPENR_TIM8LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define RCC_APB2LPENR_USART1LPEN          (0x1UL << 4) 
-#define RCC_APB2LPENR_USART1LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define RCC_APB2LPENR_USART6LPEN          (0x1UL << 5) 
-#define RCC_APB2LPENR_USART6LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
-#define RCC_APB2LPENR_SPI1LPEN          (0x1UL << 12) 
-#define RCC_APB2LPENR_SPI1LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
-#define RCC_APB2LPENR_SPI4LPEN          (0x1UL << 13) 
-#define RCC_APB2LPENR_SPI4LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 13)
-#define RCC_APB2LPENR_TIM15LPEN          (0x1UL << 16) 
-#define RCC_APB2LPENR_TIM15LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
-#define RCC_APB2LPENR_TIM16LPEN          (0x1UL << 17) 
-#define RCC_APB2LPENR_TIM16LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
-#define RCC_APB2LPENR_TIM17LPEN          (0x1UL << 18) 
-#define RCC_APB2LPENR_TIM17LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 18)
-#define RCC_APB2LPENR_SPI5LPEN          (0x1UL << 20) 
-#define RCC_APB2LPENR_SPI5LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 20)
-#define RCC_APB2LPENR_SAI1LPEN          (0x1UL << 22) 
-#define RCC_APB2LPENR_SAI1LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 22)
-#define RCC_APB2LPENR_SAI2LPEN          (0x1UL << 23) 
-#define RCC_APB2LPENR_SAI2LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 23)
-#define RCC_APB2LPENR_SAI3LPEN          (0x1UL << 24) 
-#define RCC_APB2LPENR_SAI3LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 24)
-#define RCC_APB2LPENR_DFSDM1LPEN          (0x1UL << 28) 
-#define RCC_APB2LPENR_DFSDM1LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 28)
-#define RCC_APB2LPENR_HRTIMLPEN          (0x1UL << 29) 
-#define RCC_APB2LPENR_HRTIMLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
 #define RCC_C1_APB2LPENR_TIM1LPEN          (0x1UL << 0) 
 #define RCC_C1_APB2LPENR_TIM1LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define RCC_C1_APB2LPENR_TIM8LPEN          (0x1UL << 1) 
@@ -15882,43 +16071,22 @@ struct RCC {
 #define RCC_C1_APB4LPENR_RTCAPBLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
 #define RCC_C1_APB4LPENR_SAI4LPEN          (0x1UL << 21) 
 #define RCC_C1_APB4LPENR_SAI4LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 21)
-#define RCC_APB4LPENR_SYSCFGLPEN          (0x1UL << 1) 
-#define RCC_APB4LPENR_SYSCFGLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define RCC_APB4LPENR_LPUART1LPEN          (0x1UL << 3) 
-#define RCC_APB4LPENR_LPUART1LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define RCC_APB4LPENR_SPI6LPEN          (0x1UL << 5) 
-#define RCC_APB4LPENR_SPI6LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
-#define RCC_APB4LPENR_I2C4LPEN          (0x1UL << 7) 
-#define RCC_APB4LPENR_I2C4LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define RCC_APB4LPENR_LPTIM2LPEN          (0x1UL << 9) 
-#define RCC_APB4LPENR_LPTIM2LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define RCC_APB4LPENR_LPTIM3LPEN          (0x1UL << 10) 
-#define RCC_APB4LPENR_LPTIM3LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
-#define RCC_APB4LPENR_LPTIM4LPEN          (0x1UL << 11) 
-#define RCC_APB4LPENR_LPTIM4LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
-#define RCC_APB4LPENR_LPTIM5LPEN          (0x1UL << 12) 
-#define RCC_APB4LPENR_LPTIM5LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
-#define RCC_APB4LPENR_COMP12LPEN          (0x1UL << 14) 
-#define RCC_APB4LPENR_COMP12LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 14)
-#define RCC_APB4LPENR_VREFLPEN          (0x1UL << 15) 
-#define RCC_APB4LPENR_VREFLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
-#define RCC_APB4LPENR_RTCAPBLPEN          (0x1UL << 16) 
-#define RCC_APB4LPENR_RTCAPBLPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
-#define RCC_APB4LPENR_SAI4LPEN          (0x1UL << 21) 
-#define RCC_APB4LPENR_SAI4LPEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 21)
 
 #define RCC  ((struct RCC*)(0x58024400UL))
+
+
+
 struct LPTIM1 {
-  volatile const uint32_t ISR;
-  volatile uint32_t ICR;
-  volatile uint32_t IER;
-  volatile uint32_t CFGR;
-  volatile uint32_t CR;
-  volatile uint32_t CMP;
-  volatile uint32_t ARR;
-  volatile const uint32_t CNT;
-  const volatile uint32_t RESERVED36[1];
-  volatile uint32_t CFGR2;
+    volatile const uint32_t ISR;
+    volatile uint32_t ICR;
+    volatile uint32_t IER;
+    volatile uint32_t CFGR;
+    volatile uint32_t CR;
+    volatile uint32_t CMP;
+    volatile uint32_t ARR;
+    volatile const uint32_t CNT;
+    volatile const uint32_t RESERVED_32;
+    volatile uint32_t CFGR2;
 };
 #define LPTIM1_ISR_DOWN          (0x1UL << 6) 
 #define LPTIM1_ISR_DOWN_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
@@ -16010,17 +16178,20 @@ struct LPTIM1 {
 #define LPTIM1_CFGR2_IN2SEL_VAL(X) (((uint32_t)(X) & 0x3UL) << 4)
 
 #define LPTIM1  ((struct LPTIM1*)(0x40002400UL))
+
+
+
 struct LPTIM2 {
-  volatile const uint32_t ISR;
-  volatile uint32_t ICR;
-  volatile uint32_t IER;
-  volatile uint32_t CFGR;
-  volatile uint32_t CR;
-  volatile uint32_t CMP;
-  volatile uint32_t ARR;
-  volatile const uint32_t CNT;
-  const volatile uint32_t RESERVED36[1];
-  volatile uint32_t CFGR2;
+    volatile const uint32_t ISR;
+    volatile uint32_t ICR;
+    volatile uint32_t IER;
+    volatile uint32_t CFGR;
+    volatile uint32_t CR;
+    volatile uint32_t CMP;
+    volatile uint32_t ARR;
+    volatile const uint32_t CNT;
+    volatile const uint32_t RESERVED_32;
+    volatile uint32_t CFGR2;
 };
 #define LPTIM2_ISR_DOWN          (0x1UL << 6) 
 #define LPTIM2_ISR_DOWN_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
@@ -16112,17 +16283,20 @@ struct LPTIM2 {
 #define LPTIM2_CFGR2_IN2SEL_VAL(X) (((uint32_t)(X) & 0x3UL) << 4)
 
 #define LPTIM2  ((struct LPTIM2*)(0x58002400UL))
+
+
+
 struct LPTIM3 {
-  volatile const uint32_t ISR;
-  volatile uint32_t ICR;
-  volatile uint32_t IER;
-  volatile uint32_t CFGR;
-  volatile uint32_t CR;
-  volatile uint32_t CMP;
-  volatile uint32_t ARR;
-  volatile const uint32_t CNT;
-  const volatile uint32_t RESERVED36[1];
-  volatile uint32_t CFGR2;
+    volatile const uint32_t ISR;
+    volatile uint32_t ICR;
+    volatile uint32_t IER;
+    volatile uint32_t CFGR;
+    volatile uint32_t CR;
+    volatile uint32_t CMP;
+    volatile uint32_t ARR;
+    volatile const uint32_t CNT;
+    volatile const uint32_t RESERVED_32;
+    volatile uint32_t CFGR2;
 };
 #define LPTIM3_ISR_DOWN          (0x1UL << 6) 
 #define LPTIM3_ISR_DOWN_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
@@ -16212,17 +16386,20 @@ struct LPTIM3 {
 #define LPTIM3_CFGR2_IN1SEL_VAL(X) (((uint32_t)(X) & 0x3UL) << 0)
 
 #define LPTIM3  ((struct LPTIM3*)(0x58002800UL))
+
+
+
 struct LPTIM4 {
-  volatile const uint32_t ISR;
-  volatile uint32_t ICR;
-  volatile uint32_t IER;
-  volatile uint32_t CFGR;
-  volatile uint32_t CR;
-  volatile uint32_t CMP;
-  volatile uint32_t ARR;
-  volatile const uint32_t CNT;
-  const volatile uint32_t RESERVED36[1];
-  volatile uint32_t CFGR2;
+    volatile const uint32_t ISR;
+    volatile uint32_t ICR;
+    volatile uint32_t IER;
+    volatile uint32_t CFGR;
+    volatile uint32_t CR;
+    volatile uint32_t CMP;
+    volatile uint32_t ARR;
+    volatile const uint32_t CNT;
+    volatile const uint32_t RESERVED_32;
+    volatile uint32_t CFGR2;
 };
 #define LPTIM4_ISR_DOWN          (0x1UL << 6) 
 #define LPTIM4_ISR_DOWN_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
@@ -16312,17 +16489,20 @@ struct LPTIM4 {
 #define LPTIM4_CFGR2_IN1SEL_VAL(X) (((uint32_t)(X) & 0x3UL) << 0)
 
 #define LPTIM4  ((struct LPTIM4*)(0x58002C00UL))
+
+
+
 struct LPTIM5 {
-  volatile const uint32_t ISR;
-  volatile uint32_t ICR;
-  volatile uint32_t IER;
-  volatile uint32_t CFGR;
-  volatile uint32_t CR;
-  volatile uint32_t CMP;
-  volatile uint32_t ARR;
-  volatile const uint32_t CNT;
-  const volatile uint32_t RESERVED36[1];
-  volatile uint32_t CFGR2;
+    volatile const uint32_t ISR;
+    volatile uint32_t ICR;
+    volatile uint32_t IER;
+    volatile uint32_t CFGR;
+    volatile uint32_t CR;
+    volatile uint32_t CMP;
+    volatile uint32_t ARR;
+    volatile const uint32_t CNT;
+    volatile const uint32_t RESERVED_32;
+    volatile uint32_t CFGR2;
 };
 #define LPTIM5_ISR_DOWN          (0x1UL << 6) 
 #define LPTIM5_ISR_DOWN_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
@@ -16412,19 +16592,22 @@ struct LPTIM5 {
 #define LPTIM5_CFGR2_IN1SEL_VAL(X) (((uint32_t)(X) & 0x3UL) << 0)
 
 #define LPTIM5  ((struct LPTIM5*)(0x58003000UL))
+
+
+
 struct LPUART1 {
-  volatile uint32_t CR1;
-  volatile uint32_t CR2;
-  volatile uint32_t CR3;
-  volatile uint32_t BRR;
-  volatile uint32_t GTPR;
-  volatile uint32_t RTOR;
-  volatile uint32_t RQR;
-  volatile const uint32_t ISR;
-  volatile uint32_t ICR;
-  volatile const uint32_t RDR;
-  volatile uint32_t TDR;
-  volatile uint32_t PRESC;
+    volatile uint32_t CR1;
+    volatile uint32_t CR2;
+    volatile uint32_t CR3;
+    volatile uint32_t BRR;
+    volatile uint32_t GTPR;
+    volatile uint32_t RTOR;
+    volatile uint32_t RQR;
+    volatile const uint32_t ISR;
+    volatile uint32_t ICR;
+    volatile const uint32_t RDR;
+    volatile uint32_t TDR;
+    volatile uint32_t PRESC;
 };
 #define LPUART1_CR1_RXFFIE          (0x1UL << 31) 
 #define LPUART1_CR1_RXFFIE_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
@@ -16606,38 +16789,42 @@ struct LPUART1 {
 #define LPUART1_PRESC_PRESCALER_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
 
 #define LPUART1  ((struct LPUART1*)(0x58000C00UL))
+
+
+
 struct SYSCFG {
-  volatile uint32_t PMCR;
-  volatile uint32_t EXTICR1;
-  volatile uint32_t EXTICR2;
-  volatile uint32_t EXTICR3;
-  volatile uint32_t EXTICR4;
-  const volatile uint32_t RESERVED32[2];
-  volatile uint32_t CCCSR;
-  volatile const uint32_t CCVR;
-  volatile uint32_t CCCR;
-  volatile uint32_t PWRCR;
-  const volatile uint32_t RESERVED292[61];
-  volatile const uint32_t PKGR;
-  const volatile uint32_t RESERVED768[118];
-  volatile const uint32_t UR0;
-  const volatile uint32_t RESERVED776[1];
-  volatile uint32_t UR2;
-  volatile uint32_t UR3;
-  volatile const uint32_t UR4;
-  volatile const uint32_t UR5;
-  volatile const uint32_t UR6;
-  volatile const uint32_t UR7;
-  volatile const uint32_t UR8;
-  volatile const uint32_t UR9;
-  volatile const uint32_t UR10;
-  volatile const uint32_t UR11;
-  volatile const uint32_t UR12;
-  volatile const uint32_t UR13;
-  volatile uint32_t UR14;
-  volatile const uint32_t UR15;
-  volatile const uint32_t UR16;
-  volatile const uint32_t UR17;
+    volatile const uint32_t RESERVED_0;
+    volatile uint32_t PMCR;
+    volatile uint32_t EXTICR1;
+    volatile uint32_t EXTICR2;
+    volatile uint32_t EXTICR3;
+    volatile uint32_t EXTICR4;
+    volatile const uint32_t RESERVED_24[2];
+    volatile uint32_t CCCSR;
+    volatile const uint32_t CCVR;
+    volatile uint32_t CCCR;
+    volatile uint32_t PWRCR;
+    volatile const uint32_t RESERVED_48[61];
+    volatile const uint32_t PKGR;
+    volatile const uint32_t RESERVED_296[118];
+    volatile const uint32_t UR0;
+    volatile const uint32_t RESERVED_772;
+    volatile uint32_t UR2;
+    volatile uint32_t UR3;
+    volatile const uint32_t UR4;
+    volatile const uint32_t UR5;
+    volatile const uint32_t UR6;
+    volatile const uint32_t UR7;
+    volatile const uint32_t UR8;
+    volatile const uint32_t UR9;
+    volatile const uint32_t UR10;
+    volatile const uint32_t UR11;
+    volatile const uint32_t UR12;
+    volatile const uint32_t UR13;
+    volatile uint32_t UR14;
+    volatile const uint32_t UR15;
+    volatile const uint32_t UR16;
+    volatile const uint32_t UR17;
 };
 #define SYSCFG_PMCR_I2C1FMP          (0x1UL << 0) 
 #define SYSCFG_PMCR_I2C1FMP_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -16779,39 +16966,42 @@ struct SYSCFG {
 #define SYSCFG_UR17_IO_HSLV_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 
 #define SYSCFG  ((struct SYSCFG*)(0x58000400UL))
+
+
+
 struct EXTI {
-  volatile uint32_t RTSR1;
-  volatile uint32_t FTSR1;
-  volatile uint32_t SWIER1;
-  volatile uint32_t D3PMR1;
-  volatile uint32_t D3PCR1L;
-  volatile uint32_t D3PCR1H;
-  const volatile uint32_t RESERVED32[2];
-  volatile uint32_t RTSR2;
-  volatile uint32_t FTSR2;
-  volatile uint32_t SWIER2;
-  volatile uint32_t D3PMR2;
-  volatile uint32_t D3PCR2L;
-  volatile uint32_t D3PCR2H;
-  const volatile uint32_t RESERVED64[2];
-  volatile uint32_t RTSR3;
-  volatile uint32_t FTSR3;
-  volatile uint32_t SWIER3;
-  volatile uint32_t D3PMR3;
-  const volatile uint32_t RESERVED84[1];
-  volatile uint32_t D3PCR3H;
-  const volatile uint32_t RESERVED128[10];
-  volatile uint32_t CPUIMR1;
-  volatile uint32_t CPUEMR1;
-  volatile uint32_t CPUPR1;
-  const volatile uint32_t RESERVED144[1];
-  volatile uint32_t CPUIMR2;
-  volatile uint32_t CPUEMR2;
-  volatile const uint32_t CPUPR2;
-  const volatile uint32_t RESERVED160[1];
-  volatile const uint32_t CPUIMR3;
-  volatile const uint32_t CPUEMR3;
-  volatile const uint32_t CPUPR3;
+    volatile uint32_t RTSR1;
+    volatile uint32_t FTSR1;
+    volatile uint32_t SWIER1;
+    volatile uint32_t D3PMR1;
+    volatile uint32_t D3PCR1L;
+    volatile uint32_t D3PCR1H;
+    volatile const uint32_t RESERVED_24[2];
+    volatile uint32_t RTSR2;
+    volatile uint32_t FTSR2;
+    volatile uint32_t SWIER2;
+    volatile uint32_t D3PMR2;
+    volatile uint32_t D3PCR2L;
+    volatile uint32_t D3PCR2H;
+    volatile const uint32_t RESERVED_56[2];
+    volatile uint32_t RTSR3;
+    volatile uint32_t FTSR3;
+    volatile uint32_t SWIER3;
+    volatile uint32_t D3PMR3;
+    volatile const uint32_t RESERVED_80;
+    volatile uint32_t D3PCR3H;
+    volatile const uint32_t RESERVED_88[10];
+    volatile uint32_t CPUIMR1;
+    volatile uint32_t CPUEMR1;
+    volatile uint32_t CPUPR1;
+    volatile const uint32_t RESERVED_140;
+    volatile uint32_t CPUIMR2;
+    volatile uint32_t CPUEMR2;
+    volatile const uint32_t CPUPR2;
+    volatile const uint32_t RESERVED_156;
+    volatile const uint32_t CPUIMR3;
+    volatile const uint32_t CPUEMR3;
+    volatile const uint32_t CPUPR3;
 };
 #define EXTI_RTSR1_TR0          (0x1UL << 0) 
 #define EXTI_RTSR1_TR0_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -17503,9 +17693,12 @@ struct EXTI {
 #define EXTI_CPUPR3_PR86_VAL(X) (((uint32_t)(X) & 0x1UL) << 22)
 
 #define EXTI  ((struct EXTI*)(0x58000000UL))
+
+
+
 struct DELAY_Block_SDMMC1 {
-  volatile uint32_t CR;
-  volatile uint32_t CFGR;
+    volatile uint32_t CR;
+    volatile uint32_t CFGR;
 };
 #define DELAY_Block_SDMMC1_CR_DEN          (0x1UL << 0) 
 #define DELAY_Block_SDMMC1_CR_DEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -17521,9 +17714,12 @@ struct DELAY_Block_SDMMC1 {
 #define DELAY_Block_SDMMC1_CFGR_LNGF_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
 
 #define DELAY_Block_SDMMC1  ((struct DELAY_Block_SDMMC1*)(0x52008000UL))
+
+
+
 struct DELAY_Block_QUADSPI {
-  volatile uint32_t CR;
-  volatile uint32_t CFGR;
+    volatile uint32_t CR;
+    volatile uint32_t CFGR;
 };
 #define DELAY_Block_QUADSPI_CR_DEN          (0x1UL << 0) 
 #define DELAY_Block_QUADSPI_CR_DEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -17539,9 +17735,12 @@ struct DELAY_Block_QUADSPI {
 #define DELAY_Block_QUADSPI_CFGR_LNGF_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
 
 #define DELAY_Block_QUADSPI  ((struct DELAY_Block_QUADSPI*)(0x52006000UL))
+
+
+
 struct DELAY_Block_SDMMC2 {
-  volatile uint32_t CR;
-  volatile uint32_t CFGR;
+    volatile uint32_t CR;
+    volatile uint32_t CFGR;
 };
 #define DELAY_Block_SDMMC2_CR_DEN          (0x1UL << 0) 
 #define DELAY_Block_SDMMC2_CR_DEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -17557,70 +17756,69 @@ struct DELAY_Block_SDMMC2 {
 #define DELAY_Block_SDMMC2_CFGR_LNGF_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
 
 #define DELAY_Block_SDMMC2  ((struct DELAY_Block_SDMMC2*)(0x48022800UL))
+
+
+
 struct Flash {
-  volatile uint32_t ACR;
-  volatile uint32_t KEYR1;
-  volatile uint32_t OPTKEYR;
-  volatile uint32_t CR1;
-  volatile uint32_t SR1;
-  volatile uint32_t CCR1;
-  volatile uint32_t OPTCR;
-  volatile uint32_t OPTSR_CUR;
-  volatile uint32_t OPTSR_PRG;
-  volatile uint32_t OPTCCR;
-  volatile const uint32_t PRAR_CUR1;
-  volatile uint32_t PRAR_PRG1;
-  volatile uint32_t PRAR_PRG2;
-  volatile uint32_t SCAR_CUR1;
-  volatile uint32_t SCAR_PRG1;
-  volatile const uint32_t WPSN_CUR1R;
-  volatile uint32_t WPSN_PRG1R;
-  volatile const uint32_t BOOT_CURR;
-  volatile const uint32_t BOOT_PRGR;
-  const volatile uint32_t RESERVED80[2];
-  volatile uint32_t CRCCR1;
-  volatile uint32_t CRCSADD1R;
-  volatile uint32_t CRCEADD1R;
-  volatile uint32_t CRCDATAR;
-  volatile const uint32_t ECC_FA1R;
-  const volatile uint32_t RESERVED256[39];
-  volatile uint32_t ACR_;
-  volatile const uint32_t KEYR2;
-  volatile uint32_t OPTKEYR_;
-  volatile uint32_t CR2;
-  volatile uint32_t SR2;
-  volatile uint32_t CCR2;
-  volatile uint32_t OPTCR_;
-  volatile uint32_t OPTSR_CUR_;
-  volatile uint32_t OPTSR_PRG_;
-  volatile uint32_t OPTCCR_;
-  volatile const uint32_t PRAR_CUR2;
-  const volatile uint32_t RESERVED304[1];
-  volatile uint32_t SCAR_CUR2;
-  volatile uint32_t SCAR_PRG2;
-  volatile const uint32_t WPSN_CUR2R;
-  volatile uint32_t WPSN_PRG2R;
-  const volatile uint32_t RESERVED336[4];
-  volatile uint32_t CRCCR2;
-  volatile uint32_t CRCSADD2R;
-  volatile uint32_t CRCEADD2R;
-  const volatile uint32_t RESERVED352[1];
-  volatile const uint32_t ECC_FA2R;
+    volatile uint32_t ACR;
+    volatile uint32_t KEYR1;
+    volatile uint32_t OPTKEYR;
+    volatile uint32_t CR1;
+    volatile uint32_t SR1;
+    volatile uint32_t CCR1;
+    volatile uint32_t OPTCR;
+    volatile uint32_t OPTSR_CUR;
+    volatile uint32_t OPTSR_PRG;
+    volatile uint32_t OPTCCR;
+    volatile const uint32_t PRAR_CUR1;
+  union {
+      volatile uint32_t PRAR_PRG1;
+      volatile uint32_t PRAR_PRG2;
+  };
+    volatile uint32_t SCAR_CUR1;
+    volatile uint32_t SCAR_PRG1;
+    volatile const uint32_t WPSN_CUR1R;
+    volatile uint32_t WPSN_PRG1R;
+    volatile const uint32_t BOOT_CURR;
+    volatile const uint32_t BOOT_PRGR;
+    volatile const uint32_t RESERVED_72[2];
+    volatile uint32_t CRCCR1;
+    volatile uint32_t CRCSADD1R;
+    volatile uint32_t CRCEADD1R;
+    volatile uint32_t CRCDATAR;
+    volatile const uint32_t ECC_FA1R;
+    volatile const uint32_t RESERVED_100[39];
+    volatile uint32_t ACR_;
+    volatile const uint32_t KEYR2;
+    volatile uint32_t OPTKEYR_;
+    volatile uint32_t CR2;
+    volatile uint32_t SR2;
+    volatile uint32_t CCR2;
+    volatile uint32_t OPTCR_;
+    volatile uint32_t OPTSR_CUR_;
+    volatile uint32_t OPTSR_PRG_;
+    volatile uint32_t OPTCCR_;
+    volatile const uint32_t PRAR_CUR2;
+    volatile const uint32_t RESERVED_300;
+    volatile uint32_t SCAR_CUR2;
+    volatile uint32_t SCAR_PRG2;
+    volatile const uint32_t WPSN_CUR2R;
+    volatile uint32_t WPSN_PRG2R;
+    volatile const uint32_t RESERVED_320[4];
+    volatile uint32_t CRCCR2;
+    volatile uint32_t CRCSADD2R;
+    volatile uint32_t CRCEADD2R;
+    volatile const uint32_t RESERVED_348;
+    volatile const uint32_t ECC_FA2R;
 };
 #define Flash_ACR_LATENCY          (0x7UL << 0) 
 #define Flash_ACR_LATENCY_VAL(X) (((uint32_t)(X) & 0x7UL) << 0)
 #define Flash_ACR_WRHIGHFREQ          (0x3UL << 4) 
 #define Flash_ACR_WRHIGHFREQ_VAL(X) (((uint32_t)(X) & 0x3UL) << 4)
-#define Flash_ACR__LATENCY          (0x7UL << 0) 
-#define Flash_ACR__LATENCY_VAL(X) (((uint32_t)(X) & 0x7UL) << 0)
-#define Flash_ACR__WRHIGHFREQ          (0x3UL << 4) 
-#define Flash_ACR__WRHIGHFREQ_VAL(X) (((uint32_t)(X) & 0x3UL) << 4)
 #define Flash_KEYR1_KEYR1          (0xFFFFFFFFUL << 0) 
 #define Flash_KEYR1_KEYR1_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
 #define Flash_OPTKEYR_OPTKEYR          (0xFFFFFFFFUL << 0) 
 #define Flash_OPTKEYR_OPTKEYR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
-#define Flash_OPTKEYR__OPTKEYR          (0xFFFFFFFFUL << 0) 
-#define Flash_OPTKEYR__OPTKEYR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
 #define Flash_CR1_LOCK1          (0x1UL << 0) 
 #define Flash_CR1_LOCK1_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define Flash_CR1_PG1          (0x1UL << 1) 
@@ -17723,46 +17921,6 @@ struct Flash {
 #define Flash_OPTCR_OPTCHANGEERRIE_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define Flash_OPTCR_SWAP_BANK          (0x1UL << 31) 
 #define Flash_OPTCR_SWAP_BANK_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define Flash_OPTCR__OPTLOCK          (0x1UL << 0) 
-#define Flash_OPTCR__OPTLOCK_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define Flash_OPTCR__OPTSTART          (0x1UL << 1) 
-#define Flash_OPTCR__OPTSTART_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define Flash_OPTCR__MER          (0x1UL << 4) 
-#define Flash_OPTCR__MER_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define Flash_OPTCR__OPTCHANGEERRIE          (0x1UL << 30) 
-#define Flash_OPTCR__OPTCHANGEERRIE_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
-#define Flash_OPTCR__SWAP_BANK          (0x1UL << 31) 
-#define Flash_OPTCR__SWAP_BANK_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define Flash_OPTSR_CUR__OPT_BUSY          (0x1UL << 0) 
-#define Flash_OPTSR_CUR__OPT_BUSY_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define Flash_OPTSR_CUR__BOR_LEV          (0x3UL << 2) 
-#define Flash_OPTSR_CUR__BOR_LEV_VAL(X) (((uint32_t)(X) & 0x3UL) << 2)
-#define Flash_OPTSR_CUR__IWDG1_HW          (0x1UL << 4) 
-#define Flash_OPTSR_CUR__IWDG1_HW_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define Flash_OPTSR_CUR__nRST_STOP_D1          (0x1UL << 6) 
-#define Flash_OPTSR_CUR__nRST_STOP_D1_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define Flash_OPTSR_CUR__nRST_STBY_D1          (0x1UL << 7) 
-#define Flash_OPTSR_CUR__nRST_STBY_D1_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define Flash_OPTSR_CUR__RDP          (0xFFUL << 8) 
-#define Flash_OPTSR_CUR__RDP_VAL(X) (((uint32_t)(X) & 0xFFUL) << 8)
-#define Flash_OPTSR_CUR__FZ_IWDG_STOP          (0x1UL << 17) 
-#define Flash_OPTSR_CUR__FZ_IWDG_STOP_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
-#define Flash_OPTSR_CUR__FZ_IWDG_SDBY          (0x1UL << 18) 
-#define Flash_OPTSR_CUR__FZ_IWDG_SDBY_VAL(X) (((uint32_t)(X) & 0x1UL) << 18)
-#define Flash_OPTSR_CUR__ST_RAM_SIZE          (0x3UL << 19) 
-#define Flash_OPTSR_CUR__ST_RAM_SIZE_VAL(X) (((uint32_t)(X) & 0x3UL) << 19)
-#define Flash_OPTSR_CUR__SECURITY          (0x1UL << 21) 
-#define Flash_OPTSR_CUR__SECURITY_VAL(X) (((uint32_t)(X) & 0x1UL) << 21)
-#define Flash_OPTSR_CUR__RSS1          (0x1UL << 26) 
-#define Flash_OPTSR_CUR__RSS1_VAL(X) (((uint32_t)(X) & 0x1UL) << 26)
-#define Flash_OPTSR_CUR__PERSO_OK          (0x1UL << 28) 
-#define Flash_OPTSR_CUR__PERSO_OK_VAL(X) (((uint32_t)(X) & 0x1UL) << 28)
-#define Flash_OPTSR_CUR__IO_HSLV          (0x1UL << 29) 
-#define Flash_OPTSR_CUR__IO_HSLV_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
-#define Flash_OPTSR_CUR__OPTCHANGEERR          (0x1UL << 30) 
-#define Flash_OPTSR_CUR__OPTCHANGEERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
-#define Flash_OPTSR_CUR__SWAP_BANK_OPT          (0x1UL << 31) 
-#define Flash_OPTSR_CUR__SWAP_BANK_OPT_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
 #define Flash_OPTSR_CUR_OPT_BUSY          (0x1UL << 0) 
 #define Flash_OPTSR_CUR_OPT_BUSY_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define Flash_OPTSR_CUR_BOR_LEV          (0x3UL << 2) 
@@ -17819,34 +17977,6 @@ struct Flash {
 #define Flash_OPTSR_PRG_IO_HSLV_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
 #define Flash_OPTSR_PRG_SWAP_BANK_OPT          (0x1UL << 31) 
 #define Flash_OPTSR_PRG_SWAP_BANK_OPT_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define Flash_OPTSR_PRG__BOR_LEV          (0x3UL << 2) 
-#define Flash_OPTSR_PRG__BOR_LEV_VAL(X) (((uint32_t)(X) & 0x3UL) << 2)
-#define Flash_OPTSR_PRG__IWDG1_HW          (0x1UL << 4) 
-#define Flash_OPTSR_PRG__IWDG1_HW_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define Flash_OPTSR_PRG__nRST_STOP_D1          (0x1UL << 6) 
-#define Flash_OPTSR_PRG__nRST_STOP_D1_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define Flash_OPTSR_PRG__nRST_STBY_D1          (0x1UL << 7) 
-#define Flash_OPTSR_PRG__nRST_STBY_D1_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define Flash_OPTSR_PRG__RDP          (0xFFUL << 8) 
-#define Flash_OPTSR_PRG__RDP_VAL(X) (((uint32_t)(X) & 0xFFUL) << 8)
-#define Flash_OPTSR_PRG__FZ_IWDG_STOP          (0x1UL << 17) 
-#define Flash_OPTSR_PRG__FZ_IWDG_STOP_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
-#define Flash_OPTSR_PRG__FZ_IWDG_SDBY          (0x1UL << 18) 
-#define Flash_OPTSR_PRG__FZ_IWDG_SDBY_VAL(X) (((uint32_t)(X) & 0x1UL) << 18)
-#define Flash_OPTSR_PRG__ST_RAM_SIZE          (0x3UL << 19) 
-#define Flash_OPTSR_PRG__ST_RAM_SIZE_VAL(X) (((uint32_t)(X) & 0x3UL) << 19)
-#define Flash_OPTSR_PRG__SECURITY          (0x1UL << 21) 
-#define Flash_OPTSR_PRG__SECURITY_VAL(X) (((uint32_t)(X) & 0x1UL) << 21)
-#define Flash_OPTSR_PRG__RSS1          (0x1UL << 26) 
-#define Flash_OPTSR_PRG__RSS1_VAL(X) (((uint32_t)(X) & 0x1UL) << 26)
-#define Flash_OPTSR_PRG__RSS2          (0x1UL << 27) 
-#define Flash_OPTSR_PRG__RSS2_VAL(X) (((uint32_t)(X) & 0x1UL) << 27)
-#define Flash_OPTSR_PRG__IO_HSLV          (0x1UL << 29) 
-#define Flash_OPTSR_PRG__IO_HSLV_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
-#define Flash_OPTSR_PRG__SWAP_BANK_OPT          (0x1UL << 31) 
-#define Flash_OPTSR_PRG__SWAP_BANK_OPT_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define Flash_OPTCCR__CLR_OPTCHANGEERR          (0x1UL << 30) 
-#define Flash_OPTCCR__CLR_OPTCHANGEERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define Flash_OPTCCR_CLR_OPTCHANGEERR          (0x1UL << 30) 
 #define Flash_OPTCCR_CLR_OPTCHANGEERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define Flash_PRAR_CUR1_PROT_AREA_START1          (0xFFFUL << 0) 
@@ -17861,6 +17991,12 @@ struct Flash {
 #define Flash_PRAR_PRG1_PROT_AREA_END1_VAL(X) (((uint32_t)(X) & 0xFFFUL) << 16)
 #define Flash_PRAR_PRG1_DMEP1          (0x1UL << 31) 
 #define Flash_PRAR_PRG1_DMEP1_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define Flash_PRAR_PRG2_PROT_AREA_START2          (0xFFFUL << 0) 
+#define Flash_PRAR_PRG2_PROT_AREA_START2_VAL(X) (((uint32_t)(X) & 0xFFFUL) << 0)
+#define Flash_PRAR_PRG2_PROT_AREA_END2          (0xFFFUL << 16) 
+#define Flash_PRAR_PRG2_PROT_AREA_END2_VAL(X) (((uint32_t)(X) & 0xFFFUL) << 16)
+#define Flash_PRAR_PRG2_DMEP2          (0x1UL << 31) 
+#define Flash_PRAR_PRG2_DMEP2_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
 #define Flash_SCAR_CUR1_SEC_AREA_START1          (0xFFFUL << 0) 
 #define Flash_SCAR_CUR1_SEC_AREA_START1_VAL(X) (((uint32_t)(X) & 0xFFFUL) << 0)
 #define Flash_SCAR_CUR1_SEC_AREA_END1          (0xFFFUL << 16) 
@@ -17909,8 +18045,14 @@ struct Flash {
 #define Flash_CRCDATAR_CRC_DATA_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
 #define Flash_ECC_FA1R_FAIL_ECC_ADDR1          (0x7FFFUL << 0) 
 #define Flash_ECC_FA1R_FAIL_ECC_ADDR1_VAL(X) (((uint32_t)(X) & 0x7FFFUL) << 0)
+#define Flash_ACR__LATENCY          (0x7UL << 0) 
+#define Flash_ACR__LATENCY_VAL(X) (((uint32_t)(X) & 0x7UL) << 0)
+#define Flash_ACR__WRHIGHFREQ          (0x3UL << 4) 
+#define Flash_ACR__WRHIGHFREQ_VAL(X) (((uint32_t)(X) & 0x3UL) << 4)
 #define Flash_KEYR2_KEYR2          (0xFFFFFFFFUL << 0) 
 #define Flash_KEYR2_KEYR2_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
+#define Flash_OPTKEYR__OPTKEYR          (0xFFFFFFFFUL << 0) 
+#define Flash_OPTKEYR__OPTKEYR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
 #define Flash_CR2_LOCK2          (0x1UL << 0) 
 #define Flash_CR2_LOCK2_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define Flash_CR2_PG2          (0x1UL << 1) 
@@ -18003,18 +18145,80 @@ struct Flash {
 #define Flash_CCR2_CLR_DBECCERR1_VAL(X) (((uint32_t)(X) & 0x1UL) << 26)
 #define Flash_CCR2_CLR_CRCEND2          (0x1UL << 27) 
 #define Flash_CCR2_CLR_CRCEND2_VAL(X) (((uint32_t)(X) & 0x1UL) << 27)
+#define Flash_OPTCR__OPTLOCK          (0x1UL << 0) 
+#define Flash_OPTCR__OPTLOCK_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define Flash_OPTCR__OPTSTART          (0x1UL << 1) 
+#define Flash_OPTCR__OPTSTART_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define Flash_OPTCR__MER          (0x1UL << 4) 
+#define Flash_OPTCR__MER_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define Flash_OPTCR__OPTCHANGEERRIE          (0x1UL << 30) 
+#define Flash_OPTCR__OPTCHANGEERRIE_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
+#define Flash_OPTCR__SWAP_BANK          (0x1UL << 31) 
+#define Flash_OPTCR__SWAP_BANK_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define Flash_OPTSR_CUR__OPT_BUSY          (0x1UL << 0) 
+#define Flash_OPTSR_CUR__OPT_BUSY_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define Flash_OPTSR_CUR__BOR_LEV          (0x3UL << 2) 
+#define Flash_OPTSR_CUR__BOR_LEV_VAL(X) (((uint32_t)(X) & 0x3UL) << 2)
+#define Flash_OPTSR_CUR__IWDG1_HW          (0x1UL << 4) 
+#define Flash_OPTSR_CUR__IWDG1_HW_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define Flash_OPTSR_CUR__nRST_STOP_D1          (0x1UL << 6) 
+#define Flash_OPTSR_CUR__nRST_STOP_D1_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define Flash_OPTSR_CUR__nRST_STBY_D1          (0x1UL << 7) 
+#define Flash_OPTSR_CUR__nRST_STBY_D1_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define Flash_OPTSR_CUR__RDP          (0xFFUL << 8) 
+#define Flash_OPTSR_CUR__RDP_VAL(X) (((uint32_t)(X) & 0xFFUL) << 8)
+#define Flash_OPTSR_CUR__FZ_IWDG_STOP          (0x1UL << 17) 
+#define Flash_OPTSR_CUR__FZ_IWDG_STOP_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
+#define Flash_OPTSR_CUR__FZ_IWDG_SDBY          (0x1UL << 18) 
+#define Flash_OPTSR_CUR__FZ_IWDG_SDBY_VAL(X) (((uint32_t)(X) & 0x1UL) << 18)
+#define Flash_OPTSR_CUR__ST_RAM_SIZE          (0x3UL << 19) 
+#define Flash_OPTSR_CUR__ST_RAM_SIZE_VAL(X) (((uint32_t)(X) & 0x3UL) << 19)
+#define Flash_OPTSR_CUR__SECURITY          (0x1UL << 21) 
+#define Flash_OPTSR_CUR__SECURITY_VAL(X) (((uint32_t)(X) & 0x1UL) << 21)
+#define Flash_OPTSR_CUR__RSS1          (0x1UL << 26) 
+#define Flash_OPTSR_CUR__RSS1_VAL(X) (((uint32_t)(X) & 0x1UL) << 26)
+#define Flash_OPTSR_CUR__PERSO_OK          (0x1UL << 28) 
+#define Flash_OPTSR_CUR__PERSO_OK_VAL(X) (((uint32_t)(X) & 0x1UL) << 28)
+#define Flash_OPTSR_CUR__IO_HSLV          (0x1UL << 29) 
+#define Flash_OPTSR_CUR__IO_HSLV_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
+#define Flash_OPTSR_CUR__OPTCHANGEERR          (0x1UL << 30) 
+#define Flash_OPTSR_CUR__OPTCHANGEERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
+#define Flash_OPTSR_CUR__SWAP_BANK_OPT          (0x1UL << 31) 
+#define Flash_OPTSR_CUR__SWAP_BANK_OPT_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define Flash_OPTSR_PRG__BOR_LEV          (0x3UL << 2) 
+#define Flash_OPTSR_PRG__BOR_LEV_VAL(X) (((uint32_t)(X) & 0x3UL) << 2)
+#define Flash_OPTSR_PRG__IWDG1_HW          (0x1UL << 4) 
+#define Flash_OPTSR_PRG__IWDG1_HW_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define Flash_OPTSR_PRG__nRST_STOP_D1          (0x1UL << 6) 
+#define Flash_OPTSR_PRG__nRST_STOP_D1_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define Flash_OPTSR_PRG__nRST_STBY_D1          (0x1UL << 7) 
+#define Flash_OPTSR_PRG__nRST_STBY_D1_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define Flash_OPTSR_PRG__RDP          (0xFFUL << 8) 
+#define Flash_OPTSR_PRG__RDP_VAL(X) (((uint32_t)(X) & 0xFFUL) << 8)
+#define Flash_OPTSR_PRG__FZ_IWDG_STOP          (0x1UL << 17) 
+#define Flash_OPTSR_PRG__FZ_IWDG_STOP_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
+#define Flash_OPTSR_PRG__FZ_IWDG_SDBY          (0x1UL << 18) 
+#define Flash_OPTSR_PRG__FZ_IWDG_SDBY_VAL(X) (((uint32_t)(X) & 0x1UL) << 18)
+#define Flash_OPTSR_PRG__ST_RAM_SIZE          (0x3UL << 19) 
+#define Flash_OPTSR_PRG__ST_RAM_SIZE_VAL(X) (((uint32_t)(X) & 0x3UL) << 19)
+#define Flash_OPTSR_PRG__SECURITY          (0x1UL << 21) 
+#define Flash_OPTSR_PRG__SECURITY_VAL(X) (((uint32_t)(X) & 0x1UL) << 21)
+#define Flash_OPTSR_PRG__RSS1          (0x1UL << 26) 
+#define Flash_OPTSR_PRG__RSS1_VAL(X) (((uint32_t)(X) & 0x1UL) << 26)
+#define Flash_OPTSR_PRG__RSS2          (0x1UL << 27) 
+#define Flash_OPTSR_PRG__RSS2_VAL(X) (((uint32_t)(X) & 0x1UL) << 27)
+#define Flash_OPTSR_PRG__IO_HSLV          (0x1UL << 29) 
+#define Flash_OPTSR_PRG__IO_HSLV_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
+#define Flash_OPTSR_PRG__SWAP_BANK_OPT          (0x1UL << 31) 
+#define Flash_OPTSR_PRG__SWAP_BANK_OPT_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define Flash_OPTCCR__CLR_OPTCHANGEERR          (0x1UL << 30) 
+#define Flash_OPTCCR__CLR_OPTCHANGEERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define Flash_PRAR_CUR2_PROT_AREA_START2          (0xFFFUL << 0) 
 #define Flash_PRAR_CUR2_PROT_AREA_START2_VAL(X) (((uint32_t)(X) & 0xFFFUL) << 0)
 #define Flash_PRAR_CUR2_PROT_AREA_END2          (0xFFFUL << 16) 
 #define Flash_PRAR_CUR2_PROT_AREA_END2_VAL(X) (((uint32_t)(X) & 0xFFFUL) << 16)
 #define Flash_PRAR_CUR2_DMEP2          (0x1UL << 31) 
 #define Flash_PRAR_CUR2_DMEP2_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define Flash_PRAR_PRG2_PROT_AREA_START2          (0xFFFUL << 0) 
-#define Flash_PRAR_PRG2_PROT_AREA_START2_VAL(X) (((uint32_t)(X) & 0xFFFUL) << 0)
-#define Flash_PRAR_PRG2_PROT_AREA_END2          (0xFFFUL << 16) 
-#define Flash_PRAR_PRG2_PROT_AREA_END2_VAL(X) (((uint32_t)(X) & 0xFFFUL) << 16)
-#define Flash_PRAR_PRG2_DMEP2          (0x1UL << 31) 
-#define Flash_PRAR_PRG2_DMEP2_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
 #define Flash_SCAR_CUR2_SEC_AREA_START2          (0xFFFUL << 0) 
 #define Flash_SCAR_CUR2_SEC_AREA_START2_VAL(X) (((uint32_t)(X) & 0xFFFUL) << 0)
 #define Flash_SCAR_CUR2_SEC_AREA_END2          (0xFFFUL << 16) 
@@ -18055,77 +18259,81 @@ struct Flash {
 #define Flash_ECC_FA2R_FAIL_ECC_ADDR2_VAL(X) (((uint32_t)(X) & 0x7FFFUL) << 0)
 
 #define Flash  ((struct Flash*)(0x52002000UL))
+
+
+
 struct AXI {
-  volatile const uint32_t AXI_PERIPH_ID_4;
-  const volatile uint32_t RESERVED8160[3];
-  volatile const uint32_t AXI_PERIPH_ID_0;
-  volatile const uint32_t AXI_PERIPH_ID_1;
-  volatile const uint32_t AXI_PERIPH_ID_2;
-  volatile const uint32_t AXI_PERIPH_ID_3;
-  volatile const uint32_t AXI_COMP_ID_0;
-  volatile const uint32_t AXI_COMP_ID_1;
-  volatile const uint32_t AXI_COMP_ID_2;
-  volatile const uint32_t AXI_COMP_ID_3;
-  const volatile uint32_t RESERVED8200[2];
-  volatile uint32_t AXI_TARG1_FN_MOD_ISS_BM;
-  const volatile uint32_t RESERVED8228[6];
-  volatile uint32_t AXI_TARG1_FN_MOD2;
-  const volatile uint32_t RESERVED8236[1];
-  volatile uint32_t AXI_TARG1_FN_MOD_LB;
-  const volatile uint32_t RESERVED8456[54];
-  volatile uint32_t AXI_TARG1_FN_MOD;
-  const volatile uint32_t RESERVED12296[959];
-  volatile uint32_t AXI_TARG2_FN_MOD_ISS_BM;
-  const volatile uint32_t RESERVED12324[6];
-  volatile uint32_t AXI_TARG2_FN_MOD2;
-  const volatile uint32_t RESERVED12332[1];
-  volatile uint32_t AXI_TARG2_FN_MOD_LB;
-  const volatile uint32_t RESERVED12552[54];
-  volatile uint32_t AXI_TARG2_FN_MOD;
-  const volatile uint32_t RESERVED16392[959];
-  volatile uint32_t AXI_TARG3_FN_MOD_ISS_BM;
-  const volatile uint32_t RESERVED20488[1023];
-  volatile uint32_t AXI_TARG4_FN_MOD_ISS_BM;
-  const volatile uint32_t RESERVED24584[1023];
-  volatile uint32_t AXI_TARG5_FN_MOD_ISS_BM;
-  const volatile uint32_t RESERVED28680[1023];
-  volatile uint32_t AXI_TARG6_FN_MOD_ISS_BM;
-  const volatile uint32_t RESERVED32780[1024];
-  volatile uint32_t AXI_TARG7_FN_MOD_ISS_BM;
-  const volatile uint32_t RESERVED32804[5];
-  volatile uint32_t AXI_TARG7_FN_MOD2;
-  const volatile uint32_t RESERVED33032[56];
-  volatile uint32_t AXI_TARG7_FN_MOD;
-  const volatile uint32_t RESERVED270372[59334];
-  volatile uint32_t AXI_INI1_FN_MOD2;
-  volatile uint32_t AXI_INI1_FN_MOD_AHB;
-  const volatile uint32_t RESERVED270592[53];
-  volatile uint32_t AXI_INI1_READ_QOS;
-  volatile uint32_t AXI_INI1_WRITE_QOS;
-  volatile uint32_t AXI_INI1_FN_MOD;
-  const volatile uint32_t RESERVED274688[1021];
-  volatile uint32_t AXI_INI2_READ_QOS;
-  volatile uint32_t AXI_INI2_WRITE_QOS;
-  volatile uint32_t AXI_INI2_FN_MOD;
-  const volatile uint32_t RESERVED278564[966];
-  volatile uint32_t AXI_INI3_FN_MOD2;
-  volatile uint32_t AXI_INI3_FN_MOD_AHB;
-  const volatile uint32_t RESERVED278784[53];
-  volatile uint32_t AXI_INI3_READ_QOS;
-  volatile uint32_t AXI_INI3_WRITE_QOS;
-  volatile uint32_t AXI_INI3_FN_MOD;
-  const volatile uint32_t RESERVED282880[1021];
-  volatile uint32_t AXI_INI4_READ_QOS;
-  volatile uint32_t AXI_INI4_WRITE_QOS;
-  volatile uint32_t AXI_INI4_FN_MOD;
-  const volatile uint32_t RESERVED286976[1021];
-  volatile uint32_t AXI_INI5_READ_QOS;
-  volatile uint32_t AXI_INI5_WRITE_QOS;
-  volatile uint32_t AXI_INI5_FN_MOD;
-  const volatile uint32_t RESERVED291072[1021];
-  volatile uint32_t AXI_INI6_READ_QOS;
-  volatile uint32_t AXI_INI6_WRITE_QOS;
-  volatile uint32_t AXI_INI6_FN_MOD;
+    volatile const uint32_t RESERVED_0[2036];
+    volatile const uint32_t AXI_PERIPH_ID_4;
+    volatile const uint32_t RESERVED_8148[3];
+    volatile const uint32_t AXI_PERIPH_ID_0;
+    volatile const uint32_t AXI_PERIPH_ID_1;
+    volatile const uint32_t AXI_PERIPH_ID_2;
+    volatile const uint32_t AXI_PERIPH_ID_3;
+    volatile const uint32_t AXI_COMP_ID_0;
+    volatile const uint32_t AXI_COMP_ID_1;
+    volatile const uint32_t AXI_COMP_ID_2;
+    volatile const uint32_t AXI_COMP_ID_3;
+    volatile const uint32_t RESERVED_8192[2];
+    volatile uint32_t AXI_TARG1_FN_MOD_ISS_BM;
+    volatile const uint32_t RESERVED_8204[6];
+    volatile uint32_t AXI_TARG1_FN_MOD2;
+    volatile const uint32_t RESERVED_8232;
+    volatile uint32_t AXI_TARG1_FN_MOD_LB;
+    volatile const uint32_t RESERVED_8240[54];
+    volatile uint32_t AXI_TARG1_FN_MOD;
+    volatile const uint32_t RESERVED_8460[959];
+    volatile uint32_t AXI_TARG2_FN_MOD_ISS_BM;
+    volatile const uint32_t RESERVED_12300[6];
+    volatile uint32_t AXI_TARG2_FN_MOD2;
+    volatile const uint32_t RESERVED_12328;
+    volatile uint32_t AXI_TARG2_FN_MOD_LB;
+    volatile const uint32_t RESERVED_12336[54];
+    volatile uint32_t AXI_TARG2_FN_MOD;
+    volatile const uint32_t RESERVED_12556[959];
+    volatile uint32_t AXI_TARG3_FN_MOD_ISS_BM;
+    volatile const uint32_t RESERVED_16396[1023];
+    volatile uint32_t AXI_TARG4_FN_MOD_ISS_BM;
+    volatile const uint32_t RESERVED_20492[1023];
+    volatile uint32_t AXI_TARG5_FN_MOD_ISS_BM;
+    volatile const uint32_t RESERVED_24588[1023];
+    volatile uint32_t AXI_TARG6_FN_MOD_ISS_BM;
+    volatile const uint32_t RESERVED_28684[1024];
+    volatile uint32_t AXI_TARG7_FN_MOD_ISS_BM;
+    volatile const uint32_t RESERVED_32784[5];
+    volatile uint32_t AXI_TARG7_FN_MOD2;
+    volatile const uint32_t RESERVED_32808[56];
+    volatile uint32_t AXI_TARG7_FN_MOD;
+    volatile const uint32_t RESERVED_33036[59334];
+    volatile uint32_t AXI_INI1_FN_MOD2;
+    volatile uint32_t AXI_INI1_FN_MOD_AHB;
+    volatile const uint32_t RESERVED_270380[53];
+    volatile uint32_t AXI_INI1_READ_QOS;
+    volatile uint32_t AXI_INI1_WRITE_QOS;
+    volatile uint32_t AXI_INI1_FN_MOD;
+    volatile const uint32_t RESERVED_270604[1021];
+    volatile uint32_t AXI_INI2_READ_QOS;
+    volatile uint32_t AXI_INI2_WRITE_QOS;
+    volatile uint32_t AXI_INI2_FN_MOD;
+    volatile const uint32_t RESERVED_274700[966];
+    volatile uint32_t AXI_INI3_FN_MOD2;
+    volatile uint32_t AXI_INI3_FN_MOD_AHB;
+    volatile const uint32_t RESERVED_278572[53];
+    volatile uint32_t AXI_INI3_READ_QOS;
+    volatile uint32_t AXI_INI3_WRITE_QOS;
+    volatile uint32_t AXI_INI3_FN_MOD;
+    volatile const uint32_t RESERVED_278796[1021];
+    volatile uint32_t AXI_INI4_READ_QOS;
+    volatile uint32_t AXI_INI4_WRITE_QOS;
+    volatile uint32_t AXI_INI4_FN_MOD;
+    volatile const uint32_t RESERVED_282892[1021];
+    volatile uint32_t AXI_INI5_READ_QOS;
+    volatile uint32_t AXI_INI5_WRITE_QOS;
+    volatile uint32_t AXI_INI5_FN_MOD;
+    volatile const uint32_t RESERVED_286988[1021];
+    volatile uint32_t AXI_INI6_READ_QOS;
+    volatile uint32_t AXI_INI6_WRITE_QOS;
+    volatile uint32_t AXI_INI6_FN_MOD;
 };
 #define AXI_AXI_PERIPH_ID_4_JEP106CON          (0xFUL << 0) 
 #define AXI_AXI_PERIPH_ID_4_JEP106CON_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
@@ -18161,10 +18369,26 @@ struct AXI {
 #define AXI_AXI_TARG1_FN_MOD_ISS_BM_READ_ISS_OVERRIDE_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define AXI_AXI_TARG1_FN_MOD_ISS_BM_WRITE_ISS_OVERRIDE          (0x1UL << 1) 
 #define AXI_AXI_TARG1_FN_MOD_ISS_BM_WRITE_ISS_OVERRIDE_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define AXI_AXI_TARG1_FN_MOD2_BYPASS_MERGE          (0x1UL << 0) 
+#define AXI_AXI_TARG1_FN_MOD2_BYPASS_MERGE_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define AXI_AXI_TARG1_FN_MOD_LB_FN_MOD_LB          (0x1UL << 0) 
+#define AXI_AXI_TARG1_FN_MOD_LB_FN_MOD_LB_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define AXI_AXI_TARG1_FN_MOD_READ_ISS_OVERRIDE          (0x1UL << 0) 
+#define AXI_AXI_TARG1_FN_MOD_READ_ISS_OVERRIDE_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define AXI_AXI_TARG1_FN_MOD_WRITE_ISS_OVERRIDE          (0x1UL << 1) 
+#define AXI_AXI_TARG1_FN_MOD_WRITE_ISS_OVERRIDE_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
 #define AXI_AXI_TARG2_FN_MOD_ISS_BM_READ_ISS_OVERRIDE          (0x1UL << 0) 
 #define AXI_AXI_TARG2_FN_MOD_ISS_BM_READ_ISS_OVERRIDE_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define AXI_AXI_TARG2_FN_MOD_ISS_BM_WRITE_ISS_OVERRIDE          (0x1UL << 1) 
 #define AXI_AXI_TARG2_FN_MOD_ISS_BM_WRITE_ISS_OVERRIDE_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define AXI_AXI_TARG2_FN_MOD2_BYPASS_MERGE          (0x1UL << 0) 
+#define AXI_AXI_TARG2_FN_MOD2_BYPASS_MERGE_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define AXI_AXI_TARG2_FN_MOD_LB_FN_MOD_LB          (0x1UL << 0) 
+#define AXI_AXI_TARG2_FN_MOD_LB_FN_MOD_LB_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define AXI_AXI_TARG2_FN_MOD_READ_ISS_OVERRIDE          (0x1UL << 0) 
+#define AXI_AXI_TARG2_FN_MOD_READ_ISS_OVERRIDE_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define AXI_AXI_TARG2_FN_MOD_WRITE_ISS_OVERRIDE          (0x1UL << 1) 
+#define AXI_AXI_TARG2_FN_MOD_WRITE_ISS_OVERRIDE_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
 #define AXI_AXI_TARG3_FN_MOD_ISS_BM_READ_ISS_OVERRIDE          (0x1UL << 0) 
 #define AXI_AXI_TARG3_FN_MOD_ISS_BM_READ_ISS_OVERRIDE_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define AXI_AXI_TARG3_FN_MOD_ISS_BM_WRITE_ISS_OVERRIDE          (0x1UL << 1) 
@@ -18185,102 +18409,89 @@ struct AXI {
 #define AXI_AXI_TARG7_FN_MOD_ISS_BM_READ_ISS_OVERRIDE_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define AXI_AXI_TARG7_FN_MOD_ISS_BM_WRITE_ISS_OVERRIDE          (0x1UL << 1) 
 #define AXI_AXI_TARG7_FN_MOD_ISS_BM_WRITE_ISS_OVERRIDE_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define AXI_AXI_TARG1_FN_MOD2_BYPASS_MERGE          (0x1UL << 0) 
-#define AXI_AXI_TARG1_FN_MOD2_BYPASS_MERGE_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define AXI_AXI_TARG2_FN_MOD2_BYPASS_MERGE          (0x1UL << 0) 
-#define AXI_AXI_TARG2_FN_MOD2_BYPASS_MERGE_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define AXI_AXI_TARG7_FN_MOD2_BYPASS_MERGE          (0x1UL << 0) 
 #define AXI_AXI_TARG7_FN_MOD2_BYPASS_MERGE_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define AXI_AXI_TARG1_FN_MOD_LB_FN_MOD_LB          (0x1UL << 0) 
-#define AXI_AXI_TARG1_FN_MOD_LB_FN_MOD_LB_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define AXI_AXI_TARG2_FN_MOD_LB_FN_MOD_LB          (0x1UL << 0) 
-#define AXI_AXI_TARG2_FN_MOD_LB_FN_MOD_LB_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define AXI_AXI_TARG1_FN_MOD_READ_ISS_OVERRIDE          (0x1UL << 0) 
-#define AXI_AXI_TARG1_FN_MOD_READ_ISS_OVERRIDE_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define AXI_AXI_TARG1_FN_MOD_WRITE_ISS_OVERRIDE          (0x1UL << 1) 
-#define AXI_AXI_TARG1_FN_MOD_WRITE_ISS_OVERRIDE_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define AXI_AXI_TARG2_FN_MOD_READ_ISS_OVERRIDE          (0x1UL << 0) 
-#define AXI_AXI_TARG2_FN_MOD_READ_ISS_OVERRIDE_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define AXI_AXI_TARG2_FN_MOD_WRITE_ISS_OVERRIDE          (0x1UL << 1) 
-#define AXI_AXI_TARG2_FN_MOD_WRITE_ISS_OVERRIDE_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
 #define AXI_AXI_TARG7_FN_MOD_READ_ISS_OVERRIDE          (0x1UL << 0) 
 #define AXI_AXI_TARG7_FN_MOD_READ_ISS_OVERRIDE_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define AXI_AXI_TARG7_FN_MOD_WRITE_ISS_OVERRIDE          (0x1UL << 1) 
 #define AXI_AXI_TARG7_FN_MOD_WRITE_ISS_OVERRIDE_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
 #define AXI_AXI_INI1_FN_MOD2_BYPASS_MERGE          (0x1UL << 0) 
 #define AXI_AXI_INI1_FN_MOD2_BYPASS_MERGE_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define AXI_AXI_INI3_FN_MOD2_BYPASS_MERGE          (0x1UL << 0) 
-#define AXI_AXI_INI3_FN_MOD2_BYPASS_MERGE_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define AXI_AXI_INI1_FN_MOD_AHB_RD_INC_OVERRIDE          (0x1UL << 0) 
 #define AXI_AXI_INI1_FN_MOD_AHB_RD_INC_OVERRIDE_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define AXI_AXI_INI1_FN_MOD_AHB_WR_INC_OVERRIDE          (0x1UL << 1) 
 #define AXI_AXI_INI1_FN_MOD_AHB_WR_INC_OVERRIDE_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define AXI_AXI_INI3_FN_MOD_AHB_RD_INC_OVERRIDE          (0x1UL << 0) 
-#define AXI_AXI_INI3_FN_MOD_AHB_RD_INC_OVERRIDE_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define AXI_AXI_INI3_FN_MOD_AHB_WR_INC_OVERRIDE          (0x1UL << 1) 
-#define AXI_AXI_INI3_FN_MOD_AHB_WR_INC_OVERRIDE_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
 #define AXI_AXI_INI1_READ_QOS_AR_QOS          (0xFUL << 0) 
 #define AXI_AXI_INI1_READ_QOS_AR_QOS_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
-#define AXI_AXI_INI2_READ_QOS_AR_QOS          (0xFUL << 0) 
-#define AXI_AXI_INI2_READ_QOS_AR_QOS_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
-#define AXI_AXI_INI3_READ_QOS_AR_QOS          (0xFUL << 0) 
-#define AXI_AXI_INI3_READ_QOS_AR_QOS_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
-#define AXI_AXI_INI4_READ_QOS_AR_QOS          (0xFUL << 0) 
-#define AXI_AXI_INI4_READ_QOS_AR_QOS_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
-#define AXI_AXI_INI5_READ_QOS_AR_QOS          (0xFUL << 0) 
-#define AXI_AXI_INI5_READ_QOS_AR_QOS_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
-#define AXI_AXI_INI6_READ_QOS_AR_QOS          (0xFUL << 0) 
-#define AXI_AXI_INI6_READ_QOS_AR_QOS_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
 #define AXI_AXI_INI1_WRITE_QOS_AW_QOS          (0xFUL << 0) 
 #define AXI_AXI_INI1_WRITE_QOS_AW_QOS_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
-#define AXI_AXI_INI2_WRITE_QOS_AW_QOS          (0xFUL << 0) 
-#define AXI_AXI_INI2_WRITE_QOS_AW_QOS_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
-#define AXI_AXI_INI3_WRITE_QOS_AW_QOS          (0xFUL << 0) 
-#define AXI_AXI_INI3_WRITE_QOS_AW_QOS_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
-#define AXI_AXI_INI4_WRITE_QOS_AW_QOS          (0xFUL << 0) 
-#define AXI_AXI_INI4_WRITE_QOS_AW_QOS_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
-#define AXI_AXI_INI5_WRITE_QOS_AW_QOS          (0xFUL << 0) 
-#define AXI_AXI_INI5_WRITE_QOS_AW_QOS_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
-#define AXI_AXI_INI6_WRITE_QOS_AW_QOS          (0xFUL << 0) 
-#define AXI_AXI_INI6_WRITE_QOS_AW_QOS_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
 #define AXI_AXI_INI1_FN_MOD_READ_ISS_OVERRIDE          (0x1UL << 0) 
 #define AXI_AXI_INI1_FN_MOD_READ_ISS_OVERRIDE_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define AXI_AXI_INI1_FN_MOD_WRITE_ISS_OVERRIDE          (0x1UL << 1) 
 #define AXI_AXI_INI1_FN_MOD_WRITE_ISS_OVERRIDE_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define AXI_AXI_INI2_READ_QOS_AR_QOS          (0xFUL << 0) 
+#define AXI_AXI_INI2_READ_QOS_AR_QOS_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
+#define AXI_AXI_INI2_WRITE_QOS_AW_QOS          (0xFUL << 0) 
+#define AXI_AXI_INI2_WRITE_QOS_AW_QOS_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
 #define AXI_AXI_INI2_FN_MOD_READ_ISS_OVERRIDE          (0x1UL << 0) 
 #define AXI_AXI_INI2_FN_MOD_READ_ISS_OVERRIDE_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define AXI_AXI_INI2_FN_MOD_WRITE_ISS_OVERRIDE          (0x1UL << 1) 
 #define AXI_AXI_INI2_FN_MOD_WRITE_ISS_OVERRIDE_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define AXI_AXI_INI3_FN_MOD2_BYPASS_MERGE          (0x1UL << 0) 
+#define AXI_AXI_INI3_FN_MOD2_BYPASS_MERGE_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define AXI_AXI_INI3_FN_MOD_AHB_RD_INC_OVERRIDE          (0x1UL << 0) 
+#define AXI_AXI_INI3_FN_MOD_AHB_RD_INC_OVERRIDE_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define AXI_AXI_INI3_FN_MOD_AHB_WR_INC_OVERRIDE          (0x1UL << 1) 
+#define AXI_AXI_INI3_FN_MOD_AHB_WR_INC_OVERRIDE_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define AXI_AXI_INI3_READ_QOS_AR_QOS          (0xFUL << 0) 
+#define AXI_AXI_INI3_READ_QOS_AR_QOS_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
+#define AXI_AXI_INI3_WRITE_QOS_AW_QOS          (0xFUL << 0) 
+#define AXI_AXI_INI3_WRITE_QOS_AW_QOS_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
 #define AXI_AXI_INI3_FN_MOD_READ_ISS_OVERRIDE          (0x1UL << 0) 
 #define AXI_AXI_INI3_FN_MOD_READ_ISS_OVERRIDE_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define AXI_AXI_INI3_FN_MOD_WRITE_ISS_OVERRIDE          (0x1UL << 1) 
 #define AXI_AXI_INI3_FN_MOD_WRITE_ISS_OVERRIDE_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define AXI_AXI_INI4_READ_QOS_AR_QOS          (0xFUL << 0) 
+#define AXI_AXI_INI4_READ_QOS_AR_QOS_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
+#define AXI_AXI_INI4_WRITE_QOS_AW_QOS          (0xFUL << 0) 
+#define AXI_AXI_INI4_WRITE_QOS_AW_QOS_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
 #define AXI_AXI_INI4_FN_MOD_READ_ISS_OVERRIDE          (0x1UL << 0) 
 #define AXI_AXI_INI4_FN_MOD_READ_ISS_OVERRIDE_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define AXI_AXI_INI4_FN_MOD_WRITE_ISS_OVERRIDE          (0x1UL << 1) 
 #define AXI_AXI_INI4_FN_MOD_WRITE_ISS_OVERRIDE_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define AXI_AXI_INI5_READ_QOS_AR_QOS          (0xFUL << 0) 
+#define AXI_AXI_INI5_READ_QOS_AR_QOS_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
+#define AXI_AXI_INI5_WRITE_QOS_AW_QOS          (0xFUL << 0) 
+#define AXI_AXI_INI5_WRITE_QOS_AW_QOS_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
 #define AXI_AXI_INI5_FN_MOD_READ_ISS_OVERRIDE          (0x1UL << 0) 
 #define AXI_AXI_INI5_FN_MOD_READ_ISS_OVERRIDE_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define AXI_AXI_INI5_FN_MOD_WRITE_ISS_OVERRIDE          (0x1UL << 1) 
 #define AXI_AXI_INI5_FN_MOD_WRITE_ISS_OVERRIDE_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define AXI_AXI_INI6_READ_QOS_AR_QOS          (0xFUL << 0) 
+#define AXI_AXI_INI6_READ_QOS_AR_QOS_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
+#define AXI_AXI_INI6_WRITE_QOS_AW_QOS          (0xFUL << 0) 
+#define AXI_AXI_INI6_WRITE_QOS_AW_QOS_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
 #define AXI_AXI_INI6_FN_MOD_READ_ISS_OVERRIDE          (0x1UL << 0) 
 #define AXI_AXI_INI6_FN_MOD_READ_ISS_OVERRIDE_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define AXI_AXI_INI6_FN_MOD_WRITE_ISS_OVERRIDE          (0x1UL << 1) 
 #define AXI_AXI_INI6_FN_MOD_WRITE_ISS_OVERRIDE_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
 
 #define AXI  ((struct AXI*)(0x51000000UL))
+
+
+
 struct DCMI {
-  volatile uint32_t CR;
-  volatile const uint32_t SR;
-  volatile const uint32_t RIS;
-  volatile uint32_t IER;
-  volatile const uint32_t MIS;
-  volatile uint32_t ICR;
-  volatile uint32_t ESCR;
-  volatile uint32_t ESUR;
-  volatile uint32_t CWSTRT;
-  volatile uint32_t CWSIZE;
-  volatile const uint32_t DR;
+    volatile uint32_t CR;
+    volatile const uint32_t SR;
+    volatile const uint32_t RIS;
+    volatile uint32_t IER;
+    volatile const uint32_t MIS;
+    volatile uint32_t ICR;
+    volatile uint32_t ESCR;
+    volatile uint32_t ESUR;
+    volatile uint32_t CWSTRT;
+    volatile uint32_t CWSIZE;
+    volatile const uint32_t DR;
 };
 #define DCMI_CR_OELS          (0x1UL << 20) 
 #define DCMI_CR_OELS_VAL(X) (((uint32_t)(X) & 0x1UL) << 20)
@@ -18392,37 +18603,46 @@ struct DCMI {
 #define DCMI_DR_Byte0_VAL(X) (((uint32_t)(X) & 0xFFUL) << 0)
 
 #define DCMI  ((struct DCMI*)(0x48020000UL))
+
+
+
 struct OTG1_HS_GLOBAL {
-  volatile uint32_t OTG_HS_GOTGCTL;
-  volatile uint32_t OTG_HS_GOTGINT;
-  volatile uint32_t OTG_HS_GAHBCFG;
-  volatile uint32_t OTG_HS_GUSBCFG;
-  volatile uint32_t OTG_HS_GRSTCTL;
-  volatile uint32_t OTG_HS_GINTSTS;
-  volatile uint32_t OTG_HS_GINTMSK;
-  volatile const uint32_t OTG_HS_GRXSTSR_Host;
-  volatile const uint32_t OTG_HS_GRXSTSR_Device;
-  volatile const uint32_t OTG_HS_GRXSTSP_Host;
-  volatile const uint32_t OTG_HS_GRXSTSP_Device;
-  volatile uint32_t OTG_HS_GRXFSIZ;
-  volatile uint32_t OTG_HS_HNPTXFSIZ_Host;
-  volatile uint32_t OTG_HS_DIEPTXF0_Device;
-  volatile const uint32_t OTG_HS_HNPTXSTS;
-  const volatile uint32_t RESERVED56[2];
-  volatile uint32_t OTG_HS_GCCFG;
-  volatile uint32_t OTG_HS_CID;
-  const volatile uint32_t RESERVED84[5];
-  volatile uint32_t OTG_HS_GLPMCFG;
-  const volatile uint32_t RESERVED256[42];
-  volatile uint32_t OTG_HS_HPTXFSIZ;
-  volatile uint32_t OTG_HS_DIEPTXF1;
-  volatile uint32_t OTG_HS_DIEPTXF2;
-  volatile uint32_t OTG_HS_DIEPTXF3;
-  volatile uint32_t OTG_HS_DIEPTXF4;
-  volatile uint32_t OTG_HS_DIEPTXF5;
-  volatile uint32_t OTG_HS_DIEPTXF6;
-  volatile uint32_t OTG_HS_DIEPTXF7;
-  volatile uint32_t OTG_HS_DIEPTXF8;
+    volatile uint32_t OTG_HS_GOTGCTL;
+    volatile uint32_t OTG_HS_GOTGINT;
+    volatile uint32_t OTG_HS_GAHBCFG;
+    volatile uint32_t OTG_HS_GUSBCFG;
+    volatile uint32_t OTG_HS_GRSTCTL;
+    volatile uint32_t OTG_HS_GINTSTS;
+    volatile uint32_t OTG_HS_GINTMSK;
+  union {
+      volatile const uint32_t OTG_HS_GRXSTSR_Host;
+      volatile const uint32_t OTG_HS_GRXSTSR_Device;
+  };
+  union {
+      volatile const uint32_t OTG_HS_GRXSTSP_Host;
+      volatile const uint32_t OTG_HS_GRXSTSP_Device;
+  };
+    volatile uint32_t OTG_HS_GRXFSIZ;
+  union {
+      volatile uint32_t OTG_HS_HNPTXFSIZ_Host;
+      volatile uint32_t OTG_HS_DIEPTXF0_Device;
+  };
+    volatile const uint32_t OTG_HS_HNPTXSTS;
+    volatile const uint32_t RESERVED_48[2];
+    volatile uint32_t OTG_HS_GCCFG;
+    volatile uint32_t OTG_HS_CID;
+    volatile const uint32_t RESERVED_64[5];
+    volatile uint32_t OTG_HS_GLPMCFG;
+    volatile const uint32_t RESERVED_88[42];
+    volatile uint32_t OTG_HS_HPTXFSIZ;
+    volatile uint32_t OTG_HS_DIEPTXF1;
+    volatile uint32_t OTG_HS_DIEPTXF2;
+    volatile uint32_t OTG_HS_DIEPTXF3;
+    volatile uint32_t OTG_HS_DIEPTXF4;
+    volatile uint32_t OTG_HS_DIEPTXF5;
+    volatile uint32_t OTG_HS_DIEPTXF6;
+    volatile uint32_t OTG_HS_DIEPTXF7;
+    volatile uint32_t OTG_HS_DIEPTXF8;
 };
 #define OTG1_HS_GLOBAL_OTG_HS_GOTGCTL_SRQSCS          (0x1UL << 0) 
 #define OTG1_HS_GLOBAL_OTG_HS_GOTGCTL_SRQSCS_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -18634,6 +18854,16 @@ struct OTG1_HS_GLOBAL {
 #define OTG1_HS_GLOBAL_OTG_HS_GRXSTSR_Host_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 15)
 #define OTG1_HS_GLOBAL_OTG_HS_GRXSTSR_Host_PKTSTS          (0xFUL << 17) 
 #define OTG1_HS_GLOBAL_OTG_HS_GRXSTSR_Host_PKTSTS_VAL(X) (((uint32_t)(X) & 0xFUL) << 17)
+#define OTG1_HS_GLOBAL_OTG_HS_GRXSTSR_Device_EPNUM          (0xFUL << 0) 
+#define OTG1_HS_GLOBAL_OTG_HS_GRXSTSR_Device_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
+#define OTG1_HS_GLOBAL_OTG_HS_GRXSTSR_Device_BCNT          (0x7FFUL << 4) 
+#define OTG1_HS_GLOBAL_OTG_HS_GRXSTSR_Device_BCNT_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 4)
+#define OTG1_HS_GLOBAL_OTG_HS_GRXSTSR_Device_DPID          (0x3UL << 15) 
+#define OTG1_HS_GLOBAL_OTG_HS_GRXSTSR_Device_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 15)
+#define OTG1_HS_GLOBAL_OTG_HS_GRXSTSR_Device_PKTSTS          (0xFUL << 17) 
+#define OTG1_HS_GLOBAL_OTG_HS_GRXSTSR_Device_PKTSTS_VAL(X) (((uint32_t)(X) & 0xFUL) << 17)
+#define OTG1_HS_GLOBAL_OTG_HS_GRXSTSR_Device_FRMNUM          (0xFUL << 21) 
+#define OTG1_HS_GLOBAL_OTG_HS_GRXSTSR_Device_FRMNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 21)
 #define OTG1_HS_GLOBAL_OTG_HS_GRXSTSP_Host_CHNUM          (0xFUL << 0) 
 #define OTG1_HS_GLOBAL_OTG_HS_GRXSTSP_Host_CHNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
 #define OTG1_HS_GLOBAL_OTG_HS_GRXSTSP_Host_BCNT          (0x7FFUL << 4) 
@@ -18642,6 +18872,16 @@ struct OTG1_HS_GLOBAL {
 #define OTG1_HS_GLOBAL_OTG_HS_GRXSTSP_Host_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 15)
 #define OTG1_HS_GLOBAL_OTG_HS_GRXSTSP_Host_PKTSTS          (0xFUL << 17) 
 #define OTG1_HS_GLOBAL_OTG_HS_GRXSTSP_Host_PKTSTS_VAL(X) (((uint32_t)(X) & 0xFUL) << 17)
+#define OTG1_HS_GLOBAL_OTG_HS_GRXSTSP_Device_EPNUM          (0xFUL << 0) 
+#define OTG1_HS_GLOBAL_OTG_HS_GRXSTSP_Device_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
+#define OTG1_HS_GLOBAL_OTG_HS_GRXSTSP_Device_BCNT          (0x7FFUL << 4) 
+#define OTG1_HS_GLOBAL_OTG_HS_GRXSTSP_Device_BCNT_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 4)
+#define OTG1_HS_GLOBAL_OTG_HS_GRXSTSP_Device_DPID          (0x3UL << 15) 
+#define OTG1_HS_GLOBAL_OTG_HS_GRXSTSP_Device_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 15)
+#define OTG1_HS_GLOBAL_OTG_HS_GRXSTSP_Device_PKTSTS          (0xFUL << 17) 
+#define OTG1_HS_GLOBAL_OTG_HS_GRXSTSP_Device_PKTSTS_VAL(X) (((uint32_t)(X) & 0xFUL) << 17)
+#define OTG1_HS_GLOBAL_OTG_HS_GRXSTSP_Device_FRMNUM          (0xFUL << 21) 
+#define OTG1_HS_GLOBAL_OTG_HS_GRXSTSP_Device_FRMNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 21)
 #define OTG1_HS_GLOBAL_OTG_HS_GRXFSIZ_RXFD          (0xFFFFUL << 0) 
 #define OTG1_HS_GLOBAL_OTG_HS_GRXFSIZ_RXFD_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 #define OTG1_HS_GLOBAL_OTG_HS_HNPTXFSIZ_Host_NPTXFSA          (0xFFFFUL << 0) 
@@ -18680,6 +18920,36 @@ struct OTG1_HS_GLOBAL {
 #define OTG1_HS_GLOBAL_OTG_HS_GCCFG_PS2DET_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
 #define OTG1_HS_GLOBAL_OTG_HS_CID_PRODUCT_ID          (0xFFFFFFFFUL << 0) 
 #define OTG1_HS_GLOBAL_OTG_HS_CID_PRODUCT_ID_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
+#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_LPMEN          (0x1UL << 0) 
+#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_LPMEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_LPMACK          (0x1UL << 1) 
+#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_LPMACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_BESL          (0xFUL << 2) 
+#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_BESL_VAL(X) (((uint32_t)(X) & 0xFUL) << 2)
+#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_REMWAKE          (0x1UL << 6) 
+#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_REMWAKE_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_L1SSEN          (0x1UL << 7) 
+#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_L1SSEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_BESLTHRS          (0xFUL << 8) 
+#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_BESLTHRS_VAL(X) (((uint32_t)(X) & 0xFUL) << 8)
+#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_L1DSEN          (0x1UL << 12) 
+#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_L1DSEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
+#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_LPMRST          (0x3UL << 13) 
+#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_LPMRST_VAL(X) (((uint32_t)(X) & 0x3UL) << 13)
+#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_SLPSTS          (0x1UL << 15) 
+#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_SLPSTS_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
+#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_L1RSMOK          (0x1UL << 16) 
+#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_L1RSMOK_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
+#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_LPMCHIDX          (0xFUL << 17) 
+#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_LPMCHIDX_VAL(X) (((uint32_t)(X) & 0xFUL) << 17)
+#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_LPMRCNT          (0x7UL << 21) 
+#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_LPMRCNT_VAL(X) (((uint32_t)(X) & 0x7UL) << 21)
+#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_SNDLPM          (0x1UL << 24) 
+#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_SNDLPM_VAL(X) (((uint32_t)(X) & 0x1UL) << 24)
+#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_LPMRCNTSTS          (0x7UL << 25) 
+#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_LPMRCNTSTS_VAL(X) (((uint32_t)(X) & 0x7UL) << 25)
+#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_ENBESL          (0x1UL << 28) 
+#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_ENBESL_VAL(X) (((uint32_t)(X) & 0x1UL) << 28)
 #define OTG1_HS_GLOBAL_OTG_HS_HPTXFSIZ_PTXSA          (0xFFFFUL << 0) 
 #define OTG1_HS_GLOBAL_OTG_HS_HPTXFSIZ_PTXSA_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 #define OTG1_HS_GLOBAL_OTG_HS_HPTXFSIZ_PTXFSIZ          (0xFFFFUL << 16) 
@@ -18716,89 +18986,48 @@ struct OTG1_HS_GLOBAL {
 #define OTG1_HS_GLOBAL_OTG_HS_DIEPTXF8_INEPTXSA_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 #define OTG1_HS_GLOBAL_OTG_HS_DIEPTXF8_INEPTXFD          (0xFFFFUL << 16) 
 #define OTG1_HS_GLOBAL_OTG_HS_DIEPTXF8_INEPTXFD_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 16)
-#define OTG1_HS_GLOBAL_OTG_HS_GRXSTSR_Device_EPNUM          (0xFUL << 0) 
-#define OTG1_HS_GLOBAL_OTG_HS_GRXSTSR_Device_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
-#define OTG1_HS_GLOBAL_OTG_HS_GRXSTSR_Device_BCNT          (0x7FFUL << 4) 
-#define OTG1_HS_GLOBAL_OTG_HS_GRXSTSR_Device_BCNT_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 4)
-#define OTG1_HS_GLOBAL_OTG_HS_GRXSTSR_Device_DPID          (0x3UL << 15) 
-#define OTG1_HS_GLOBAL_OTG_HS_GRXSTSR_Device_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 15)
-#define OTG1_HS_GLOBAL_OTG_HS_GRXSTSR_Device_PKTSTS          (0xFUL << 17) 
-#define OTG1_HS_GLOBAL_OTG_HS_GRXSTSR_Device_PKTSTS_VAL(X) (((uint32_t)(X) & 0xFUL) << 17)
-#define OTG1_HS_GLOBAL_OTG_HS_GRXSTSR_Device_FRMNUM          (0xFUL << 21) 
-#define OTG1_HS_GLOBAL_OTG_HS_GRXSTSR_Device_FRMNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 21)
-#define OTG1_HS_GLOBAL_OTG_HS_GRXSTSP_Device_EPNUM          (0xFUL << 0) 
-#define OTG1_HS_GLOBAL_OTG_HS_GRXSTSP_Device_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
-#define OTG1_HS_GLOBAL_OTG_HS_GRXSTSP_Device_BCNT          (0x7FFUL << 4) 
-#define OTG1_HS_GLOBAL_OTG_HS_GRXSTSP_Device_BCNT_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 4)
-#define OTG1_HS_GLOBAL_OTG_HS_GRXSTSP_Device_DPID          (0x3UL << 15) 
-#define OTG1_HS_GLOBAL_OTG_HS_GRXSTSP_Device_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 15)
-#define OTG1_HS_GLOBAL_OTG_HS_GRXSTSP_Device_PKTSTS          (0xFUL << 17) 
-#define OTG1_HS_GLOBAL_OTG_HS_GRXSTSP_Device_PKTSTS_VAL(X) (((uint32_t)(X) & 0xFUL) << 17)
-#define OTG1_HS_GLOBAL_OTG_HS_GRXSTSP_Device_FRMNUM          (0xFUL << 21) 
-#define OTG1_HS_GLOBAL_OTG_HS_GRXSTSP_Device_FRMNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 21)
-#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_LPMEN          (0x1UL << 0) 
-#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_LPMEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_LPMACK          (0x1UL << 1) 
-#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_LPMACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_BESL          (0xFUL << 2) 
-#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_BESL_VAL(X) (((uint32_t)(X) & 0xFUL) << 2)
-#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_REMWAKE          (0x1UL << 6) 
-#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_REMWAKE_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_L1SSEN          (0x1UL << 7) 
-#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_L1SSEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_BESLTHRS          (0xFUL << 8) 
-#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_BESLTHRS_VAL(X) (((uint32_t)(X) & 0xFUL) << 8)
-#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_L1DSEN          (0x1UL << 12) 
-#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_L1DSEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
-#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_LPMRST          (0x3UL << 13) 
-#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_LPMRST_VAL(X) (((uint32_t)(X) & 0x3UL) << 13)
-#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_SLPSTS          (0x1UL << 15) 
-#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_SLPSTS_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
-#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_L1RSMOK          (0x1UL << 16) 
-#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_L1RSMOK_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
-#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_LPMCHIDX          (0xFUL << 17) 
-#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_LPMCHIDX_VAL(X) (((uint32_t)(X) & 0xFUL) << 17)
-#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_LPMRCNT          (0x7UL << 21) 
-#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_LPMRCNT_VAL(X) (((uint32_t)(X) & 0x7UL) << 21)
-#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_SNDLPM          (0x1UL << 24) 
-#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_SNDLPM_VAL(X) (((uint32_t)(X) & 0x1UL) << 24)
-#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_LPMRCNTSTS          (0x7UL << 25) 
-#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_LPMRCNTSTS_VAL(X) (((uint32_t)(X) & 0x7UL) << 25)
-#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_ENBESL          (0x1UL << 28) 
-#define OTG1_HS_GLOBAL_OTG_HS_GLPMCFG_ENBESL_VAL(X) (((uint32_t)(X) & 0x1UL) << 28)
 
 #define OTG1_HS_GLOBAL  ((struct OTG1_HS_GLOBAL*)(0x40040000UL))
+
+
+
 struct OTG2_HS_GLOBAL {
-  volatile uint32_t OTG_HS_GOTGCTL;
-  volatile uint32_t OTG_HS_GOTGINT;
-  volatile uint32_t OTG_HS_GAHBCFG;
-  volatile uint32_t OTG_HS_GUSBCFG;
-  volatile uint32_t OTG_HS_GRSTCTL;
-  volatile uint32_t OTG_HS_GINTSTS;
-  volatile uint32_t OTG_HS_GINTMSK;
-  volatile const uint32_t OTG_HS_GRXSTSR_Host;
-  volatile const uint32_t OTG_HS_GRXSTSR_Device;
-  volatile const uint32_t OTG_HS_GRXSTSP_Host;
-  volatile const uint32_t OTG_HS_GRXSTSP_Device;
-  volatile uint32_t OTG_HS_GRXFSIZ;
-  volatile uint32_t OTG_HS_HNPTXFSIZ_Host;
-  volatile uint32_t OTG_HS_DIEPTXF0_Device;
-  volatile const uint32_t OTG_HS_HNPTXSTS;
-  const volatile uint32_t RESERVED56[2];
-  volatile uint32_t OTG_HS_GCCFG;
-  volatile uint32_t OTG_HS_CID;
-  const volatile uint32_t RESERVED84[5];
-  volatile uint32_t OTG_HS_GLPMCFG;
-  const volatile uint32_t RESERVED256[42];
-  volatile uint32_t OTG_HS_HPTXFSIZ;
-  volatile uint32_t OTG_HS_DIEPTXF1;
-  volatile uint32_t OTG_HS_DIEPTXF2;
-  volatile uint32_t OTG_HS_DIEPTXF3;
-  volatile uint32_t OTG_HS_DIEPTXF4;
-  volatile uint32_t OTG_HS_DIEPTXF5;
-  volatile uint32_t OTG_HS_DIEPTXF6;
-  volatile uint32_t OTG_HS_DIEPTXF7;
-  volatile uint32_t OTG_HS_DIEPTXF8;
+    volatile uint32_t OTG_HS_GOTGCTL;
+    volatile uint32_t OTG_HS_GOTGINT;
+    volatile uint32_t OTG_HS_GAHBCFG;
+    volatile uint32_t OTG_HS_GUSBCFG;
+    volatile uint32_t OTG_HS_GRSTCTL;
+    volatile uint32_t OTG_HS_GINTSTS;
+    volatile uint32_t OTG_HS_GINTMSK;
+  union {
+      volatile const uint32_t OTG_HS_GRXSTSR_Host;
+      volatile const uint32_t OTG_HS_GRXSTSR_Device;
+  };
+  union {
+      volatile const uint32_t OTG_HS_GRXSTSP_Host;
+      volatile const uint32_t OTG_HS_GRXSTSP_Device;
+  };
+    volatile uint32_t OTG_HS_GRXFSIZ;
+  union {
+      volatile uint32_t OTG_HS_HNPTXFSIZ_Host;
+      volatile uint32_t OTG_HS_DIEPTXF0_Device;
+  };
+    volatile const uint32_t OTG_HS_HNPTXSTS;
+    volatile const uint32_t RESERVED_48[2];
+    volatile uint32_t OTG_HS_GCCFG;
+    volatile uint32_t OTG_HS_CID;
+    volatile const uint32_t RESERVED_64[5];
+    volatile uint32_t OTG_HS_GLPMCFG;
+    volatile const uint32_t RESERVED_88[42];
+    volatile uint32_t OTG_HS_HPTXFSIZ;
+    volatile uint32_t OTG_HS_DIEPTXF1;
+    volatile uint32_t OTG_HS_DIEPTXF2;
+    volatile uint32_t OTG_HS_DIEPTXF3;
+    volatile uint32_t OTG_HS_DIEPTXF4;
+    volatile uint32_t OTG_HS_DIEPTXF5;
+    volatile uint32_t OTG_HS_DIEPTXF6;
+    volatile uint32_t OTG_HS_DIEPTXF7;
+    volatile uint32_t OTG_HS_DIEPTXF8;
 };
 #define OTG2_HS_GLOBAL_OTG_HS_GOTGCTL_SRQSCS          (0x1UL << 0) 
 #define OTG2_HS_GLOBAL_OTG_HS_GOTGCTL_SRQSCS_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -19010,6 +19239,16 @@ struct OTG2_HS_GLOBAL {
 #define OTG2_HS_GLOBAL_OTG_HS_GRXSTSR_Host_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 15)
 #define OTG2_HS_GLOBAL_OTG_HS_GRXSTSR_Host_PKTSTS          (0xFUL << 17) 
 #define OTG2_HS_GLOBAL_OTG_HS_GRXSTSR_Host_PKTSTS_VAL(X) (((uint32_t)(X) & 0xFUL) << 17)
+#define OTG2_HS_GLOBAL_OTG_HS_GRXSTSR_Device_EPNUM          (0xFUL << 0) 
+#define OTG2_HS_GLOBAL_OTG_HS_GRXSTSR_Device_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
+#define OTG2_HS_GLOBAL_OTG_HS_GRXSTSR_Device_BCNT          (0x7FFUL << 4) 
+#define OTG2_HS_GLOBAL_OTG_HS_GRXSTSR_Device_BCNT_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 4)
+#define OTG2_HS_GLOBAL_OTG_HS_GRXSTSR_Device_DPID          (0x3UL << 15) 
+#define OTG2_HS_GLOBAL_OTG_HS_GRXSTSR_Device_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 15)
+#define OTG2_HS_GLOBAL_OTG_HS_GRXSTSR_Device_PKTSTS          (0xFUL << 17) 
+#define OTG2_HS_GLOBAL_OTG_HS_GRXSTSR_Device_PKTSTS_VAL(X) (((uint32_t)(X) & 0xFUL) << 17)
+#define OTG2_HS_GLOBAL_OTG_HS_GRXSTSR_Device_FRMNUM          (0xFUL << 21) 
+#define OTG2_HS_GLOBAL_OTG_HS_GRXSTSR_Device_FRMNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 21)
 #define OTG2_HS_GLOBAL_OTG_HS_GRXSTSP_Host_CHNUM          (0xFUL << 0) 
 #define OTG2_HS_GLOBAL_OTG_HS_GRXSTSP_Host_CHNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
 #define OTG2_HS_GLOBAL_OTG_HS_GRXSTSP_Host_BCNT          (0x7FFUL << 4) 
@@ -19018,6 +19257,16 @@ struct OTG2_HS_GLOBAL {
 #define OTG2_HS_GLOBAL_OTG_HS_GRXSTSP_Host_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 15)
 #define OTG2_HS_GLOBAL_OTG_HS_GRXSTSP_Host_PKTSTS          (0xFUL << 17) 
 #define OTG2_HS_GLOBAL_OTG_HS_GRXSTSP_Host_PKTSTS_VAL(X) (((uint32_t)(X) & 0xFUL) << 17)
+#define OTG2_HS_GLOBAL_OTG_HS_GRXSTSP_Device_EPNUM          (0xFUL << 0) 
+#define OTG2_HS_GLOBAL_OTG_HS_GRXSTSP_Device_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
+#define OTG2_HS_GLOBAL_OTG_HS_GRXSTSP_Device_BCNT          (0x7FFUL << 4) 
+#define OTG2_HS_GLOBAL_OTG_HS_GRXSTSP_Device_BCNT_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 4)
+#define OTG2_HS_GLOBAL_OTG_HS_GRXSTSP_Device_DPID          (0x3UL << 15) 
+#define OTG2_HS_GLOBAL_OTG_HS_GRXSTSP_Device_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 15)
+#define OTG2_HS_GLOBAL_OTG_HS_GRXSTSP_Device_PKTSTS          (0xFUL << 17) 
+#define OTG2_HS_GLOBAL_OTG_HS_GRXSTSP_Device_PKTSTS_VAL(X) (((uint32_t)(X) & 0xFUL) << 17)
+#define OTG2_HS_GLOBAL_OTG_HS_GRXSTSP_Device_FRMNUM          (0xFUL << 21) 
+#define OTG2_HS_GLOBAL_OTG_HS_GRXSTSP_Device_FRMNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 21)
 #define OTG2_HS_GLOBAL_OTG_HS_GRXFSIZ_RXFD          (0xFFFFUL << 0) 
 #define OTG2_HS_GLOBAL_OTG_HS_GRXFSIZ_RXFD_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 #define OTG2_HS_GLOBAL_OTG_HS_HNPTXFSIZ_Host_NPTXFSA          (0xFFFFUL << 0) 
@@ -19056,6 +19305,36 @@ struct OTG2_HS_GLOBAL {
 #define OTG2_HS_GLOBAL_OTG_HS_GCCFG_PS2DET_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
 #define OTG2_HS_GLOBAL_OTG_HS_CID_PRODUCT_ID          (0xFFFFFFFFUL << 0) 
 #define OTG2_HS_GLOBAL_OTG_HS_CID_PRODUCT_ID_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
+#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_LPMEN          (0x1UL << 0) 
+#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_LPMEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_LPMACK          (0x1UL << 1) 
+#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_LPMACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_BESL          (0xFUL << 2) 
+#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_BESL_VAL(X) (((uint32_t)(X) & 0xFUL) << 2)
+#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_REMWAKE          (0x1UL << 6) 
+#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_REMWAKE_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_L1SSEN          (0x1UL << 7) 
+#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_L1SSEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_BESLTHRS          (0xFUL << 8) 
+#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_BESLTHRS_VAL(X) (((uint32_t)(X) & 0xFUL) << 8)
+#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_L1DSEN          (0x1UL << 12) 
+#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_L1DSEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
+#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_LPMRST          (0x3UL << 13) 
+#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_LPMRST_VAL(X) (((uint32_t)(X) & 0x3UL) << 13)
+#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_SLPSTS          (0x1UL << 15) 
+#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_SLPSTS_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
+#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_L1RSMOK          (0x1UL << 16) 
+#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_L1RSMOK_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
+#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_LPMCHIDX          (0xFUL << 17) 
+#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_LPMCHIDX_VAL(X) (((uint32_t)(X) & 0xFUL) << 17)
+#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_LPMRCNT          (0x7UL << 21) 
+#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_LPMRCNT_VAL(X) (((uint32_t)(X) & 0x7UL) << 21)
+#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_SNDLPM          (0x1UL << 24) 
+#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_SNDLPM_VAL(X) (((uint32_t)(X) & 0x1UL) << 24)
+#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_LPMRCNTSTS          (0x7UL << 25) 
+#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_LPMRCNTSTS_VAL(X) (((uint32_t)(X) & 0x7UL) << 25)
+#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_ENBESL          (0x1UL << 28) 
+#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_ENBESL_VAL(X) (((uint32_t)(X) & 0x1UL) << 28)
 #define OTG2_HS_GLOBAL_OTG_HS_HPTXFSIZ_PTXSA          (0xFFFFUL << 0) 
 #define OTG2_HS_GLOBAL_OTG_HS_HPTXFSIZ_PTXSA_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 #define OTG2_HS_GLOBAL_OTG_HS_HPTXFSIZ_PTXFSIZ          (0xFFFFUL << 16) 
@@ -19092,176 +19371,129 @@ struct OTG2_HS_GLOBAL {
 #define OTG2_HS_GLOBAL_OTG_HS_DIEPTXF8_INEPTXSA_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 #define OTG2_HS_GLOBAL_OTG_HS_DIEPTXF8_INEPTXFD          (0xFFFFUL << 16) 
 #define OTG2_HS_GLOBAL_OTG_HS_DIEPTXF8_INEPTXFD_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 16)
-#define OTG2_HS_GLOBAL_OTG_HS_GRXSTSR_Device_EPNUM          (0xFUL << 0) 
-#define OTG2_HS_GLOBAL_OTG_HS_GRXSTSR_Device_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
-#define OTG2_HS_GLOBAL_OTG_HS_GRXSTSR_Device_BCNT          (0x7FFUL << 4) 
-#define OTG2_HS_GLOBAL_OTG_HS_GRXSTSR_Device_BCNT_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 4)
-#define OTG2_HS_GLOBAL_OTG_HS_GRXSTSR_Device_DPID          (0x3UL << 15) 
-#define OTG2_HS_GLOBAL_OTG_HS_GRXSTSR_Device_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 15)
-#define OTG2_HS_GLOBAL_OTG_HS_GRXSTSR_Device_PKTSTS          (0xFUL << 17) 
-#define OTG2_HS_GLOBAL_OTG_HS_GRXSTSR_Device_PKTSTS_VAL(X) (((uint32_t)(X) & 0xFUL) << 17)
-#define OTG2_HS_GLOBAL_OTG_HS_GRXSTSR_Device_FRMNUM          (0xFUL << 21) 
-#define OTG2_HS_GLOBAL_OTG_HS_GRXSTSR_Device_FRMNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 21)
-#define OTG2_HS_GLOBAL_OTG_HS_GRXSTSP_Device_EPNUM          (0xFUL << 0) 
-#define OTG2_HS_GLOBAL_OTG_HS_GRXSTSP_Device_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
-#define OTG2_HS_GLOBAL_OTG_HS_GRXSTSP_Device_BCNT          (0x7FFUL << 4) 
-#define OTG2_HS_GLOBAL_OTG_HS_GRXSTSP_Device_BCNT_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 4)
-#define OTG2_HS_GLOBAL_OTG_HS_GRXSTSP_Device_DPID          (0x3UL << 15) 
-#define OTG2_HS_GLOBAL_OTG_HS_GRXSTSP_Device_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 15)
-#define OTG2_HS_GLOBAL_OTG_HS_GRXSTSP_Device_PKTSTS          (0xFUL << 17) 
-#define OTG2_HS_GLOBAL_OTG_HS_GRXSTSP_Device_PKTSTS_VAL(X) (((uint32_t)(X) & 0xFUL) << 17)
-#define OTG2_HS_GLOBAL_OTG_HS_GRXSTSP_Device_FRMNUM          (0xFUL << 21) 
-#define OTG2_HS_GLOBAL_OTG_HS_GRXSTSP_Device_FRMNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 21)
-#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_LPMEN          (0x1UL << 0) 
-#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_LPMEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_LPMACK          (0x1UL << 1) 
-#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_LPMACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_BESL          (0xFUL << 2) 
-#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_BESL_VAL(X) (((uint32_t)(X) & 0xFUL) << 2)
-#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_REMWAKE          (0x1UL << 6) 
-#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_REMWAKE_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_L1SSEN          (0x1UL << 7) 
-#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_L1SSEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_BESLTHRS          (0xFUL << 8) 
-#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_BESLTHRS_VAL(X) (((uint32_t)(X) & 0xFUL) << 8)
-#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_L1DSEN          (0x1UL << 12) 
-#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_L1DSEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
-#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_LPMRST          (0x3UL << 13) 
-#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_LPMRST_VAL(X) (((uint32_t)(X) & 0x3UL) << 13)
-#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_SLPSTS          (0x1UL << 15) 
-#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_SLPSTS_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
-#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_L1RSMOK          (0x1UL << 16) 
-#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_L1RSMOK_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
-#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_LPMCHIDX          (0xFUL << 17) 
-#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_LPMCHIDX_VAL(X) (((uint32_t)(X) & 0xFUL) << 17)
-#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_LPMRCNT          (0x7UL << 21) 
-#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_LPMRCNT_VAL(X) (((uint32_t)(X) & 0x7UL) << 21)
-#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_SNDLPM          (0x1UL << 24) 
-#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_SNDLPM_VAL(X) (((uint32_t)(X) & 0x1UL) << 24)
-#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_LPMRCNTSTS          (0x7UL << 25) 
-#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_LPMRCNTSTS_VAL(X) (((uint32_t)(X) & 0x7UL) << 25)
-#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_ENBESL          (0x1UL << 28) 
-#define OTG2_HS_GLOBAL_OTG_HS_GLPMCFG_ENBESL_VAL(X) (((uint32_t)(X) & 0x1UL) << 28)
 
 #define OTG2_HS_GLOBAL  ((struct OTG2_HS_GLOBAL*)(0x40080000UL))
+
+
+
 struct OTG1_HS_HOST {
-  volatile uint32_t OTG_HS_HCFG;
-  volatile uint32_t OTG_HS_HFIR;
-  volatile const uint32_t OTG_HS_HFNUM;
-  const volatile uint32_t RESERVED16[1];
-  volatile uint32_t OTG_HS_HPTXSTS;
-  volatile const uint32_t OTG_HS_HAINT;
-  volatile uint32_t OTG_HS_HAINTMSK;
-  const volatile uint32_t RESERVED64[9];
-  volatile uint32_t OTG_HS_HPRT;
-  const volatile uint32_t RESERVED256[47];
-  volatile uint32_t OTG_HS_HCCHAR0;
-  volatile uint32_t OTG_HS_HCSPLT0;
-  volatile uint32_t OTG_HS_HCINT0;
-  volatile uint32_t OTG_HS_HCINTMSK0;
-  volatile uint32_t OTG_HS_HCTSIZ0;
-  volatile uint32_t OTG_HS_HCDMA0;
-  const volatile uint32_t RESERVED288[2];
-  volatile uint32_t OTG_HS_HCCHAR1;
-  volatile uint32_t OTG_HS_HCSPLT1;
-  volatile uint32_t OTG_HS_HCINT1;
-  volatile uint32_t OTG_HS_HCINTMSK1;
-  volatile uint32_t OTG_HS_HCTSIZ1;
-  volatile uint32_t OTG_HS_HCDMA1;
-  const volatile uint32_t RESERVED320[2];
-  volatile uint32_t OTG_HS_HCCHAR2;
-  volatile uint32_t OTG_HS_HCSPLT2;
-  volatile uint32_t OTG_HS_HCINT2;
-  volatile uint32_t OTG_HS_HCINTMSK2;
-  volatile uint32_t OTG_HS_HCTSIZ2;
-  volatile uint32_t OTG_HS_HCDMA2;
-  const volatile uint32_t RESERVED352[2];
-  volatile uint32_t OTG_HS_HCCHAR3;
-  volatile uint32_t OTG_HS_HCSPLT3;
-  volatile uint32_t OTG_HS_HCINT3;
-  volatile uint32_t OTG_HS_HCINTMSK3;
-  volatile uint32_t OTG_HS_HCTSIZ3;
-  volatile uint32_t OTG_HS_HCDMA3;
-  const volatile uint32_t RESERVED384[2];
-  volatile uint32_t OTG_HS_HCCHAR4;
-  volatile uint32_t OTG_HS_HCSPLT4;
-  volatile uint32_t OTG_HS_HCINT4;
-  volatile uint32_t OTG_HS_HCINTMSK4;
-  volatile uint32_t OTG_HS_HCTSIZ4;
-  volatile uint32_t OTG_HS_HCDMA4;
-  const volatile uint32_t RESERVED416[2];
-  volatile uint32_t OTG_HS_HCCHAR5;
-  volatile uint32_t OTG_HS_HCSPLT5;
-  volatile uint32_t OTG_HS_HCINT5;
-  volatile uint32_t OTG_HS_HCINTMSK5;
-  volatile uint32_t OTG_HS_HCTSIZ5;
-  volatile uint32_t OTG_HS_HCDMA5;
-  const volatile uint32_t RESERVED448[2];
-  volatile uint32_t OTG_HS_HCCHAR6;
-  volatile uint32_t OTG_HS_HCSPLT6;
-  volatile uint32_t OTG_HS_HCINT6;
-  volatile uint32_t OTG_HS_HCINTMSK6;
-  volatile uint32_t OTG_HS_HCTSIZ6;
-  volatile uint32_t OTG_HS_HCDMA6;
-  const volatile uint32_t RESERVED480[2];
-  volatile uint32_t OTG_HS_HCCHAR7;
-  volatile uint32_t OTG_HS_HCSPLT7;
-  volatile uint32_t OTG_HS_HCINT7;
-  volatile uint32_t OTG_HS_HCINTMSK7;
-  volatile uint32_t OTG_HS_HCTSIZ7;
-  volatile uint32_t OTG_HS_HCDMA7;
-  const volatile uint32_t RESERVED512[2];
-  volatile uint32_t OTG_HS_HCCHAR8;
-  volatile uint32_t OTG_HS_HCSPLT8;
-  volatile uint32_t OTG_HS_HCINT8;
-  volatile uint32_t OTG_HS_HCINTMSK8;
-  volatile uint32_t OTG_HS_HCTSIZ8;
-  volatile uint32_t OTG_HS_HCDMA8;
-  const volatile uint32_t RESERVED544[2];
-  volatile uint32_t OTG_HS_HCCHAR9;
-  volatile uint32_t OTG_HS_HCSPLT9;
-  volatile uint32_t OTG_HS_HCINT9;
-  volatile uint32_t OTG_HS_HCINTMSK9;
-  volatile uint32_t OTG_HS_HCTSIZ9;
-  volatile uint32_t OTG_HS_HCDMA9;
-  const volatile uint32_t RESERVED576[2];
-  volatile uint32_t OTG_HS_HCCHAR10;
-  volatile uint32_t OTG_HS_HCSPLT10;
-  volatile uint32_t OTG_HS_HCINT10;
-  volatile uint32_t OTG_HS_HCINTMSK10;
-  volatile uint32_t OTG_HS_HCTSIZ10;
-  volatile uint32_t OTG_HS_HCDMA10;
-  const volatile uint32_t RESERVED608[2];
-  volatile uint32_t OTG_HS_HCCHAR11;
-  volatile uint32_t OTG_HS_HCSPLT11;
-  volatile uint32_t OTG_HS_HCINT11;
-  volatile uint32_t OTG_HS_HCINTMSK11;
-  volatile uint32_t OTG_HS_HCTSIZ11;
-  volatile uint32_t OTG_HS_HCDMA11;
-  volatile uint32_t OTG_HS_HCCHAR12;
-  volatile uint32_t OTG_HS_HCSPLT12;
-  volatile uint32_t OTG_HS_HCINT12;
-  volatile uint32_t OTG_HS_HCINTMSK12;
-  volatile uint32_t OTG_HS_HCTSIZ12;
-  volatile uint32_t OTG_HS_HCDMA12;
-  volatile uint32_t OTG_HS_HCCHAR13;
-  volatile uint32_t OTG_HS_HCSPLT13;
-  volatile uint32_t OTG_HS_HCINT13;
-  volatile uint32_t OTG_HS_HCINTMSK13;
-  volatile uint32_t OTG_HS_HCTSIZ13;
-  volatile uint32_t OTG_HS_HCDMA13;
-  volatile uint32_t OTG_HS_HCCHAR14;
-  volatile uint32_t OTG_HS_HCSPLT14;
-  volatile uint32_t OTG_HS_HCINT14;
-  volatile uint32_t OTG_HS_HCINTMSK14;
-  volatile uint32_t OTG_HS_HCTSIZ14;
-  volatile uint32_t OTG_HS_HCDMA14;
-  volatile uint32_t OTG_HS_HCCHAR15;
-  volatile uint32_t OTG_HS_HCSPLT15;
-  volatile uint32_t OTG_HS_HCINT15;
-  volatile uint32_t OTG_HS_HCINTMSK15;
-  volatile uint32_t OTG_HS_HCTSIZ15;
-  volatile uint32_t OTG_HS_HCDMA15;
+    volatile uint32_t OTG_HS_HCFG;
+    volatile uint32_t OTG_HS_HFIR;
+    volatile const uint32_t OTG_HS_HFNUM;
+    volatile const uint32_t RESERVED_12;
+    volatile uint32_t OTG_HS_HPTXSTS;
+    volatile const uint32_t OTG_HS_HAINT;
+    volatile uint32_t OTG_HS_HAINTMSK;
+    volatile const uint32_t RESERVED_28[9];
+    volatile uint32_t OTG_HS_HPRT;
+    volatile const uint32_t RESERVED_68[47];
+    volatile uint32_t OTG_HS_HCCHAR0;
+    volatile uint32_t OTG_HS_HCSPLT0;
+    volatile uint32_t OTG_HS_HCINT0;
+    volatile uint32_t OTG_HS_HCINTMSK0;
+    volatile uint32_t OTG_HS_HCTSIZ0;
+    volatile uint32_t OTG_HS_HCDMA0;
+    volatile const uint32_t RESERVED_280[2];
+    volatile uint32_t OTG_HS_HCCHAR1;
+    volatile uint32_t OTG_HS_HCSPLT1;
+    volatile uint32_t OTG_HS_HCINT1;
+    volatile uint32_t OTG_HS_HCINTMSK1;
+    volatile uint32_t OTG_HS_HCTSIZ1;
+    volatile uint32_t OTG_HS_HCDMA1;
+    volatile const uint32_t RESERVED_312[2];
+    volatile uint32_t OTG_HS_HCCHAR2;
+    volatile uint32_t OTG_HS_HCSPLT2;
+    volatile uint32_t OTG_HS_HCINT2;
+    volatile uint32_t OTG_HS_HCINTMSK2;
+    volatile uint32_t OTG_HS_HCTSIZ2;
+    volatile uint32_t OTG_HS_HCDMA2;
+    volatile const uint32_t RESERVED_344[2];
+    volatile uint32_t OTG_HS_HCCHAR3;
+    volatile uint32_t OTG_HS_HCSPLT3;
+    volatile uint32_t OTG_HS_HCINT3;
+    volatile uint32_t OTG_HS_HCINTMSK3;
+    volatile uint32_t OTG_HS_HCTSIZ3;
+    volatile uint32_t OTG_HS_HCDMA3;
+    volatile const uint32_t RESERVED_376[2];
+    volatile uint32_t OTG_HS_HCCHAR4;
+    volatile uint32_t OTG_HS_HCSPLT4;
+    volatile uint32_t OTG_HS_HCINT4;
+    volatile uint32_t OTG_HS_HCINTMSK4;
+    volatile uint32_t OTG_HS_HCTSIZ4;
+    volatile uint32_t OTG_HS_HCDMA4;
+    volatile const uint32_t RESERVED_408[2];
+    volatile uint32_t OTG_HS_HCCHAR5;
+    volatile uint32_t OTG_HS_HCSPLT5;
+    volatile uint32_t OTG_HS_HCINT5;
+    volatile uint32_t OTG_HS_HCINTMSK5;
+    volatile uint32_t OTG_HS_HCTSIZ5;
+    volatile uint32_t OTG_HS_HCDMA5;
+    volatile const uint32_t RESERVED_440[2];
+    volatile uint32_t OTG_HS_HCCHAR6;
+    volatile uint32_t OTG_HS_HCSPLT6;
+    volatile uint32_t OTG_HS_HCINT6;
+    volatile uint32_t OTG_HS_HCINTMSK6;
+    volatile uint32_t OTG_HS_HCTSIZ6;
+    volatile uint32_t OTG_HS_HCDMA6;
+    volatile const uint32_t RESERVED_472[2];
+    volatile uint32_t OTG_HS_HCCHAR7;
+    volatile uint32_t OTG_HS_HCSPLT7;
+    volatile uint32_t OTG_HS_HCINT7;
+    volatile uint32_t OTG_HS_HCINTMSK7;
+    volatile uint32_t OTG_HS_HCTSIZ7;
+    volatile uint32_t OTG_HS_HCDMA7;
+    volatile const uint32_t RESERVED_504[2];
+    volatile uint32_t OTG_HS_HCCHAR8;
+    volatile uint32_t OTG_HS_HCSPLT8;
+    volatile uint32_t OTG_HS_HCINT8;
+    volatile uint32_t OTG_HS_HCINTMSK8;
+    volatile uint32_t OTG_HS_HCTSIZ8;
+    volatile uint32_t OTG_HS_HCDMA8;
+    volatile const uint32_t RESERVED_536[2];
+    volatile uint32_t OTG_HS_HCCHAR9;
+    volatile uint32_t OTG_HS_HCSPLT9;
+    volatile uint32_t OTG_HS_HCINT9;
+    volatile uint32_t OTG_HS_HCINTMSK9;
+    volatile uint32_t OTG_HS_HCTSIZ9;
+    volatile uint32_t OTG_HS_HCDMA9;
+    volatile const uint32_t RESERVED_568[2];
+    volatile uint32_t OTG_HS_HCCHAR10;
+    volatile uint32_t OTG_HS_HCSPLT10;
+    volatile uint32_t OTG_HS_HCINT10;
+    volatile uint32_t OTG_HS_HCINTMSK10;
+    volatile uint32_t OTG_HS_HCTSIZ10;
+    volatile uint32_t OTG_HS_HCDMA10;
+    volatile const uint32_t RESERVED_600[2];
+    volatile uint32_t OTG_HS_HCCHAR11;
+    volatile uint32_t OTG_HS_HCSPLT11;
+    volatile uint32_t OTG_HS_HCINT11;
+    volatile uint32_t OTG_HS_HCINTMSK11;
+    volatile uint32_t OTG_HS_HCTSIZ11;
+    volatile uint32_t OTG_HS_HCDMA11;
+    volatile uint32_t OTG_HS_HCCHAR12;
+    volatile uint32_t OTG_HS_HCSPLT12;
+    volatile uint32_t OTG_HS_HCINT12;
+    volatile uint32_t OTG_HS_HCINTMSK12;
+    volatile uint32_t OTG_HS_HCTSIZ12;
+    volatile uint32_t OTG_HS_HCDMA12;
+    volatile uint32_t OTG_HS_HCCHAR13;
+    volatile uint32_t OTG_HS_HCSPLT13;
+    volatile uint32_t OTG_HS_HCINT13;
+    volatile uint32_t OTG_HS_HCINTMSK13;
+    volatile uint32_t OTG_HS_HCTSIZ13;
+    volatile uint32_t OTG_HS_HCDMA13;
+    volatile uint32_t OTG_HS_HCCHAR14;
+    volatile uint32_t OTG_HS_HCSPLT14;
+    volatile uint32_t OTG_HS_HCINT14;
+    volatile uint32_t OTG_HS_HCINTMSK14;
+    volatile uint32_t OTG_HS_HCTSIZ14;
+    volatile uint32_t OTG_HS_HCDMA14;
+    volatile uint32_t OTG_HS_HCCHAR15;
+    volatile uint32_t OTG_HS_HCSPLT15;
+    volatile uint32_t OTG_HS_HCINT15;
+    volatile uint32_t OTG_HS_HCINTMSK15;
+    volatile uint32_t OTG_HS_HCTSIZ15;
+    volatile uint32_t OTG_HS_HCDMA15;
 };
 #define OTG1_HS_HOST_OTG_HS_HCFG_FSLSPCS          (0x3UL << 0) 
 #define OTG1_HS_HOST_OTG_HS_HCFG_FSLSPCS_VAL(X) (((uint32_t)(X) & 0x3UL) << 0)
@@ -19329,226 +19561,6 @@ struct OTG1_HS_HOST {
 #define OTG1_HS_HOST_OTG_HS_HCCHAR0_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define OTG1_HS_HOST_OTG_HS_HCCHAR0_CHENA          (0x1UL << 31) 
 #define OTG1_HS_HOST_OTG_HS_HCCHAR0_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR1_MPSIZ          (0x7FFUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR1_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR1_EPNUM          (0xFUL << 11) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR1_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR1_EPDIR          (0x1UL << 15) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR1_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR1_LSDEV          (0x1UL << 17) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR1_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR1_EPTYP          (0x3UL << 18) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR1_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR1_MC          (0x3UL << 20) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR1_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR1_DAD          (0x7FUL << 22) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR1_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR1_ODDFRM          (0x1UL << 29) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR1_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR1_CHDIS          (0x1UL << 30) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR1_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR1_CHENA          (0x1UL << 31) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR1_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR2_MPSIZ          (0x7FFUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR2_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR2_EPNUM          (0xFUL << 11) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR2_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR2_EPDIR          (0x1UL << 15) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR2_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR2_LSDEV          (0x1UL << 17) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR2_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR2_EPTYP          (0x3UL << 18) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR2_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR2_MC          (0x3UL << 20) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR2_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR2_DAD          (0x7FUL << 22) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR2_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR2_ODDFRM          (0x1UL << 29) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR2_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR2_CHDIS          (0x1UL << 30) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR2_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR2_CHENA          (0x1UL << 31) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR2_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR3_MPSIZ          (0x7FFUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR3_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR3_EPNUM          (0xFUL << 11) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR3_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR3_EPDIR          (0x1UL << 15) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR3_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR3_LSDEV          (0x1UL << 17) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR3_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR3_EPTYP          (0x3UL << 18) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR3_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR3_MC          (0x3UL << 20) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR3_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR3_DAD          (0x7FUL << 22) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR3_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR3_ODDFRM          (0x1UL << 29) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR3_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR3_CHDIS          (0x1UL << 30) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR3_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR3_CHENA          (0x1UL << 31) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR3_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR4_MPSIZ          (0x7FFUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR4_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR4_EPNUM          (0xFUL << 11) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR4_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR4_EPDIR          (0x1UL << 15) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR4_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR4_LSDEV          (0x1UL << 17) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR4_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR4_EPTYP          (0x3UL << 18) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR4_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR4_MC          (0x3UL << 20) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR4_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR4_DAD          (0x7FUL << 22) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR4_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR4_ODDFRM          (0x1UL << 29) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR4_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR4_CHDIS          (0x1UL << 30) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR4_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR4_CHENA          (0x1UL << 31) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR4_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR5_MPSIZ          (0x7FFUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR5_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR5_EPNUM          (0xFUL << 11) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR5_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR5_EPDIR          (0x1UL << 15) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR5_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR5_LSDEV          (0x1UL << 17) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR5_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR5_EPTYP          (0x3UL << 18) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR5_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR5_MC          (0x3UL << 20) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR5_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR5_DAD          (0x7FUL << 22) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR5_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR5_ODDFRM          (0x1UL << 29) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR5_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR5_CHDIS          (0x1UL << 30) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR5_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR5_CHENA          (0x1UL << 31) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR5_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR6_MPSIZ          (0x7FFUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR6_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR6_EPNUM          (0xFUL << 11) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR6_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR6_EPDIR          (0x1UL << 15) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR6_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR6_LSDEV          (0x1UL << 17) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR6_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR6_EPTYP          (0x3UL << 18) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR6_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR6_MC          (0x3UL << 20) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR6_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR6_DAD          (0x7FUL << 22) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR6_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR6_ODDFRM          (0x1UL << 29) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR6_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR6_CHDIS          (0x1UL << 30) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR6_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR6_CHENA          (0x1UL << 31) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR6_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR7_MPSIZ          (0x7FFUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR7_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR7_EPNUM          (0xFUL << 11) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR7_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR7_EPDIR          (0x1UL << 15) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR7_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR7_LSDEV          (0x1UL << 17) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR7_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR7_EPTYP          (0x3UL << 18) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR7_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR7_MC          (0x3UL << 20) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR7_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR7_DAD          (0x7FUL << 22) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR7_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR7_ODDFRM          (0x1UL << 29) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR7_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR7_CHDIS          (0x1UL << 30) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR7_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR7_CHENA          (0x1UL << 31) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR7_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR8_MPSIZ          (0x7FFUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR8_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR8_EPNUM          (0xFUL << 11) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR8_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR8_EPDIR          (0x1UL << 15) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR8_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR8_LSDEV          (0x1UL << 17) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR8_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR8_EPTYP          (0x3UL << 18) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR8_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR8_MC          (0x3UL << 20) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR8_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR8_DAD          (0x7FUL << 22) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR8_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR8_ODDFRM          (0x1UL << 29) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR8_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR8_CHDIS          (0x1UL << 30) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR8_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR8_CHENA          (0x1UL << 31) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR8_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR9_MPSIZ          (0x7FFUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR9_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR9_EPNUM          (0xFUL << 11) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR9_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR9_EPDIR          (0x1UL << 15) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR9_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR9_LSDEV          (0x1UL << 17) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR9_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR9_EPTYP          (0x3UL << 18) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR9_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR9_MC          (0x3UL << 20) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR9_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR9_DAD          (0x7FUL << 22) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR9_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR9_ODDFRM          (0x1UL << 29) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR9_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR9_CHDIS          (0x1UL << 30) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR9_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR9_CHENA          (0x1UL << 31) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR9_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR10_MPSIZ          (0x7FFUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR10_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR10_EPNUM          (0xFUL << 11) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR10_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR10_EPDIR          (0x1UL << 15) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR10_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR10_LSDEV          (0x1UL << 17) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR10_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR10_EPTYP          (0x3UL << 18) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR10_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR10_MC          (0x3UL << 20) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR10_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR10_DAD          (0x7FUL << 22) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR10_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR10_ODDFRM          (0x1UL << 29) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR10_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR10_CHDIS          (0x1UL << 30) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR10_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR10_CHENA          (0x1UL << 31) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR10_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR11_MPSIZ          (0x7FFUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR11_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR11_EPNUM          (0xFUL << 11) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR11_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR11_EPDIR          (0x1UL << 15) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR11_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR11_LSDEV          (0x1UL << 17) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR11_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR11_EPTYP          (0x3UL << 18) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR11_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR11_MC          (0x3UL << 20) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR11_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR11_DAD          (0x7FUL << 22) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR11_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR11_ODDFRM          (0x1UL << 29) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR11_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR11_CHDIS          (0x1UL << 30) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR11_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
-#define OTG1_HS_HOST_OTG_HS_HCCHAR11_CHENA          (0x1UL << 31) 
-#define OTG1_HS_HOST_OTG_HS_HCCHAR11_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
 #define OTG1_HS_HOST_OTG_HS_HCSPLT0_PRTADDR          (0x7FUL << 0) 
 #define OTG1_HS_HOST_OTG_HS_HCSPLT0_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
 #define OTG1_HS_HOST_OTG_HS_HCSPLT0_HUBADDR          (0x7FUL << 7) 
@@ -19559,116 +19571,6 @@ struct OTG1_HS_HOST {
 #define OTG1_HS_HOST_OTG_HS_HCSPLT0_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
 #define OTG1_HS_HOST_OTG_HS_HCSPLT0_SPLITEN          (0x1UL << 31) 
 #define OTG1_HS_HOST_OTG_HS_HCSPLT0_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT1_PRTADDR          (0x7FUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT1_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT1_HUBADDR          (0x7FUL << 7) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT1_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT1_XACTPOS          (0x3UL << 14) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT1_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT1_COMPLSPLT          (0x1UL << 16) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT1_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT1_SPLITEN          (0x1UL << 31) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT1_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT2_PRTADDR          (0x7FUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT2_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT2_HUBADDR          (0x7FUL << 7) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT2_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT2_XACTPOS          (0x3UL << 14) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT2_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT2_COMPLSPLT          (0x1UL << 16) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT2_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT2_SPLITEN          (0x1UL << 31) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT2_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT3_PRTADDR          (0x7FUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT3_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT3_HUBADDR          (0x7FUL << 7) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT3_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT3_XACTPOS          (0x3UL << 14) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT3_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT3_COMPLSPLT          (0x1UL << 16) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT3_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT3_SPLITEN          (0x1UL << 31) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT3_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT4_PRTADDR          (0x7FUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT4_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT4_HUBADDR          (0x7FUL << 7) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT4_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT4_XACTPOS          (0x3UL << 14) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT4_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT4_COMPLSPLT          (0x1UL << 16) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT4_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT4_SPLITEN          (0x1UL << 31) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT4_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT5_PRTADDR          (0x7FUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT5_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT5_HUBADDR          (0x7FUL << 7) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT5_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT5_XACTPOS          (0x3UL << 14) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT5_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT5_COMPLSPLT          (0x1UL << 16) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT5_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT5_SPLITEN          (0x1UL << 31) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT5_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT6_PRTADDR          (0x7FUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT6_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT6_HUBADDR          (0x7FUL << 7) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT6_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT6_XACTPOS          (0x3UL << 14) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT6_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT6_COMPLSPLT          (0x1UL << 16) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT6_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT6_SPLITEN          (0x1UL << 31) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT6_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT7_PRTADDR          (0x7FUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT7_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT7_HUBADDR          (0x7FUL << 7) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT7_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT7_XACTPOS          (0x3UL << 14) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT7_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT7_COMPLSPLT          (0x1UL << 16) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT7_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT7_SPLITEN          (0x1UL << 31) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT7_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT8_PRTADDR          (0x7FUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT8_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT8_HUBADDR          (0x7FUL << 7) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT8_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT8_XACTPOS          (0x3UL << 14) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT8_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT8_COMPLSPLT          (0x1UL << 16) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT8_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT8_SPLITEN          (0x1UL << 31) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT8_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT9_PRTADDR          (0x7FUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT9_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT9_HUBADDR          (0x7FUL << 7) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT9_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT9_XACTPOS          (0x3UL << 14) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT9_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT9_COMPLSPLT          (0x1UL << 16) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT9_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT9_SPLITEN          (0x1UL << 31) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT9_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT10_PRTADDR          (0x7FUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT10_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT10_HUBADDR          (0x7FUL << 7) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT10_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT10_XACTPOS          (0x3UL << 14) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT10_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT10_COMPLSPLT          (0x1UL << 16) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT10_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT10_SPLITEN          (0x1UL << 31) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT10_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT11_PRTADDR          (0x7FUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT11_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT11_HUBADDR          (0x7FUL << 7) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT11_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT11_XACTPOS          (0x3UL << 14) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT11_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT11_COMPLSPLT          (0x1UL << 16) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT11_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
-#define OTG1_HS_HOST_OTG_HS_HCSPLT11_SPLITEN          (0x1UL << 31) 
-#define OTG1_HS_HOST_OTG_HS_HCSPLT11_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
 #define OTG1_HS_HOST_OTG_HS_HCINT0_XFRC          (0x1UL << 0) 
 #define OTG1_HS_HOST_OTG_HS_HCINT0_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define OTG1_HS_HOST_OTG_HS_HCINT0_CHH          (0x1UL << 1) 
@@ -19691,248 +19593,6 @@ struct OTG1_HS_HOST {
 #define OTG1_HS_HOST_OTG_HS_HCINT0_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
 #define OTG1_HS_HOST_OTG_HS_HCINT0_DTERR          (0x1UL << 10) 
 #define OTG1_HS_HOST_OTG_HS_HCINT0_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
-#define OTG1_HS_HOST_OTG_HS_HCINT1_XFRC          (0x1UL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCINT1_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCINT1_CHH          (0x1UL << 1) 
-#define OTG1_HS_HOST_OTG_HS_HCINT1_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG1_HS_HOST_OTG_HS_HCINT1_AHBERR          (0x1UL << 2) 
-#define OTG1_HS_HOST_OTG_HS_HCINT1_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
-#define OTG1_HS_HOST_OTG_HS_HCINT1_STALL          (0x1UL << 3) 
-#define OTG1_HS_HOST_OTG_HS_HCINT1_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG1_HS_HOST_OTG_HS_HCINT1_NAK          (0x1UL << 4) 
-#define OTG1_HS_HOST_OTG_HS_HCINT1_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG1_HS_HOST_OTG_HS_HCINT1_ACK          (0x1UL << 5) 
-#define OTG1_HS_HOST_OTG_HS_HCINT1_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
-#define OTG1_HS_HOST_OTG_HS_HCINT1_NYET          (0x1UL << 6) 
-#define OTG1_HS_HOST_OTG_HS_HCINT1_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG1_HS_HOST_OTG_HS_HCINT1_TXERR          (0x1UL << 7) 
-#define OTG1_HS_HOST_OTG_HS_HCINT1_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define OTG1_HS_HOST_OTG_HS_HCINT1_BBERR          (0x1UL << 8) 
-#define OTG1_HS_HOST_OTG_HS_HCINT1_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define OTG1_HS_HOST_OTG_HS_HCINT1_FRMOR          (0x1UL << 9) 
-#define OTG1_HS_HOST_OTG_HS_HCINT1_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define OTG1_HS_HOST_OTG_HS_HCINT1_DTERR          (0x1UL << 10) 
-#define OTG1_HS_HOST_OTG_HS_HCINT1_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
-#define OTG1_HS_HOST_OTG_HS_HCINT2_XFRC          (0x1UL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCINT2_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCINT2_CHH          (0x1UL << 1) 
-#define OTG1_HS_HOST_OTG_HS_HCINT2_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG1_HS_HOST_OTG_HS_HCINT2_AHBERR          (0x1UL << 2) 
-#define OTG1_HS_HOST_OTG_HS_HCINT2_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
-#define OTG1_HS_HOST_OTG_HS_HCINT2_STALL          (0x1UL << 3) 
-#define OTG1_HS_HOST_OTG_HS_HCINT2_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG1_HS_HOST_OTG_HS_HCINT2_NAK          (0x1UL << 4) 
-#define OTG1_HS_HOST_OTG_HS_HCINT2_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG1_HS_HOST_OTG_HS_HCINT2_ACK          (0x1UL << 5) 
-#define OTG1_HS_HOST_OTG_HS_HCINT2_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
-#define OTG1_HS_HOST_OTG_HS_HCINT2_NYET          (0x1UL << 6) 
-#define OTG1_HS_HOST_OTG_HS_HCINT2_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG1_HS_HOST_OTG_HS_HCINT2_TXERR          (0x1UL << 7) 
-#define OTG1_HS_HOST_OTG_HS_HCINT2_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define OTG1_HS_HOST_OTG_HS_HCINT2_BBERR          (0x1UL << 8) 
-#define OTG1_HS_HOST_OTG_HS_HCINT2_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define OTG1_HS_HOST_OTG_HS_HCINT2_FRMOR          (0x1UL << 9) 
-#define OTG1_HS_HOST_OTG_HS_HCINT2_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define OTG1_HS_HOST_OTG_HS_HCINT2_DTERR          (0x1UL << 10) 
-#define OTG1_HS_HOST_OTG_HS_HCINT2_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
-#define OTG1_HS_HOST_OTG_HS_HCINT3_XFRC          (0x1UL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCINT3_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCINT3_CHH          (0x1UL << 1) 
-#define OTG1_HS_HOST_OTG_HS_HCINT3_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG1_HS_HOST_OTG_HS_HCINT3_AHBERR          (0x1UL << 2) 
-#define OTG1_HS_HOST_OTG_HS_HCINT3_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
-#define OTG1_HS_HOST_OTG_HS_HCINT3_STALL          (0x1UL << 3) 
-#define OTG1_HS_HOST_OTG_HS_HCINT3_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG1_HS_HOST_OTG_HS_HCINT3_NAK          (0x1UL << 4) 
-#define OTG1_HS_HOST_OTG_HS_HCINT3_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG1_HS_HOST_OTG_HS_HCINT3_ACK          (0x1UL << 5) 
-#define OTG1_HS_HOST_OTG_HS_HCINT3_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
-#define OTG1_HS_HOST_OTG_HS_HCINT3_NYET          (0x1UL << 6) 
-#define OTG1_HS_HOST_OTG_HS_HCINT3_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG1_HS_HOST_OTG_HS_HCINT3_TXERR          (0x1UL << 7) 
-#define OTG1_HS_HOST_OTG_HS_HCINT3_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define OTG1_HS_HOST_OTG_HS_HCINT3_BBERR          (0x1UL << 8) 
-#define OTG1_HS_HOST_OTG_HS_HCINT3_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define OTG1_HS_HOST_OTG_HS_HCINT3_FRMOR          (0x1UL << 9) 
-#define OTG1_HS_HOST_OTG_HS_HCINT3_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define OTG1_HS_HOST_OTG_HS_HCINT3_DTERR          (0x1UL << 10) 
-#define OTG1_HS_HOST_OTG_HS_HCINT3_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
-#define OTG1_HS_HOST_OTG_HS_HCINT4_XFRC          (0x1UL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCINT4_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCINT4_CHH          (0x1UL << 1) 
-#define OTG1_HS_HOST_OTG_HS_HCINT4_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG1_HS_HOST_OTG_HS_HCINT4_AHBERR          (0x1UL << 2) 
-#define OTG1_HS_HOST_OTG_HS_HCINT4_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
-#define OTG1_HS_HOST_OTG_HS_HCINT4_STALL          (0x1UL << 3) 
-#define OTG1_HS_HOST_OTG_HS_HCINT4_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG1_HS_HOST_OTG_HS_HCINT4_NAK          (0x1UL << 4) 
-#define OTG1_HS_HOST_OTG_HS_HCINT4_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG1_HS_HOST_OTG_HS_HCINT4_ACK          (0x1UL << 5) 
-#define OTG1_HS_HOST_OTG_HS_HCINT4_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
-#define OTG1_HS_HOST_OTG_HS_HCINT4_NYET          (0x1UL << 6) 
-#define OTG1_HS_HOST_OTG_HS_HCINT4_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG1_HS_HOST_OTG_HS_HCINT4_TXERR          (0x1UL << 7) 
-#define OTG1_HS_HOST_OTG_HS_HCINT4_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define OTG1_HS_HOST_OTG_HS_HCINT4_BBERR          (0x1UL << 8) 
-#define OTG1_HS_HOST_OTG_HS_HCINT4_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define OTG1_HS_HOST_OTG_HS_HCINT4_FRMOR          (0x1UL << 9) 
-#define OTG1_HS_HOST_OTG_HS_HCINT4_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define OTG1_HS_HOST_OTG_HS_HCINT4_DTERR          (0x1UL << 10) 
-#define OTG1_HS_HOST_OTG_HS_HCINT4_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
-#define OTG1_HS_HOST_OTG_HS_HCINT5_XFRC          (0x1UL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCINT5_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCINT5_CHH          (0x1UL << 1) 
-#define OTG1_HS_HOST_OTG_HS_HCINT5_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG1_HS_HOST_OTG_HS_HCINT5_AHBERR          (0x1UL << 2) 
-#define OTG1_HS_HOST_OTG_HS_HCINT5_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
-#define OTG1_HS_HOST_OTG_HS_HCINT5_STALL          (0x1UL << 3) 
-#define OTG1_HS_HOST_OTG_HS_HCINT5_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG1_HS_HOST_OTG_HS_HCINT5_NAK          (0x1UL << 4) 
-#define OTG1_HS_HOST_OTG_HS_HCINT5_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG1_HS_HOST_OTG_HS_HCINT5_ACK          (0x1UL << 5) 
-#define OTG1_HS_HOST_OTG_HS_HCINT5_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
-#define OTG1_HS_HOST_OTG_HS_HCINT5_NYET          (0x1UL << 6) 
-#define OTG1_HS_HOST_OTG_HS_HCINT5_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG1_HS_HOST_OTG_HS_HCINT5_TXERR          (0x1UL << 7) 
-#define OTG1_HS_HOST_OTG_HS_HCINT5_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define OTG1_HS_HOST_OTG_HS_HCINT5_BBERR          (0x1UL << 8) 
-#define OTG1_HS_HOST_OTG_HS_HCINT5_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define OTG1_HS_HOST_OTG_HS_HCINT5_FRMOR          (0x1UL << 9) 
-#define OTG1_HS_HOST_OTG_HS_HCINT5_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define OTG1_HS_HOST_OTG_HS_HCINT5_DTERR          (0x1UL << 10) 
-#define OTG1_HS_HOST_OTG_HS_HCINT5_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
-#define OTG1_HS_HOST_OTG_HS_HCINT6_XFRC          (0x1UL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCINT6_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCINT6_CHH          (0x1UL << 1) 
-#define OTG1_HS_HOST_OTG_HS_HCINT6_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG1_HS_HOST_OTG_HS_HCINT6_AHBERR          (0x1UL << 2) 
-#define OTG1_HS_HOST_OTG_HS_HCINT6_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
-#define OTG1_HS_HOST_OTG_HS_HCINT6_STALL          (0x1UL << 3) 
-#define OTG1_HS_HOST_OTG_HS_HCINT6_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG1_HS_HOST_OTG_HS_HCINT6_NAK          (0x1UL << 4) 
-#define OTG1_HS_HOST_OTG_HS_HCINT6_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG1_HS_HOST_OTG_HS_HCINT6_ACK          (0x1UL << 5) 
-#define OTG1_HS_HOST_OTG_HS_HCINT6_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
-#define OTG1_HS_HOST_OTG_HS_HCINT6_NYET          (0x1UL << 6) 
-#define OTG1_HS_HOST_OTG_HS_HCINT6_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG1_HS_HOST_OTG_HS_HCINT6_TXERR          (0x1UL << 7) 
-#define OTG1_HS_HOST_OTG_HS_HCINT6_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define OTG1_HS_HOST_OTG_HS_HCINT6_BBERR          (0x1UL << 8) 
-#define OTG1_HS_HOST_OTG_HS_HCINT6_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define OTG1_HS_HOST_OTG_HS_HCINT6_FRMOR          (0x1UL << 9) 
-#define OTG1_HS_HOST_OTG_HS_HCINT6_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define OTG1_HS_HOST_OTG_HS_HCINT6_DTERR          (0x1UL << 10) 
-#define OTG1_HS_HOST_OTG_HS_HCINT6_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
-#define OTG1_HS_HOST_OTG_HS_HCINT7_XFRC          (0x1UL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCINT7_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCINT7_CHH          (0x1UL << 1) 
-#define OTG1_HS_HOST_OTG_HS_HCINT7_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG1_HS_HOST_OTG_HS_HCINT7_AHBERR          (0x1UL << 2) 
-#define OTG1_HS_HOST_OTG_HS_HCINT7_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
-#define OTG1_HS_HOST_OTG_HS_HCINT7_STALL          (0x1UL << 3) 
-#define OTG1_HS_HOST_OTG_HS_HCINT7_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG1_HS_HOST_OTG_HS_HCINT7_NAK          (0x1UL << 4) 
-#define OTG1_HS_HOST_OTG_HS_HCINT7_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG1_HS_HOST_OTG_HS_HCINT7_ACK          (0x1UL << 5) 
-#define OTG1_HS_HOST_OTG_HS_HCINT7_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
-#define OTG1_HS_HOST_OTG_HS_HCINT7_NYET          (0x1UL << 6) 
-#define OTG1_HS_HOST_OTG_HS_HCINT7_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG1_HS_HOST_OTG_HS_HCINT7_TXERR          (0x1UL << 7) 
-#define OTG1_HS_HOST_OTG_HS_HCINT7_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define OTG1_HS_HOST_OTG_HS_HCINT7_BBERR          (0x1UL << 8) 
-#define OTG1_HS_HOST_OTG_HS_HCINT7_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define OTG1_HS_HOST_OTG_HS_HCINT7_FRMOR          (0x1UL << 9) 
-#define OTG1_HS_HOST_OTG_HS_HCINT7_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define OTG1_HS_HOST_OTG_HS_HCINT7_DTERR          (0x1UL << 10) 
-#define OTG1_HS_HOST_OTG_HS_HCINT7_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
-#define OTG1_HS_HOST_OTG_HS_HCINT8_XFRC          (0x1UL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCINT8_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCINT8_CHH          (0x1UL << 1) 
-#define OTG1_HS_HOST_OTG_HS_HCINT8_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG1_HS_HOST_OTG_HS_HCINT8_AHBERR          (0x1UL << 2) 
-#define OTG1_HS_HOST_OTG_HS_HCINT8_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
-#define OTG1_HS_HOST_OTG_HS_HCINT8_STALL          (0x1UL << 3) 
-#define OTG1_HS_HOST_OTG_HS_HCINT8_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG1_HS_HOST_OTG_HS_HCINT8_NAK          (0x1UL << 4) 
-#define OTG1_HS_HOST_OTG_HS_HCINT8_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG1_HS_HOST_OTG_HS_HCINT8_ACK          (0x1UL << 5) 
-#define OTG1_HS_HOST_OTG_HS_HCINT8_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
-#define OTG1_HS_HOST_OTG_HS_HCINT8_NYET          (0x1UL << 6) 
-#define OTG1_HS_HOST_OTG_HS_HCINT8_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG1_HS_HOST_OTG_HS_HCINT8_TXERR          (0x1UL << 7) 
-#define OTG1_HS_HOST_OTG_HS_HCINT8_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define OTG1_HS_HOST_OTG_HS_HCINT8_BBERR          (0x1UL << 8) 
-#define OTG1_HS_HOST_OTG_HS_HCINT8_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define OTG1_HS_HOST_OTG_HS_HCINT8_FRMOR          (0x1UL << 9) 
-#define OTG1_HS_HOST_OTG_HS_HCINT8_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define OTG1_HS_HOST_OTG_HS_HCINT8_DTERR          (0x1UL << 10) 
-#define OTG1_HS_HOST_OTG_HS_HCINT8_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
-#define OTG1_HS_HOST_OTG_HS_HCINT9_XFRC          (0x1UL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCINT9_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCINT9_CHH          (0x1UL << 1) 
-#define OTG1_HS_HOST_OTG_HS_HCINT9_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG1_HS_HOST_OTG_HS_HCINT9_AHBERR          (0x1UL << 2) 
-#define OTG1_HS_HOST_OTG_HS_HCINT9_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
-#define OTG1_HS_HOST_OTG_HS_HCINT9_STALL          (0x1UL << 3) 
-#define OTG1_HS_HOST_OTG_HS_HCINT9_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG1_HS_HOST_OTG_HS_HCINT9_NAK          (0x1UL << 4) 
-#define OTG1_HS_HOST_OTG_HS_HCINT9_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG1_HS_HOST_OTG_HS_HCINT9_ACK          (0x1UL << 5) 
-#define OTG1_HS_HOST_OTG_HS_HCINT9_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
-#define OTG1_HS_HOST_OTG_HS_HCINT9_NYET          (0x1UL << 6) 
-#define OTG1_HS_HOST_OTG_HS_HCINT9_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG1_HS_HOST_OTG_HS_HCINT9_TXERR          (0x1UL << 7) 
-#define OTG1_HS_HOST_OTG_HS_HCINT9_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define OTG1_HS_HOST_OTG_HS_HCINT9_BBERR          (0x1UL << 8) 
-#define OTG1_HS_HOST_OTG_HS_HCINT9_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define OTG1_HS_HOST_OTG_HS_HCINT9_FRMOR          (0x1UL << 9) 
-#define OTG1_HS_HOST_OTG_HS_HCINT9_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define OTG1_HS_HOST_OTG_HS_HCINT9_DTERR          (0x1UL << 10) 
-#define OTG1_HS_HOST_OTG_HS_HCINT9_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
-#define OTG1_HS_HOST_OTG_HS_HCINT10_XFRC          (0x1UL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCINT10_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCINT10_CHH          (0x1UL << 1) 
-#define OTG1_HS_HOST_OTG_HS_HCINT10_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG1_HS_HOST_OTG_HS_HCINT10_AHBERR          (0x1UL << 2) 
-#define OTG1_HS_HOST_OTG_HS_HCINT10_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
-#define OTG1_HS_HOST_OTG_HS_HCINT10_STALL          (0x1UL << 3) 
-#define OTG1_HS_HOST_OTG_HS_HCINT10_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG1_HS_HOST_OTG_HS_HCINT10_NAK          (0x1UL << 4) 
-#define OTG1_HS_HOST_OTG_HS_HCINT10_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG1_HS_HOST_OTG_HS_HCINT10_ACK          (0x1UL << 5) 
-#define OTG1_HS_HOST_OTG_HS_HCINT10_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
-#define OTG1_HS_HOST_OTG_HS_HCINT10_NYET          (0x1UL << 6) 
-#define OTG1_HS_HOST_OTG_HS_HCINT10_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG1_HS_HOST_OTG_HS_HCINT10_TXERR          (0x1UL << 7) 
-#define OTG1_HS_HOST_OTG_HS_HCINT10_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define OTG1_HS_HOST_OTG_HS_HCINT10_BBERR          (0x1UL << 8) 
-#define OTG1_HS_HOST_OTG_HS_HCINT10_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define OTG1_HS_HOST_OTG_HS_HCINT10_FRMOR          (0x1UL << 9) 
-#define OTG1_HS_HOST_OTG_HS_HCINT10_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define OTG1_HS_HOST_OTG_HS_HCINT10_DTERR          (0x1UL << 10) 
-#define OTG1_HS_HOST_OTG_HS_HCINT10_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
-#define OTG1_HS_HOST_OTG_HS_HCINT11_XFRC          (0x1UL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCINT11_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCINT11_CHH          (0x1UL << 1) 
-#define OTG1_HS_HOST_OTG_HS_HCINT11_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG1_HS_HOST_OTG_HS_HCINT11_AHBERR          (0x1UL << 2) 
-#define OTG1_HS_HOST_OTG_HS_HCINT11_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
-#define OTG1_HS_HOST_OTG_HS_HCINT11_STALL          (0x1UL << 3) 
-#define OTG1_HS_HOST_OTG_HS_HCINT11_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG1_HS_HOST_OTG_HS_HCINT11_NAK          (0x1UL << 4) 
-#define OTG1_HS_HOST_OTG_HS_HCINT11_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG1_HS_HOST_OTG_HS_HCINT11_ACK          (0x1UL << 5) 
-#define OTG1_HS_HOST_OTG_HS_HCINT11_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
-#define OTG1_HS_HOST_OTG_HS_HCINT11_NYET          (0x1UL << 6) 
-#define OTG1_HS_HOST_OTG_HS_HCINT11_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG1_HS_HOST_OTG_HS_HCINT11_TXERR          (0x1UL << 7) 
-#define OTG1_HS_HOST_OTG_HS_HCINT11_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define OTG1_HS_HOST_OTG_HS_HCINT11_BBERR          (0x1UL << 8) 
-#define OTG1_HS_HOST_OTG_HS_HCINT11_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define OTG1_HS_HOST_OTG_HS_HCINT11_FRMOR          (0x1UL << 9) 
-#define OTG1_HS_HOST_OTG_HS_HCINT11_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define OTG1_HS_HOST_OTG_HS_HCINT11_DTERR          (0x1UL << 10) 
-#define OTG1_HS_HOST_OTG_HS_HCINT11_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK0_XFRCM          (0x1UL << 0) 
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK0_XFRCM_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK0_CHHM          (0x1UL << 1) 
@@ -19955,6 +19615,66 @@ struct OTG1_HS_HOST {
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK0_FRMORM_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK0_DTERRM          (0x1UL << 10) 
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK0_DTERRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ0_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ0_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ0_PKTCNT          (0x3FFUL << 19) 
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ0_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ0_DPID          (0x3UL << 29) 
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ0_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
+#define OTG1_HS_HOST_OTG_HS_HCDMA0_DMAADDR          (0xFFFFFFFFUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCDMA0_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR1_MPSIZ          (0x7FFUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR1_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR1_EPNUM          (0xFUL << 11) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR1_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR1_EPDIR          (0x1UL << 15) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR1_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR1_LSDEV          (0x1UL << 17) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR1_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR1_EPTYP          (0x3UL << 18) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR1_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR1_MC          (0x3UL << 20) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR1_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR1_DAD          (0x7FUL << 22) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR1_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR1_ODDFRM          (0x1UL << 29) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR1_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR1_CHDIS          (0x1UL << 30) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR1_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR1_CHENA          (0x1UL << 31) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR1_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT1_PRTADDR          (0x7FUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT1_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT1_HUBADDR          (0x7FUL << 7) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT1_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT1_XACTPOS          (0x3UL << 14) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT1_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT1_COMPLSPLT          (0x1UL << 16) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT1_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT1_SPLITEN          (0x1UL << 31) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT1_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG1_HS_HOST_OTG_HS_HCINT1_XFRC          (0x1UL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCINT1_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCINT1_CHH          (0x1UL << 1) 
+#define OTG1_HS_HOST_OTG_HS_HCINT1_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG1_HS_HOST_OTG_HS_HCINT1_AHBERR          (0x1UL << 2) 
+#define OTG1_HS_HOST_OTG_HS_HCINT1_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
+#define OTG1_HS_HOST_OTG_HS_HCINT1_STALL          (0x1UL << 3) 
+#define OTG1_HS_HOST_OTG_HS_HCINT1_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG1_HS_HOST_OTG_HS_HCINT1_NAK          (0x1UL << 4) 
+#define OTG1_HS_HOST_OTG_HS_HCINT1_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG1_HS_HOST_OTG_HS_HCINT1_ACK          (0x1UL << 5) 
+#define OTG1_HS_HOST_OTG_HS_HCINT1_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
+#define OTG1_HS_HOST_OTG_HS_HCINT1_NYET          (0x1UL << 6) 
+#define OTG1_HS_HOST_OTG_HS_HCINT1_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG1_HS_HOST_OTG_HS_HCINT1_TXERR          (0x1UL << 7) 
+#define OTG1_HS_HOST_OTG_HS_HCINT1_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define OTG1_HS_HOST_OTG_HS_HCINT1_BBERR          (0x1UL << 8) 
+#define OTG1_HS_HOST_OTG_HS_HCINT1_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define OTG1_HS_HOST_OTG_HS_HCINT1_FRMOR          (0x1UL << 9) 
+#define OTG1_HS_HOST_OTG_HS_HCINT1_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define OTG1_HS_HOST_OTG_HS_HCINT1_DTERR          (0x1UL << 10) 
+#define OTG1_HS_HOST_OTG_HS_HCINT1_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK1_XFRCM          (0x1UL << 0) 
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK1_XFRCM_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK1_CHHM          (0x1UL << 1) 
@@ -19977,6 +19697,66 @@ struct OTG1_HS_HOST {
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK1_FRMORM_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK1_DTERRM          (0x1UL << 10) 
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK1_DTERRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ1_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ1_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ1_PKTCNT          (0x3FFUL << 19) 
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ1_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ1_DPID          (0x3UL << 29) 
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ1_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
+#define OTG1_HS_HOST_OTG_HS_HCDMA1_DMAADDR          (0xFFFFFFFFUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCDMA1_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR2_MPSIZ          (0x7FFUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR2_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR2_EPNUM          (0xFUL << 11) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR2_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR2_EPDIR          (0x1UL << 15) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR2_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR2_LSDEV          (0x1UL << 17) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR2_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR2_EPTYP          (0x3UL << 18) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR2_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR2_MC          (0x3UL << 20) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR2_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR2_DAD          (0x7FUL << 22) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR2_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR2_ODDFRM          (0x1UL << 29) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR2_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR2_CHDIS          (0x1UL << 30) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR2_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR2_CHENA          (0x1UL << 31) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR2_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT2_PRTADDR          (0x7FUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT2_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT2_HUBADDR          (0x7FUL << 7) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT2_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT2_XACTPOS          (0x3UL << 14) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT2_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT2_COMPLSPLT          (0x1UL << 16) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT2_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT2_SPLITEN          (0x1UL << 31) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT2_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG1_HS_HOST_OTG_HS_HCINT2_XFRC          (0x1UL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCINT2_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCINT2_CHH          (0x1UL << 1) 
+#define OTG1_HS_HOST_OTG_HS_HCINT2_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG1_HS_HOST_OTG_HS_HCINT2_AHBERR          (0x1UL << 2) 
+#define OTG1_HS_HOST_OTG_HS_HCINT2_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
+#define OTG1_HS_HOST_OTG_HS_HCINT2_STALL          (0x1UL << 3) 
+#define OTG1_HS_HOST_OTG_HS_HCINT2_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG1_HS_HOST_OTG_HS_HCINT2_NAK          (0x1UL << 4) 
+#define OTG1_HS_HOST_OTG_HS_HCINT2_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG1_HS_HOST_OTG_HS_HCINT2_ACK          (0x1UL << 5) 
+#define OTG1_HS_HOST_OTG_HS_HCINT2_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
+#define OTG1_HS_HOST_OTG_HS_HCINT2_NYET          (0x1UL << 6) 
+#define OTG1_HS_HOST_OTG_HS_HCINT2_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG1_HS_HOST_OTG_HS_HCINT2_TXERR          (0x1UL << 7) 
+#define OTG1_HS_HOST_OTG_HS_HCINT2_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define OTG1_HS_HOST_OTG_HS_HCINT2_BBERR          (0x1UL << 8) 
+#define OTG1_HS_HOST_OTG_HS_HCINT2_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define OTG1_HS_HOST_OTG_HS_HCINT2_FRMOR          (0x1UL << 9) 
+#define OTG1_HS_HOST_OTG_HS_HCINT2_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define OTG1_HS_HOST_OTG_HS_HCINT2_DTERR          (0x1UL << 10) 
+#define OTG1_HS_HOST_OTG_HS_HCINT2_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK2_XFRCM          (0x1UL << 0) 
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK2_XFRCM_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK2_CHHM          (0x1UL << 1) 
@@ -19999,6 +19779,66 @@ struct OTG1_HS_HOST {
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK2_FRMORM_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK2_DTERRM          (0x1UL << 10) 
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK2_DTERRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ2_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ2_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ2_PKTCNT          (0x3FFUL << 19) 
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ2_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ2_DPID          (0x3UL << 29) 
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ2_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
+#define OTG1_HS_HOST_OTG_HS_HCDMA2_DMAADDR          (0xFFFFFFFFUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCDMA2_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR3_MPSIZ          (0x7FFUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR3_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR3_EPNUM          (0xFUL << 11) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR3_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR3_EPDIR          (0x1UL << 15) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR3_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR3_LSDEV          (0x1UL << 17) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR3_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR3_EPTYP          (0x3UL << 18) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR3_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR3_MC          (0x3UL << 20) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR3_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR3_DAD          (0x7FUL << 22) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR3_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR3_ODDFRM          (0x1UL << 29) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR3_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR3_CHDIS          (0x1UL << 30) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR3_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR3_CHENA          (0x1UL << 31) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR3_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT3_PRTADDR          (0x7FUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT3_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT3_HUBADDR          (0x7FUL << 7) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT3_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT3_XACTPOS          (0x3UL << 14) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT3_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT3_COMPLSPLT          (0x1UL << 16) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT3_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT3_SPLITEN          (0x1UL << 31) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT3_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG1_HS_HOST_OTG_HS_HCINT3_XFRC          (0x1UL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCINT3_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCINT3_CHH          (0x1UL << 1) 
+#define OTG1_HS_HOST_OTG_HS_HCINT3_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG1_HS_HOST_OTG_HS_HCINT3_AHBERR          (0x1UL << 2) 
+#define OTG1_HS_HOST_OTG_HS_HCINT3_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
+#define OTG1_HS_HOST_OTG_HS_HCINT3_STALL          (0x1UL << 3) 
+#define OTG1_HS_HOST_OTG_HS_HCINT3_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG1_HS_HOST_OTG_HS_HCINT3_NAK          (0x1UL << 4) 
+#define OTG1_HS_HOST_OTG_HS_HCINT3_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG1_HS_HOST_OTG_HS_HCINT3_ACK          (0x1UL << 5) 
+#define OTG1_HS_HOST_OTG_HS_HCINT3_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
+#define OTG1_HS_HOST_OTG_HS_HCINT3_NYET          (0x1UL << 6) 
+#define OTG1_HS_HOST_OTG_HS_HCINT3_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG1_HS_HOST_OTG_HS_HCINT3_TXERR          (0x1UL << 7) 
+#define OTG1_HS_HOST_OTG_HS_HCINT3_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define OTG1_HS_HOST_OTG_HS_HCINT3_BBERR          (0x1UL << 8) 
+#define OTG1_HS_HOST_OTG_HS_HCINT3_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define OTG1_HS_HOST_OTG_HS_HCINT3_FRMOR          (0x1UL << 9) 
+#define OTG1_HS_HOST_OTG_HS_HCINT3_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define OTG1_HS_HOST_OTG_HS_HCINT3_DTERR          (0x1UL << 10) 
+#define OTG1_HS_HOST_OTG_HS_HCINT3_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK3_XFRCM          (0x1UL << 0) 
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK3_XFRCM_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK3_CHHM          (0x1UL << 1) 
@@ -20021,6 +19861,66 @@ struct OTG1_HS_HOST {
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK3_FRMORM_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK3_DTERRM          (0x1UL << 10) 
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK3_DTERRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ3_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ3_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ3_PKTCNT          (0x3FFUL << 19) 
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ3_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ3_DPID          (0x3UL << 29) 
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ3_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
+#define OTG1_HS_HOST_OTG_HS_HCDMA3_DMAADDR          (0xFFFFFFFFUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCDMA3_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR4_MPSIZ          (0x7FFUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR4_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR4_EPNUM          (0xFUL << 11) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR4_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR4_EPDIR          (0x1UL << 15) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR4_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR4_LSDEV          (0x1UL << 17) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR4_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR4_EPTYP          (0x3UL << 18) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR4_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR4_MC          (0x3UL << 20) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR4_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR4_DAD          (0x7FUL << 22) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR4_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR4_ODDFRM          (0x1UL << 29) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR4_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR4_CHDIS          (0x1UL << 30) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR4_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR4_CHENA          (0x1UL << 31) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR4_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT4_PRTADDR          (0x7FUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT4_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT4_HUBADDR          (0x7FUL << 7) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT4_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT4_XACTPOS          (0x3UL << 14) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT4_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT4_COMPLSPLT          (0x1UL << 16) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT4_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT4_SPLITEN          (0x1UL << 31) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT4_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG1_HS_HOST_OTG_HS_HCINT4_XFRC          (0x1UL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCINT4_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCINT4_CHH          (0x1UL << 1) 
+#define OTG1_HS_HOST_OTG_HS_HCINT4_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG1_HS_HOST_OTG_HS_HCINT4_AHBERR          (0x1UL << 2) 
+#define OTG1_HS_HOST_OTG_HS_HCINT4_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
+#define OTG1_HS_HOST_OTG_HS_HCINT4_STALL          (0x1UL << 3) 
+#define OTG1_HS_HOST_OTG_HS_HCINT4_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG1_HS_HOST_OTG_HS_HCINT4_NAK          (0x1UL << 4) 
+#define OTG1_HS_HOST_OTG_HS_HCINT4_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG1_HS_HOST_OTG_HS_HCINT4_ACK          (0x1UL << 5) 
+#define OTG1_HS_HOST_OTG_HS_HCINT4_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
+#define OTG1_HS_HOST_OTG_HS_HCINT4_NYET          (0x1UL << 6) 
+#define OTG1_HS_HOST_OTG_HS_HCINT4_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG1_HS_HOST_OTG_HS_HCINT4_TXERR          (0x1UL << 7) 
+#define OTG1_HS_HOST_OTG_HS_HCINT4_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define OTG1_HS_HOST_OTG_HS_HCINT4_BBERR          (0x1UL << 8) 
+#define OTG1_HS_HOST_OTG_HS_HCINT4_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define OTG1_HS_HOST_OTG_HS_HCINT4_FRMOR          (0x1UL << 9) 
+#define OTG1_HS_HOST_OTG_HS_HCINT4_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define OTG1_HS_HOST_OTG_HS_HCINT4_DTERR          (0x1UL << 10) 
+#define OTG1_HS_HOST_OTG_HS_HCINT4_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK4_XFRCM          (0x1UL << 0) 
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK4_XFRCM_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK4_CHHM          (0x1UL << 1) 
@@ -20043,6 +19943,66 @@ struct OTG1_HS_HOST {
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK4_FRMORM_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK4_DTERRM          (0x1UL << 10) 
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK4_DTERRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ4_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ4_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ4_PKTCNT          (0x3FFUL << 19) 
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ4_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ4_DPID          (0x3UL << 29) 
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ4_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
+#define OTG1_HS_HOST_OTG_HS_HCDMA4_DMAADDR          (0xFFFFFFFFUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCDMA4_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR5_MPSIZ          (0x7FFUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR5_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR5_EPNUM          (0xFUL << 11) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR5_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR5_EPDIR          (0x1UL << 15) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR5_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR5_LSDEV          (0x1UL << 17) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR5_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR5_EPTYP          (0x3UL << 18) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR5_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR5_MC          (0x3UL << 20) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR5_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR5_DAD          (0x7FUL << 22) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR5_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR5_ODDFRM          (0x1UL << 29) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR5_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR5_CHDIS          (0x1UL << 30) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR5_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR5_CHENA          (0x1UL << 31) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR5_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT5_PRTADDR          (0x7FUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT5_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT5_HUBADDR          (0x7FUL << 7) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT5_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT5_XACTPOS          (0x3UL << 14) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT5_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT5_COMPLSPLT          (0x1UL << 16) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT5_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT5_SPLITEN          (0x1UL << 31) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT5_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG1_HS_HOST_OTG_HS_HCINT5_XFRC          (0x1UL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCINT5_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCINT5_CHH          (0x1UL << 1) 
+#define OTG1_HS_HOST_OTG_HS_HCINT5_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG1_HS_HOST_OTG_HS_HCINT5_AHBERR          (0x1UL << 2) 
+#define OTG1_HS_HOST_OTG_HS_HCINT5_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
+#define OTG1_HS_HOST_OTG_HS_HCINT5_STALL          (0x1UL << 3) 
+#define OTG1_HS_HOST_OTG_HS_HCINT5_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG1_HS_HOST_OTG_HS_HCINT5_NAK          (0x1UL << 4) 
+#define OTG1_HS_HOST_OTG_HS_HCINT5_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG1_HS_HOST_OTG_HS_HCINT5_ACK          (0x1UL << 5) 
+#define OTG1_HS_HOST_OTG_HS_HCINT5_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
+#define OTG1_HS_HOST_OTG_HS_HCINT5_NYET          (0x1UL << 6) 
+#define OTG1_HS_HOST_OTG_HS_HCINT5_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG1_HS_HOST_OTG_HS_HCINT5_TXERR          (0x1UL << 7) 
+#define OTG1_HS_HOST_OTG_HS_HCINT5_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define OTG1_HS_HOST_OTG_HS_HCINT5_BBERR          (0x1UL << 8) 
+#define OTG1_HS_HOST_OTG_HS_HCINT5_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define OTG1_HS_HOST_OTG_HS_HCINT5_FRMOR          (0x1UL << 9) 
+#define OTG1_HS_HOST_OTG_HS_HCINT5_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define OTG1_HS_HOST_OTG_HS_HCINT5_DTERR          (0x1UL << 10) 
+#define OTG1_HS_HOST_OTG_HS_HCINT5_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK5_XFRCM          (0x1UL << 0) 
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK5_XFRCM_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK5_CHHM          (0x1UL << 1) 
@@ -20065,6 +20025,66 @@ struct OTG1_HS_HOST {
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK5_FRMORM_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK5_DTERRM          (0x1UL << 10) 
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK5_DTERRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ5_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ5_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ5_PKTCNT          (0x3FFUL << 19) 
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ5_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ5_DPID          (0x3UL << 29) 
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ5_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
+#define OTG1_HS_HOST_OTG_HS_HCDMA5_DMAADDR          (0xFFFFFFFFUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCDMA5_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR6_MPSIZ          (0x7FFUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR6_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR6_EPNUM          (0xFUL << 11) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR6_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR6_EPDIR          (0x1UL << 15) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR6_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR6_LSDEV          (0x1UL << 17) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR6_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR6_EPTYP          (0x3UL << 18) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR6_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR6_MC          (0x3UL << 20) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR6_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR6_DAD          (0x7FUL << 22) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR6_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR6_ODDFRM          (0x1UL << 29) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR6_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR6_CHDIS          (0x1UL << 30) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR6_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR6_CHENA          (0x1UL << 31) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR6_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT6_PRTADDR          (0x7FUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT6_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT6_HUBADDR          (0x7FUL << 7) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT6_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT6_XACTPOS          (0x3UL << 14) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT6_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT6_COMPLSPLT          (0x1UL << 16) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT6_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT6_SPLITEN          (0x1UL << 31) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT6_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG1_HS_HOST_OTG_HS_HCINT6_XFRC          (0x1UL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCINT6_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCINT6_CHH          (0x1UL << 1) 
+#define OTG1_HS_HOST_OTG_HS_HCINT6_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG1_HS_HOST_OTG_HS_HCINT6_AHBERR          (0x1UL << 2) 
+#define OTG1_HS_HOST_OTG_HS_HCINT6_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
+#define OTG1_HS_HOST_OTG_HS_HCINT6_STALL          (0x1UL << 3) 
+#define OTG1_HS_HOST_OTG_HS_HCINT6_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG1_HS_HOST_OTG_HS_HCINT6_NAK          (0x1UL << 4) 
+#define OTG1_HS_HOST_OTG_HS_HCINT6_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG1_HS_HOST_OTG_HS_HCINT6_ACK          (0x1UL << 5) 
+#define OTG1_HS_HOST_OTG_HS_HCINT6_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
+#define OTG1_HS_HOST_OTG_HS_HCINT6_NYET          (0x1UL << 6) 
+#define OTG1_HS_HOST_OTG_HS_HCINT6_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG1_HS_HOST_OTG_HS_HCINT6_TXERR          (0x1UL << 7) 
+#define OTG1_HS_HOST_OTG_HS_HCINT6_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define OTG1_HS_HOST_OTG_HS_HCINT6_BBERR          (0x1UL << 8) 
+#define OTG1_HS_HOST_OTG_HS_HCINT6_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define OTG1_HS_HOST_OTG_HS_HCINT6_FRMOR          (0x1UL << 9) 
+#define OTG1_HS_HOST_OTG_HS_HCINT6_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define OTG1_HS_HOST_OTG_HS_HCINT6_DTERR          (0x1UL << 10) 
+#define OTG1_HS_HOST_OTG_HS_HCINT6_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK6_XFRCM          (0x1UL << 0) 
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK6_XFRCM_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK6_CHHM          (0x1UL << 1) 
@@ -20087,6 +20107,66 @@ struct OTG1_HS_HOST {
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK6_FRMORM_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK6_DTERRM          (0x1UL << 10) 
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK6_DTERRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ6_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ6_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ6_PKTCNT          (0x3FFUL << 19) 
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ6_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ6_DPID          (0x3UL << 29) 
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ6_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
+#define OTG1_HS_HOST_OTG_HS_HCDMA6_DMAADDR          (0xFFFFFFFFUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCDMA6_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR7_MPSIZ          (0x7FFUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR7_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR7_EPNUM          (0xFUL << 11) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR7_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR7_EPDIR          (0x1UL << 15) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR7_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR7_LSDEV          (0x1UL << 17) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR7_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR7_EPTYP          (0x3UL << 18) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR7_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR7_MC          (0x3UL << 20) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR7_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR7_DAD          (0x7FUL << 22) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR7_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR7_ODDFRM          (0x1UL << 29) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR7_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR7_CHDIS          (0x1UL << 30) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR7_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR7_CHENA          (0x1UL << 31) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR7_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT7_PRTADDR          (0x7FUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT7_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT7_HUBADDR          (0x7FUL << 7) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT7_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT7_XACTPOS          (0x3UL << 14) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT7_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT7_COMPLSPLT          (0x1UL << 16) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT7_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT7_SPLITEN          (0x1UL << 31) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT7_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG1_HS_HOST_OTG_HS_HCINT7_XFRC          (0x1UL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCINT7_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCINT7_CHH          (0x1UL << 1) 
+#define OTG1_HS_HOST_OTG_HS_HCINT7_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG1_HS_HOST_OTG_HS_HCINT7_AHBERR          (0x1UL << 2) 
+#define OTG1_HS_HOST_OTG_HS_HCINT7_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
+#define OTG1_HS_HOST_OTG_HS_HCINT7_STALL          (0x1UL << 3) 
+#define OTG1_HS_HOST_OTG_HS_HCINT7_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG1_HS_HOST_OTG_HS_HCINT7_NAK          (0x1UL << 4) 
+#define OTG1_HS_HOST_OTG_HS_HCINT7_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG1_HS_HOST_OTG_HS_HCINT7_ACK          (0x1UL << 5) 
+#define OTG1_HS_HOST_OTG_HS_HCINT7_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
+#define OTG1_HS_HOST_OTG_HS_HCINT7_NYET          (0x1UL << 6) 
+#define OTG1_HS_HOST_OTG_HS_HCINT7_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG1_HS_HOST_OTG_HS_HCINT7_TXERR          (0x1UL << 7) 
+#define OTG1_HS_HOST_OTG_HS_HCINT7_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define OTG1_HS_HOST_OTG_HS_HCINT7_BBERR          (0x1UL << 8) 
+#define OTG1_HS_HOST_OTG_HS_HCINT7_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define OTG1_HS_HOST_OTG_HS_HCINT7_FRMOR          (0x1UL << 9) 
+#define OTG1_HS_HOST_OTG_HS_HCINT7_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define OTG1_HS_HOST_OTG_HS_HCINT7_DTERR          (0x1UL << 10) 
+#define OTG1_HS_HOST_OTG_HS_HCINT7_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK7_XFRCM          (0x1UL << 0) 
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK7_XFRCM_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK7_CHHM          (0x1UL << 1) 
@@ -20109,6 +20189,66 @@ struct OTG1_HS_HOST {
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK7_FRMORM_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK7_DTERRM          (0x1UL << 10) 
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK7_DTERRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ7_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ7_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ7_PKTCNT          (0x3FFUL << 19) 
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ7_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ7_DPID          (0x3UL << 29) 
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ7_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
+#define OTG1_HS_HOST_OTG_HS_HCDMA7_DMAADDR          (0xFFFFFFFFUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCDMA7_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR8_MPSIZ          (0x7FFUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR8_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR8_EPNUM          (0xFUL << 11) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR8_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR8_EPDIR          (0x1UL << 15) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR8_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR8_LSDEV          (0x1UL << 17) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR8_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR8_EPTYP          (0x3UL << 18) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR8_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR8_MC          (0x3UL << 20) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR8_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR8_DAD          (0x7FUL << 22) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR8_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR8_ODDFRM          (0x1UL << 29) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR8_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR8_CHDIS          (0x1UL << 30) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR8_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR8_CHENA          (0x1UL << 31) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR8_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT8_PRTADDR          (0x7FUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT8_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT8_HUBADDR          (0x7FUL << 7) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT8_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT8_XACTPOS          (0x3UL << 14) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT8_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT8_COMPLSPLT          (0x1UL << 16) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT8_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT8_SPLITEN          (0x1UL << 31) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT8_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG1_HS_HOST_OTG_HS_HCINT8_XFRC          (0x1UL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCINT8_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCINT8_CHH          (0x1UL << 1) 
+#define OTG1_HS_HOST_OTG_HS_HCINT8_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG1_HS_HOST_OTG_HS_HCINT8_AHBERR          (0x1UL << 2) 
+#define OTG1_HS_HOST_OTG_HS_HCINT8_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
+#define OTG1_HS_HOST_OTG_HS_HCINT8_STALL          (0x1UL << 3) 
+#define OTG1_HS_HOST_OTG_HS_HCINT8_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG1_HS_HOST_OTG_HS_HCINT8_NAK          (0x1UL << 4) 
+#define OTG1_HS_HOST_OTG_HS_HCINT8_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG1_HS_HOST_OTG_HS_HCINT8_ACK          (0x1UL << 5) 
+#define OTG1_HS_HOST_OTG_HS_HCINT8_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
+#define OTG1_HS_HOST_OTG_HS_HCINT8_NYET          (0x1UL << 6) 
+#define OTG1_HS_HOST_OTG_HS_HCINT8_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG1_HS_HOST_OTG_HS_HCINT8_TXERR          (0x1UL << 7) 
+#define OTG1_HS_HOST_OTG_HS_HCINT8_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define OTG1_HS_HOST_OTG_HS_HCINT8_BBERR          (0x1UL << 8) 
+#define OTG1_HS_HOST_OTG_HS_HCINT8_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define OTG1_HS_HOST_OTG_HS_HCINT8_FRMOR          (0x1UL << 9) 
+#define OTG1_HS_HOST_OTG_HS_HCINT8_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define OTG1_HS_HOST_OTG_HS_HCINT8_DTERR          (0x1UL << 10) 
+#define OTG1_HS_HOST_OTG_HS_HCINT8_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK8_XFRCM          (0x1UL << 0) 
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK8_XFRCM_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK8_CHHM          (0x1UL << 1) 
@@ -20131,6 +20271,66 @@ struct OTG1_HS_HOST {
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK8_FRMORM_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK8_DTERRM          (0x1UL << 10) 
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK8_DTERRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ8_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ8_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ8_PKTCNT          (0x3FFUL << 19) 
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ8_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ8_DPID          (0x3UL << 29) 
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ8_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
+#define OTG1_HS_HOST_OTG_HS_HCDMA8_DMAADDR          (0xFFFFFFFFUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCDMA8_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR9_MPSIZ          (0x7FFUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR9_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR9_EPNUM          (0xFUL << 11) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR9_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR9_EPDIR          (0x1UL << 15) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR9_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR9_LSDEV          (0x1UL << 17) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR9_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR9_EPTYP          (0x3UL << 18) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR9_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR9_MC          (0x3UL << 20) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR9_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR9_DAD          (0x7FUL << 22) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR9_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR9_ODDFRM          (0x1UL << 29) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR9_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR9_CHDIS          (0x1UL << 30) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR9_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR9_CHENA          (0x1UL << 31) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR9_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT9_PRTADDR          (0x7FUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT9_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT9_HUBADDR          (0x7FUL << 7) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT9_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT9_XACTPOS          (0x3UL << 14) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT9_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT9_COMPLSPLT          (0x1UL << 16) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT9_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT9_SPLITEN          (0x1UL << 31) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT9_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG1_HS_HOST_OTG_HS_HCINT9_XFRC          (0x1UL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCINT9_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCINT9_CHH          (0x1UL << 1) 
+#define OTG1_HS_HOST_OTG_HS_HCINT9_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG1_HS_HOST_OTG_HS_HCINT9_AHBERR          (0x1UL << 2) 
+#define OTG1_HS_HOST_OTG_HS_HCINT9_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
+#define OTG1_HS_HOST_OTG_HS_HCINT9_STALL          (0x1UL << 3) 
+#define OTG1_HS_HOST_OTG_HS_HCINT9_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG1_HS_HOST_OTG_HS_HCINT9_NAK          (0x1UL << 4) 
+#define OTG1_HS_HOST_OTG_HS_HCINT9_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG1_HS_HOST_OTG_HS_HCINT9_ACK          (0x1UL << 5) 
+#define OTG1_HS_HOST_OTG_HS_HCINT9_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
+#define OTG1_HS_HOST_OTG_HS_HCINT9_NYET          (0x1UL << 6) 
+#define OTG1_HS_HOST_OTG_HS_HCINT9_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG1_HS_HOST_OTG_HS_HCINT9_TXERR          (0x1UL << 7) 
+#define OTG1_HS_HOST_OTG_HS_HCINT9_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define OTG1_HS_HOST_OTG_HS_HCINT9_BBERR          (0x1UL << 8) 
+#define OTG1_HS_HOST_OTG_HS_HCINT9_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define OTG1_HS_HOST_OTG_HS_HCINT9_FRMOR          (0x1UL << 9) 
+#define OTG1_HS_HOST_OTG_HS_HCINT9_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define OTG1_HS_HOST_OTG_HS_HCINT9_DTERR          (0x1UL << 10) 
+#define OTG1_HS_HOST_OTG_HS_HCINT9_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK9_XFRCM          (0x1UL << 0) 
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK9_XFRCM_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK9_CHHM          (0x1UL << 1) 
@@ -20153,6 +20353,66 @@ struct OTG1_HS_HOST {
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK9_FRMORM_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK9_DTERRM          (0x1UL << 10) 
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK9_DTERRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ9_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ9_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ9_PKTCNT          (0x3FFUL << 19) 
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ9_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ9_DPID          (0x3UL << 29) 
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ9_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
+#define OTG1_HS_HOST_OTG_HS_HCDMA9_DMAADDR          (0xFFFFFFFFUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCDMA9_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR10_MPSIZ          (0x7FFUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR10_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR10_EPNUM          (0xFUL << 11) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR10_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR10_EPDIR          (0x1UL << 15) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR10_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR10_LSDEV          (0x1UL << 17) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR10_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR10_EPTYP          (0x3UL << 18) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR10_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR10_MC          (0x3UL << 20) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR10_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR10_DAD          (0x7FUL << 22) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR10_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR10_ODDFRM          (0x1UL << 29) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR10_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR10_CHDIS          (0x1UL << 30) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR10_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR10_CHENA          (0x1UL << 31) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR10_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT10_PRTADDR          (0x7FUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT10_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT10_HUBADDR          (0x7FUL << 7) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT10_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT10_XACTPOS          (0x3UL << 14) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT10_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT10_COMPLSPLT          (0x1UL << 16) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT10_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT10_SPLITEN          (0x1UL << 31) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT10_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG1_HS_HOST_OTG_HS_HCINT10_XFRC          (0x1UL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCINT10_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCINT10_CHH          (0x1UL << 1) 
+#define OTG1_HS_HOST_OTG_HS_HCINT10_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG1_HS_HOST_OTG_HS_HCINT10_AHBERR          (0x1UL << 2) 
+#define OTG1_HS_HOST_OTG_HS_HCINT10_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
+#define OTG1_HS_HOST_OTG_HS_HCINT10_STALL          (0x1UL << 3) 
+#define OTG1_HS_HOST_OTG_HS_HCINT10_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG1_HS_HOST_OTG_HS_HCINT10_NAK          (0x1UL << 4) 
+#define OTG1_HS_HOST_OTG_HS_HCINT10_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG1_HS_HOST_OTG_HS_HCINT10_ACK          (0x1UL << 5) 
+#define OTG1_HS_HOST_OTG_HS_HCINT10_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
+#define OTG1_HS_HOST_OTG_HS_HCINT10_NYET          (0x1UL << 6) 
+#define OTG1_HS_HOST_OTG_HS_HCINT10_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG1_HS_HOST_OTG_HS_HCINT10_TXERR          (0x1UL << 7) 
+#define OTG1_HS_HOST_OTG_HS_HCINT10_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define OTG1_HS_HOST_OTG_HS_HCINT10_BBERR          (0x1UL << 8) 
+#define OTG1_HS_HOST_OTG_HS_HCINT10_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define OTG1_HS_HOST_OTG_HS_HCINT10_FRMOR          (0x1UL << 9) 
+#define OTG1_HS_HOST_OTG_HS_HCINT10_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define OTG1_HS_HOST_OTG_HS_HCINT10_DTERR          (0x1UL << 10) 
+#define OTG1_HS_HOST_OTG_HS_HCINT10_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK10_XFRCM          (0x1UL << 0) 
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK10_XFRCM_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK10_CHHM          (0x1UL << 1) 
@@ -20175,6 +20435,66 @@ struct OTG1_HS_HOST {
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK10_FRMORM_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK10_DTERRM          (0x1UL << 10) 
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK10_DTERRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ10_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ10_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ10_PKTCNT          (0x3FFUL << 19) 
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ10_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ10_DPID          (0x3UL << 29) 
+#define OTG1_HS_HOST_OTG_HS_HCTSIZ10_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
+#define OTG1_HS_HOST_OTG_HS_HCDMA10_DMAADDR          (0xFFFFFFFFUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCDMA10_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR11_MPSIZ          (0x7FFUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR11_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR11_EPNUM          (0xFUL << 11) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR11_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR11_EPDIR          (0x1UL << 15) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR11_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR11_LSDEV          (0x1UL << 17) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR11_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR11_EPTYP          (0x3UL << 18) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR11_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR11_MC          (0x3UL << 20) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR11_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR11_DAD          (0x7FUL << 22) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR11_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR11_ODDFRM          (0x1UL << 29) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR11_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR11_CHDIS          (0x1UL << 30) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR11_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
+#define OTG1_HS_HOST_OTG_HS_HCCHAR11_CHENA          (0x1UL << 31) 
+#define OTG1_HS_HOST_OTG_HS_HCCHAR11_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT11_PRTADDR          (0x7FUL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT11_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT11_HUBADDR          (0x7FUL << 7) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT11_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT11_XACTPOS          (0x3UL << 14) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT11_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT11_COMPLSPLT          (0x1UL << 16) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT11_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
+#define OTG1_HS_HOST_OTG_HS_HCSPLT11_SPLITEN          (0x1UL << 31) 
+#define OTG1_HS_HOST_OTG_HS_HCSPLT11_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG1_HS_HOST_OTG_HS_HCINT11_XFRC          (0x1UL << 0) 
+#define OTG1_HS_HOST_OTG_HS_HCINT11_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG1_HS_HOST_OTG_HS_HCINT11_CHH          (0x1UL << 1) 
+#define OTG1_HS_HOST_OTG_HS_HCINT11_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG1_HS_HOST_OTG_HS_HCINT11_AHBERR          (0x1UL << 2) 
+#define OTG1_HS_HOST_OTG_HS_HCINT11_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
+#define OTG1_HS_HOST_OTG_HS_HCINT11_STALL          (0x1UL << 3) 
+#define OTG1_HS_HOST_OTG_HS_HCINT11_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG1_HS_HOST_OTG_HS_HCINT11_NAK          (0x1UL << 4) 
+#define OTG1_HS_HOST_OTG_HS_HCINT11_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG1_HS_HOST_OTG_HS_HCINT11_ACK          (0x1UL << 5) 
+#define OTG1_HS_HOST_OTG_HS_HCINT11_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
+#define OTG1_HS_HOST_OTG_HS_HCINT11_NYET          (0x1UL << 6) 
+#define OTG1_HS_HOST_OTG_HS_HCINT11_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG1_HS_HOST_OTG_HS_HCINT11_TXERR          (0x1UL << 7) 
+#define OTG1_HS_HOST_OTG_HS_HCINT11_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define OTG1_HS_HOST_OTG_HS_HCINT11_BBERR          (0x1UL << 8) 
+#define OTG1_HS_HOST_OTG_HS_HCINT11_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define OTG1_HS_HOST_OTG_HS_HCINT11_FRMOR          (0x1UL << 9) 
+#define OTG1_HS_HOST_OTG_HS_HCINT11_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define OTG1_HS_HOST_OTG_HS_HCINT11_DTERR          (0x1UL << 10) 
+#define OTG1_HS_HOST_OTG_HS_HCINT11_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK11_XFRCM          (0x1UL << 0) 
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK11_XFRCM_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK11_CHHM          (0x1UL << 1) 
@@ -20197,100 +20517,12 @@ struct OTG1_HS_HOST {
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK11_FRMORM_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK11_DTERRM          (0x1UL << 10) 
 #define OTG1_HS_HOST_OTG_HS_HCINTMSK11_DTERRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ0_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ0_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ0_PKTCNT          (0x3FFUL << 19) 
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ0_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ0_DPID          (0x3UL << 29) 
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ0_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ1_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ1_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ1_PKTCNT          (0x3FFUL << 19) 
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ1_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ1_DPID          (0x3UL << 29) 
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ1_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ2_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ2_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ2_PKTCNT          (0x3FFUL << 19) 
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ2_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ2_DPID          (0x3UL << 29) 
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ2_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ3_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ3_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ3_PKTCNT          (0x3FFUL << 19) 
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ3_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ3_DPID          (0x3UL << 29) 
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ3_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ4_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ4_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ4_PKTCNT          (0x3FFUL << 19) 
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ4_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ4_DPID          (0x3UL << 29) 
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ4_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ5_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ5_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ5_PKTCNT          (0x3FFUL << 19) 
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ5_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ5_DPID          (0x3UL << 29) 
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ5_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ6_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ6_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ6_PKTCNT          (0x3FFUL << 19) 
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ6_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ6_DPID          (0x3UL << 29) 
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ6_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ7_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ7_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ7_PKTCNT          (0x3FFUL << 19) 
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ7_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ7_DPID          (0x3UL << 29) 
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ7_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ8_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ8_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ8_PKTCNT          (0x3FFUL << 19) 
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ8_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ8_DPID          (0x3UL << 29) 
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ8_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ9_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ9_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ9_PKTCNT          (0x3FFUL << 19) 
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ9_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ9_DPID          (0x3UL << 29) 
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ9_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ10_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ10_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ10_PKTCNT          (0x3FFUL << 19) 
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ10_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ10_DPID          (0x3UL << 29) 
-#define OTG1_HS_HOST_OTG_HS_HCTSIZ10_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
 #define OTG1_HS_HOST_OTG_HS_HCTSIZ11_XFRSIZ          (0x7FFFFUL << 0) 
 #define OTG1_HS_HOST_OTG_HS_HCTSIZ11_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
 #define OTG1_HS_HOST_OTG_HS_HCTSIZ11_PKTCNT          (0x3FFUL << 19) 
 #define OTG1_HS_HOST_OTG_HS_HCTSIZ11_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
 #define OTG1_HS_HOST_OTG_HS_HCTSIZ11_DPID          (0x3UL << 29) 
 #define OTG1_HS_HOST_OTG_HS_HCTSIZ11_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG1_HS_HOST_OTG_HS_HCDMA0_DMAADDR          (0xFFFFFFFFUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCDMA0_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCDMA1_DMAADDR          (0xFFFFFFFFUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCDMA1_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCDMA2_DMAADDR          (0xFFFFFFFFUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCDMA2_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCDMA3_DMAADDR          (0xFFFFFFFFUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCDMA3_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCDMA4_DMAADDR          (0xFFFFFFFFUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCDMA4_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCDMA5_DMAADDR          (0xFFFFFFFFUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCDMA5_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCDMA6_DMAADDR          (0xFFFFFFFFUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCDMA6_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCDMA7_DMAADDR          (0xFFFFFFFFUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCDMA7_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCDMA8_DMAADDR          (0xFFFFFFFFUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCDMA8_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCDMA9_DMAADDR          (0xFFFFFFFFUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCDMA9_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
-#define OTG1_HS_HOST_OTG_HS_HCDMA10_DMAADDR          (0xFFFFFFFFUL << 0) 
-#define OTG1_HS_HOST_OTG_HS_HCDMA10_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
 #define OTG1_HS_HOST_OTG_HS_HCDMA11_DMAADDR          (0xFFFFFFFFUL << 0) 
 #define OTG1_HS_HOST_OTG_HS_HCDMA11_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
 #define OTG1_HS_HOST_OTG_HS_HCCHAR12_MPSIZ          (0x7FFUL << 0) 
@@ -20623,124 +20855,127 @@ struct OTG1_HS_HOST {
 #define OTG1_HS_HOST_OTG_HS_HCDMA15_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
 
 #define OTG1_HS_HOST  ((struct OTG1_HS_HOST*)(0x40040400UL))
+
+
+
 struct OTG2_HS_HOST {
-  volatile uint32_t OTG_HS_HCFG;
-  volatile uint32_t OTG_HS_HFIR;
-  volatile const uint32_t OTG_HS_HFNUM;
-  const volatile uint32_t RESERVED16[1];
-  volatile uint32_t OTG_HS_HPTXSTS;
-  volatile const uint32_t OTG_HS_HAINT;
-  volatile uint32_t OTG_HS_HAINTMSK;
-  const volatile uint32_t RESERVED64[9];
-  volatile uint32_t OTG_HS_HPRT;
-  const volatile uint32_t RESERVED256[47];
-  volatile uint32_t OTG_HS_HCCHAR0;
-  volatile uint32_t OTG_HS_HCSPLT0;
-  volatile uint32_t OTG_HS_HCINT0;
-  volatile uint32_t OTG_HS_HCINTMSK0;
-  volatile uint32_t OTG_HS_HCTSIZ0;
-  volatile uint32_t OTG_HS_HCDMA0;
-  const volatile uint32_t RESERVED288[2];
-  volatile uint32_t OTG_HS_HCCHAR1;
-  volatile uint32_t OTG_HS_HCSPLT1;
-  volatile uint32_t OTG_HS_HCINT1;
-  volatile uint32_t OTG_HS_HCINTMSK1;
-  volatile uint32_t OTG_HS_HCTSIZ1;
-  volatile uint32_t OTG_HS_HCDMA1;
-  const volatile uint32_t RESERVED320[2];
-  volatile uint32_t OTG_HS_HCCHAR2;
-  volatile uint32_t OTG_HS_HCSPLT2;
-  volatile uint32_t OTG_HS_HCINT2;
-  volatile uint32_t OTG_HS_HCINTMSK2;
-  volatile uint32_t OTG_HS_HCTSIZ2;
-  volatile uint32_t OTG_HS_HCDMA2;
-  const volatile uint32_t RESERVED352[2];
-  volatile uint32_t OTG_HS_HCCHAR3;
-  volatile uint32_t OTG_HS_HCSPLT3;
-  volatile uint32_t OTG_HS_HCINT3;
-  volatile uint32_t OTG_HS_HCINTMSK3;
-  volatile uint32_t OTG_HS_HCTSIZ3;
-  volatile uint32_t OTG_HS_HCDMA3;
-  const volatile uint32_t RESERVED384[2];
-  volatile uint32_t OTG_HS_HCCHAR4;
-  volatile uint32_t OTG_HS_HCSPLT4;
-  volatile uint32_t OTG_HS_HCINT4;
-  volatile uint32_t OTG_HS_HCINTMSK4;
-  volatile uint32_t OTG_HS_HCTSIZ4;
-  volatile uint32_t OTG_HS_HCDMA4;
-  const volatile uint32_t RESERVED416[2];
-  volatile uint32_t OTG_HS_HCCHAR5;
-  volatile uint32_t OTG_HS_HCSPLT5;
-  volatile uint32_t OTG_HS_HCINT5;
-  volatile uint32_t OTG_HS_HCINTMSK5;
-  volatile uint32_t OTG_HS_HCTSIZ5;
-  volatile uint32_t OTG_HS_HCDMA5;
-  const volatile uint32_t RESERVED448[2];
-  volatile uint32_t OTG_HS_HCCHAR6;
-  volatile uint32_t OTG_HS_HCSPLT6;
-  volatile uint32_t OTG_HS_HCINT6;
-  volatile uint32_t OTG_HS_HCINTMSK6;
-  volatile uint32_t OTG_HS_HCTSIZ6;
-  volatile uint32_t OTG_HS_HCDMA6;
-  const volatile uint32_t RESERVED480[2];
-  volatile uint32_t OTG_HS_HCCHAR7;
-  volatile uint32_t OTG_HS_HCSPLT7;
-  volatile uint32_t OTG_HS_HCINT7;
-  volatile uint32_t OTG_HS_HCINTMSK7;
-  volatile uint32_t OTG_HS_HCTSIZ7;
-  volatile uint32_t OTG_HS_HCDMA7;
-  const volatile uint32_t RESERVED512[2];
-  volatile uint32_t OTG_HS_HCCHAR8;
-  volatile uint32_t OTG_HS_HCSPLT8;
-  volatile uint32_t OTG_HS_HCINT8;
-  volatile uint32_t OTG_HS_HCINTMSK8;
-  volatile uint32_t OTG_HS_HCTSIZ8;
-  volatile uint32_t OTG_HS_HCDMA8;
-  const volatile uint32_t RESERVED544[2];
-  volatile uint32_t OTG_HS_HCCHAR9;
-  volatile uint32_t OTG_HS_HCSPLT9;
-  volatile uint32_t OTG_HS_HCINT9;
-  volatile uint32_t OTG_HS_HCINTMSK9;
-  volatile uint32_t OTG_HS_HCTSIZ9;
-  volatile uint32_t OTG_HS_HCDMA9;
-  const volatile uint32_t RESERVED576[2];
-  volatile uint32_t OTG_HS_HCCHAR10;
-  volatile uint32_t OTG_HS_HCSPLT10;
-  volatile uint32_t OTG_HS_HCINT10;
-  volatile uint32_t OTG_HS_HCINTMSK10;
-  volatile uint32_t OTG_HS_HCTSIZ10;
-  volatile uint32_t OTG_HS_HCDMA10;
-  const volatile uint32_t RESERVED608[2];
-  volatile uint32_t OTG_HS_HCCHAR11;
-  volatile uint32_t OTG_HS_HCSPLT11;
-  volatile uint32_t OTG_HS_HCINT11;
-  volatile uint32_t OTG_HS_HCINTMSK11;
-  volatile uint32_t OTG_HS_HCTSIZ11;
-  volatile uint32_t OTG_HS_HCDMA11;
-  volatile uint32_t OTG_HS_HCCHAR12;
-  volatile uint32_t OTG_HS_HCSPLT12;
-  volatile uint32_t OTG_HS_HCINT12;
-  volatile uint32_t OTG_HS_HCINTMSK12;
-  volatile uint32_t OTG_HS_HCTSIZ12;
-  volatile uint32_t OTG_HS_HCDMA12;
-  volatile uint32_t OTG_HS_HCCHAR13;
-  volatile uint32_t OTG_HS_HCSPLT13;
-  volatile uint32_t OTG_HS_HCINT13;
-  volatile uint32_t OTG_HS_HCINTMSK13;
-  volatile uint32_t OTG_HS_HCTSIZ13;
-  volatile uint32_t OTG_HS_HCDMA13;
-  volatile uint32_t OTG_HS_HCCHAR14;
-  volatile uint32_t OTG_HS_HCSPLT14;
-  volatile uint32_t OTG_HS_HCINT14;
-  volatile uint32_t OTG_HS_HCINTMSK14;
-  volatile uint32_t OTG_HS_HCTSIZ14;
-  volatile uint32_t OTG_HS_HCDMA14;
-  volatile uint32_t OTG_HS_HCCHAR15;
-  volatile uint32_t OTG_HS_HCSPLT15;
-  volatile uint32_t OTG_HS_HCINT15;
-  volatile uint32_t OTG_HS_HCINTMSK15;
-  volatile uint32_t OTG_HS_HCTSIZ15;
-  volatile uint32_t OTG_HS_HCDMA15;
+    volatile uint32_t OTG_HS_HCFG;
+    volatile uint32_t OTG_HS_HFIR;
+    volatile const uint32_t OTG_HS_HFNUM;
+    volatile const uint32_t RESERVED_12;
+    volatile uint32_t OTG_HS_HPTXSTS;
+    volatile const uint32_t OTG_HS_HAINT;
+    volatile uint32_t OTG_HS_HAINTMSK;
+    volatile const uint32_t RESERVED_28[9];
+    volatile uint32_t OTG_HS_HPRT;
+    volatile const uint32_t RESERVED_68[47];
+    volatile uint32_t OTG_HS_HCCHAR0;
+    volatile uint32_t OTG_HS_HCSPLT0;
+    volatile uint32_t OTG_HS_HCINT0;
+    volatile uint32_t OTG_HS_HCINTMSK0;
+    volatile uint32_t OTG_HS_HCTSIZ0;
+    volatile uint32_t OTG_HS_HCDMA0;
+    volatile const uint32_t RESERVED_280[2];
+    volatile uint32_t OTG_HS_HCCHAR1;
+    volatile uint32_t OTG_HS_HCSPLT1;
+    volatile uint32_t OTG_HS_HCINT1;
+    volatile uint32_t OTG_HS_HCINTMSK1;
+    volatile uint32_t OTG_HS_HCTSIZ1;
+    volatile uint32_t OTG_HS_HCDMA1;
+    volatile const uint32_t RESERVED_312[2];
+    volatile uint32_t OTG_HS_HCCHAR2;
+    volatile uint32_t OTG_HS_HCSPLT2;
+    volatile uint32_t OTG_HS_HCINT2;
+    volatile uint32_t OTG_HS_HCINTMSK2;
+    volatile uint32_t OTG_HS_HCTSIZ2;
+    volatile uint32_t OTG_HS_HCDMA2;
+    volatile const uint32_t RESERVED_344[2];
+    volatile uint32_t OTG_HS_HCCHAR3;
+    volatile uint32_t OTG_HS_HCSPLT3;
+    volatile uint32_t OTG_HS_HCINT3;
+    volatile uint32_t OTG_HS_HCINTMSK3;
+    volatile uint32_t OTG_HS_HCTSIZ3;
+    volatile uint32_t OTG_HS_HCDMA3;
+    volatile const uint32_t RESERVED_376[2];
+    volatile uint32_t OTG_HS_HCCHAR4;
+    volatile uint32_t OTG_HS_HCSPLT4;
+    volatile uint32_t OTG_HS_HCINT4;
+    volatile uint32_t OTG_HS_HCINTMSK4;
+    volatile uint32_t OTG_HS_HCTSIZ4;
+    volatile uint32_t OTG_HS_HCDMA4;
+    volatile const uint32_t RESERVED_408[2];
+    volatile uint32_t OTG_HS_HCCHAR5;
+    volatile uint32_t OTG_HS_HCSPLT5;
+    volatile uint32_t OTG_HS_HCINT5;
+    volatile uint32_t OTG_HS_HCINTMSK5;
+    volatile uint32_t OTG_HS_HCTSIZ5;
+    volatile uint32_t OTG_HS_HCDMA5;
+    volatile const uint32_t RESERVED_440[2];
+    volatile uint32_t OTG_HS_HCCHAR6;
+    volatile uint32_t OTG_HS_HCSPLT6;
+    volatile uint32_t OTG_HS_HCINT6;
+    volatile uint32_t OTG_HS_HCINTMSK6;
+    volatile uint32_t OTG_HS_HCTSIZ6;
+    volatile uint32_t OTG_HS_HCDMA6;
+    volatile const uint32_t RESERVED_472[2];
+    volatile uint32_t OTG_HS_HCCHAR7;
+    volatile uint32_t OTG_HS_HCSPLT7;
+    volatile uint32_t OTG_HS_HCINT7;
+    volatile uint32_t OTG_HS_HCINTMSK7;
+    volatile uint32_t OTG_HS_HCTSIZ7;
+    volatile uint32_t OTG_HS_HCDMA7;
+    volatile const uint32_t RESERVED_504[2];
+    volatile uint32_t OTG_HS_HCCHAR8;
+    volatile uint32_t OTG_HS_HCSPLT8;
+    volatile uint32_t OTG_HS_HCINT8;
+    volatile uint32_t OTG_HS_HCINTMSK8;
+    volatile uint32_t OTG_HS_HCTSIZ8;
+    volatile uint32_t OTG_HS_HCDMA8;
+    volatile const uint32_t RESERVED_536[2];
+    volatile uint32_t OTG_HS_HCCHAR9;
+    volatile uint32_t OTG_HS_HCSPLT9;
+    volatile uint32_t OTG_HS_HCINT9;
+    volatile uint32_t OTG_HS_HCINTMSK9;
+    volatile uint32_t OTG_HS_HCTSIZ9;
+    volatile uint32_t OTG_HS_HCDMA9;
+    volatile const uint32_t RESERVED_568[2];
+    volatile uint32_t OTG_HS_HCCHAR10;
+    volatile uint32_t OTG_HS_HCSPLT10;
+    volatile uint32_t OTG_HS_HCINT10;
+    volatile uint32_t OTG_HS_HCINTMSK10;
+    volatile uint32_t OTG_HS_HCTSIZ10;
+    volatile uint32_t OTG_HS_HCDMA10;
+    volatile const uint32_t RESERVED_600[2];
+    volatile uint32_t OTG_HS_HCCHAR11;
+    volatile uint32_t OTG_HS_HCSPLT11;
+    volatile uint32_t OTG_HS_HCINT11;
+    volatile uint32_t OTG_HS_HCINTMSK11;
+    volatile uint32_t OTG_HS_HCTSIZ11;
+    volatile uint32_t OTG_HS_HCDMA11;
+    volatile uint32_t OTG_HS_HCCHAR12;
+    volatile uint32_t OTG_HS_HCSPLT12;
+    volatile uint32_t OTG_HS_HCINT12;
+    volatile uint32_t OTG_HS_HCINTMSK12;
+    volatile uint32_t OTG_HS_HCTSIZ12;
+    volatile uint32_t OTG_HS_HCDMA12;
+    volatile uint32_t OTG_HS_HCCHAR13;
+    volatile uint32_t OTG_HS_HCSPLT13;
+    volatile uint32_t OTG_HS_HCINT13;
+    volatile uint32_t OTG_HS_HCINTMSK13;
+    volatile uint32_t OTG_HS_HCTSIZ13;
+    volatile uint32_t OTG_HS_HCDMA13;
+    volatile uint32_t OTG_HS_HCCHAR14;
+    volatile uint32_t OTG_HS_HCSPLT14;
+    volatile uint32_t OTG_HS_HCINT14;
+    volatile uint32_t OTG_HS_HCINTMSK14;
+    volatile uint32_t OTG_HS_HCTSIZ14;
+    volatile uint32_t OTG_HS_HCDMA14;
+    volatile uint32_t OTG_HS_HCCHAR15;
+    volatile uint32_t OTG_HS_HCSPLT15;
+    volatile uint32_t OTG_HS_HCINT15;
+    volatile uint32_t OTG_HS_HCINTMSK15;
+    volatile uint32_t OTG_HS_HCTSIZ15;
+    volatile uint32_t OTG_HS_HCDMA15;
 };
 #define OTG2_HS_HOST_OTG_HS_HCFG_FSLSPCS          (0x3UL << 0) 
 #define OTG2_HS_HOST_OTG_HS_HCFG_FSLSPCS_VAL(X) (((uint32_t)(X) & 0x3UL) << 0)
@@ -20808,226 +21043,6 @@ struct OTG2_HS_HOST {
 #define OTG2_HS_HOST_OTG_HS_HCCHAR0_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define OTG2_HS_HOST_OTG_HS_HCCHAR0_CHENA          (0x1UL << 31) 
 #define OTG2_HS_HOST_OTG_HS_HCCHAR0_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR1_MPSIZ          (0x7FFUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR1_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR1_EPNUM          (0xFUL << 11) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR1_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR1_EPDIR          (0x1UL << 15) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR1_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR1_LSDEV          (0x1UL << 17) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR1_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR1_EPTYP          (0x3UL << 18) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR1_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR1_MC          (0x3UL << 20) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR1_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR1_DAD          (0x7FUL << 22) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR1_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR1_ODDFRM          (0x1UL << 29) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR1_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR1_CHDIS          (0x1UL << 30) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR1_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR1_CHENA          (0x1UL << 31) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR1_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR2_MPSIZ          (0x7FFUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR2_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR2_EPNUM          (0xFUL << 11) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR2_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR2_EPDIR          (0x1UL << 15) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR2_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR2_LSDEV          (0x1UL << 17) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR2_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR2_EPTYP          (0x3UL << 18) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR2_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR2_MC          (0x3UL << 20) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR2_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR2_DAD          (0x7FUL << 22) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR2_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR2_ODDFRM          (0x1UL << 29) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR2_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR2_CHDIS          (0x1UL << 30) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR2_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR2_CHENA          (0x1UL << 31) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR2_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR3_MPSIZ          (0x7FFUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR3_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR3_EPNUM          (0xFUL << 11) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR3_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR3_EPDIR          (0x1UL << 15) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR3_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR3_LSDEV          (0x1UL << 17) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR3_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR3_EPTYP          (0x3UL << 18) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR3_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR3_MC          (0x3UL << 20) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR3_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR3_DAD          (0x7FUL << 22) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR3_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR3_ODDFRM          (0x1UL << 29) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR3_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR3_CHDIS          (0x1UL << 30) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR3_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR3_CHENA          (0x1UL << 31) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR3_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR4_MPSIZ          (0x7FFUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR4_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR4_EPNUM          (0xFUL << 11) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR4_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR4_EPDIR          (0x1UL << 15) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR4_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR4_LSDEV          (0x1UL << 17) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR4_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR4_EPTYP          (0x3UL << 18) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR4_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR4_MC          (0x3UL << 20) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR4_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR4_DAD          (0x7FUL << 22) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR4_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR4_ODDFRM          (0x1UL << 29) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR4_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR4_CHDIS          (0x1UL << 30) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR4_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR4_CHENA          (0x1UL << 31) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR4_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR5_MPSIZ          (0x7FFUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR5_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR5_EPNUM          (0xFUL << 11) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR5_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR5_EPDIR          (0x1UL << 15) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR5_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR5_LSDEV          (0x1UL << 17) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR5_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR5_EPTYP          (0x3UL << 18) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR5_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR5_MC          (0x3UL << 20) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR5_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR5_DAD          (0x7FUL << 22) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR5_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR5_ODDFRM          (0x1UL << 29) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR5_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR5_CHDIS          (0x1UL << 30) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR5_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR5_CHENA          (0x1UL << 31) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR5_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR6_MPSIZ          (0x7FFUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR6_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR6_EPNUM          (0xFUL << 11) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR6_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR6_EPDIR          (0x1UL << 15) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR6_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR6_LSDEV          (0x1UL << 17) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR6_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR6_EPTYP          (0x3UL << 18) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR6_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR6_MC          (0x3UL << 20) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR6_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR6_DAD          (0x7FUL << 22) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR6_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR6_ODDFRM          (0x1UL << 29) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR6_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR6_CHDIS          (0x1UL << 30) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR6_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR6_CHENA          (0x1UL << 31) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR6_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR7_MPSIZ          (0x7FFUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR7_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR7_EPNUM          (0xFUL << 11) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR7_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR7_EPDIR          (0x1UL << 15) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR7_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR7_LSDEV          (0x1UL << 17) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR7_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR7_EPTYP          (0x3UL << 18) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR7_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR7_MC          (0x3UL << 20) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR7_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR7_DAD          (0x7FUL << 22) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR7_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR7_ODDFRM          (0x1UL << 29) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR7_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR7_CHDIS          (0x1UL << 30) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR7_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR7_CHENA          (0x1UL << 31) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR7_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR8_MPSIZ          (0x7FFUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR8_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR8_EPNUM          (0xFUL << 11) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR8_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR8_EPDIR          (0x1UL << 15) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR8_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR8_LSDEV          (0x1UL << 17) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR8_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR8_EPTYP          (0x3UL << 18) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR8_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR8_MC          (0x3UL << 20) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR8_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR8_DAD          (0x7FUL << 22) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR8_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR8_ODDFRM          (0x1UL << 29) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR8_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR8_CHDIS          (0x1UL << 30) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR8_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR8_CHENA          (0x1UL << 31) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR8_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR9_MPSIZ          (0x7FFUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR9_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR9_EPNUM          (0xFUL << 11) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR9_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR9_EPDIR          (0x1UL << 15) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR9_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR9_LSDEV          (0x1UL << 17) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR9_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR9_EPTYP          (0x3UL << 18) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR9_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR9_MC          (0x3UL << 20) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR9_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR9_DAD          (0x7FUL << 22) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR9_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR9_ODDFRM          (0x1UL << 29) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR9_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR9_CHDIS          (0x1UL << 30) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR9_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR9_CHENA          (0x1UL << 31) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR9_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR10_MPSIZ          (0x7FFUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR10_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR10_EPNUM          (0xFUL << 11) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR10_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR10_EPDIR          (0x1UL << 15) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR10_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR10_LSDEV          (0x1UL << 17) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR10_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR10_EPTYP          (0x3UL << 18) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR10_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR10_MC          (0x3UL << 20) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR10_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR10_DAD          (0x7FUL << 22) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR10_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR10_ODDFRM          (0x1UL << 29) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR10_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR10_CHDIS          (0x1UL << 30) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR10_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR10_CHENA          (0x1UL << 31) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR10_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR11_MPSIZ          (0x7FFUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR11_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR11_EPNUM          (0xFUL << 11) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR11_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR11_EPDIR          (0x1UL << 15) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR11_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR11_LSDEV          (0x1UL << 17) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR11_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR11_EPTYP          (0x3UL << 18) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR11_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR11_MC          (0x3UL << 20) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR11_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR11_DAD          (0x7FUL << 22) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR11_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR11_ODDFRM          (0x1UL << 29) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR11_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR11_CHDIS          (0x1UL << 30) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR11_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
-#define OTG2_HS_HOST_OTG_HS_HCCHAR11_CHENA          (0x1UL << 31) 
-#define OTG2_HS_HOST_OTG_HS_HCCHAR11_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
 #define OTG2_HS_HOST_OTG_HS_HCSPLT0_PRTADDR          (0x7FUL << 0) 
 #define OTG2_HS_HOST_OTG_HS_HCSPLT0_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
 #define OTG2_HS_HOST_OTG_HS_HCSPLT0_HUBADDR          (0x7FUL << 7) 
@@ -21038,116 +21053,6 @@ struct OTG2_HS_HOST {
 #define OTG2_HS_HOST_OTG_HS_HCSPLT0_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
 #define OTG2_HS_HOST_OTG_HS_HCSPLT0_SPLITEN          (0x1UL << 31) 
 #define OTG2_HS_HOST_OTG_HS_HCSPLT0_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT1_PRTADDR          (0x7FUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT1_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT1_HUBADDR          (0x7FUL << 7) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT1_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT1_XACTPOS          (0x3UL << 14) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT1_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT1_COMPLSPLT          (0x1UL << 16) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT1_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT1_SPLITEN          (0x1UL << 31) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT1_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT2_PRTADDR          (0x7FUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT2_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT2_HUBADDR          (0x7FUL << 7) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT2_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT2_XACTPOS          (0x3UL << 14) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT2_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT2_COMPLSPLT          (0x1UL << 16) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT2_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT2_SPLITEN          (0x1UL << 31) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT2_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT3_PRTADDR          (0x7FUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT3_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT3_HUBADDR          (0x7FUL << 7) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT3_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT3_XACTPOS          (0x3UL << 14) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT3_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT3_COMPLSPLT          (0x1UL << 16) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT3_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT3_SPLITEN          (0x1UL << 31) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT3_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT4_PRTADDR          (0x7FUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT4_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT4_HUBADDR          (0x7FUL << 7) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT4_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT4_XACTPOS          (0x3UL << 14) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT4_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT4_COMPLSPLT          (0x1UL << 16) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT4_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT4_SPLITEN          (0x1UL << 31) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT4_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT5_PRTADDR          (0x7FUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT5_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT5_HUBADDR          (0x7FUL << 7) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT5_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT5_XACTPOS          (0x3UL << 14) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT5_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT5_COMPLSPLT          (0x1UL << 16) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT5_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT5_SPLITEN          (0x1UL << 31) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT5_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT6_PRTADDR          (0x7FUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT6_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT6_HUBADDR          (0x7FUL << 7) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT6_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT6_XACTPOS          (0x3UL << 14) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT6_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT6_COMPLSPLT          (0x1UL << 16) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT6_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT6_SPLITEN          (0x1UL << 31) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT6_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT7_PRTADDR          (0x7FUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT7_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT7_HUBADDR          (0x7FUL << 7) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT7_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT7_XACTPOS          (0x3UL << 14) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT7_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT7_COMPLSPLT          (0x1UL << 16) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT7_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT7_SPLITEN          (0x1UL << 31) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT7_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT8_PRTADDR          (0x7FUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT8_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT8_HUBADDR          (0x7FUL << 7) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT8_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT8_XACTPOS          (0x3UL << 14) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT8_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT8_COMPLSPLT          (0x1UL << 16) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT8_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT8_SPLITEN          (0x1UL << 31) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT8_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT9_PRTADDR          (0x7FUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT9_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT9_HUBADDR          (0x7FUL << 7) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT9_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT9_XACTPOS          (0x3UL << 14) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT9_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT9_COMPLSPLT          (0x1UL << 16) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT9_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT9_SPLITEN          (0x1UL << 31) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT9_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT10_PRTADDR          (0x7FUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT10_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT10_HUBADDR          (0x7FUL << 7) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT10_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT10_XACTPOS          (0x3UL << 14) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT10_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT10_COMPLSPLT          (0x1UL << 16) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT10_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT10_SPLITEN          (0x1UL << 31) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT10_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT11_PRTADDR          (0x7FUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT11_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT11_HUBADDR          (0x7FUL << 7) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT11_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT11_XACTPOS          (0x3UL << 14) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT11_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT11_COMPLSPLT          (0x1UL << 16) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT11_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
-#define OTG2_HS_HOST_OTG_HS_HCSPLT11_SPLITEN          (0x1UL << 31) 
-#define OTG2_HS_HOST_OTG_HS_HCSPLT11_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
 #define OTG2_HS_HOST_OTG_HS_HCINT0_XFRC          (0x1UL << 0) 
 #define OTG2_HS_HOST_OTG_HS_HCINT0_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define OTG2_HS_HOST_OTG_HS_HCINT0_CHH          (0x1UL << 1) 
@@ -21170,248 +21075,6 @@ struct OTG2_HS_HOST {
 #define OTG2_HS_HOST_OTG_HS_HCINT0_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
 #define OTG2_HS_HOST_OTG_HS_HCINT0_DTERR          (0x1UL << 10) 
 #define OTG2_HS_HOST_OTG_HS_HCINT0_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
-#define OTG2_HS_HOST_OTG_HS_HCINT1_XFRC          (0x1UL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCINT1_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCINT1_CHH          (0x1UL << 1) 
-#define OTG2_HS_HOST_OTG_HS_HCINT1_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG2_HS_HOST_OTG_HS_HCINT1_AHBERR          (0x1UL << 2) 
-#define OTG2_HS_HOST_OTG_HS_HCINT1_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
-#define OTG2_HS_HOST_OTG_HS_HCINT1_STALL          (0x1UL << 3) 
-#define OTG2_HS_HOST_OTG_HS_HCINT1_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG2_HS_HOST_OTG_HS_HCINT1_NAK          (0x1UL << 4) 
-#define OTG2_HS_HOST_OTG_HS_HCINT1_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG2_HS_HOST_OTG_HS_HCINT1_ACK          (0x1UL << 5) 
-#define OTG2_HS_HOST_OTG_HS_HCINT1_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
-#define OTG2_HS_HOST_OTG_HS_HCINT1_NYET          (0x1UL << 6) 
-#define OTG2_HS_HOST_OTG_HS_HCINT1_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG2_HS_HOST_OTG_HS_HCINT1_TXERR          (0x1UL << 7) 
-#define OTG2_HS_HOST_OTG_HS_HCINT1_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define OTG2_HS_HOST_OTG_HS_HCINT1_BBERR          (0x1UL << 8) 
-#define OTG2_HS_HOST_OTG_HS_HCINT1_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define OTG2_HS_HOST_OTG_HS_HCINT1_FRMOR          (0x1UL << 9) 
-#define OTG2_HS_HOST_OTG_HS_HCINT1_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define OTG2_HS_HOST_OTG_HS_HCINT1_DTERR          (0x1UL << 10) 
-#define OTG2_HS_HOST_OTG_HS_HCINT1_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
-#define OTG2_HS_HOST_OTG_HS_HCINT2_XFRC          (0x1UL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCINT2_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCINT2_CHH          (0x1UL << 1) 
-#define OTG2_HS_HOST_OTG_HS_HCINT2_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG2_HS_HOST_OTG_HS_HCINT2_AHBERR          (0x1UL << 2) 
-#define OTG2_HS_HOST_OTG_HS_HCINT2_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
-#define OTG2_HS_HOST_OTG_HS_HCINT2_STALL          (0x1UL << 3) 
-#define OTG2_HS_HOST_OTG_HS_HCINT2_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG2_HS_HOST_OTG_HS_HCINT2_NAK          (0x1UL << 4) 
-#define OTG2_HS_HOST_OTG_HS_HCINT2_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG2_HS_HOST_OTG_HS_HCINT2_ACK          (0x1UL << 5) 
-#define OTG2_HS_HOST_OTG_HS_HCINT2_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
-#define OTG2_HS_HOST_OTG_HS_HCINT2_NYET          (0x1UL << 6) 
-#define OTG2_HS_HOST_OTG_HS_HCINT2_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG2_HS_HOST_OTG_HS_HCINT2_TXERR          (0x1UL << 7) 
-#define OTG2_HS_HOST_OTG_HS_HCINT2_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define OTG2_HS_HOST_OTG_HS_HCINT2_BBERR          (0x1UL << 8) 
-#define OTG2_HS_HOST_OTG_HS_HCINT2_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define OTG2_HS_HOST_OTG_HS_HCINT2_FRMOR          (0x1UL << 9) 
-#define OTG2_HS_HOST_OTG_HS_HCINT2_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define OTG2_HS_HOST_OTG_HS_HCINT2_DTERR          (0x1UL << 10) 
-#define OTG2_HS_HOST_OTG_HS_HCINT2_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
-#define OTG2_HS_HOST_OTG_HS_HCINT3_XFRC          (0x1UL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCINT3_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCINT3_CHH          (0x1UL << 1) 
-#define OTG2_HS_HOST_OTG_HS_HCINT3_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG2_HS_HOST_OTG_HS_HCINT3_AHBERR          (0x1UL << 2) 
-#define OTG2_HS_HOST_OTG_HS_HCINT3_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
-#define OTG2_HS_HOST_OTG_HS_HCINT3_STALL          (0x1UL << 3) 
-#define OTG2_HS_HOST_OTG_HS_HCINT3_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG2_HS_HOST_OTG_HS_HCINT3_NAK          (0x1UL << 4) 
-#define OTG2_HS_HOST_OTG_HS_HCINT3_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG2_HS_HOST_OTG_HS_HCINT3_ACK          (0x1UL << 5) 
-#define OTG2_HS_HOST_OTG_HS_HCINT3_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
-#define OTG2_HS_HOST_OTG_HS_HCINT3_NYET          (0x1UL << 6) 
-#define OTG2_HS_HOST_OTG_HS_HCINT3_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG2_HS_HOST_OTG_HS_HCINT3_TXERR          (0x1UL << 7) 
-#define OTG2_HS_HOST_OTG_HS_HCINT3_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define OTG2_HS_HOST_OTG_HS_HCINT3_BBERR          (0x1UL << 8) 
-#define OTG2_HS_HOST_OTG_HS_HCINT3_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define OTG2_HS_HOST_OTG_HS_HCINT3_FRMOR          (0x1UL << 9) 
-#define OTG2_HS_HOST_OTG_HS_HCINT3_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define OTG2_HS_HOST_OTG_HS_HCINT3_DTERR          (0x1UL << 10) 
-#define OTG2_HS_HOST_OTG_HS_HCINT3_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
-#define OTG2_HS_HOST_OTG_HS_HCINT4_XFRC          (0x1UL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCINT4_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCINT4_CHH          (0x1UL << 1) 
-#define OTG2_HS_HOST_OTG_HS_HCINT4_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG2_HS_HOST_OTG_HS_HCINT4_AHBERR          (0x1UL << 2) 
-#define OTG2_HS_HOST_OTG_HS_HCINT4_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
-#define OTG2_HS_HOST_OTG_HS_HCINT4_STALL          (0x1UL << 3) 
-#define OTG2_HS_HOST_OTG_HS_HCINT4_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG2_HS_HOST_OTG_HS_HCINT4_NAK          (0x1UL << 4) 
-#define OTG2_HS_HOST_OTG_HS_HCINT4_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG2_HS_HOST_OTG_HS_HCINT4_ACK          (0x1UL << 5) 
-#define OTG2_HS_HOST_OTG_HS_HCINT4_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
-#define OTG2_HS_HOST_OTG_HS_HCINT4_NYET          (0x1UL << 6) 
-#define OTG2_HS_HOST_OTG_HS_HCINT4_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG2_HS_HOST_OTG_HS_HCINT4_TXERR          (0x1UL << 7) 
-#define OTG2_HS_HOST_OTG_HS_HCINT4_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define OTG2_HS_HOST_OTG_HS_HCINT4_BBERR          (0x1UL << 8) 
-#define OTG2_HS_HOST_OTG_HS_HCINT4_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define OTG2_HS_HOST_OTG_HS_HCINT4_FRMOR          (0x1UL << 9) 
-#define OTG2_HS_HOST_OTG_HS_HCINT4_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define OTG2_HS_HOST_OTG_HS_HCINT4_DTERR          (0x1UL << 10) 
-#define OTG2_HS_HOST_OTG_HS_HCINT4_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
-#define OTG2_HS_HOST_OTG_HS_HCINT5_XFRC          (0x1UL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCINT5_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCINT5_CHH          (0x1UL << 1) 
-#define OTG2_HS_HOST_OTG_HS_HCINT5_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG2_HS_HOST_OTG_HS_HCINT5_AHBERR          (0x1UL << 2) 
-#define OTG2_HS_HOST_OTG_HS_HCINT5_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
-#define OTG2_HS_HOST_OTG_HS_HCINT5_STALL          (0x1UL << 3) 
-#define OTG2_HS_HOST_OTG_HS_HCINT5_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG2_HS_HOST_OTG_HS_HCINT5_NAK          (0x1UL << 4) 
-#define OTG2_HS_HOST_OTG_HS_HCINT5_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG2_HS_HOST_OTG_HS_HCINT5_ACK          (0x1UL << 5) 
-#define OTG2_HS_HOST_OTG_HS_HCINT5_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
-#define OTG2_HS_HOST_OTG_HS_HCINT5_NYET          (0x1UL << 6) 
-#define OTG2_HS_HOST_OTG_HS_HCINT5_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG2_HS_HOST_OTG_HS_HCINT5_TXERR          (0x1UL << 7) 
-#define OTG2_HS_HOST_OTG_HS_HCINT5_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define OTG2_HS_HOST_OTG_HS_HCINT5_BBERR          (0x1UL << 8) 
-#define OTG2_HS_HOST_OTG_HS_HCINT5_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define OTG2_HS_HOST_OTG_HS_HCINT5_FRMOR          (0x1UL << 9) 
-#define OTG2_HS_HOST_OTG_HS_HCINT5_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define OTG2_HS_HOST_OTG_HS_HCINT5_DTERR          (0x1UL << 10) 
-#define OTG2_HS_HOST_OTG_HS_HCINT5_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
-#define OTG2_HS_HOST_OTG_HS_HCINT6_XFRC          (0x1UL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCINT6_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCINT6_CHH          (0x1UL << 1) 
-#define OTG2_HS_HOST_OTG_HS_HCINT6_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG2_HS_HOST_OTG_HS_HCINT6_AHBERR          (0x1UL << 2) 
-#define OTG2_HS_HOST_OTG_HS_HCINT6_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
-#define OTG2_HS_HOST_OTG_HS_HCINT6_STALL          (0x1UL << 3) 
-#define OTG2_HS_HOST_OTG_HS_HCINT6_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG2_HS_HOST_OTG_HS_HCINT6_NAK          (0x1UL << 4) 
-#define OTG2_HS_HOST_OTG_HS_HCINT6_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG2_HS_HOST_OTG_HS_HCINT6_ACK          (0x1UL << 5) 
-#define OTG2_HS_HOST_OTG_HS_HCINT6_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
-#define OTG2_HS_HOST_OTG_HS_HCINT6_NYET          (0x1UL << 6) 
-#define OTG2_HS_HOST_OTG_HS_HCINT6_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG2_HS_HOST_OTG_HS_HCINT6_TXERR          (0x1UL << 7) 
-#define OTG2_HS_HOST_OTG_HS_HCINT6_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define OTG2_HS_HOST_OTG_HS_HCINT6_BBERR          (0x1UL << 8) 
-#define OTG2_HS_HOST_OTG_HS_HCINT6_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define OTG2_HS_HOST_OTG_HS_HCINT6_FRMOR          (0x1UL << 9) 
-#define OTG2_HS_HOST_OTG_HS_HCINT6_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define OTG2_HS_HOST_OTG_HS_HCINT6_DTERR          (0x1UL << 10) 
-#define OTG2_HS_HOST_OTG_HS_HCINT6_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
-#define OTG2_HS_HOST_OTG_HS_HCINT7_XFRC          (0x1UL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCINT7_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCINT7_CHH          (0x1UL << 1) 
-#define OTG2_HS_HOST_OTG_HS_HCINT7_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG2_HS_HOST_OTG_HS_HCINT7_AHBERR          (0x1UL << 2) 
-#define OTG2_HS_HOST_OTG_HS_HCINT7_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
-#define OTG2_HS_HOST_OTG_HS_HCINT7_STALL          (0x1UL << 3) 
-#define OTG2_HS_HOST_OTG_HS_HCINT7_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG2_HS_HOST_OTG_HS_HCINT7_NAK          (0x1UL << 4) 
-#define OTG2_HS_HOST_OTG_HS_HCINT7_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG2_HS_HOST_OTG_HS_HCINT7_ACK          (0x1UL << 5) 
-#define OTG2_HS_HOST_OTG_HS_HCINT7_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
-#define OTG2_HS_HOST_OTG_HS_HCINT7_NYET          (0x1UL << 6) 
-#define OTG2_HS_HOST_OTG_HS_HCINT7_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG2_HS_HOST_OTG_HS_HCINT7_TXERR          (0x1UL << 7) 
-#define OTG2_HS_HOST_OTG_HS_HCINT7_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define OTG2_HS_HOST_OTG_HS_HCINT7_BBERR          (0x1UL << 8) 
-#define OTG2_HS_HOST_OTG_HS_HCINT7_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define OTG2_HS_HOST_OTG_HS_HCINT7_FRMOR          (0x1UL << 9) 
-#define OTG2_HS_HOST_OTG_HS_HCINT7_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define OTG2_HS_HOST_OTG_HS_HCINT7_DTERR          (0x1UL << 10) 
-#define OTG2_HS_HOST_OTG_HS_HCINT7_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
-#define OTG2_HS_HOST_OTG_HS_HCINT8_XFRC          (0x1UL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCINT8_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCINT8_CHH          (0x1UL << 1) 
-#define OTG2_HS_HOST_OTG_HS_HCINT8_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG2_HS_HOST_OTG_HS_HCINT8_AHBERR          (0x1UL << 2) 
-#define OTG2_HS_HOST_OTG_HS_HCINT8_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
-#define OTG2_HS_HOST_OTG_HS_HCINT8_STALL          (0x1UL << 3) 
-#define OTG2_HS_HOST_OTG_HS_HCINT8_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG2_HS_HOST_OTG_HS_HCINT8_NAK          (0x1UL << 4) 
-#define OTG2_HS_HOST_OTG_HS_HCINT8_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG2_HS_HOST_OTG_HS_HCINT8_ACK          (0x1UL << 5) 
-#define OTG2_HS_HOST_OTG_HS_HCINT8_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
-#define OTG2_HS_HOST_OTG_HS_HCINT8_NYET          (0x1UL << 6) 
-#define OTG2_HS_HOST_OTG_HS_HCINT8_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG2_HS_HOST_OTG_HS_HCINT8_TXERR          (0x1UL << 7) 
-#define OTG2_HS_HOST_OTG_HS_HCINT8_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define OTG2_HS_HOST_OTG_HS_HCINT8_BBERR          (0x1UL << 8) 
-#define OTG2_HS_HOST_OTG_HS_HCINT8_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define OTG2_HS_HOST_OTG_HS_HCINT8_FRMOR          (0x1UL << 9) 
-#define OTG2_HS_HOST_OTG_HS_HCINT8_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define OTG2_HS_HOST_OTG_HS_HCINT8_DTERR          (0x1UL << 10) 
-#define OTG2_HS_HOST_OTG_HS_HCINT8_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
-#define OTG2_HS_HOST_OTG_HS_HCINT9_XFRC          (0x1UL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCINT9_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCINT9_CHH          (0x1UL << 1) 
-#define OTG2_HS_HOST_OTG_HS_HCINT9_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG2_HS_HOST_OTG_HS_HCINT9_AHBERR          (0x1UL << 2) 
-#define OTG2_HS_HOST_OTG_HS_HCINT9_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
-#define OTG2_HS_HOST_OTG_HS_HCINT9_STALL          (0x1UL << 3) 
-#define OTG2_HS_HOST_OTG_HS_HCINT9_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG2_HS_HOST_OTG_HS_HCINT9_NAK          (0x1UL << 4) 
-#define OTG2_HS_HOST_OTG_HS_HCINT9_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG2_HS_HOST_OTG_HS_HCINT9_ACK          (0x1UL << 5) 
-#define OTG2_HS_HOST_OTG_HS_HCINT9_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
-#define OTG2_HS_HOST_OTG_HS_HCINT9_NYET          (0x1UL << 6) 
-#define OTG2_HS_HOST_OTG_HS_HCINT9_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG2_HS_HOST_OTG_HS_HCINT9_TXERR          (0x1UL << 7) 
-#define OTG2_HS_HOST_OTG_HS_HCINT9_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define OTG2_HS_HOST_OTG_HS_HCINT9_BBERR          (0x1UL << 8) 
-#define OTG2_HS_HOST_OTG_HS_HCINT9_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define OTG2_HS_HOST_OTG_HS_HCINT9_FRMOR          (0x1UL << 9) 
-#define OTG2_HS_HOST_OTG_HS_HCINT9_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define OTG2_HS_HOST_OTG_HS_HCINT9_DTERR          (0x1UL << 10) 
-#define OTG2_HS_HOST_OTG_HS_HCINT9_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
-#define OTG2_HS_HOST_OTG_HS_HCINT10_XFRC          (0x1UL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCINT10_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCINT10_CHH          (0x1UL << 1) 
-#define OTG2_HS_HOST_OTG_HS_HCINT10_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG2_HS_HOST_OTG_HS_HCINT10_AHBERR          (0x1UL << 2) 
-#define OTG2_HS_HOST_OTG_HS_HCINT10_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
-#define OTG2_HS_HOST_OTG_HS_HCINT10_STALL          (0x1UL << 3) 
-#define OTG2_HS_HOST_OTG_HS_HCINT10_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG2_HS_HOST_OTG_HS_HCINT10_NAK          (0x1UL << 4) 
-#define OTG2_HS_HOST_OTG_HS_HCINT10_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG2_HS_HOST_OTG_HS_HCINT10_ACK          (0x1UL << 5) 
-#define OTG2_HS_HOST_OTG_HS_HCINT10_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
-#define OTG2_HS_HOST_OTG_HS_HCINT10_NYET          (0x1UL << 6) 
-#define OTG2_HS_HOST_OTG_HS_HCINT10_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG2_HS_HOST_OTG_HS_HCINT10_TXERR          (0x1UL << 7) 
-#define OTG2_HS_HOST_OTG_HS_HCINT10_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define OTG2_HS_HOST_OTG_HS_HCINT10_BBERR          (0x1UL << 8) 
-#define OTG2_HS_HOST_OTG_HS_HCINT10_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define OTG2_HS_HOST_OTG_HS_HCINT10_FRMOR          (0x1UL << 9) 
-#define OTG2_HS_HOST_OTG_HS_HCINT10_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define OTG2_HS_HOST_OTG_HS_HCINT10_DTERR          (0x1UL << 10) 
-#define OTG2_HS_HOST_OTG_HS_HCINT10_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
-#define OTG2_HS_HOST_OTG_HS_HCINT11_XFRC          (0x1UL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCINT11_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCINT11_CHH          (0x1UL << 1) 
-#define OTG2_HS_HOST_OTG_HS_HCINT11_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG2_HS_HOST_OTG_HS_HCINT11_AHBERR          (0x1UL << 2) 
-#define OTG2_HS_HOST_OTG_HS_HCINT11_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
-#define OTG2_HS_HOST_OTG_HS_HCINT11_STALL          (0x1UL << 3) 
-#define OTG2_HS_HOST_OTG_HS_HCINT11_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG2_HS_HOST_OTG_HS_HCINT11_NAK          (0x1UL << 4) 
-#define OTG2_HS_HOST_OTG_HS_HCINT11_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG2_HS_HOST_OTG_HS_HCINT11_ACK          (0x1UL << 5) 
-#define OTG2_HS_HOST_OTG_HS_HCINT11_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
-#define OTG2_HS_HOST_OTG_HS_HCINT11_NYET          (0x1UL << 6) 
-#define OTG2_HS_HOST_OTG_HS_HCINT11_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG2_HS_HOST_OTG_HS_HCINT11_TXERR          (0x1UL << 7) 
-#define OTG2_HS_HOST_OTG_HS_HCINT11_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define OTG2_HS_HOST_OTG_HS_HCINT11_BBERR          (0x1UL << 8) 
-#define OTG2_HS_HOST_OTG_HS_HCINT11_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define OTG2_HS_HOST_OTG_HS_HCINT11_FRMOR          (0x1UL << 9) 
-#define OTG2_HS_HOST_OTG_HS_HCINT11_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define OTG2_HS_HOST_OTG_HS_HCINT11_DTERR          (0x1UL << 10) 
-#define OTG2_HS_HOST_OTG_HS_HCINT11_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK0_XFRCM          (0x1UL << 0) 
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK0_XFRCM_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK0_CHHM          (0x1UL << 1) 
@@ -21434,6 +21097,66 @@ struct OTG2_HS_HOST {
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK0_FRMORM_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK0_DTERRM          (0x1UL << 10) 
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK0_DTERRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ0_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ0_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ0_PKTCNT          (0x3FFUL << 19) 
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ0_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ0_DPID          (0x3UL << 29) 
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ0_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
+#define OTG2_HS_HOST_OTG_HS_HCDMA0_DMAADDR          (0xFFFFFFFFUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCDMA0_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR1_MPSIZ          (0x7FFUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR1_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR1_EPNUM          (0xFUL << 11) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR1_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR1_EPDIR          (0x1UL << 15) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR1_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR1_LSDEV          (0x1UL << 17) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR1_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR1_EPTYP          (0x3UL << 18) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR1_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR1_MC          (0x3UL << 20) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR1_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR1_DAD          (0x7FUL << 22) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR1_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR1_ODDFRM          (0x1UL << 29) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR1_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR1_CHDIS          (0x1UL << 30) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR1_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR1_CHENA          (0x1UL << 31) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR1_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT1_PRTADDR          (0x7FUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT1_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT1_HUBADDR          (0x7FUL << 7) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT1_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT1_XACTPOS          (0x3UL << 14) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT1_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT1_COMPLSPLT          (0x1UL << 16) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT1_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT1_SPLITEN          (0x1UL << 31) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT1_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG2_HS_HOST_OTG_HS_HCINT1_XFRC          (0x1UL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCINT1_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCINT1_CHH          (0x1UL << 1) 
+#define OTG2_HS_HOST_OTG_HS_HCINT1_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG2_HS_HOST_OTG_HS_HCINT1_AHBERR          (0x1UL << 2) 
+#define OTG2_HS_HOST_OTG_HS_HCINT1_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
+#define OTG2_HS_HOST_OTG_HS_HCINT1_STALL          (0x1UL << 3) 
+#define OTG2_HS_HOST_OTG_HS_HCINT1_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG2_HS_HOST_OTG_HS_HCINT1_NAK          (0x1UL << 4) 
+#define OTG2_HS_HOST_OTG_HS_HCINT1_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG2_HS_HOST_OTG_HS_HCINT1_ACK          (0x1UL << 5) 
+#define OTG2_HS_HOST_OTG_HS_HCINT1_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
+#define OTG2_HS_HOST_OTG_HS_HCINT1_NYET          (0x1UL << 6) 
+#define OTG2_HS_HOST_OTG_HS_HCINT1_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG2_HS_HOST_OTG_HS_HCINT1_TXERR          (0x1UL << 7) 
+#define OTG2_HS_HOST_OTG_HS_HCINT1_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define OTG2_HS_HOST_OTG_HS_HCINT1_BBERR          (0x1UL << 8) 
+#define OTG2_HS_HOST_OTG_HS_HCINT1_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define OTG2_HS_HOST_OTG_HS_HCINT1_FRMOR          (0x1UL << 9) 
+#define OTG2_HS_HOST_OTG_HS_HCINT1_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define OTG2_HS_HOST_OTG_HS_HCINT1_DTERR          (0x1UL << 10) 
+#define OTG2_HS_HOST_OTG_HS_HCINT1_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK1_XFRCM          (0x1UL << 0) 
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK1_XFRCM_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK1_CHHM          (0x1UL << 1) 
@@ -21456,6 +21179,66 @@ struct OTG2_HS_HOST {
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK1_FRMORM_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK1_DTERRM          (0x1UL << 10) 
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK1_DTERRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ1_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ1_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ1_PKTCNT          (0x3FFUL << 19) 
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ1_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ1_DPID          (0x3UL << 29) 
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ1_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
+#define OTG2_HS_HOST_OTG_HS_HCDMA1_DMAADDR          (0xFFFFFFFFUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCDMA1_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR2_MPSIZ          (0x7FFUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR2_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR2_EPNUM          (0xFUL << 11) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR2_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR2_EPDIR          (0x1UL << 15) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR2_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR2_LSDEV          (0x1UL << 17) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR2_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR2_EPTYP          (0x3UL << 18) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR2_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR2_MC          (0x3UL << 20) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR2_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR2_DAD          (0x7FUL << 22) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR2_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR2_ODDFRM          (0x1UL << 29) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR2_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR2_CHDIS          (0x1UL << 30) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR2_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR2_CHENA          (0x1UL << 31) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR2_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT2_PRTADDR          (0x7FUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT2_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT2_HUBADDR          (0x7FUL << 7) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT2_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT2_XACTPOS          (0x3UL << 14) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT2_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT2_COMPLSPLT          (0x1UL << 16) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT2_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT2_SPLITEN          (0x1UL << 31) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT2_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG2_HS_HOST_OTG_HS_HCINT2_XFRC          (0x1UL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCINT2_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCINT2_CHH          (0x1UL << 1) 
+#define OTG2_HS_HOST_OTG_HS_HCINT2_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG2_HS_HOST_OTG_HS_HCINT2_AHBERR          (0x1UL << 2) 
+#define OTG2_HS_HOST_OTG_HS_HCINT2_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
+#define OTG2_HS_HOST_OTG_HS_HCINT2_STALL          (0x1UL << 3) 
+#define OTG2_HS_HOST_OTG_HS_HCINT2_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG2_HS_HOST_OTG_HS_HCINT2_NAK          (0x1UL << 4) 
+#define OTG2_HS_HOST_OTG_HS_HCINT2_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG2_HS_HOST_OTG_HS_HCINT2_ACK          (0x1UL << 5) 
+#define OTG2_HS_HOST_OTG_HS_HCINT2_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
+#define OTG2_HS_HOST_OTG_HS_HCINT2_NYET          (0x1UL << 6) 
+#define OTG2_HS_HOST_OTG_HS_HCINT2_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG2_HS_HOST_OTG_HS_HCINT2_TXERR          (0x1UL << 7) 
+#define OTG2_HS_HOST_OTG_HS_HCINT2_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define OTG2_HS_HOST_OTG_HS_HCINT2_BBERR          (0x1UL << 8) 
+#define OTG2_HS_HOST_OTG_HS_HCINT2_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define OTG2_HS_HOST_OTG_HS_HCINT2_FRMOR          (0x1UL << 9) 
+#define OTG2_HS_HOST_OTG_HS_HCINT2_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define OTG2_HS_HOST_OTG_HS_HCINT2_DTERR          (0x1UL << 10) 
+#define OTG2_HS_HOST_OTG_HS_HCINT2_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK2_XFRCM          (0x1UL << 0) 
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK2_XFRCM_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK2_CHHM          (0x1UL << 1) 
@@ -21478,6 +21261,66 @@ struct OTG2_HS_HOST {
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK2_FRMORM_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK2_DTERRM          (0x1UL << 10) 
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK2_DTERRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ2_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ2_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ2_PKTCNT          (0x3FFUL << 19) 
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ2_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ2_DPID          (0x3UL << 29) 
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ2_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
+#define OTG2_HS_HOST_OTG_HS_HCDMA2_DMAADDR          (0xFFFFFFFFUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCDMA2_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR3_MPSIZ          (0x7FFUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR3_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR3_EPNUM          (0xFUL << 11) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR3_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR3_EPDIR          (0x1UL << 15) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR3_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR3_LSDEV          (0x1UL << 17) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR3_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR3_EPTYP          (0x3UL << 18) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR3_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR3_MC          (0x3UL << 20) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR3_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR3_DAD          (0x7FUL << 22) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR3_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR3_ODDFRM          (0x1UL << 29) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR3_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR3_CHDIS          (0x1UL << 30) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR3_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR3_CHENA          (0x1UL << 31) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR3_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT3_PRTADDR          (0x7FUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT3_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT3_HUBADDR          (0x7FUL << 7) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT3_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT3_XACTPOS          (0x3UL << 14) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT3_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT3_COMPLSPLT          (0x1UL << 16) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT3_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT3_SPLITEN          (0x1UL << 31) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT3_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG2_HS_HOST_OTG_HS_HCINT3_XFRC          (0x1UL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCINT3_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCINT3_CHH          (0x1UL << 1) 
+#define OTG2_HS_HOST_OTG_HS_HCINT3_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG2_HS_HOST_OTG_HS_HCINT3_AHBERR          (0x1UL << 2) 
+#define OTG2_HS_HOST_OTG_HS_HCINT3_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
+#define OTG2_HS_HOST_OTG_HS_HCINT3_STALL          (0x1UL << 3) 
+#define OTG2_HS_HOST_OTG_HS_HCINT3_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG2_HS_HOST_OTG_HS_HCINT3_NAK          (0x1UL << 4) 
+#define OTG2_HS_HOST_OTG_HS_HCINT3_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG2_HS_HOST_OTG_HS_HCINT3_ACK          (0x1UL << 5) 
+#define OTG2_HS_HOST_OTG_HS_HCINT3_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
+#define OTG2_HS_HOST_OTG_HS_HCINT3_NYET          (0x1UL << 6) 
+#define OTG2_HS_HOST_OTG_HS_HCINT3_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG2_HS_HOST_OTG_HS_HCINT3_TXERR          (0x1UL << 7) 
+#define OTG2_HS_HOST_OTG_HS_HCINT3_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define OTG2_HS_HOST_OTG_HS_HCINT3_BBERR          (0x1UL << 8) 
+#define OTG2_HS_HOST_OTG_HS_HCINT3_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define OTG2_HS_HOST_OTG_HS_HCINT3_FRMOR          (0x1UL << 9) 
+#define OTG2_HS_HOST_OTG_HS_HCINT3_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define OTG2_HS_HOST_OTG_HS_HCINT3_DTERR          (0x1UL << 10) 
+#define OTG2_HS_HOST_OTG_HS_HCINT3_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK3_XFRCM          (0x1UL << 0) 
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK3_XFRCM_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK3_CHHM          (0x1UL << 1) 
@@ -21500,6 +21343,66 @@ struct OTG2_HS_HOST {
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK3_FRMORM_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK3_DTERRM          (0x1UL << 10) 
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK3_DTERRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ3_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ3_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ3_PKTCNT          (0x3FFUL << 19) 
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ3_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ3_DPID          (0x3UL << 29) 
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ3_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
+#define OTG2_HS_HOST_OTG_HS_HCDMA3_DMAADDR          (0xFFFFFFFFUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCDMA3_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR4_MPSIZ          (0x7FFUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR4_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR4_EPNUM          (0xFUL << 11) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR4_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR4_EPDIR          (0x1UL << 15) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR4_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR4_LSDEV          (0x1UL << 17) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR4_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR4_EPTYP          (0x3UL << 18) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR4_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR4_MC          (0x3UL << 20) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR4_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR4_DAD          (0x7FUL << 22) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR4_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR4_ODDFRM          (0x1UL << 29) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR4_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR4_CHDIS          (0x1UL << 30) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR4_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR4_CHENA          (0x1UL << 31) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR4_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT4_PRTADDR          (0x7FUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT4_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT4_HUBADDR          (0x7FUL << 7) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT4_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT4_XACTPOS          (0x3UL << 14) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT4_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT4_COMPLSPLT          (0x1UL << 16) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT4_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT4_SPLITEN          (0x1UL << 31) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT4_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG2_HS_HOST_OTG_HS_HCINT4_XFRC          (0x1UL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCINT4_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCINT4_CHH          (0x1UL << 1) 
+#define OTG2_HS_HOST_OTG_HS_HCINT4_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG2_HS_HOST_OTG_HS_HCINT4_AHBERR          (0x1UL << 2) 
+#define OTG2_HS_HOST_OTG_HS_HCINT4_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
+#define OTG2_HS_HOST_OTG_HS_HCINT4_STALL          (0x1UL << 3) 
+#define OTG2_HS_HOST_OTG_HS_HCINT4_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG2_HS_HOST_OTG_HS_HCINT4_NAK          (0x1UL << 4) 
+#define OTG2_HS_HOST_OTG_HS_HCINT4_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG2_HS_HOST_OTG_HS_HCINT4_ACK          (0x1UL << 5) 
+#define OTG2_HS_HOST_OTG_HS_HCINT4_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
+#define OTG2_HS_HOST_OTG_HS_HCINT4_NYET          (0x1UL << 6) 
+#define OTG2_HS_HOST_OTG_HS_HCINT4_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG2_HS_HOST_OTG_HS_HCINT4_TXERR          (0x1UL << 7) 
+#define OTG2_HS_HOST_OTG_HS_HCINT4_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define OTG2_HS_HOST_OTG_HS_HCINT4_BBERR          (0x1UL << 8) 
+#define OTG2_HS_HOST_OTG_HS_HCINT4_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define OTG2_HS_HOST_OTG_HS_HCINT4_FRMOR          (0x1UL << 9) 
+#define OTG2_HS_HOST_OTG_HS_HCINT4_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define OTG2_HS_HOST_OTG_HS_HCINT4_DTERR          (0x1UL << 10) 
+#define OTG2_HS_HOST_OTG_HS_HCINT4_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK4_XFRCM          (0x1UL << 0) 
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK4_XFRCM_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK4_CHHM          (0x1UL << 1) 
@@ -21522,6 +21425,66 @@ struct OTG2_HS_HOST {
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK4_FRMORM_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK4_DTERRM          (0x1UL << 10) 
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK4_DTERRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ4_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ4_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ4_PKTCNT          (0x3FFUL << 19) 
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ4_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ4_DPID          (0x3UL << 29) 
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ4_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
+#define OTG2_HS_HOST_OTG_HS_HCDMA4_DMAADDR          (0xFFFFFFFFUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCDMA4_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR5_MPSIZ          (0x7FFUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR5_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR5_EPNUM          (0xFUL << 11) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR5_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR5_EPDIR          (0x1UL << 15) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR5_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR5_LSDEV          (0x1UL << 17) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR5_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR5_EPTYP          (0x3UL << 18) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR5_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR5_MC          (0x3UL << 20) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR5_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR5_DAD          (0x7FUL << 22) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR5_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR5_ODDFRM          (0x1UL << 29) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR5_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR5_CHDIS          (0x1UL << 30) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR5_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR5_CHENA          (0x1UL << 31) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR5_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT5_PRTADDR          (0x7FUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT5_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT5_HUBADDR          (0x7FUL << 7) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT5_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT5_XACTPOS          (0x3UL << 14) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT5_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT5_COMPLSPLT          (0x1UL << 16) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT5_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT5_SPLITEN          (0x1UL << 31) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT5_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG2_HS_HOST_OTG_HS_HCINT5_XFRC          (0x1UL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCINT5_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCINT5_CHH          (0x1UL << 1) 
+#define OTG2_HS_HOST_OTG_HS_HCINT5_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG2_HS_HOST_OTG_HS_HCINT5_AHBERR          (0x1UL << 2) 
+#define OTG2_HS_HOST_OTG_HS_HCINT5_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
+#define OTG2_HS_HOST_OTG_HS_HCINT5_STALL          (0x1UL << 3) 
+#define OTG2_HS_HOST_OTG_HS_HCINT5_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG2_HS_HOST_OTG_HS_HCINT5_NAK          (0x1UL << 4) 
+#define OTG2_HS_HOST_OTG_HS_HCINT5_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG2_HS_HOST_OTG_HS_HCINT5_ACK          (0x1UL << 5) 
+#define OTG2_HS_HOST_OTG_HS_HCINT5_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
+#define OTG2_HS_HOST_OTG_HS_HCINT5_NYET          (0x1UL << 6) 
+#define OTG2_HS_HOST_OTG_HS_HCINT5_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG2_HS_HOST_OTG_HS_HCINT5_TXERR          (0x1UL << 7) 
+#define OTG2_HS_HOST_OTG_HS_HCINT5_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define OTG2_HS_HOST_OTG_HS_HCINT5_BBERR          (0x1UL << 8) 
+#define OTG2_HS_HOST_OTG_HS_HCINT5_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define OTG2_HS_HOST_OTG_HS_HCINT5_FRMOR          (0x1UL << 9) 
+#define OTG2_HS_HOST_OTG_HS_HCINT5_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define OTG2_HS_HOST_OTG_HS_HCINT5_DTERR          (0x1UL << 10) 
+#define OTG2_HS_HOST_OTG_HS_HCINT5_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK5_XFRCM          (0x1UL << 0) 
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK5_XFRCM_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK5_CHHM          (0x1UL << 1) 
@@ -21544,6 +21507,66 @@ struct OTG2_HS_HOST {
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK5_FRMORM_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK5_DTERRM          (0x1UL << 10) 
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK5_DTERRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ5_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ5_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ5_PKTCNT          (0x3FFUL << 19) 
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ5_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ5_DPID          (0x3UL << 29) 
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ5_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
+#define OTG2_HS_HOST_OTG_HS_HCDMA5_DMAADDR          (0xFFFFFFFFUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCDMA5_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR6_MPSIZ          (0x7FFUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR6_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR6_EPNUM          (0xFUL << 11) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR6_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR6_EPDIR          (0x1UL << 15) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR6_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR6_LSDEV          (0x1UL << 17) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR6_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR6_EPTYP          (0x3UL << 18) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR6_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR6_MC          (0x3UL << 20) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR6_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR6_DAD          (0x7FUL << 22) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR6_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR6_ODDFRM          (0x1UL << 29) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR6_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR6_CHDIS          (0x1UL << 30) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR6_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR6_CHENA          (0x1UL << 31) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR6_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT6_PRTADDR          (0x7FUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT6_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT6_HUBADDR          (0x7FUL << 7) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT6_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT6_XACTPOS          (0x3UL << 14) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT6_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT6_COMPLSPLT          (0x1UL << 16) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT6_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT6_SPLITEN          (0x1UL << 31) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT6_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG2_HS_HOST_OTG_HS_HCINT6_XFRC          (0x1UL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCINT6_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCINT6_CHH          (0x1UL << 1) 
+#define OTG2_HS_HOST_OTG_HS_HCINT6_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG2_HS_HOST_OTG_HS_HCINT6_AHBERR          (0x1UL << 2) 
+#define OTG2_HS_HOST_OTG_HS_HCINT6_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
+#define OTG2_HS_HOST_OTG_HS_HCINT6_STALL          (0x1UL << 3) 
+#define OTG2_HS_HOST_OTG_HS_HCINT6_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG2_HS_HOST_OTG_HS_HCINT6_NAK          (0x1UL << 4) 
+#define OTG2_HS_HOST_OTG_HS_HCINT6_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG2_HS_HOST_OTG_HS_HCINT6_ACK          (0x1UL << 5) 
+#define OTG2_HS_HOST_OTG_HS_HCINT6_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
+#define OTG2_HS_HOST_OTG_HS_HCINT6_NYET          (0x1UL << 6) 
+#define OTG2_HS_HOST_OTG_HS_HCINT6_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG2_HS_HOST_OTG_HS_HCINT6_TXERR          (0x1UL << 7) 
+#define OTG2_HS_HOST_OTG_HS_HCINT6_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define OTG2_HS_HOST_OTG_HS_HCINT6_BBERR          (0x1UL << 8) 
+#define OTG2_HS_HOST_OTG_HS_HCINT6_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define OTG2_HS_HOST_OTG_HS_HCINT6_FRMOR          (0x1UL << 9) 
+#define OTG2_HS_HOST_OTG_HS_HCINT6_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define OTG2_HS_HOST_OTG_HS_HCINT6_DTERR          (0x1UL << 10) 
+#define OTG2_HS_HOST_OTG_HS_HCINT6_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK6_XFRCM          (0x1UL << 0) 
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK6_XFRCM_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK6_CHHM          (0x1UL << 1) 
@@ -21566,6 +21589,66 @@ struct OTG2_HS_HOST {
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK6_FRMORM_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK6_DTERRM          (0x1UL << 10) 
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK6_DTERRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ6_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ6_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ6_PKTCNT          (0x3FFUL << 19) 
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ6_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ6_DPID          (0x3UL << 29) 
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ6_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
+#define OTG2_HS_HOST_OTG_HS_HCDMA6_DMAADDR          (0xFFFFFFFFUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCDMA6_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR7_MPSIZ          (0x7FFUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR7_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR7_EPNUM          (0xFUL << 11) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR7_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR7_EPDIR          (0x1UL << 15) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR7_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR7_LSDEV          (0x1UL << 17) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR7_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR7_EPTYP          (0x3UL << 18) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR7_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR7_MC          (0x3UL << 20) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR7_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR7_DAD          (0x7FUL << 22) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR7_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR7_ODDFRM          (0x1UL << 29) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR7_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR7_CHDIS          (0x1UL << 30) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR7_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR7_CHENA          (0x1UL << 31) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR7_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT7_PRTADDR          (0x7FUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT7_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT7_HUBADDR          (0x7FUL << 7) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT7_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT7_XACTPOS          (0x3UL << 14) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT7_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT7_COMPLSPLT          (0x1UL << 16) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT7_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT7_SPLITEN          (0x1UL << 31) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT7_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG2_HS_HOST_OTG_HS_HCINT7_XFRC          (0x1UL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCINT7_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCINT7_CHH          (0x1UL << 1) 
+#define OTG2_HS_HOST_OTG_HS_HCINT7_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG2_HS_HOST_OTG_HS_HCINT7_AHBERR          (0x1UL << 2) 
+#define OTG2_HS_HOST_OTG_HS_HCINT7_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
+#define OTG2_HS_HOST_OTG_HS_HCINT7_STALL          (0x1UL << 3) 
+#define OTG2_HS_HOST_OTG_HS_HCINT7_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG2_HS_HOST_OTG_HS_HCINT7_NAK          (0x1UL << 4) 
+#define OTG2_HS_HOST_OTG_HS_HCINT7_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG2_HS_HOST_OTG_HS_HCINT7_ACK          (0x1UL << 5) 
+#define OTG2_HS_HOST_OTG_HS_HCINT7_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
+#define OTG2_HS_HOST_OTG_HS_HCINT7_NYET          (0x1UL << 6) 
+#define OTG2_HS_HOST_OTG_HS_HCINT7_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG2_HS_HOST_OTG_HS_HCINT7_TXERR          (0x1UL << 7) 
+#define OTG2_HS_HOST_OTG_HS_HCINT7_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define OTG2_HS_HOST_OTG_HS_HCINT7_BBERR          (0x1UL << 8) 
+#define OTG2_HS_HOST_OTG_HS_HCINT7_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define OTG2_HS_HOST_OTG_HS_HCINT7_FRMOR          (0x1UL << 9) 
+#define OTG2_HS_HOST_OTG_HS_HCINT7_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define OTG2_HS_HOST_OTG_HS_HCINT7_DTERR          (0x1UL << 10) 
+#define OTG2_HS_HOST_OTG_HS_HCINT7_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK7_XFRCM          (0x1UL << 0) 
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK7_XFRCM_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK7_CHHM          (0x1UL << 1) 
@@ -21588,6 +21671,66 @@ struct OTG2_HS_HOST {
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK7_FRMORM_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK7_DTERRM          (0x1UL << 10) 
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK7_DTERRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ7_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ7_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ7_PKTCNT          (0x3FFUL << 19) 
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ7_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ7_DPID          (0x3UL << 29) 
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ7_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
+#define OTG2_HS_HOST_OTG_HS_HCDMA7_DMAADDR          (0xFFFFFFFFUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCDMA7_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR8_MPSIZ          (0x7FFUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR8_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR8_EPNUM          (0xFUL << 11) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR8_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR8_EPDIR          (0x1UL << 15) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR8_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR8_LSDEV          (0x1UL << 17) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR8_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR8_EPTYP          (0x3UL << 18) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR8_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR8_MC          (0x3UL << 20) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR8_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR8_DAD          (0x7FUL << 22) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR8_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR8_ODDFRM          (0x1UL << 29) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR8_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR8_CHDIS          (0x1UL << 30) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR8_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR8_CHENA          (0x1UL << 31) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR8_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT8_PRTADDR          (0x7FUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT8_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT8_HUBADDR          (0x7FUL << 7) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT8_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT8_XACTPOS          (0x3UL << 14) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT8_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT8_COMPLSPLT          (0x1UL << 16) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT8_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT8_SPLITEN          (0x1UL << 31) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT8_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG2_HS_HOST_OTG_HS_HCINT8_XFRC          (0x1UL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCINT8_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCINT8_CHH          (0x1UL << 1) 
+#define OTG2_HS_HOST_OTG_HS_HCINT8_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG2_HS_HOST_OTG_HS_HCINT8_AHBERR          (0x1UL << 2) 
+#define OTG2_HS_HOST_OTG_HS_HCINT8_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
+#define OTG2_HS_HOST_OTG_HS_HCINT8_STALL          (0x1UL << 3) 
+#define OTG2_HS_HOST_OTG_HS_HCINT8_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG2_HS_HOST_OTG_HS_HCINT8_NAK          (0x1UL << 4) 
+#define OTG2_HS_HOST_OTG_HS_HCINT8_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG2_HS_HOST_OTG_HS_HCINT8_ACK          (0x1UL << 5) 
+#define OTG2_HS_HOST_OTG_HS_HCINT8_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
+#define OTG2_HS_HOST_OTG_HS_HCINT8_NYET          (0x1UL << 6) 
+#define OTG2_HS_HOST_OTG_HS_HCINT8_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG2_HS_HOST_OTG_HS_HCINT8_TXERR          (0x1UL << 7) 
+#define OTG2_HS_HOST_OTG_HS_HCINT8_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define OTG2_HS_HOST_OTG_HS_HCINT8_BBERR          (0x1UL << 8) 
+#define OTG2_HS_HOST_OTG_HS_HCINT8_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define OTG2_HS_HOST_OTG_HS_HCINT8_FRMOR          (0x1UL << 9) 
+#define OTG2_HS_HOST_OTG_HS_HCINT8_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define OTG2_HS_HOST_OTG_HS_HCINT8_DTERR          (0x1UL << 10) 
+#define OTG2_HS_HOST_OTG_HS_HCINT8_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK8_XFRCM          (0x1UL << 0) 
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK8_XFRCM_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK8_CHHM          (0x1UL << 1) 
@@ -21610,6 +21753,66 @@ struct OTG2_HS_HOST {
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK8_FRMORM_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK8_DTERRM          (0x1UL << 10) 
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK8_DTERRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ8_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ8_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ8_PKTCNT          (0x3FFUL << 19) 
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ8_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ8_DPID          (0x3UL << 29) 
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ8_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
+#define OTG2_HS_HOST_OTG_HS_HCDMA8_DMAADDR          (0xFFFFFFFFUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCDMA8_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR9_MPSIZ          (0x7FFUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR9_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR9_EPNUM          (0xFUL << 11) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR9_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR9_EPDIR          (0x1UL << 15) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR9_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR9_LSDEV          (0x1UL << 17) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR9_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR9_EPTYP          (0x3UL << 18) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR9_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR9_MC          (0x3UL << 20) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR9_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR9_DAD          (0x7FUL << 22) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR9_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR9_ODDFRM          (0x1UL << 29) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR9_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR9_CHDIS          (0x1UL << 30) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR9_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR9_CHENA          (0x1UL << 31) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR9_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT9_PRTADDR          (0x7FUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT9_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT9_HUBADDR          (0x7FUL << 7) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT9_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT9_XACTPOS          (0x3UL << 14) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT9_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT9_COMPLSPLT          (0x1UL << 16) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT9_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT9_SPLITEN          (0x1UL << 31) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT9_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG2_HS_HOST_OTG_HS_HCINT9_XFRC          (0x1UL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCINT9_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCINT9_CHH          (0x1UL << 1) 
+#define OTG2_HS_HOST_OTG_HS_HCINT9_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG2_HS_HOST_OTG_HS_HCINT9_AHBERR          (0x1UL << 2) 
+#define OTG2_HS_HOST_OTG_HS_HCINT9_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
+#define OTG2_HS_HOST_OTG_HS_HCINT9_STALL          (0x1UL << 3) 
+#define OTG2_HS_HOST_OTG_HS_HCINT9_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG2_HS_HOST_OTG_HS_HCINT9_NAK          (0x1UL << 4) 
+#define OTG2_HS_HOST_OTG_HS_HCINT9_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG2_HS_HOST_OTG_HS_HCINT9_ACK          (0x1UL << 5) 
+#define OTG2_HS_HOST_OTG_HS_HCINT9_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
+#define OTG2_HS_HOST_OTG_HS_HCINT9_NYET          (0x1UL << 6) 
+#define OTG2_HS_HOST_OTG_HS_HCINT9_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG2_HS_HOST_OTG_HS_HCINT9_TXERR          (0x1UL << 7) 
+#define OTG2_HS_HOST_OTG_HS_HCINT9_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define OTG2_HS_HOST_OTG_HS_HCINT9_BBERR          (0x1UL << 8) 
+#define OTG2_HS_HOST_OTG_HS_HCINT9_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define OTG2_HS_HOST_OTG_HS_HCINT9_FRMOR          (0x1UL << 9) 
+#define OTG2_HS_HOST_OTG_HS_HCINT9_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define OTG2_HS_HOST_OTG_HS_HCINT9_DTERR          (0x1UL << 10) 
+#define OTG2_HS_HOST_OTG_HS_HCINT9_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK9_XFRCM          (0x1UL << 0) 
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK9_XFRCM_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK9_CHHM          (0x1UL << 1) 
@@ -21632,6 +21835,66 @@ struct OTG2_HS_HOST {
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK9_FRMORM_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK9_DTERRM          (0x1UL << 10) 
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK9_DTERRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ9_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ9_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ9_PKTCNT          (0x3FFUL << 19) 
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ9_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ9_DPID          (0x3UL << 29) 
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ9_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
+#define OTG2_HS_HOST_OTG_HS_HCDMA9_DMAADDR          (0xFFFFFFFFUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCDMA9_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR10_MPSIZ          (0x7FFUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR10_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR10_EPNUM          (0xFUL << 11) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR10_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR10_EPDIR          (0x1UL << 15) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR10_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR10_LSDEV          (0x1UL << 17) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR10_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR10_EPTYP          (0x3UL << 18) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR10_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR10_MC          (0x3UL << 20) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR10_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR10_DAD          (0x7FUL << 22) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR10_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR10_ODDFRM          (0x1UL << 29) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR10_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR10_CHDIS          (0x1UL << 30) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR10_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR10_CHENA          (0x1UL << 31) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR10_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT10_PRTADDR          (0x7FUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT10_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT10_HUBADDR          (0x7FUL << 7) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT10_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT10_XACTPOS          (0x3UL << 14) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT10_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT10_COMPLSPLT          (0x1UL << 16) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT10_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT10_SPLITEN          (0x1UL << 31) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT10_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG2_HS_HOST_OTG_HS_HCINT10_XFRC          (0x1UL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCINT10_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCINT10_CHH          (0x1UL << 1) 
+#define OTG2_HS_HOST_OTG_HS_HCINT10_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG2_HS_HOST_OTG_HS_HCINT10_AHBERR          (0x1UL << 2) 
+#define OTG2_HS_HOST_OTG_HS_HCINT10_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
+#define OTG2_HS_HOST_OTG_HS_HCINT10_STALL          (0x1UL << 3) 
+#define OTG2_HS_HOST_OTG_HS_HCINT10_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG2_HS_HOST_OTG_HS_HCINT10_NAK          (0x1UL << 4) 
+#define OTG2_HS_HOST_OTG_HS_HCINT10_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG2_HS_HOST_OTG_HS_HCINT10_ACK          (0x1UL << 5) 
+#define OTG2_HS_HOST_OTG_HS_HCINT10_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
+#define OTG2_HS_HOST_OTG_HS_HCINT10_NYET          (0x1UL << 6) 
+#define OTG2_HS_HOST_OTG_HS_HCINT10_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG2_HS_HOST_OTG_HS_HCINT10_TXERR          (0x1UL << 7) 
+#define OTG2_HS_HOST_OTG_HS_HCINT10_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define OTG2_HS_HOST_OTG_HS_HCINT10_BBERR          (0x1UL << 8) 
+#define OTG2_HS_HOST_OTG_HS_HCINT10_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define OTG2_HS_HOST_OTG_HS_HCINT10_FRMOR          (0x1UL << 9) 
+#define OTG2_HS_HOST_OTG_HS_HCINT10_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define OTG2_HS_HOST_OTG_HS_HCINT10_DTERR          (0x1UL << 10) 
+#define OTG2_HS_HOST_OTG_HS_HCINT10_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK10_XFRCM          (0x1UL << 0) 
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK10_XFRCM_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK10_CHHM          (0x1UL << 1) 
@@ -21654,6 +21917,66 @@ struct OTG2_HS_HOST {
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK10_FRMORM_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK10_DTERRM          (0x1UL << 10) 
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK10_DTERRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ10_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ10_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ10_PKTCNT          (0x3FFUL << 19) 
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ10_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ10_DPID          (0x3UL << 29) 
+#define OTG2_HS_HOST_OTG_HS_HCTSIZ10_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
+#define OTG2_HS_HOST_OTG_HS_HCDMA10_DMAADDR          (0xFFFFFFFFUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCDMA10_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR11_MPSIZ          (0x7FFUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR11_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR11_EPNUM          (0xFUL << 11) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR11_EPNUM_VAL(X) (((uint32_t)(X) & 0xFUL) << 11)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR11_EPDIR          (0x1UL << 15) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR11_EPDIR_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR11_LSDEV          (0x1UL << 17) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR11_LSDEV_VAL(X) (((uint32_t)(X) & 0x1UL) << 17)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR11_EPTYP          (0x3UL << 18) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR11_EPTYP_VAL(X) (((uint32_t)(X) & 0x3UL) << 18)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR11_MC          (0x3UL << 20) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR11_MC_VAL(X) (((uint32_t)(X) & 0x3UL) << 20)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR11_DAD          (0x7FUL << 22) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR11_DAD_VAL(X) (((uint32_t)(X) & 0x7FUL) << 22)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR11_ODDFRM          (0x1UL << 29) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR11_ODDFRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 29)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR11_CHDIS          (0x1UL << 30) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR11_CHDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
+#define OTG2_HS_HOST_OTG_HS_HCCHAR11_CHENA          (0x1UL << 31) 
+#define OTG2_HS_HOST_OTG_HS_HCCHAR11_CHENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT11_PRTADDR          (0x7FUL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT11_PRTADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT11_HUBADDR          (0x7FUL << 7) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT11_HUBADDR_VAL(X) (((uint32_t)(X) & 0x7FUL) << 7)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT11_XACTPOS          (0x3UL << 14) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT11_XACTPOS_VAL(X) (((uint32_t)(X) & 0x3UL) << 14)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT11_COMPLSPLT          (0x1UL << 16) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT11_COMPLSPLT_VAL(X) (((uint32_t)(X) & 0x1UL) << 16)
+#define OTG2_HS_HOST_OTG_HS_HCSPLT11_SPLITEN          (0x1UL << 31) 
+#define OTG2_HS_HOST_OTG_HS_HCSPLT11_SPLITEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG2_HS_HOST_OTG_HS_HCINT11_XFRC          (0x1UL << 0) 
+#define OTG2_HS_HOST_OTG_HS_HCINT11_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG2_HS_HOST_OTG_HS_HCINT11_CHH          (0x1UL << 1) 
+#define OTG2_HS_HOST_OTG_HS_HCINT11_CHH_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG2_HS_HOST_OTG_HS_HCINT11_AHBERR          (0x1UL << 2) 
+#define OTG2_HS_HOST_OTG_HS_HCINT11_AHBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
+#define OTG2_HS_HOST_OTG_HS_HCINT11_STALL          (0x1UL << 3) 
+#define OTG2_HS_HOST_OTG_HS_HCINT11_STALL_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG2_HS_HOST_OTG_HS_HCINT11_NAK          (0x1UL << 4) 
+#define OTG2_HS_HOST_OTG_HS_HCINT11_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG2_HS_HOST_OTG_HS_HCINT11_ACK          (0x1UL << 5) 
+#define OTG2_HS_HOST_OTG_HS_HCINT11_ACK_VAL(X) (((uint32_t)(X) & 0x1UL) << 5)
+#define OTG2_HS_HOST_OTG_HS_HCINT11_NYET          (0x1UL << 6) 
+#define OTG2_HS_HOST_OTG_HS_HCINT11_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG2_HS_HOST_OTG_HS_HCINT11_TXERR          (0x1UL << 7) 
+#define OTG2_HS_HOST_OTG_HS_HCINT11_TXERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define OTG2_HS_HOST_OTG_HS_HCINT11_BBERR          (0x1UL << 8) 
+#define OTG2_HS_HOST_OTG_HS_HCINT11_BBERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define OTG2_HS_HOST_OTG_HS_HCINT11_FRMOR          (0x1UL << 9) 
+#define OTG2_HS_HOST_OTG_HS_HCINT11_FRMOR_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define OTG2_HS_HOST_OTG_HS_HCINT11_DTERR          (0x1UL << 10) 
+#define OTG2_HS_HOST_OTG_HS_HCINT11_DTERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK11_XFRCM          (0x1UL << 0) 
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK11_XFRCM_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK11_CHHM          (0x1UL << 1) 
@@ -21676,100 +21999,12 @@ struct OTG2_HS_HOST {
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK11_FRMORM_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK11_DTERRM          (0x1UL << 10) 
 #define OTG2_HS_HOST_OTG_HS_HCINTMSK11_DTERRM_VAL(X) (((uint32_t)(X) & 0x1UL) << 10)
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ0_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ0_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ0_PKTCNT          (0x3FFUL << 19) 
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ0_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ0_DPID          (0x3UL << 29) 
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ0_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ1_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ1_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ1_PKTCNT          (0x3FFUL << 19) 
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ1_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ1_DPID          (0x3UL << 29) 
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ1_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ2_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ2_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ2_PKTCNT          (0x3FFUL << 19) 
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ2_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ2_DPID          (0x3UL << 29) 
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ2_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ3_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ3_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ3_PKTCNT          (0x3FFUL << 19) 
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ3_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ3_DPID          (0x3UL << 29) 
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ3_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ4_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ4_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ4_PKTCNT          (0x3FFUL << 19) 
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ4_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ4_DPID          (0x3UL << 29) 
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ4_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ5_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ5_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ5_PKTCNT          (0x3FFUL << 19) 
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ5_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ5_DPID          (0x3UL << 29) 
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ5_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ6_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ6_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ6_PKTCNT          (0x3FFUL << 19) 
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ6_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ6_DPID          (0x3UL << 29) 
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ6_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ7_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ7_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ7_PKTCNT          (0x3FFUL << 19) 
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ7_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ7_DPID          (0x3UL << 29) 
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ7_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ8_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ8_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ8_PKTCNT          (0x3FFUL << 19) 
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ8_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ8_DPID          (0x3UL << 29) 
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ8_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ9_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ9_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ9_PKTCNT          (0x3FFUL << 19) 
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ9_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ9_DPID          (0x3UL << 29) 
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ9_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ10_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ10_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ10_PKTCNT          (0x3FFUL << 19) 
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ10_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ10_DPID          (0x3UL << 29) 
-#define OTG2_HS_HOST_OTG_HS_HCTSIZ10_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
 #define OTG2_HS_HOST_OTG_HS_HCTSIZ11_XFRSIZ          (0x7FFFFUL << 0) 
 #define OTG2_HS_HOST_OTG_HS_HCTSIZ11_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
 #define OTG2_HS_HOST_OTG_HS_HCTSIZ11_PKTCNT          (0x3FFUL << 19) 
 #define OTG2_HS_HOST_OTG_HS_HCTSIZ11_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
 #define OTG2_HS_HOST_OTG_HS_HCTSIZ11_DPID          (0x3UL << 29) 
 #define OTG2_HS_HOST_OTG_HS_HCTSIZ11_DPID_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG2_HS_HOST_OTG_HS_HCDMA0_DMAADDR          (0xFFFFFFFFUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCDMA0_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCDMA1_DMAADDR          (0xFFFFFFFFUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCDMA1_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCDMA2_DMAADDR          (0xFFFFFFFFUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCDMA2_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCDMA3_DMAADDR          (0xFFFFFFFFUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCDMA3_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCDMA4_DMAADDR          (0xFFFFFFFFUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCDMA4_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCDMA5_DMAADDR          (0xFFFFFFFFUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCDMA5_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCDMA6_DMAADDR          (0xFFFFFFFFUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCDMA6_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCDMA7_DMAADDR          (0xFFFFFFFFUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCDMA7_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCDMA8_DMAADDR          (0xFFFFFFFFUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCDMA8_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCDMA9_DMAADDR          (0xFFFFFFFFUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCDMA9_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
-#define OTG2_HS_HOST_OTG_HS_HCDMA10_DMAADDR          (0xFFFFFFFFUL << 0) 
-#define OTG2_HS_HOST_OTG_HS_HCDMA10_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
 #define OTG2_HS_HOST_OTG_HS_HCDMA11_DMAADDR          (0xFFFFFFFFUL << 0) 
 #define OTG2_HS_HOST_OTG_HS_HCDMA11_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
 #define OTG2_HS_HOST_OTG_HS_HCCHAR12_MPSIZ          (0x7FFUL << 0) 
@@ -22102,128 +22337,135 @@ struct OTG2_HS_HOST {
 #define OTG2_HS_HOST_OTG_HS_HCDMA15_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
 
 #define OTG2_HS_HOST  ((struct OTG2_HS_HOST*)(0x40080400UL))
+
+
+
 struct OTG1_HS_DEVICE {
-  volatile uint32_t OTG_HS_DCFG;
-  volatile uint32_t OTG_HS_DCTL;
-  volatile const uint32_t OTG_HS_DSTS;
-  const volatile uint32_t RESERVED16[1];
-  volatile uint32_t OTG_HS_DIEPMSK;
-  volatile uint32_t OTG_HS_DOEPMSK;
-  volatile const uint32_t OTG_HS_DAINT;
-  volatile uint32_t OTG_HS_DAINTMSK;
-  const volatile uint32_t RESERVED40[2];
-  volatile uint32_t OTG_HS_DVBUSDIS;
-  volatile uint32_t OTG_HS_DVBUSPULSE;
-  volatile uint32_t OTG_HS_DTHRCTL;
-  volatile uint32_t OTG_HS_DIEPEMPMSK;
-  volatile uint32_t OTG_HS_DEACHINT;
-  volatile uint32_t OTG_HS_DEACHINTMSK;
-  const volatile uint32_t RESERVED256[48];
-  volatile uint32_t OTG_HS_DIEPCTL0;
-  const volatile uint32_t RESERVED264[1];
-  volatile uint32_t OTG_HS_DIEPINT0;
-  const volatile uint32_t RESERVED272[1];
-  volatile uint32_t OTG_HS_DIEPTSIZ0;
-  volatile uint32_t OTG_HS_DIEPDMA1;
-  volatile const uint32_t OTG_HS_DTXFSTS0;
-  const volatile uint32_t RESERVED288[1];
-  volatile uint32_t OTG_HS_DIEPCTL1;
-  const volatile uint32_t RESERVED296[1];
-  volatile uint32_t OTG_HS_DIEPINT1;
-  const volatile uint32_t RESERVED304[1];
-  volatile uint32_t OTG_HS_DIEPTSIZ1;
-  volatile uint32_t OTG_HS_DIEPDMA2;
-  volatile const uint32_t OTG_HS_DTXFSTS1;
-  const volatile uint32_t RESERVED320[1];
-  volatile uint32_t OTG_HS_DIEPCTL2;
-  const volatile uint32_t RESERVED328[1];
-  volatile uint32_t OTG_HS_DIEPINT2;
-  const volatile uint32_t RESERVED336[1];
-  volatile uint32_t OTG_HS_DIEPTSIZ2;
-  volatile uint32_t OTG_HS_DIEPDMA3;
-  volatile const uint32_t OTG_HS_DTXFSTS2;
-  const volatile uint32_t RESERVED352[1];
-  volatile uint32_t OTG_HS_DIEPCTL3;
-  const volatile uint32_t RESERVED360[1];
-  volatile uint32_t OTG_HS_DIEPINT3;
-  const volatile uint32_t RESERVED368[1];
-  volatile uint32_t OTG_HS_DIEPTSIZ3;
-  volatile uint32_t OTG_HS_DIEPDMA4;
-  volatile const uint32_t OTG_HS_DTXFSTS3;
-  const volatile uint32_t RESERVED384[1];
-  volatile uint32_t OTG_HS_DIEPCTL4;
-  const volatile uint32_t RESERVED392[1];
-  volatile uint32_t OTG_HS_DIEPINT4;
-  const volatile uint32_t RESERVED400[1];
-  volatile uint32_t OTG_HS_DIEPTSIZ4;
-  volatile uint32_t OTG_HS_DIEPDMA5;
-  volatile const uint32_t OTG_HS_DTXFSTS4;
-  const volatile uint32_t RESERVED416[1];
-  volatile uint32_t OTG_HS_DIEPCTL5;
-  volatile uint32_t OTG_HS_DIEPTSIZ6;
-  volatile uint32_t OTG_HS_DTXFSTS6;
-  volatile uint32_t OTG_HS_DIEPINT5;
-  volatile uint32_t OTG_HS_DIEPTSIZ7;
-  volatile uint32_t OTG_HS_DTXFSTS7;
-  volatile uint32_t OTG_HS_DIEPTSIZ5;
-  const volatile uint32_t RESERVED440[1];
-  volatile const uint32_t OTG_HS_DTXFSTS5;
-  const volatile uint32_t RESERVED448[1];
-  volatile uint32_t OTG_HS_DIEPCTL6;
-  const volatile uint32_t RESERVED456[1];
-  volatile uint32_t OTG_HS_DIEPINT6;
-  const volatile uint32_t RESERVED480[5];
-  volatile uint32_t OTG_HS_DIEPCTL7;
-  const volatile uint32_t RESERVED488[1];
-  volatile uint32_t OTG_HS_DIEPINT7;
-  const volatile uint32_t RESERVED768[69];
-  volatile uint32_t OTG_HS_DOEPCTL0;
-  const volatile uint32_t RESERVED776[1];
-  volatile uint32_t OTG_HS_DOEPINT0;
-  const volatile uint32_t RESERVED784[1];
-  volatile uint32_t OTG_HS_DOEPTSIZ0;
-  const volatile uint32_t RESERVED800[3];
-  volatile uint32_t OTG_HS_DOEPCTL1;
-  const volatile uint32_t RESERVED808[1];
-  volatile uint32_t OTG_HS_DOEPINT1;
-  const volatile uint32_t RESERVED816[1];
-  volatile uint32_t OTG_HS_DOEPTSIZ1;
-  const volatile uint32_t RESERVED832[3];
-  volatile uint32_t OTG_HS_DOEPCTL2;
-  const volatile uint32_t RESERVED840[1];
-  volatile uint32_t OTG_HS_DOEPINT2;
-  const volatile uint32_t RESERVED848[1];
-  volatile uint32_t OTG_HS_DOEPTSIZ2;
-  const volatile uint32_t RESERVED864[3];
-  volatile uint32_t OTG_HS_DOEPCTL3;
-  const volatile uint32_t RESERVED872[1];
-  volatile uint32_t OTG_HS_DOEPINT3;
-  const volatile uint32_t RESERVED880[1];
-  volatile uint32_t OTG_HS_DOEPTSIZ3;
-  const volatile uint32_t RESERVED896[3];
-  volatile uint32_t OTG_HS_DOEPCTL4;
-  const volatile uint32_t RESERVED904[1];
-  volatile uint32_t OTG_HS_DOEPINT4;
-  const volatile uint32_t RESERVED912[1];
-  volatile uint32_t OTG_HS_DOEPTSIZ4;
-  const volatile uint32_t RESERVED928[3];
-  volatile uint32_t OTG_HS_DOEPCTL5;
-  const volatile uint32_t RESERVED936[1];
-  volatile uint32_t OTG_HS_DOEPINT5;
-  const volatile uint32_t RESERVED944[1];
-  volatile uint32_t OTG_HS_DOEPTSIZ5;
-  const volatile uint32_t RESERVED960[3];
-  volatile uint32_t OTG_HS_DOEPCTL6;
-  const volatile uint32_t RESERVED968[1];
-  volatile uint32_t OTG_HS_DOEPINT6;
-  const volatile uint32_t RESERVED976[1];
-  volatile uint32_t OTG_HS_DOEPTSIZ6;
-  const volatile uint32_t RESERVED992[3];
-  volatile uint32_t OTG_HS_DOEPCTL7;
-  const volatile uint32_t RESERVED1000[1];
-  volatile uint32_t OTG_HS_DOEPINT7;
-  const volatile uint32_t RESERVED1008[1];
-  volatile uint32_t OTG_HS_DOEPTSIZ7;
+    volatile uint32_t OTG_HS_DCFG;
+    volatile uint32_t OTG_HS_DCTL;
+    volatile const uint32_t OTG_HS_DSTS;
+    volatile const uint32_t RESERVED_12;
+    volatile uint32_t OTG_HS_DIEPMSK;
+    volatile uint32_t OTG_HS_DOEPMSK;
+    volatile const uint32_t OTG_HS_DAINT;
+    volatile uint32_t OTG_HS_DAINTMSK;
+    volatile const uint32_t RESERVED_32[2];
+    volatile uint32_t OTG_HS_DVBUSDIS;
+    volatile uint32_t OTG_HS_DVBUSPULSE;
+    volatile uint32_t OTG_HS_DTHRCTL;
+    volatile uint32_t OTG_HS_DIEPEMPMSK;
+    volatile uint32_t OTG_HS_DEACHINT;
+    volatile uint32_t OTG_HS_DEACHINTMSK;
+    volatile const uint32_t RESERVED_64[48];
+    volatile uint32_t OTG_HS_DIEPCTL0;
+    volatile const uint32_t RESERVED_260;
+    volatile uint32_t OTG_HS_DIEPINT0;
+    volatile const uint32_t RESERVED_268;
+    volatile uint32_t OTG_HS_DIEPTSIZ0;
+    volatile uint32_t OTG_HS_DIEPDMA1;
+    volatile const uint32_t OTG_HS_DTXFSTS0;
+    volatile const uint32_t RESERVED_284;
+    volatile uint32_t OTG_HS_DIEPCTL1;
+    volatile const uint32_t RESERVED_292;
+    volatile uint32_t OTG_HS_DIEPINT1;
+    volatile const uint32_t RESERVED_300;
+    volatile uint32_t OTG_HS_DIEPTSIZ1;
+    volatile uint32_t OTG_HS_DIEPDMA2;
+    volatile const uint32_t OTG_HS_DTXFSTS1;
+    volatile const uint32_t RESERVED_316;
+    volatile uint32_t OTG_HS_DIEPCTL2;
+    volatile const uint32_t RESERVED_324;
+    volatile uint32_t OTG_HS_DIEPINT2;
+    volatile const uint32_t RESERVED_332;
+    volatile uint32_t OTG_HS_DIEPTSIZ2;
+    volatile uint32_t OTG_HS_DIEPDMA3;
+    volatile const uint32_t OTG_HS_DTXFSTS2;
+    volatile const uint32_t RESERVED_348;
+    volatile uint32_t OTG_HS_DIEPCTL3;
+    volatile const uint32_t RESERVED_356;
+    volatile uint32_t OTG_HS_DIEPINT3;
+    volatile const uint32_t RESERVED_364;
+    volatile uint32_t OTG_HS_DIEPTSIZ3;
+    volatile uint32_t OTG_HS_DIEPDMA4;
+    volatile const uint32_t OTG_HS_DTXFSTS3;
+    volatile const uint32_t RESERVED_380;
+    volatile uint32_t OTG_HS_DIEPCTL4;
+    volatile const uint32_t RESERVED_388;
+    volatile uint32_t OTG_HS_DIEPINT4;
+    volatile const uint32_t RESERVED_396;
+    volatile uint32_t OTG_HS_DIEPTSIZ4;
+    volatile uint32_t OTG_HS_DIEPDMA5;
+    volatile const uint32_t OTG_HS_DTXFSTS4;
+    volatile const uint32_t RESERVED_412;
+  union {
+      volatile uint32_t OTG_HS_DIEPCTL5;
+      volatile uint32_t OTG_HS_DIEPTSIZ6;
+  };
+    volatile uint32_t OTG_HS_DTXFSTS6;
+  union {
+      volatile uint32_t OTG_HS_DIEPINT5;
+      volatile uint32_t OTG_HS_DIEPTSIZ7;
+  };
+    volatile uint32_t OTG_HS_DTXFSTS7;
+    volatile uint32_t OTG_HS_DIEPTSIZ5;
+    volatile const uint32_t RESERVED_436;
+    volatile const uint32_t OTG_HS_DTXFSTS5;
+    volatile const uint32_t RESERVED_444;
+    volatile uint32_t OTG_HS_DIEPCTL6;
+    volatile const uint32_t RESERVED_452;
+    volatile uint32_t OTG_HS_DIEPINT6;
+    volatile const uint32_t RESERVED_460[5];
+    volatile uint32_t OTG_HS_DIEPCTL7;
+    volatile const uint32_t RESERVED_484;
+    volatile uint32_t OTG_HS_DIEPINT7;
+    volatile const uint32_t RESERVED_492[69];
+    volatile uint32_t OTG_HS_DOEPCTL0;
+    volatile const uint32_t RESERVED_772;
+    volatile uint32_t OTG_HS_DOEPINT0;
+    volatile const uint32_t RESERVED_780;
+    volatile uint32_t OTG_HS_DOEPTSIZ0;
+    volatile const uint32_t RESERVED_788[3];
+    volatile uint32_t OTG_HS_DOEPCTL1;
+    volatile const uint32_t RESERVED_804;
+    volatile uint32_t OTG_HS_DOEPINT1;
+    volatile const uint32_t RESERVED_812;
+    volatile uint32_t OTG_HS_DOEPTSIZ1;
+    volatile const uint32_t RESERVED_820[3];
+    volatile uint32_t OTG_HS_DOEPCTL2;
+    volatile const uint32_t RESERVED_836;
+    volatile uint32_t OTG_HS_DOEPINT2;
+    volatile const uint32_t RESERVED_844;
+    volatile uint32_t OTG_HS_DOEPTSIZ2;
+    volatile const uint32_t RESERVED_852[3];
+    volatile uint32_t OTG_HS_DOEPCTL3;
+    volatile const uint32_t RESERVED_868;
+    volatile uint32_t OTG_HS_DOEPINT3;
+    volatile const uint32_t RESERVED_876;
+    volatile uint32_t OTG_HS_DOEPTSIZ3;
+    volatile const uint32_t RESERVED_884[3];
+    volatile uint32_t OTG_HS_DOEPCTL4;
+    volatile const uint32_t RESERVED_900;
+    volatile uint32_t OTG_HS_DOEPINT4;
+    volatile const uint32_t RESERVED_908;
+    volatile uint32_t OTG_HS_DOEPTSIZ4;
+    volatile const uint32_t RESERVED_916[3];
+    volatile uint32_t OTG_HS_DOEPCTL5;
+    volatile const uint32_t RESERVED_932;
+    volatile uint32_t OTG_HS_DOEPINT5;
+    volatile const uint32_t RESERVED_940;
+    volatile uint32_t OTG_HS_DOEPTSIZ5;
+    volatile const uint32_t RESERVED_948[3];
+    volatile uint32_t OTG_HS_DOEPCTL6;
+    volatile const uint32_t RESERVED_964;
+    volatile uint32_t OTG_HS_DOEPINT6;
+    volatile const uint32_t RESERVED_972;
+    volatile uint32_t OTG_HS_DOEPTSIZ6;
+    volatile const uint32_t RESERVED_980[3];
+    volatile uint32_t OTG_HS_DOEPCTL7;
+    volatile const uint32_t RESERVED_996;
+    volatile uint32_t OTG_HS_DOEPINT7;
+    volatile const uint32_t RESERVED_1004;
+    volatile uint32_t OTG_HS_DOEPTSIZ7;
 };
 #define OTG1_HS_DEVICE_OTG_HS_DCFG_DSPD          (0x3UL << 0) 
 #define OTG1_HS_DEVICE_OTG_HS_DCFG_DSPD_VAL(X) (((uint32_t)(X) & 0x3UL) << 0)
@@ -22353,6 +22595,36 @@ struct OTG1_HS_DEVICE {
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL0_EPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL0_EPENA          (0x1UL << 31) 
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL0_EPENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_XFRC          (0x1UL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_EPDISD          (0x1UL << 1) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_TOC          (0x1UL << 3) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_TOC_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_ITTXFE          (0x1UL << 4) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_ITTXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_INEPNE          (0x1UL << 6) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_INEPNE_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_TXFE          (0x1UL << 7) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_TXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_TXFIFOUDRN          (0x1UL << 8) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_TXFIFOUDRN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_BNA          (0x1UL << 9) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_BNA_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_PKTDRPSTS          (0x1UL << 11) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_PKTDRPSTS_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_BERR          (0x1UL << 12) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_BERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_NAK          (0x1UL << 13) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 13)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ0_XFRSIZ          (0x7FUL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ0_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ0_PKTCNT          (0x3UL << 19) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ0_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 19)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPDMA1_DMAADDR          (0xFFFFFFFFUL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPDMA1_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
+#define OTG1_HS_DEVICE_OTG_HS_DTXFSTS0_INEPTFSAV          (0xFFFFUL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DTXFSTS0_INEPTFSAV_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL1_MPSIZ          (0x7FFUL << 0) 
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL1_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL1_USBAEP          (0x1UL << 15) 
@@ -22379,6 +22651,38 @@ struct OTG1_HS_DEVICE {
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL1_EPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL1_EPENA          (0x1UL << 31) 
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL1_EPENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_XFRC          (0x1UL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_EPDISD          (0x1UL << 1) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_TOC          (0x1UL << 3) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_TOC_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_ITTXFE          (0x1UL << 4) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_ITTXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_INEPNE          (0x1UL << 6) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_INEPNE_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_TXFE          (0x1UL << 7) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_TXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_TXFIFOUDRN          (0x1UL << 8) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_TXFIFOUDRN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_BNA          (0x1UL << 9) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_BNA_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_PKTDRPSTS          (0x1UL << 11) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_PKTDRPSTS_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_BERR          (0x1UL << 12) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_BERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_NAK          (0x1UL << 13) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 13)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ1_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ1_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ1_PKTCNT          (0x3FFUL << 19) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ1_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ1_MCNT          (0x3UL << 29) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ1_MCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPDMA2_DMAADDR          (0xFFFFFFFFUL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPDMA2_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
+#define OTG1_HS_DEVICE_OTG_HS_DTXFSTS1_INEPTFSAV          (0xFFFFUL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DTXFSTS1_INEPTFSAV_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL2_MPSIZ          (0x7FFUL << 0) 
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL2_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL2_USBAEP          (0x1UL << 15) 
@@ -22405,6 +22709,38 @@ struct OTG1_HS_DEVICE {
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL2_EPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL2_EPENA          (0x1UL << 31) 
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL2_EPENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_XFRC          (0x1UL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_EPDISD          (0x1UL << 1) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_TOC          (0x1UL << 3) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_TOC_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_ITTXFE          (0x1UL << 4) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_ITTXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_INEPNE          (0x1UL << 6) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_INEPNE_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_TXFE          (0x1UL << 7) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_TXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_TXFIFOUDRN          (0x1UL << 8) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_TXFIFOUDRN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_BNA          (0x1UL << 9) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_BNA_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_PKTDRPSTS          (0x1UL << 11) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_PKTDRPSTS_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_BERR          (0x1UL << 12) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_BERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_NAK          (0x1UL << 13) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 13)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ2_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ2_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ2_PKTCNT          (0x3FFUL << 19) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ2_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ2_MCNT          (0x3UL << 29) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ2_MCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPDMA3_DMAADDR          (0xFFFFFFFFUL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPDMA3_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
+#define OTG1_HS_DEVICE_OTG_HS_DTXFSTS2_INEPTFSAV          (0xFFFFUL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DTXFSTS2_INEPTFSAV_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL3_MPSIZ          (0x7FFUL << 0) 
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL3_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL3_USBAEP          (0x1UL << 15) 
@@ -22431,6 +22767,38 @@ struct OTG1_HS_DEVICE {
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL3_EPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL3_EPENA          (0x1UL << 31) 
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL3_EPENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_XFRC          (0x1UL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_EPDISD          (0x1UL << 1) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_TOC          (0x1UL << 3) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_TOC_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_ITTXFE          (0x1UL << 4) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_ITTXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_INEPNE          (0x1UL << 6) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_INEPNE_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_TXFE          (0x1UL << 7) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_TXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_TXFIFOUDRN          (0x1UL << 8) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_TXFIFOUDRN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_BNA          (0x1UL << 9) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_BNA_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_PKTDRPSTS          (0x1UL << 11) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_PKTDRPSTS_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_BERR          (0x1UL << 12) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_BERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_NAK          (0x1UL << 13) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 13)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ3_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ3_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ3_PKTCNT          (0x3FFUL << 19) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ3_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ3_MCNT          (0x3UL << 29) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ3_MCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPDMA4_DMAADDR          (0xFFFFFFFFUL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPDMA4_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
+#define OTG1_HS_DEVICE_OTG_HS_DTXFSTS3_INEPTFSAV          (0xFFFFUL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DTXFSTS3_INEPTFSAV_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL4_MPSIZ          (0x7FFUL << 0) 
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL4_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL4_USBAEP          (0x1UL << 15) 
@@ -22457,6 +22825,38 @@ struct OTG1_HS_DEVICE {
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL4_EPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL4_EPENA          (0x1UL << 31) 
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL4_EPENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_XFRC          (0x1UL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_EPDISD          (0x1UL << 1) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_TOC          (0x1UL << 3) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_TOC_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_ITTXFE          (0x1UL << 4) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_ITTXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_INEPNE          (0x1UL << 6) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_INEPNE_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_TXFE          (0x1UL << 7) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_TXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_TXFIFOUDRN          (0x1UL << 8) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_TXFIFOUDRN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_BNA          (0x1UL << 9) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_BNA_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_PKTDRPSTS          (0x1UL << 11) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_PKTDRPSTS_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_BERR          (0x1UL << 12) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_BERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_NAK          (0x1UL << 13) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 13)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ4_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ4_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ4_PKTCNT          (0x3FFUL << 19) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ4_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ4_MCNT          (0x3UL << 29) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ4_MCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPDMA5_DMAADDR          (0xFFFFFFFFUL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPDMA5_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
+#define OTG1_HS_DEVICE_OTG_HS_DTXFSTS4_INEPTFSAV          (0xFFFFUL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DTXFSTS4_INEPTFSAV_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL5_MPSIZ          (0x7FFUL << 0) 
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL5_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL5_USBAEP          (0x1UL << 15) 
@@ -22483,6 +22883,52 @@ struct OTG1_HS_DEVICE {
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL5_EPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL5_EPENA          (0x1UL << 31) 
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL5_EPENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ6_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ6_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ6_PKTCNT          (0x3FFUL << 19) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ6_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ6_MCNT          (0x3UL << 29) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ6_MCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
+#define OTG1_HS_DEVICE_OTG_HS_DTXFSTS6_INEPTFSAV          (0xFFFFUL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DTXFSTS6_INEPTFSAV_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_XFRC          (0x1UL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_EPDISD          (0x1UL << 1) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_TOC          (0x1UL << 3) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_TOC_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_ITTXFE          (0x1UL << 4) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_ITTXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_INEPNE          (0x1UL << 6) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_INEPNE_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_TXFE          (0x1UL << 7) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_TXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_TXFIFOUDRN          (0x1UL << 8) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_TXFIFOUDRN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_BNA          (0x1UL << 9) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_BNA_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_PKTDRPSTS          (0x1UL << 11) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_PKTDRPSTS_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_BERR          (0x1UL << 12) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_BERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_NAK          (0x1UL << 13) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 13)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ7_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ7_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ7_PKTCNT          (0x3FFUL << 19) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ7_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ7_MCNT          (0x3UL << 29) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ7_MCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
+#define OTG1_HS_DEVICE_OTG_HS_DTXFSTS7_INEPTFSAV          (0xFFFFUL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DTXFSTS7_INEPTFSAV_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ5_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ5_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ5_PKTCNT          (0x3FFUL << 19) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ5_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ5_MCNT          (0x3UL << 29) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ5_MCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
+#define OTG1_HS_DEVICE_OTG_HS_DTXFSTS5_INEPTFSAV          (0xFFFFUL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DTXFSTS5_INEPTFSAV_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL6_MPSIZ          (0x7FFUL << 0) 
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL6_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL6_USBAEP          (0x1UL << 15) 
@@ -22509,6 +22955,28 @@ struct OTG1_HS_DEVICE {
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL6_EPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL6_EPENA          (0x1UL << 31) 
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL6_EPENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_XFRC          (0x1UL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_EPDISD          (0x1UL << 1) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_TOC          (0x1UL << 3) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_TOC_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_ITTXFE          (0x1UL << 4) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_ITTXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_INEPNE          (0x1UL << 6) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_INEPNE_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_TXFE          (0x1UL << 7) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_TXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_TXFIFOUDRN          (0x1UL << 8) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_TXFIFOUDRN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_BNA          (0x1UL << 9) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_BNA_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_PKTDRPSTS          (0x1UL << 11) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_PKTDRPSTS_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_BERR          (0x1UL << 12) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_BERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_NAK          (0x1UL << 13) 
+#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 13)
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL7_MPSIZ          (0x7FFUL << 0) 
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL7_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL7_USBAEP          (0x1UL << 15) 
@@ -22535,160 +23003,6 @@ struct OTG1_HS_DEVICE {
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL7_EPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL7_EPENA          (0x1UL << 31) 
 #define OTG1_HS_DEVICE_OTG_HS_DIEPCTL7_EPENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_XFRC          (0x1UL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_EPDISD          (0x1UL << 1) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_TOC          (0x1UL << 3) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_TOC_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_ITTXFE          (0x1UL << 4) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_ITTXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_INEPNE          (0x1UL << 6) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_INEPNE_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_TXFE          (0x1UL << 7) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_TXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_TXFIFOUDRN          (0x1UL << 8) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_TXFIFOUDRN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_BNA          (0x1UL << 9) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_BNA_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_PKTDRPSTS          (0x1UL << 11) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_PKTDRPSTS_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_BERR          (0x1UL << 12) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_BERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_NAK          (0x1UL << 13) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT0_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 13)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_XFRC          (0x1UL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_EPDISD          (0x1UL << 1) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_TOC          (0x1UL << 3) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_TOC_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_ITTXFE          (0x1UL << 4) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_ITTXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_INEPNE          (0x1UL << 6) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_INEPNE_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_TXFE          (0x1UL << 7) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_TXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_TXFIFOUDRN          (0x1UL << 8) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_TXFIFOUDRN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_BNA          (0x1UL << 9) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_BNA_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_PKTDRPSTS          (0x1UL << 11) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_PKTDRPSTS_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_BERR          (0x1UL << 12) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_BERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_NAK          (0x1UL << 13) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT1_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 13)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_XFRC          (0x1UL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_EPDISD          (0x1UL << 1) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_TOC          (0x1UL << 3) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_TOC_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_ITTXFE          (0x1UL << 4) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_ITTXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_INEPNE          (0x1UL << 6) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_INEPNE_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_TXFE          (0x1UL << 7) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_TXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_TXFIFOUDRN          (0x1UL << 8) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_TXFIFOUDRN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_BNA          (0x1UL << 9) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_BNA_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_PKTDRPSTS          (0x1UL << 11) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_PKTDRPSTS_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_BERR          (0x1UL << 12) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_BERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_NAK          (0x1UL << 13) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT2_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 13)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_XFRC          (0x1UL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_EPDISD          (0x1UL << 1) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_TOC          (0x1UL << 3) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_TOC_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_ITTXFE          (0x1UL << 4) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_ITTXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_INEPNE          (0x1UL << 6) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_INEPNE_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_TXFE          (0x1UL << 7) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_TXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_TXFIFOUDRN          (0x1UL << 8) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_TXFIFOUDRN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_BNA          (0x1UL << 9) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_BNA_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_PKTDRPSTS          (0x1UL << 11) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_PKTDRPSTS_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_BERR          (0x1UL << 12) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_BERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_NAK          (0x1UL << 13) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT3_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 13)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_XFRC          (0x1UL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_EPDISD          (0x1UL << 1) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_TOC          (0x1UL << 3) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_TOC_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_ITTXFE          (0x1UL << 4) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_ITTXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_INEPNE          (0x1UL << 6) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_INEPNE_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_TXFE          (0x1UL << 7) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_TXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_TXFIFOUDRN          (0x1UL << 8) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_TXFIFOUDRN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_BNA          (0x1UL << 9) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_BNA_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_PKTDRPSTS          (0x1UL << 11) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_PKTDRPSTS_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_BERR          (0x1UL << 12) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_BERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_NAK          (0x1UL << 13) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT4_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 13)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_XFRC          (0x1UL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_EPDISD          (0x1UL << 1) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_TOC          (0x1UL << 3) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_TOC_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_ITTXFE          (0x1UL << 4) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_ITTXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_INEPNE          (0x1UL << 6) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_INEPNE_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_TXFE          (0x1UL << 7) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_TXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_TXFIFOUDRN          (0x1UL << 8) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_TXFIFOUDRN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_BNA          (0x1UL << 9) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_BNA_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_PKTDRPSTS          (0x1UL << 11) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_PKTDRPSTS_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_BERR          (0x1UL << 12) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_BERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_NAK          (0x1UL << 13) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT5_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 13)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_XFRC          (0x1UL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_EPDISD          (0x1UL << 1) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_TOC          (0x1UL << 3) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_TOC_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_ITTXFE          (0x1UL << 4) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_ITTXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_INEPNE          (0x1UL << 6) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_INEPNE_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_TXFE          (0x1UL << 7) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_TXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_TXFIFOUDRN          (0x1UL << 8) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_TXFIFOUDRN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_BNA          (0x1UL << 9) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_BNA_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_PKTDRPSTS          (0x1UL << 11) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_PKTDRPSTS_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_BERR          (0x1UL << 12) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_BERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_NAK          (0x1UL << 13) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPINT6_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 13)
 #define OTG1_HS_DEVICE_OTG_HS_DIEPINT7_XFRC          (0x1UL << 0) 
 #define OTG1_HS_DEVICE_OTG_HS_DIEPINT7_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define OTG1_HS_DEVICE_OTG_HS_DIEPINT7_EPDISD          (0x1UL << 1) 
@@ -22711,62 +23025,6 @@ struct OTG1_HS_DEVICE {
 #define OTG1_HS_DEVICE_OTG_HS_DIEPINT7_BERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
 #define OTG1_HS_DEVICE_OTG_HS_DIEPINT7_NAK          (0x1UL << 13) 
 #define OTG1_HS_DEVICE_OTG_HS_DIEPINT7_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 13)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ0_XFRSIZ          (0x7FUL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ0_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ0_PKTCNT          (0x3UL << 19) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ0_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 19)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPDMA1_DMAADDR          (0xFFFFFFFFUL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPDMA1_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPDMA2_DMAADDR          (0xFFFFFFFFUL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPDMA2_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPDMA3_DMAADDR          (0xFFFFFFFFUL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPDMA3_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPDMA4_DMAADDR          (0xFFFFFFFFUL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPDMA4_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPDMA5_DMAADDR          (0xFFFFFFFFUL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPDMA5_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
-#define OTG1_HS_DEVICE_OTG_HS_DTXFSTS0_INEPTFSAV          (0xFFFFUL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DTXFSTS0_INEPTFSAV_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
-#define OTG1_HS_DEVICE_OTG_HS_DTXFSTS1_INEPTFSAV          (0xFFFFUL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DTXFSTS1_INEPTFSAV_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
-#define OTG1_HS_DEVICE_OTG_HS_DTXFSTS2_INEPTFSAV          (0xFFFFUL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DTXFSTS2_INEPTFSAV_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
-#define OTG1_HS_DEVICE_OTG_HS_DTXFSTS3_INEPTFSAV          (0xFFFFUL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DTXFSTS3_INEPTFSAV_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
-#define OTG1_HS_DEVICE_OTG_HS_DTXFSTS4_INEPTFSAV          (0xFFFFUL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DTXFSTS4_INEPTFSAV_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
-#define OTG1_HS_DEVICE_OTG_HS_DTXFSTS5_INEPTFSAV          (0xFFFFUL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DTXFSTS5_INEPTFSAV_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ1_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ1_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ1_PKTCNT          (0x3FFUL << 19) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ1_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ1_MCNT          (0x3UL << 29) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ1_MCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ2_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ2_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ2_PKTCNT          (0x3FFUL << 19) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ2_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ2_MCNT          (0x3UL << 29) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ2_MCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ3_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ3_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ3_PKTCNT          (0x3FFUL << 19) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ3_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ3_MCNT          (0x3UL << 29) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ3_MCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ4_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ4_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ4_PKTCNT          (0x3FFUL << 19) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ4_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ4_MCNT          (0x3UL << 29) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ4_MCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ5_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ5_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ5_PKTCNT          (0x3FFUL << 19) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ5_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ5_MCNT          (0x3UL << 29) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ5_MCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL0_MPSIZ          (0x3UL << 0) 
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL0_MPSIZ_VAL(X) (((uint32_t)(X) & 0x3UL) << 0)
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL0_USBAEP          (0x1UL << 15) 
@@ -22787,6 +23045,24 @@ struct OTG1_HS_DEVICE {
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL0_EPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL0_EPENA          (0x1UL << 31) 
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL0_EPENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT0_XFRC          (0x1UL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT0_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT0_EPDISD          (0x1UL << 1) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT0_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT0_STUP          (0x1UL << 3) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT0_STUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT0_OTEPDIS          (0x1UL << 4) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT0_OTEPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT0_B2BSTUP          (0x1UL << 6) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT0_B2BSTUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT0_NYET          (0x1UL << 14) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT0_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 14)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ0_XFRSIZ          (0x7FUL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ0_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ0_PKTCNT          (0x1UL << 19) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ0_PKTCNT_VAL(X) (((uint32_t)(X) & 0x1UL) << 19)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ0_STUPCNT          (0x3UL << 29) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ0_STUPCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL1_MPSIZ          (0x7FFUL << 0) 
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL1_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL1_USBAEP          (0x1UL << 15) 
@@ -22813,6 +23089,24 @@ struct OTG1_HS_DEVICE {
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL1_EPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL1_EPENA          (0x1UL << 31) 
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL1_EPENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT1_XFRC          (0x1UL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT1_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT1_EPDISD          (0x1UL << 1) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT1_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT1_STUP          (0x1UL << 3) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT1_STUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT1_OTEPDIS          (0x1UL << 4) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT1_OTEPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT1_B2BSTUP          (0x1UL << 6) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT1_B2BSTUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT1_NYET          (0x1UL << 14) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT1_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 14)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ1_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ1_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ1_PKTCNT          (0x3FFUL << 19) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ1_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ1_RXDPID_STUPCNT          (0x3UL << 29) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ1_RXDPID_STUPCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL2_MPSIZ          (0x7FFUL << 0) 
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL2_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL2_USBAEP          (0x1UL << 15) 
@@ -22839,6 +23133,24 @@ struct OTG1_HS_DEVICE {
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL2_EPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL2_EPENA          (0x1UL << 31) 
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL2_EPENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT2_XFRC          (0x1UL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT2_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT2_EPDISD          (0x1UL << 1) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT2_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT2_STUP          (0x1UL << 3) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT2_STUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT2_OTEPDIS          (0x1UL << 4) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT2_OTEPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT2_B2BSTUP          (0x1UL << 6) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT2_B2BSTUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT2_NYET          (0x1UL << 14) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT2_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 14)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ2_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ2_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ2_PKTCNT          (0x3FFUL << 19) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ2_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ2_RXDPID_STUPCNT          (0x3UL << 29) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ2_RXDPID_STUPCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL3_MPSIZ          (0x7FFUL << 0) 
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL3_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL3_USBAEP          (0x1UL << 15) 
@@ -22865,42 +23177,6 @@ struct OTG1_HS_DEVICE {
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL3_EPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL3_EPENA          (0x1UL << 31) 
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL3_EPENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT0_XFRC          (0x1UL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT0_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT0_EPDISD          (0x1UL << 1) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT0_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT0_STUP          (0x1UL << 3) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT0_STUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT0_OTEPDIS          (0x1UL << 4) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT0_OTEPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT0_B2BSTUP          (0x1UL << 6) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT0_B2BSTUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT0_NYET          (0x1UL << 14) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT0_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 14)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT1_XFRC          (0x1UL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT1_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT1_EPDISD          (0x1UL << 1) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT1_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT1_STUP          (0x1UL << 3) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT1_STUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT1_OTEPDIS          (0x1UL << 4) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT1_OTEPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT1_B2BSTUP          (0x1UL << 6) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT1_B2BSTUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT1_NYET          (0x1UL << 14) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT1_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 14)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT2_XFRC          (0x1UL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT2_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT2_EPDISD          (0x1UL << 1) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT2_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT2_STUP          (0x1UL << 3) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT2_STUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT2_OTEPDIS          (0x1UL << 4) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT2_OTEPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT2_B2BSTUP          (0x1UL << 6) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT2_B2BSTUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT2_NYET          (0x1UL << 14) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT2_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 14)
 #define OTG1_HS_DEVICE_OTG_HS_DOEPINT3_XFRC          (0x1UL << 0) 
 #define OTG1_HS_DEVICE_OTG_HS_DOEPINT3_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define OTG1_HS_DEVICE_OTG_HS_DOEPINT3_EPDISD          (0x1UL << 1) 
@@ -22913,100 +23189,12 @@ struct OTG1_HS_DEVICE {
 #define OTG1_HS_DEVICE_OTG_HS_DOEPINT3_B2BSTUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
 #define OTG1_HS_DEVICE_OTG_HS_DOEPINT3_NYET          (0x1UL << 14) 
 #define OTG1_HS_DEVICE_OTG_HS_DOEPINT3_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 14)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT4_XFRC          (0x1UL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT4_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT4_EPDISD          (0x1UL << 1) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT4_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT4_STUP          (0x1UL << 3) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT4_STUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT4_OTEPDIS          (0x1UL << 4) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT4_OTEPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT4_B2BSTUP          (0x1UL << 6) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT4_B2BSTUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT4_NYET          (0x1UL << 14) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT4_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 14)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT5_XFRC          (0x1UL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT5_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT5_EPDISD          (0x1UL << 1) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT5_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT5_STUP          (0x1UL << 3) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT5_STUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT5_OTEPDIS          (0x1UL << 4) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT5_OTEPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT5_B2BSTUP          (0x1UL << 6) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT5_B2BSTUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT5_NYET          (0x1UL << 14) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT5_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 14)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT6_XFRC          (0x1UL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT6_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT6_EPDISD          (0x1UL << 1) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT6_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT6_STUP          (0x1UL << 3) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT6_STUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT6_OTEPDIS          (0x1UL << 4) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT6_OTEPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT6_B2BSTUP          (0x1UL << 6) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT6_B2BSTUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT6_NYET          (0x1UL << 14) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT6_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 14)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT7_XFRC          (0x1UL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT7_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT7_EPDISD          (0x1UL << 1) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT7_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT7_STUP          (0x1UL << 3) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT7_STUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT7_OTEPDIS          (0x1UL << 4) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT7_OTEPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT7_B2BSTUP          (0x1UL << 6) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT7_B2BSTUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT7_NYET          (0x1UL << 14) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPINT7_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 14)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ0_XFRSIZ          (0x7FUL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ0_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ0_PKTCNT          (0x1UL << 19) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ0_PKTCNT_VAL(X) (((uint32_t)(X) & 0x1UL) << 19)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ0_STUPCNT          (0x3UL << 29) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ0_STUPCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ1_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ1_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ1_PKTCNT          (0x3FFUL << 19) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ1_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ1_RXDPID_STUPCNT          (0x3UL << 29) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ1_RXDPID_STUPCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ2_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ2_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ2_PKTCNT          (0x3FFUL << 19) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ2_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ2_RXDPID_STUPCNT          (0x3UL << 29) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ2_RXDPID_STUPCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
 #define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ3_XFRSIZ          (0x7FFFFUL << 0) 
 #define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ3_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
 #define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ3_PKTCNT          (0x3FFUL << 19) 
 #define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ3_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
 #define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ3_RXDPID_STUPCNT          (0x3UL << 29) 
 #define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ3_RXDPID_STUPCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ4_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ4_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ4_PKTCNT          (0x3FFUL << 19) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ4_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ4_RXDPID_STUPCNT          (0x3UL << 29) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ4_RXDPID_STUPCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ6_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ6_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ6_PKTCNT          (0x3FFUL << 19) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ6_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ6_MCNT          (0x3UL << 29) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ6_MCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG1_HS_DEVICE_OTG_HS_DTXFSTS6_INEPTFSAV          (0xFFFFUL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DTXFSTS6_INEPTFSAV_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ7_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ7_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ7_PKTCNT          (0x3FFUL << 19) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ7_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ7_MCNT          (0x3UL << 29) 
-#define OTG1_HS_DEVICE_OTG_HS_DIEPTSIZ7_MCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG1_HS_DEVICE_OTG_HS_DTXFSTS7_INEPTFSAV          (0xFFFFUL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DTXFSTS7_INEPTFSAV_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL4_MPSIZ          (0x7FFUL << 0) 
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL4_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL4_USBAEP          (0x1UL << 15) 
@@ -23033,6 +23221,24 @@ struct OTG1_HS_DEVICE {
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL4_EPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL4_EPENA          (0x1UL << 31) 
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL4_EPENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT4_XFRC          (0x1UL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT4_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT4_EPDISD          (0x1UL << 1) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT4_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT4_STUP          (0x1UL << 3) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT4_STUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT4_OTEPDIS          (0x1UL << 4) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT4_OTEPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT4_B2BSTUP          (0x1UL << 6) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT4_B2BSTUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT4_NYET          (0x1UL << 14) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT4_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 14)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ4_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ4_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ4_PKTCNT          (0x3FFUL << 19) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ4_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ4_RXDPID_STUPCNT          (0x3UL << 29) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ4_RXDPID_STUPCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL5_MPSIZ          (0x7FFUL << 0) 
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL5_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL5_USBAEP          (0x1UL << 15) 
@@ -23059,6 +23265,24 @@ struct OTG1_HS_DEVICE {
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL5_EPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL5_EPENA          (0x1UL << 31) 
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL5_EPENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT5_XFRC          (0x1UL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT5_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT5_EPDISD          (0x1UL << 1) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT5_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT5_STUP          (0x1UL << 3) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT5_STUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT5_OTEPDIS          (0x1UL << 4) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT5_OTEPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT5_B2BSTUP          (0x1UL << 6) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT5_B2BSTUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT5_NYET          (0x1UL << 14) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT5_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 14)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ5_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ5_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ5_PKTCNT          (0x3FFUL << 19) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ5_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ5_RXDPID_STUPCNT          (0x3UL << 29) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ5_RXDPID_STUPCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL6_MPSIZ          (0x7FFUL << 0) 
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL6_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL6_USBAEP          (0x1UL << 15) 
@@ -23085,6 +23309,24 @@ struct OTG1_HS_DEVICE {
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL6_EPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL6_EPENA          (0x1UL << 31) 
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL6_EPENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT6_XFRC          (0x1UL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT6_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT6_EPDISD          (0x1UL << 1) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT6_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT6_STUP          (0x1UL << 3) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT6_STUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT6_OTEPDIS          (0x1UL << 4) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT6_OTEPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT6_B2BSTUP          (0x1UL << 6) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT6_B2BSTUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT6_NYET          (0x1UL << 14) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT6_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 14)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ6_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ6_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ6_PKTCNT          (0x3FFUL << 19) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ6_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ6_RXDPID_STUPCNT          (0x3UL << 29) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ6_RXDPID_STUPCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL7_MPSIZ          (0x7FFUL << 0) 
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL7_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL7_USBAEP          (0x1UL << 15) 
@@ -23111,18 +23353,18 @@ struct OTG1_HS_DEVICE {
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL7_EPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL7_EPENA          (0x1UL << 31) 
 #define OTG1_HS_DEVICE_OTG_HS_DOEPCTL7_EPENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ5_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ5_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ5_PKTCNT          (0x3FFUL << 19) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ5_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ5_RXDPID_STUPCNT          (0x3UL << 29) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ5_RXDPID_STUPCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ6_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ6_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ6_PKTCNT          (0x3FFUL << 19) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ6_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ6_RXDPID_STUPCNT          (0x3UL << 29) 
-#define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ6_RXDPID_STUPCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT7_XFRC          (0x1UL << 0) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT7_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT7_EPDISD          (0x1UL << 1) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT7_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT7_STUP          (0x1UL << 3) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT7_STUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT7_OTEPDIS          (0x1UL << 4) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT7_OTEPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT7_B2BSTUP          (0x1UL << 6) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT7_B2BSTUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT7_NYET          (0x1UL << 14) 
+#define OTG1_HS_DEVICE_OTG_HS_DOEPINT7_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 14)
 #define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ7_XFRSIZ          (0x7FFFFUL << 0) 
 #define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ7_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
 #define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ7_PKTCNT          (0x3FFUL << 19) 
@@ -23131,128 +23373,135 @@ struct OTG1_HS_DEVICE {
 #define OTG1_HS_DEVICE_OTG_HS_DOEPTSIZ7_RXDPID_STUPCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
 
 #define OTG1_HS_DEVICE  ((struct OTG1_HS_DEVICE*)(0x40040800UL))
+
+
+
 struct OTG2_HS_DEVICE {
-  volatile uint32_t OTG_HS_DCFG;
-  volatile uint32_t OTG_HS_DCTL;
-  volatile const uint32_t OTG_HS_DSTS;
-  const volatile uint32_t RESERVED16[1];
-  volatile uint32_t OTG_HS_DIEPMSK;
-  volatile uint32_t OTG_HS_DOEPMSK;
-  volatile const uint32_t OTG_HS_DAINT;
-  volatile uint32_t OTG_HS_DAINTMSK;
-  const volatile uint32_t RESERVED40[2];
-  volatile uint32_t OTG_HS_DVBUSDIS;
-  volatile uint32_t OTG_HS_DVBUSPULSE;
-  volatile uint32_t OTG_HS_DTHRCTL;
-  volatile uint32_t OTG_HS_DIEPEMPMSK;
-  volatile uint32_t OTG_HS_DEACHINT;
-  volatile uint32_t OTG_HS_DEACHINTMSK;
-  const volatile uint32_t RESERVED256[48];
-  volatile uint32_t OTG_HS_DIEPCTL0;
-  const volatile uint32_t RESERVED264[1];
-  volatile uint32_t OTG_HS_DIEPINT0;
-  const volatile uint32_t RESERVED272[1];
-  volatile uint32_t OTG_HS_DIEPTSIZ0;
-  volatile uint32_t OTG_HS_DIEPDMA1;
-  volatile const uint32_t OTG_HS_DTXFSTS0;
-  const volatile uint32_t RESERVED288[1];
-  volatile uint32_t OTG_HS_DIEPCTL1;
-  const volatile uint32_t RESERVED296[1];
-  volatile uint32_t OTG_HS_DIEPINT1;
-  const volatile uint32_t RESERVED304[1];
-  volatile uint32_t OTG_HS_DIEPTSIZ1;
-  volatile uint32_t OTG_HS_DIEPDMA2;
-  volatile const uint32_t OTG_HS_DTXFSTS1;
-  const volatile uint32_t RESERVED320[1];
-  volatile uint32_t OTG_HS_DIEPCTL2;
-  const volatile uint32_t RESERVED328[1];
-  volatile uint32_t OTG_HS_DIEPINT2;
-  const volatile uint32_t RESERVED336[1];
-  volatile uint32_t OTG_HS_DIEPTSIZ2;
-  volatile uint32_t OTG_HS_DIEPDMA3;
-  volatile const uint32_t OTG_HS_DTXFSTS2;
-  const volatile uint32_t RESERVED352[1];
-  volatile uint32_t OTG_HS_DIEPCTL3;
-  const volatile uint32_t RESERVED360[1];
-  volatile uint32_t OTG_HS_DIEPINT3;
-  const volatile uint32_t RESERVED368[1];
-  volatile uint32_t OTG_HS_DIEPTSIZ3;
-  volatile uint32_t OTG_HS_DIEPDMA4;
-  volatile const uint32_t OTG_HS_DTXFSTS3;
-  const volatile uint32_t RESERVED384[1];
-  volatile uint32_t OTG_HS_DIEPCTL4;
-  const volatile uint32_t RESERVED392[1];
-  volatile uint32_t OTG_HS_DIEPINT4;
-  const volatile uint32_t RESERVED400[1];
-  volatile uint32_t OTG_HS_DIEPTSIZ4;
-  volatile uint32_t OTG_HS_DIEPDMA5;
-  volatile const uint32_t OTG_HS_DTXFSTS4;
-  const volatile uint32_t RESERVED416[1];
-  volatile uint32_t OTG_HS_DIEPCTL5;
-  volatile uint32_t OTG_HS_DIEPTSIZ6;
-  volatile uint32_t OTG_HS_DTXFSTS6;
-  volatile uint32_t OTG_HS_DIEPINT5;
-  volatile uint32_t OTG_HS_DIEPTSIZ7;
-  volatile uint32_t OTG_HS_DTXFSTS7;
-  volatile uint32_t OTG_HS_DIEPTSIZ5;
-  const volatile uint32_t RESERVED440[1];
-  volatile const uint32_t OTG_HS_DTXFSTS5;
-  const volatile uint32_t RESERVED448[1];
-  volatile uint32_t OTG_HS_DIEPCTL6;
-  const volatile uint32_t RESERVED456[1];
-  volatile uint32_t OTG_HS_DIEPINT6;
-  const volatile uint32_t RESERVED480[5];
-  volatile uint32_t OTG_HS_DIEPCTL7;
-  const volatile uint32_t RESERVED488[1];
-  volatile uint32_t OTG_HS_DIEPINT7;
-  const volatile uint32_t RESERVED768[69];
-  volatile uint32_t OTG_HS_DOEPCTL0;
-  const volatile uint32_t RESERVED776[1];
-  volatile uint32_t OTG_HS_DOEPINT0;
-  const volatile uint32_t RESERVED784[1];
-  volatile uint32_t OTG_HS_DOEPTSIZ0;
-  const volatile uint32_t RESERVED800[3];
-  volatile uint32_t OTG_HS_DOEPCTL1;
-  const volatile uint32_t RESERVED808[1];
-  volatile uint32_t OTG_HS_DOEPINT1;
-  const volatile uint32_t RESERVED816[1];
-  volatile uint32_t OTG_HS_DOEPTSIZ1;
-  const volatile uint32_t RESERVED832[3];
-  volatile uint32_t OTG_HS_DOEPCTL2;
-  const volatile uint32_t RESERVED840[1];
-  volatile uint32_t OTG_HS_DOEPINT2;
-  const volatile uint32_t RESERVED848[1];
-  volatile uint32_t OTG_HS_DOEPTSIZ2;
-  const volatile uint32_t RESERVED864[3];
-  volatile uint32_t OTG_HS_DOEPCTL3;
-  const volatile uint32_t RESERVED872[1];
-  volatile uint32_t OTG_HS_DOEPINT3;
-  const volatile uint32_t RESERVED880[1];
-  volatile uint32_t OTG_HS_DOEPTSIZ3;
-  const volatile uint32_t RESERVED896[3];
-  volatile uint32_t OTG_HS_DOEPCTL4;
-  const volatile uint32_t RESERVED904[1];
-  volatile uint32_t OTG_HS_DOEPINT4;
-  const volatile uint32_t RESERVED912[1];
-  volatile uint32_t OTG_HS_DOEPTSIZ4;
-  const volatile uint32_t RESERVED928[3];
-  volatile uint32_t OTG_HS_DOEPCTL5;
-  const volatile uint32_t RESERVED936[1];
-  volatile uint32_t OTG_HS_DOEPINT5;
-  const volatile uint32_t RESERVED944[1];
-  volatile uint32_t OTG_HS_DOEPTSIZ5;
-  const volatile uint32_t RESERVED960[3];
-  volatile uint32_t OTG_HS_DOEPCTL6;
-  const volatile uint32_t RESERVED968[1];
-  volatile uint32_t OTG_HS_DOEPINT6;
-  const volatile uint32_t RESERVED976[1];
-  volatile uint32_t OTG_HS_DOEPTSIZ6;
-  const volatile uint32_t RESERVED992[3];
-  volatile uint32_t OTG_HS_DOEPCTL7;
-  const volatile uint32_t RESERVED1000[1];
-  volatile uint32_t OTG_HS_DOEPINT7;
-  const volatile uint32_t RESERVED1008[1];
-  volatile uint32_t OTG_HS_DOEPTSIZ7;
+    volatile uint32_t OTG_HS_DCFG;
+    volatile uint32_t OTG_HS_DCTL;
+    volatile const uint32_t OTG_HS_DSTS;
+    volatile const uint32_t RESERVED_12;
+    volatile uint32_t OTG_HS_DIEPMSK;
+    volatile uint32_t OTG_HS_DOEPMSK;
+    volatile const uint32_t OTG_HS_DAINT;
+    volatile uint32_t OTG_HS_DAINTMSK;
+    volatile const uint32_t RESERVED_32[2];
+    volatile uint32_t OTG_HS_DVBUSDIS;
+    volatile uint32_t OTG_HS_DVBUSPULSE;
+    volatile uint32_t OTG_HS_DTHRCTL;
+    volatile uint32_t OTG_HS_DIEPEMPMSK;
+    volatile uint32_t OTG_HS_DEACHINT;
+    volatile uint32_t OTG_HS_DEACHINTMSK;
+    volatile const uint32_t RESERVED_64[48];
+    volatile uint32_t OTG_HS_DIEPCTL0;
+    volatile const uint32_t RESERVED_260;
+    volatile uint32_t OTG_HS_DIEPINT0;
+    volatile const uint32_t RESERVED_268;
+    volatile uint32_t OTG_HS_DIEPTSIZ0;
+    volatile uint32_t OTG_HS_DIEPDMA1;
+    volatile const uint32_t OTG_HS_DTXFSTS0;
+    volatile const uint32_t RESERVED_284;
+    volatile uint32_t OTG_HS_DIEPCTL1;
+    volatile const uint32_t RESERVED_292;
+    volatile uint32_t OTG_HS_DIEPINT1;
+    volatile const uint32_t RESERVED_300;
+    volatile uint32_t OTG_HS_DIEPTSIZ1;
+    volatile uint32_t OTG_HS_DIEPDMA2;
+    volatile const uint32_t OTG_HS_DTXFSTS1;
+    volatile const uint32_t RESERVED_316;
+    volatile uint32_t OTG_HS_DIEPCTL2;
+    volatile const uint32_t RESERVED_324;
+    volatile uint32_t OTG_HS_DIEPINT2;
+    volatile const uint32_t RESERVED_332;
+    volatile uint32_t OTG_HS_DIEPTSIZ2;
+    volatile uint32_t OTG_HS_DIEPDMA3;
+    volatile const uint32_t OTG_HS_DTXFSTS2;
+    volatile const uint32_t RESERVED_348;
+    volatile uint32_t OTG_HS_DIEPCTL3;
+    volatile const uint32_t RESERVED_356;
+    volatile uint32_t OTG_HS_DIEPINT3;
+    volatile const uint32_t RESERVED_364;
+    volatile uint32_t OTG_HS_DIEPTSIZ3;
+    volatile uint32_t OTG_HS_DIEPDMA4;
+    volatile const uint32_t OTG_HS_DTXFSTS3;
+    volatile const uint32_t RESERVED_380;
+    volatile uint32_t OTG_HS_DIEPCTL4;
+    volatile const uint32_t RESERVED_388;
+    volatile uint32_t OTG_HS_DIEPINT4;
+    volatile const uint32_t RESERVED_396;
+    volatile uint32_t OTG_HS_DIEPTSIZ4;
+    volatile uint32_t OTG_HS_DIEPDMA5;
+    volatile const uint32_t OTG_HS_DTXFSTS4;
+    volatile const uint32_t RESERVED_412;
+  union {
+      volatile uint32_t OTG_HS_DIEPCTL5;
+      volatile uint32_t OTG_HS_DIEPTSIZ6;
+  };
+    volatile uint32_t OTG_HS_DTXFSTS6;
+  union {
+      volatile uint32_t OTG_HS_DIEPINT5;
+      volatile uint32_t OTG_HS_DIEPTSIZ7;
+  };
+    volatile uint32_t OTG_HS_DTXFSTS7;
+    volatile uint32_t OTG_HS_DIEPTSIZ5;
+    volatile const uint32_t RESERVED_436;
+    volatile const uint32_t OTG_HS_DTXFSTS5;
+    volatile const uint32_t RESERVED_444;
+    volatile uint32_t OTG_HS_DIEPCTL6;
+    volatile const uint32_t RESERVED_452;
+    volatile uint32_t OTG_HS_DIEPINT6;
+    volatile const uint32_t RESERVED_460[5];
+    volatile uint32_t OTG_HS_DIEPCTL7;
+    volatile const uint32_t RESERVED_484;
+    volatile uint32_t OTG_HS_DIEPINT7;
+    volatile const uint32_t RESERVED_492[69];
+    volatile uint32_t OTG_HS_DOEPCTL0;
+    volatile const uint32_t RESERVED_772;
+    volatile uint32_t OTG_HS_DOEPINT0;
+    volatile const uint32_t RESERVED_780;
+    volatile uint32_t OTG_HS_DOEPTSIZ0;
+    volatile const uint32_t RESERVED_788[3];
+    volatile uint32_t OTG_HS_DOEPCTL1;
+    volatile const uint32_t RESERVED_804;
+    volatile uint32_t OTG_HS_DOEPINT1;
+    volatile const uint32_t RESERVED_812;
+    volatile uint32_t OTG_HS_DOEPTSIZ1;
+    volatile const uint32_t RESERVED_820[3];
+    volatile uint32_t OTG_HS_DOEPCTL2;
+    volatile const uint32_t RESERVED_836;
+    volatile uint32_t OTG_HS_DOEPINT2;
+    volatile const uint32_t RESERVED_844;
+    volatile uint32_t OTG_HS_DOEPTSIZ2;
+    volatile const uint32_t RESERVED_852[3];
+    volatile uint32_t OTG_HS_DOEPCTL3;
+    volatile const uint32_t RESERVED_868;
+    volatile uint32_t OTG_HS_DOEPINT3;
+    volatile const uint32_t RESERVED_876;
+    volatile uint32_t OTG_HS_DOEPTSIZ3;
+    volatile const uint32_t RESERVED_884[3];
+    volatile uint32_t OTG_HS_DOEPCTL4;
+    volatile const uint32_t RESERVED_900;
+    volatile uint32_t OTG_HS_DOEPINT4;
+    volatile const uint32_t RESERVED_908;
+    volatile uint32_t OTG_HS_DOEPTSIZ4;
+    volatile const uint32_t RESERVED_916[3];
+    volatile uint32_t OTG_HS_DOEPCTL5;
+    volatile const uint32_t RESERVED_932;
+    volatile uint32_t OTG_HS_DOEPINT5;
+    volatile const uint32_t RESERVED_940;
+    volatile uint32_t OTG_HS_DOEPTSIZ5;
+    volatile const uint32_t RESERVED_948[3];
+    volatile uint32_t OTG_HS_DOEPCTL6;
+    volatile const uint32_t RESERVED_964;
+    volatile uint32_t OTG_HS_DOEPINT6;
+    volatile const uint32_t RESERVED_972;
+    volatile uint32_t OTG_HS_DOEPTSIZ6;
+    volatile const uint32_t RESERVED_980[3];
+    volatile uint32_t OTG_HS_DOEPCTL7;
+    volatile const uint32_t RESERVED_996;
+    volatile uint32_t OTG_HS_DOEPINT7;
+    volatile const uint32_t RESERVED_1004;
+    volatile uint32_t OTG_HS_DOEPTSIZ7;
 };
 #define OTG2_HS_DEVICE_OTG_HS_DCFG_DSPD          (0x3UL << 0) 
 #define OTG2_HS_DEVICE_OTG_HS_DCFG_DSPD_VAL(X) (((uint32_t)(X) & 0x3UL) << 0)
@@ -23382,6 +23631,36 @@ struct OTG2_HS_DEVICE {
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL0_EPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL0_EPENA          (0x1UL << 31) 
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL0_EPENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_XFRC          (0x1UL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_EPDISD          (0x1UL << 1) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_TOC          (0x1UL << 3) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_TOC_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_ITTXFE          (0x1UL << 4) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_ITTXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_INEPNE          (0x1UL << 6) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_INEPNE_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_TXFE          (0x1UL << 7) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_TXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_TXFIFOUDRN          (0x1UL << 8) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_TXFIFOUDRN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_BNA          (0x1UL << 9) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_BNA_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_PKTDRPSTS          (0x1UL << 11) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_PKTDRPSTS_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_BERR          (0x1UL << 12) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_BERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_NAK          (0x1UL << 13) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 13)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ0_XFRSIZ          (0x7FUL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ0_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ0_PKTCNT          (0x3UL << 19) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ0_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 19)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPDMA1_DMAADDR          (0xFFFFFFFFUL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPDMA1_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
+#define OTG2_HS_DEVICE_OTG_HS_DTXFSTS0_INEPTFSAV          (0xFFFFUL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DTXFSTS0_INEPTFSAV_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL1_MPSIZ          (0x7FFUL << 0) 
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL1_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL1_USBAEP          (0x1UL << 15) 
@@ -23408,6 +23687,38 @@ struct OTG2_HS_DEVICE {
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL1_EPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL1_EPENA          (0x1UL << 31) 
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL1_EPENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_XFRC          (0x1UL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_EPDISD          (0x1UL << 1) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_TOC          (0x1UL << 3) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_TOC_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_ITTXFE          (0x1UL << 4) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_ITTXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_INEPNE          (0x1UL << 6) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_INEPNE_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_TXFE          (0x1UL << 7) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_TXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_TXFIFOUDRN          (0x1UL << 8) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_TXFIFOUDRN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_BNA          (0x1UL << 9) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_BNA_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_PKTDRPSTS          (0x1UL << 11) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_PKTDRPSTS_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_BERR          (0x1UL << 12) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_BERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_NAK          (0x1UL << 13) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 13)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ1_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ1_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ1_PKTCNT          (0x3FFUL << 19) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ1_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ1_MCNT          (0x3UL << 29) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ1_MCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPDMA2_DMAADDR          (0xFFFFFFFFUL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPDMA2_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
+#define OTG2_HS_DEVICE_OTG_HS_DTXFSTS1_INEPTFSAV          (0xFFFFUL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DTXFSTS1_INEPTFSAV_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL2_MPSIZ          (0x7FFUL << 0) 
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL2_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL2_USBAEP          (0x1UL << 15) 
@@ -23434,6 +23745,38 @@ struct OTG2_HS_DEVICE {
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL2_EPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL2_EPENA          (0x1UL << 31) 
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL2_EPENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_XFRC          (0x1UL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_EPDISD          (0x1UL << 1) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_TOC          (0x1UL << 3) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_TOC_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_ITTXFE          (0x1UL << 4) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_ITTXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_INEPNE          (0x1UL << 6) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_INEPNE_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_TXFE          (0x1UL << 7) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_TXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_TXFIFOUDRN          (0x1UL << 8) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_TXFIFOUDRN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_BNA          (0x1UL << 9) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_BNA_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_PKTDRPSTS          (0x1UL << 11) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_PKTDRPSTS_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_BERR          (0x1UL << 12) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_BERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_NAK          (0x1UL << 13) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 13)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ2_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ2_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ2_PKTCNT          (0x3FFUL << 19) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ2_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ2_MCNT          (0x3UL << 29) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ2_MCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPDMA3_DMAADDR          (0xFFFFFFFFUL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPDMA3_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
+#define OTG2_HS_DEVICE_OTG_HS_DTXFSTS2_INEPTFSAV          (0xFFFFUL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DTXFSTS2_INEPTFSAV_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL3_MPSIZ          (0x7FFUL << 0) 
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL3_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL3_USBAEP          (0x1UL << 15) 
@@ -23460,6 +23803,38 @@ struct OTG2_HS_DEVICE {
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL3_EPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL3_EPENA          (0x1UL << 31) 
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL3_EPENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_XFRC          (0x1UL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_EPDISD          (0x1UL << 1) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_TOC          (0x1UL << 3) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_TOC_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_ITTXFE          (0x1UL << 4) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_ITTXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_INEPNE          (0x1UL << 6) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_INEPNE_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_TXFE          (0x1UL << 7) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_TXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_TXFIFOUDRN          (0x1UL << 8) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_TXFIFOUDRN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_BNA          (0x1UL << 9) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_BNA_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_PKTDRPSTS          (0x1UL << 11) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_PKTDRPSTS_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_BERR          (0x1UL << 12) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_BERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_NAK          (0x1UL << 13) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 13)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ3_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ3_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ3_PKTCNT          (0x3FFUL << 19) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ3_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ3_MCNT          (0x3UL << 29) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ3_MCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPDMA4_DMAADDR          (0xFFFFFFFFUL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPDMA4_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
+#define OTG2_HS_DEVICE_OTG_HS_DTXFSTS3_INEPTFSAV          (0xFFFFUL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DTXFSTS3_INEPTFSAV_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL4_MPSIZ          (0x7FFUL << 0) 
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL4_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL4_USBAEP          (0x1UL << 15) 
@@ -23486,6 +23861,38 @@ struct OTG2_HS_DEVICE {
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL4_EPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL4_EPENA          (0x1UL << 31) 
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL4_EPENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_XFRC          (0x1UL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_EPDISD          (0x1UL << 1) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_TOC          (0x1UL << 3) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_TOC_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_ITTXFE          (0x1UL << 4) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_ITTXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_INEPNE          (0x1UL << 6) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_INEPNE_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_TXFE          (0x1UL << 7) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_TXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_TXFIFOUDRN          (0x1UL << 8) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_TXFIFOUDRN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_BNA          (0x1UL << 9) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_BNA_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_PKTDRPSTS          (0x1UL << 11) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_PKTDRPSTS_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_BERR          (0x1UL << 12) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_BERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_NAK          (0x1UL << 13) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 13)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ4_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ4_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ4_PKTCNT          (0x3FFUL << 19) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ4_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ4_MCNT          (0x3UL << 29) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ4_MCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPDMA5_DMAADDR          (0xFFFFFFFFUL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPDMA5_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
+#define OTG2_HS_DEVICE_OTG_HS_DTXFSTS4_INEPTFSAV          (0xFFFFUL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DTXFSTS4_INEPTFSAV_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL5_MPSIZ          (0x7FFUL << 0) 
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL5_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL5_USBAEP          (0x1UL << 15) 
@@ -23512,6 +23919,52 @@ struct OTG2_HS_DEVICE {
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL5_EPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL5_EPENA          (0x1UL << 31) 
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL5_EPENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ6_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ6_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ6_PKTCNT          (0x3FFUL << 19) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ6_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ6_MCNT          (0x3UL << 29) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ6_MCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
+#define OTG2_HS_DEVICE_OTG_HS_DTXFSTS6_INEPTFSAV          (0xFFFFUL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DTXFSTS6_INEPTFSAV_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_XFRC          (0x1UL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_EPDISD          (0x1UL << 1) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_TOC          (0x1UL << 3) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_TOC_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_ITTXFE          (0x1UL << 4) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_ITTXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_INEPNE          (0x1UL << 6) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_INEPNE_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_TXFE          (0x1UL << 7) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_TXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_TXFIFOUDRN          (0x1UL << 8) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_TXFIFOUDRN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_BNA          (0x1UL << 9) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_BNA_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_PKTDRPSTS          (0x1UL << 11) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_PKTDRPSTS_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_BERR          (0x1UL << 12) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_BERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_NAK          (0x1UL << 13) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 13)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ7_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ7_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ7_PKTCNT          (0x3FFUL << 19) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ7_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ7_MCNT          (0x3UL << 29) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ7_MCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
+#define OTG2_HS_DEVICE_OTG_HS_DTXFSTS7_INEPTFSAV          (0xFFFFUL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DTXFSTS7_INEPTFSAV_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ5_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ5_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ5_PKTCNT          (0x3FFUL << 19) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ5_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ5_MCNT          (0x3UL << 29) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ5_MCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
+#define OTG2_HS_DEVICE_OTG_HS_DTXFSTS5_INEPTFSAV          (0xFFFFUL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DTXFSTS5_INEPTFSAV_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL6_MPSIZ          (0x7FFUL << 0) 
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL6_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL6_USBAEP          (0x1UL << 15) 
@@ -23538,6 +23991,28 @@ struct OTG2_HS_DEVICE {
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL6_EPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL6_EPENA          (0x1UL << 31) 
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL6_EPENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_XFRC          (0x1UL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_EPDISD          (0x1UL << 1) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_TOC          (0x1UL << 3) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_TOC_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_ITTXFE          (0x1UL << 4) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_ITTXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_INEPNE          (0x1UL << 6) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_INEPNE_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_TXFE          (0x1UL << 7) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_TXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_TXFIFOUDRN          (0x1UL << 8) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_TXFIFOUDRN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_BNA          (0x1UL << 9) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_BNA_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_PKTDRPSTS          (0x1UL << 11) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_PKTDRPSTS_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_BERR          (0x1UL << 12) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_BERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_NAK          (0x1UL << 13) 
+#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 13)
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL7_MPSIZ          (0x7FFUL << 0) 
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL7_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL7_USBAEP          (0x1UL << 15) 
@@ -23564,160 +24039,6 @@ struct OTG2_HS_DEVICE {
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL7_EPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL7_EPENA          (0x1UL << 31) 
 #define OTG2_HS_DEVICE_OTG_HS_DIEPCTL7_EPENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_XFRC          (0x1UL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_EPDISD          (0x1UL << 1) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_TOC          (0x1UL << 3) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_TOC_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_ITTXFE          (0x1UL << 4) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_ITTXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_INEPNE          (0x1UL << 6) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_INEPNE_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_TXFE          (0x1UL << 7) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_TXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_TXFIFOUDRN          (0x1UL << 8) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_TXFIFOUDRN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_BNA          (0x1UL << 9) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_BNA_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_PKTDRPSTS          (0x1UL << 11) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_PKTDRPSTS_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_BERR          (0x1UL << 12) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_BERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_NAK          (0x1UL << 13) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT0_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 13)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_XFRC          (0x1UL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_EPDISD          (0x1UL << 1) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_TOC          (0x1UL << 3) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_TOC_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_ITTXFE          (0x1UL << 4) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_ITTXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_INEPNE          (0x1UL << 6) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_INEPNE_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_TXFE          (0x1UL << 7) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_TXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_TXFIFOUDRN          (0x1UL << 8) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_TXFIFOUDRN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_BNA          (0x1UL << 9) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_BNA_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_PKTDRPSTS          (0x1UL << 11) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_PKTDRPSTS_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_BERR          (0x1UL << 12) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_BERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_NAK          (0x1UL << 13) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT1_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 13)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_XFRC          (0x1UL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_EPDISD          (0x1UL << 1) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_TOC          (0x1UL << 3) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_TOC_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_ITTXFE          (0x1UL << 4) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_ITTXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_INEPNE          (0x1UL << 6) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_INEPNE_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_TXFE          (0x1UL << 7) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_TXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_TXFIFOUDRN          (0x1UL << 8) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_TXFIFOUDRN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_BNA          (0x1UL << 9) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_BNA_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_PKTDRPSTS          (0x1UL << 11) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_PKTDRPSTS_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_BERR          (0x1UL << 12) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_BERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_NAK          (0x1UL << 13) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT2_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 13)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_XFRC          (0x1UL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_EPDISD          (0x1UL << 1) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_TOC          (0x1UL << 3) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_TOC_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_ITTXFE          (0x1UL << 4) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_ITTXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_INEPNE          (0x1UL << 6) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_INEPNE_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_TXFE          (0x1UL << 7) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_TXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_TXFIFOUDRN          (0x1UL << 8) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_TXFIFOUDRN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_BNA          (0x1UL << 9) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_BNA_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_PKTDRPSTS          (0x1UL << 11) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_PKTDRPSTS_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_BERR          (0x1UL << 12) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_BERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_NAK          (0x1UL << 13) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT3_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 13)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_XFRC          (0x1UL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_EPDISD          (0x1UL << 1) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_TOC          (0x1UL << 3) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_TOC_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_ITTXFE          (0x1UL << 4) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_ITTXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_INEPNE          (0x1UL << 6) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_INEPNE_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_TXFE          (0x1UL << 7) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_TXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_TXFIFOUDRN          (0x1UL << 8) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_TXFIFOUDRN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_BNA          (0x1UL << 9) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_BNA_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_PKTDRPSTS          (0x1UL << 11) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_PKTDRPSTS_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_BERR          (0x1UL << 12) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_BERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_NAK          (0x1UL << 13) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT4_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 13)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_XFRC          (0x1UL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_EPDISD          (0x1UL << 1) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_TOC          (0x1UL << 3) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_TOC_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_ITTXFE          (0x1UL << 4) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_ITTXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_INEPNE          (0x1UL << 6) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_INEPNE_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_TXFE          (0x1UL << 7) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_TXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_TXFIFOUDRN          (0x1UL << 8) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_TXFIFOUDRN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_BNA          (0x1UL << 9) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_BNA_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_PKTDRPSTS          (0x1UL << 11) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_PKTDRPSTS_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_BERR          (0x1UL << 12) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_BERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_NAK          (0x1UL << 13) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT5_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 13)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_XFRC          (0x1UL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_EPDISD          (0x1UL << 1) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_TOC          (0x1UL << 3) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_TOC_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_ITTXFE          (0x1UL << 4) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_ITTXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_INEPNE          (0x1UL << 6) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_INEPNE_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_TXFE          (0x1UL << 7) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_TXFE_VAL(X) (((uint32_t)(X) & 0x1UL) << 7)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_TXFIFOUDRN          (0x1UL << 8) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_TXFIFOUDRN_VAL(X) (((uint32_t)(X) & 0x1UL) << 8)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_BNA          (0x1UL << 9) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_BNA_VAL(X) (((uint32_t)(X) & 0x1UL) << 9)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_PKTDRPSTS          (0x1UL << 11) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_PKTDRPSTS_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_BERR          (0x1UL << 12) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_BERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_NAK          (0x1UL << 13) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPINT6_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 13)
 #define OTG2_HS_DEVICE_OTG_HS_DIEPINT7_XFRC          (0x1UL << 0) 
 #define OTG2_HS_DEVICE_OTG_HS_DIEPINT7_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define OTG2_HS_DEVICE_OTG_HS_DIEPINT7_EPDISD          (0x1UL << 1) 
@@ -23740,62 +24061,6 @@ struct OTG2_HS_DEVICE {
 #define OTG2_HS_DEVICE_OTG_HS_DIEPINT7_BERR_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
 #define OTG2_HS_DEVICE_OTG_HS_DIEPINT7_NAK          (0x1UL << 13) 
 #define OTG2_HS_DEVICE_OTG_HS_DIEPINT7_NAK_VAL(X) (((uint32_t)(X) & 0x1UL) << 13)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ0_XFRSIZ          (0x7FUL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ0_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ0_PKTCNT          (0x3UL << 19) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ0_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 19)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPDMA1_DMAADDR          (0xFFFFFFFFUL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPDMA1_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPDMA2_DMAADDR          (0xFFFFFFFFUL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPDMA2_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPDMA3_DMAADDR          (0xFFFFFFFFUL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPDMA3_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPDMA4_DMAADDR          (0xFFFFFFFFUL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPDMA4_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPDMA5_DMAADDR          (0xFFFFFFFFUL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPDMA5_DMAADDR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
-#define OTG2_HS_DEVICE_OTG_HS_DTXFSTS0_INEPTFSAV          (0xFFFFUL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DTXFSTS0_INEPTFSAV_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
-#define OTG2_HS_DEVICE_OTG_HS_DTXFSTS1_INEPTFSAV          (0xFFFFUL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DTXFSTS1_INEPTFSAV_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
-#define OTG2_HS_DEVICE_OTG_HS_DTXFSTS2_INEPTFSAV          (0xFFFFUL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DTXFSTS2_INEPTFSAV_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
-#define OTG2_HS_DEVICE_OTG_HS_DTXFSTS3_INEPTFSAV          (0xFFFFUL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DTXFSTS3_INEPTFSAV_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
-#define OTG2_HS_DEVICE_OTG_HS_DTXFSTS4_INEPTFSAV          (0xFFFFUL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DTXFSTS4_INEPTFSAV_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
-#define OTG2_HS_DEVICE_OTG_HS_DTXFSTS5_INEPTFSAV          (0xFFFFUL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DTXFSTS5_INEPTFSAV_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ1_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ1_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ1_PKTCNT          (0x3FFUL << 19) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ1_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ1_MCNT          (0x3UL << 29) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ1_MCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ2_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ2_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ2_PKTCNT          (0x3FFUL << 19) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ2_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ2_MCNT          (0x3UL << 29) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ2_MCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ3_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ3_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ3_PKTCNT          (0x3FFUL << 19) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ3_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ3_MCNT          (0x3UL << 29) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ3_MCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ4_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ4_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ4_PKTCNT          (0x3FFUL << 19) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ4_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ4_MCNT          (0x3UL << 29) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ4_MCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ5_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ5_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ5_PKTCNT          (0x3FFUL << 19) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ5_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ5_MCNT          (0x3UL << 29) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ5_MCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL0_MPSIZ          (0x3UL << 0) 
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL0_MPSIZ_VAL(X) (((uint32_t)(X) & 0x3UL) << 0)
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL0_USBAEP          (0x1UL << 15) 
@@ -23816,6 +24081,24 @@ struct OTG2_HS_DEVICE {
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL0_EPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL0_EPENA          (0x1UL << 31) 
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL0_EPENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT0_XFRC          (0x1UL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT0_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT0_EPDISD          (0x1UL << 1) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT0_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT0_STUP          (0x1UL << 3) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT0_STUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT0_OTEPDIS          (0x1UL << 4) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT0_OTEPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT0_B2BSTUP          (0x1UL << 6) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT0_B2BSTUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT0_NYET          (0x1UL << 14) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT0_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 14)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ0_XFRSIZ          (0x7FUL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ0_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ0_PKTCNT          (0x1UL << 19) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ0_PKTCNT_VAL(X) (((uint32_t)(X) & 0x1UL) << 19)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ0_STUPCNT          (0x3UL << 29) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ0_STUPCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL1_MPSIZ          (0x7FFUL << 0) 
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL1_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL1_USBAEP          (0x1UL << 15) 
@@ -23842,6 +24125,24 @@ struct OTG2_HS_DEVICE {
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL1_EPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL1_EPENA          (0x1UL << 31) 
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL1_EPENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT1_XFRC          (0x1UL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT1_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT1_EPDISD          (0x1UL << 1) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT1_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT1_STUP          (0x1UL << 3) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT1_STUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT1_OTEPDIS          (0x1UL << 4) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT1_OTEPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT1_B2BSTUP          (0x1UL << 6) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT1_B2BSTUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT1_NYET          (0x1UL << 14) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT1_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 14)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ1_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ1_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ1_PKTCNT          (0x3FFUL << 19) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ1_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ1_RXDPID_STUPCNT          (0x3UL << 29) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ1_RXDPID_STUPCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL2_MPSIZ          (0x7FFUL << 0) 
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL2_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL2_USBAEP          (0x1UL << 15) 
@@ -23868,6 +24169,24 @@ struct OTG2_HS_DEVICE {
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL2_EPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL2_EPENA          (0x1UL << 31) 
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL2_EPENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT2_XFRC          (0x1UL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT2_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT2_EPDISD          (0x1UL << 1) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT2_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT2_STUP          (0x1UL << 3) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT2_STUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT2_OTEPDIS          (0x1UL << 4) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT2_OTEPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT2_B2BSTUP          (0x1UL << 6) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT2_B2BSTUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT2_NYET          (0x1UL << 14) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT2_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 14)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ2_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ2_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ2_PKTCNT          (0x3FFUL << 19) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ2_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ2_RXDPID_STUPCNT          (0x3UL << 29) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ2_RXDPID_STUPCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL3_MPSIZ          (0x7FFUL << 0) 
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL3_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL3_USBAEP          (0x1UL << 15) 
@@ -23894,42 +24213,6 @@ struct OTG2_HS_DEVICE {
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL3_EPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL3_EPENA          (0x1UL << 31) 
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL3_EPENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT0_XFRC          (0x1UL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT0_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT0_EPDISD          (0x1UL << 1) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT0_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT0_STUP          (0x1UL << 3) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT0_STUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT0_OTEPDIS          (0x1UL << 4) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT0_OTEPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT0_B2BSTUP          (0x1UL << 6) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT0_B2BSTUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT0_NYET          (0x1UL << 14) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT0_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 14)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT1_XFRC          (0x1UL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT1_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT1_EPDISD          (0x1UL << 1) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT1_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT1_STUP          (0x1UL << 3) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT1_STUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT1_OTEPDIS          (0x1UL << 4) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT1_OTEPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT1_B2BSTUP          (0x1UL << 6) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT1_B2BSTUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT1_NYET          (0x1UL << 14) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT1_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 14)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT2_XFRC          (0x1UL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT2_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT2_EPDISD          (0x1UL << 1) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT2_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT2_STUP          (0x1UL << 3) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT2_STUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT2_OTEPDIS          (0x1UL << 4) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT2_OTEPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT2_B2BSTUP          (0x1UL << 6) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT2_B2BSTUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT2_NYET          (0x1UL << 14) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT2_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 14)
 #define OTG2_HS_DEVICE_OTG_HS_DOEPINT3_XFRC          (0x1UL << 0) 
 #define OTG2_HS_DEVICE_OTG_HS_DOEPINT3_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define OTG2_HS_DEVICE_OTG_HS_DOEPINT3_EPDISD          (0x1UL << 1) 
@@ -23942,100 +24225,12 @@ struct OTG2_HS_DEVICE {
 #define OTG2_HS_DEVICE_OTG_HS_DOEPINT3_B2BSTUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
 #define OTG2_HS_DEVICE_OTG_HS_DOEPINT3_NYET          (0x1UL << 14) 
 #define OTG2_HS_DEVICE_OTG_HS_DOEPINT3_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 14)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT4_XFRC          (0x1UL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT4_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT4_EPDISD          (0x1UL << 1) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT4_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT4_STUP          (0x1UL << 3) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT4_STUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT4_OTEPDIS          (0x1UL << 4) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT4_OTEPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT4_B2BSTUP          (0x1UL << 6) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT4_B2BSTUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT4_NYET          (0x1UL << 14) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT4_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 14)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT5_XFRC          (0x1UL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT5_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT5_EPDISD          (0x1UL << 1) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT5_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT5_STUP          (0x1UL << 3) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT5_STUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT5_OTEPDIS          (0x1UL << 4) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT5_OTEPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT5_B2BSTUP          (0x1UL << 6) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT5_B2BSTUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT5_NYET          (0x1UL << 14) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT5_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 14)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT6_XFRC          (0x1UL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT6_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT6_EPDISD          (0x1UL << 1) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT6_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT6_STUP          (0x1UL << 3) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT6_STUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT6_OTEPDIS          (0x1UL << 4) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT6_OTEPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT6_B2BSTUP          (0x1UL << 6) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT6_B2BSTUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT6_NYET          (0x1UL << 14) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT6_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 14)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT7_XFRC          (0x1UL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT7_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT7_EPDISD          (0x1UL << 1) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT7_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT7_STUP          (0x1UL << 3) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT7_STUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT7_OTEPDIS          (0x1UL << 4) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT7_OTEPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT7_B2BSTUP          (0x1UL << 6) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT7_B2BSTUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT7_NYET          (0x1UL << 14) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPINT7_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 14)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ0_XFRSIZ          (0x7FUL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ0_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FUL) << 0)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ0_PKTCNT          (0x1UL << 19) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ0_PKTCNT_VAL(X) (((uint32_t)(X) & 0x1UL) << 19)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ0_STUPCNT          (0x3UL << 29) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ0_STUPCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ1_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ1_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ1_PKTCNT          (0x3FFUL << 19) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ1_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ1_RXDPID_STUPCNT          (0x3UL << 29) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ1_RXDPID_STUPCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ2_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ2_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ2_PKTCNT          (0x3FFUL << 19) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ2_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ2_RXDPID_STUPCNT          (0x3UL << 29) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ2_RXDPID_STUPCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
 #define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ3_XFRSIZ          (0x7FFFFUL << 0) 
 #define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ3_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
 #define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ3_PKTCNT          (0x3FFUL << 19) 
 #define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ3_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
 #define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ3_RXDPID_STUPCNT          (0x3UL << 29) 
 #define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ3_RXDPID_STUPCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ4_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ4_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ4_PKTCNT          (0x3FFUL << 19) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ4_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ4_RXDPID_STUPCNT          (0x3UL << 29) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ4_RXDPID_STUPCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ6_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ6_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ6_PKTCNT          (0x3FFUL << 19) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ6_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ6_MCNT          (0x3UL << 29) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ6_MCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG2_HS_DEVICE_OTG_HS_DTXFSTS6_INEPTFSAV          (0xFFFFUL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DTXFSTS6_INEPTFSAV_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ7_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ7_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ7_PKTCNT          (0x3FFUL << 19) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ7_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ7_MCNT          (0x3UL << 29) 
-#define OTG2_HS_DEVICE_OTG_HS_DIEPTSIZ7_MCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG2_HS_DEVICE_OTG_HS_DTXFSTS7_INEPTFSAV          (0xFFFFUL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DTXFSTS7_INEPTFSAV_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL4_MPSIZ          (0x7FFUL << 0) 
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL4_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL4_USBAEP          (0x1UL << 15) 
@@ -24062,6 +24257,24 @@ struct OTG2_HS_DEVICE {
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL4_EPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL4_EPENA          (0x1UL << 31) 
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL4_EPENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT4_XFRC          (0x1UL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT4_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT4_EPDISD          (0x1UL << 1) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT4_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT4_STUP          (0x1UL << 3) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT4_STUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT4_OTEPDIS          (0x1UL << 4) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT4_OTEPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT4_B2BSTUP          (0x1UL << 6) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT4_B2BSTUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT4_NYET          (0x1UL << 14) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT4_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 14)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ4_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ4_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ4_PKTCNT          (0x3FFUL << 19) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ4_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ4_RXDPID_STUPCNT          (0x3UL << 29) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ4_RXDPID_STUPCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL5_MPSIZ          (0x7FFUL << 0) 
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL5_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL5_USBAEP          (0x1UL << 15) 
@@ -24088,6 +24301,24 @@ struct OTG2_HS_DEVICE {
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL5_EPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL5_EPENA          (0x1UL << 31) 
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL5_EPENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT5_XFRC          (0x1UL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT5_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT5_EPDISD          (0x1UL << 1) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT5_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT5_STUP          (0x1UL << 3) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT5_STUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT5_OTEPDIS          (0x1UL << 4) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT5_OTEPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT5_B2BSTUP          (0x1UL << 6) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT5_B2BSTUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT5_NYET          (0x1UL << 14) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT5_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 14)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ5_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ5_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ5_PKTCNT          (0x3FFUL << 19) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ5_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ5_RXDPID_STUPCNT          (0x3UL << 29) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ5_RXDPID_STUPCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL6_MPSIZ          (0x7FFUL << 0) 
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL6_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL6_USBAEP          (0x1UL << 15) 
@@ -24114,6 +24345,24 @@ struct OTG2_HS_DEVICE {
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL6_EPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL6_EPENA          (0x1UL << 31) 
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL6_EPENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT6_XFRC          (0x1UL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT6_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT6_EPDISD          (0x1UL << 1) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT6_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT6_STUP          (0x1UL << 3) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT6_STUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT6_OTEPDIS          (0x1UL << 4) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT6_OTEPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT6_B2BSTUP          (0x1UL << 6) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT6_B2BSTUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT6_NYET          (0x1UL << 14) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT6_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 14)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ6_XFRSIZ          (0x7FFFFUL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ6_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ6_PKTCNT          (0x3FFUL << 19) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ6_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ6_RXDPID_STUPCNT          (0x3UL << 29) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ6_RXDPID_STUPCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL7_MPSIZ          (0x7FFUL << 0) 
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL7_MPSIZ_VAL(X) (((uint32_t)(X) & 0x7FFUL) << 0)
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL7_USBAEP          (0x1UL << 15) 
@@ -24140,18 +24389,18 @@ struct OTG2_HS_DEVICE {
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL7_EPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL7_EPENA          (0x1UL << 31) 
 #define OTG2_HS_DEVICE_OTG_HS_DOEPCTL7_EPENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ5_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ5_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ5_PKTCNT          (0x3FFUL << 19) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ5_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ5_RXDPID_STUPCNT          (0x3UL << 29) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ5_RXDPID_STUPCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ6_XFRSIZ          (0x7FFFFUL << 0) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ6_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ6_PKTCNT          (0x3FFUL << 19) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ6_PKTCNT_VAL(X) (((uint32_t)(X) & 0x3FFUL) << 19)
-#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ6_RXDPID_STUPCNT          (0x3UL << 29) 
-#define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ6_RXDPID_STUPCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT7_XFRC          (0x1UL << 0) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT7_XFRC_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT7_EPDISD          (0x1UL << 1) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT7_EPDISD_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT7_STUP          (0x1UL << 3) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT7_STUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 3)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT7_OTEPDIS          (0x1UL << 4) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT7_OTEPDIS_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT7_B2BSTUP          (0x1UL << 6) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT7_B2BSTUP_VAL(X) (((uint32_t)(X) & 0x1UL) << 6)
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT7_NYET          (0x1UL << 14) 
+#define OTG2_HS_DEVICE_OTG_HS_DOEPINT7_NYET_VAL(X) (((uint32_t)(X) & 0x1UL) << 14)
 #define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ7_XFRSIZ          (0x7FFFFUL << 0) 
 #define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ7_XFRSIZ_VAL(X) (((uint32_t)(X) & 0x7FFFFUL) << 0)
 #define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ7_PKTCNT          (0x3FFUL << 19) 
@@ -24160,8 +24409,11 @@ struct OTG2_HS_DEVICE {
 #define OTG2_HS_DEVICE_OTG_HS_DOEPTSIZ7_RXDPID_STUPCNT_VAL(X) (((uint32_t)(X) & 0x3UL) << 29)
 
 #define OTG2_HS_DEVICE  ((struct OTG2_HS_DEVICE*)(0x40080800UL))
+
+
+
 struct OTG1_HS_PWRCLK {
-  volatile uint32_t OTG_HS_PCGCR;
+    volatile uint32_t OTG_HS_PCGCR;
 };
 #define OTG1_HS_PWRCLK_OTG_HS_PCGCR_STPPCLK          (0x1UL << 0) 
 #define OTG1_HS_PWRCLK_OTG_HS_PCGCR_STPPCLK_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -24171,8 +24423,11 @@ struct OTG1_HS_PWRCLK {
 #define OTG1_HS_PWRCLK_OTG_HS_PCGCR_PHYSUSP_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
 
 #define OTG1_HS_PWRCLK  ((struct OTG1_HS_PWRCLK*)(0x40040E00UL))
+
+
+
 struct OTG2_HS_PWRCLK {
-  volatile uint32_t OTG_HS_PCGCR;
+    volatile uint32_t OTG_HS_PCGCR;
 };
 #define OTG2_HS_PWRCLK_OTG_HS_PCGCR_STPPCLK          (0x1UL << 0) 
 #define OTG2_HS_PWRCLK_OTG_HS_PCGCR_STPPCLK_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -24182,37 +24437,40 @@ struct OTG2_HS_PWRCLK {
 #define OTG2_HS_PWRCLK_OTG_HS_PCGCR_PHYSUSP_VAL(X) (((uint32_t)(X) & 0x1UL) << 4)
 
 #define OTG2_HS_PWRCLK  ((struct OTG2_HS_PWRCLK*)(0x40080E00UL))
+
+
+
 struct Ethernet_DMA {
-  volatile uint32_t DMAMR;
-  volatile uint32_t DMASBMR;
-  volatile const uint32_t DMAISR;
-  volatile const uint32_t DMADSR;
-  const volatile uint32_t RESERVED256[60];
-  volatile uint32_t DMACCR;
-  volatile uint32_t DMACTxCR;
-  volatile uint32_t DMACRxCR;
-  const volatile uint32_t RESERVED276[2];
-  volatile uint32_t DMACTxDLAR;
-  const volatile uint32_t RESERVED284[1];
-  volatile uint32_t DMACRxDLAR;
-  volatile uint32_t DMACTxDTPR;
-  const volatile uint32_t RESERVED296[1];
-  volatile uint32_t DMACRxDTPR;
-  volatile uint32_t DMACTxRLR;
-  volatile uint32_t DMACRxRLR;
-  volatile uint32_t DMACIER;
-  volatile uint32_t DMACRxIWTR;
-  const volatile uint32_t RESERVED324[2];
-  volatile const uint32_t DMACCATxDR;
-  const volatile uint32_t RESERVED332[1];
-  volatile const uint32_t DMACCARxDR;
-  const volatile uint32_t RESERVED340[1];
-  volatile const uint32_t DMACCATxBR;
-  const volatile uint32_t RESERVED348[1];
-  volatile const uint32_t DMACCARxBR;
-  volatile uint32_t DMACSR;
-  const volatile uint32_t RESERVED364[2];
-  volatile const uint32_t DMACMFCR;
+    volatile uint32_t DMAMR;
+    volatile uint32_t DMASBMR;
+    volatile const uint32_t DMAISR;
+    volatile const uint32_t DMADSR;
+    volatile const uint32_t RESERVED_16[60];
+    volatile uint32_t DMACCR;
+    volatile uint32_t DMACTxCR;
+    volatile uint32_t DMACRxCR;
+    volatile const uint32_t RESERVED_268[2];
+    volatile uint32_t DMACTxDLAR;
+    volatile const uint32_t RESERVED_280;
+    volatile uint32_t DMACRxDLAR;
+    volatile uint32_t DMACTxDTPR;
+    volatile const uint32_t RESERVED_292;
+    volatile uint32_t DMACRxDTPR;
+    volatile uint32_t DMACTxRLR;
+    volatile uint32_t DMACRxRLR;
+    volatile uint32_t DMACIER;
+    volatile uint32_t DMACRxIWTR;
+    volatile const uint32_t RESERVED_316[2];
+    volatile const uint32_t DMACCATxDR;
+    volatile const uint32_t RESERVED_328;
+    volatile const uint32_t DMACCARxDR;
+    volatile const uint32_t RESERVED_336;
+    volatile const uint32_t DMACCATxBR;
+    volatile const uint32_t RESERVED_344;
+    volatile const uint32_t DMACCARxBR;
+    volatile uint32_t DMACSR;
+    volatile const uint32_t RESERVED_356[2];
+    volatile const uint32_t DMACMFCR;
 };
 #define Ethernet_DMA_DMAMR_SWR          (0x1UL << 0) 
 #define Ethernet_DMA_DMAMR_SWR_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -24350,19 +24608,22 @@ struct Ethernet_DMA {
 #define Ethernet_DMA_DMACMFCR_MFCO_VAL(X) (((uint32_t)(X) & 0x1UL) << 15)
 
 #define Ethernet_DMA  ((struct Ethernet_DMA*)(0x40029000UL))
+
+
+
 struct Ethernet_MTL {
-  volatile uint32_t MTLOMR;
-  const volatile uint32_t RESERVED32[7];
-  volatile const uint32_t MTLISR;
-  const volatile uint32_t RESERVED256[55];
-  volatile uint32_t MTLTxQOMR;
-  volatile const uint32_t MTLTxQUR;
-  volatile const uint32_t MTLTxQDR;
-  const volatile uint32_t RESERVED300[8];
-  volatile uint32_t MTLQICSR;
-  volatile uint32_t MTLRxQOMR;
-  volatile const uint32_t MTLRxQMPOCR;
-  volatile const uint32_t MTLRxQDR;
+    volatile uint32_t MTLOMR;
+    volatile const uint32_t RESERVED_4[7];
+    volatile const uint32_t MTLISR;
+    volatile const uint32_t RESERVED_36[55];
+    volatile uint32_t MTLTxQOMR;
+    volatile const uint32_t MTLTxQUR;
+    volatile const uint32_t MTLTxQDR;
+    volatile const uint32_t RESERVED_268[8];
+    volatile uint32_t MTLQICSR;
+    volatile uint32_t MTLRxQOMR;
+    volatile const uint32_t MTLRxQMPOCR;
+    volatile const uint32_t MTLRxQDR;
 };
 #define Ethernet_MTL_MTLOMR_DTXSTS          (0x1UL << 1) 
 #define Ethernet_MTL_MTLOMR_DTXSTS_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
@@ -24444,128 +24705,131 @@ struct Ethernet_MTL {
 #define Ethernet_MTL_MTLRxQDR_PRXQ_VAL(X) (((uint32_t)(X) & 0x3FFFUL) << 16)
 
 #define Ethernet_MTL  ((struct Ethernet_MTL*)(0x40028C00UL))
+
+
+
 struct Ethernet_MAC {
-  volatile uint32_t MACCR;
-  volatile uint32_t MACECR;
-  volatile uint32_t MACPFR;
-  volatile uint32_t MACWTR;
-  volatile uint32_t MACHT0R;
-  volatile uint32_t MACHT1R;
-  const volatile uint32_t RESERVED80[14];
-  volatile uint32_t MACVTR;
-  const volatile uint32_t RESERVED88[1];
-  volatile uint32_t MACVHTR;
-  const volatile uint32_t RESERVED96[1];
-  volatile uint32_t MACVIR;
-  volatile uint32_t MACIVIR;
-  const volatile uint32_t RESERVED112[2];
-  volatile uint32_t MACQTxFCR;
-  const volatile uint32_t RESERVED144[7];
-  volatile uint32_t MACRxFCR;
-  const volatile uint32_t RESERVED176[7];
-  volatile const uint32_t MACISR;
-  volatile uint32_t MACIER;
-  volatile const uint32_t MACRxTxSR;
-  const volatile uint32_t RESERVED192[1];
-  volatile uint32_t MACPCSR;
-  volatile uint32_t MACRWKPFR;
-  const volatile uint32_t RESERVED208[2];
-  volatile uint32_t MACLCSR;
-  volatile uint32_t MACLTCR;
-  volatile uint32_t MACLETR;
-  volatile uint32_t MAC1USTCR;
-  const volatile uint32_t RESERVED272[12];
-  volatile const uint32_t MACVR;
-  volatile const uint32_t MACDR;
-  const volatile uint32_t RESERVED288[2];
-  volatile const uint32_t MACHWF1R;
-  volatile const uint32_t MACHWF2R;
-  const volatile uint32_t RESERVED512[54];
-  volatile uint32_t MACMDIOAR;
-  volatile uint32_t MACMDIODR;
-  const volatile uint32_t RESERVED768[62];
-  volatile uint32_t MACA0HR;
-  volatile uint32_t MACA0LR;
-  volatile uint32_t MACA1HR;
-  volatile uint32_t MACA1LR;
-  volatile uint32_t MACA2HR;
-  volatile uint32_t MACA2LR;
-  volatile uint32_t MACA3HR;
-  volatile uint32_t MACA3LR;
-  const volatile uint32_t RESERVED1792[248];
-  volatile uint32_t MMC_CONTROL;
-  volatile const uint32_t MMC_RX_INTERRUPT;
-  volatile const uint32_t MMC_TX_INTERRUPT;
-  volatile uint32_t MMC_RX_INTERRUPT_MASK;
-  volatile uint32_t MMC_TX_INTERRUPT_MASK;
-  const volatile uint32_t RESERVED1868[14];
-  volatile const uint32_t TX_SINGLE_COLLISION_GOOD_PACKETS;
-  volatile const uint32_t TX_MULTIPLE_COLLISION_GOOD_PACKETS;
-  const volatile uint32_t RESERVED1896[5];
-  volatile const uint32_t TX_PACKET_COUNT_GOOD;
-  const volatile uint32_t RESERVED1940[10];
-  volatile const uint32_t RX_CRC_ERROR_PACKETS;
-  volatile const uint32_t RX_ALIGNMENT_ERROR_PACKETS;
-  const volatile uint32_t RESERVED1988[10];
-  volatile const uint32_t RX_UNICAST_PACKETS_GOOD;
-  const volatile uint32_t RESERVED2028[9];
-  volatile const uint32_t TX_LPI_USEC_CNTR;
-  volatile const uint32_t TX_LPI_TRAN_CNTR;
-  volatile const uint32_t RX_LPI_USEC_CNTR;
-  volatile const uint32_t RX_LPI_TRAN_CNTR;
-  const volatile uint32_t RESERVED2304[65];
-  volatile uint32_t MACL3L4C0R;
-  volatile uint32_t MACL4A0R;
-  const volatile uint32_t RESERVED2320[2];
-  volatile uint32_t MACL3A00R;
-  volatile uint32_t MACL3A10R;
-  volatile uint32_t MACL3A20;
-  volatile uint32_t MACL3A30;
-  const volatile uint32_t RESERVED2352[4];
-  volatile uint32_t MACL3L4C1R;
-  volatile uint32_t MACL4A1R;
-  const volatile uint32_t RESERVED2368[2];
-  volatile uint32_t MACL3A01R;
-  volatile uint32_t MACL3A11R;
-  volatile uint32_t MACL3A21R;
-  volatile uint32_t MACL3A31R;
-  const volatile uint32_t RESERVED2784[100];
-  volatile uint32_t MACARPAR;
-  const volatile uint32_t RESERVED2816[7];
-  volatile uint32_t MACTSCR;
-  volatile uint32_t MACSSIR;
-  volatile const uint32_t MACSTSR;
-  volatile const uint32_t MACSTNR;
-  volatile uint32_t MACSTSUR;
-  volatile uint32_t MACSTNUR;
-  volatile uint32_t MACTSAR;
-  const volatile uint32_t RESERVED2848[1];
-  volatile const uint32_t MACTSSR;
-  const volatile uint32_t RESERVED2864[3];
-  volatile const uint32_t MACTxTSSNR;
-  volatile const uint32_t MACTxTSSSR;
-  const volatile uint32_t RESERVED2880[2];
-  volatile uint32_t MACACR;
-  const volatile uint32_t RESERVED2888[1];
-  volatile const uint32_t MACATSNR;
-  volatile const uint32_t MACATSSR;
-  volatile uint32_t MACTSIACR;
-  volatile uint32_t MACTSEACR;
-  volatile uint32_t MACTSICNR;
-  volatile uint32_t MACTSECNR;
-  const volatile uint32_t RESERVED2928[4];
-  volatile uint32_t MACPPSCR;
-  const volatile uint32_t RESERVED2944[3];
-  volatile uint32_t MACPPSTTSR;
-  volatile uint32_t MACPPSTTNR;
-  volatile uint32_t MACPPSIR;
-  volatile uint32_t MACPPSWR;
-  const volatile uint32_t RESERVED3008[12];
-  volatile uint32_t MACPOCR;
-  volatile uint32_t MACSPI0R;
-  volatile uint32_t MACSPI1R;
-  volatile uint32_t MACSPI2R;
-  volatile uint32_t MACLMIR;
+    volatile uint32_t MACCR;
+    volatile uint32_t MACECR;
+    volatile uint32_t MACPFR;
+    volatile uint32_t MACWTR;
+    volatile uint32_t MACHT0R;
+    volatile uint32_t MACHT1R;
+    volatile const uint32_t RESERVED_24[14];
+    volatile uint32_t MACVTR;
+    volatile const uint32_t RESERVED_84;
+    volatile uint32_t MACVHTR;
+    volatile const uint32_t RESERVED_92;
+    volatile uint32_t MACVIR;
+    volatile uint32_t MACIVIR;
+    volatile const uint32_t RESERVED_104[2];
+    volatile uint32_t MACQTxFCR;
+    volatile const uint32_t RESERVED_116[7];
+    volatile uint32_t MACRxFCR;
+    volatile const uint32_t RESERVED_148[7];
+    volatile const uint32_t MACISR;
+    volatile uint32_t MACIER;
+    volatile const uint32_t MACRxTxSR;
+    volatile const uint32_t RESERVED_188;
+    volatile uint32_t MACPCSR;
+    volatile uint32_t MACRWKPFR;
+    volatile const uint32_t RESERVED_200[2];
+    volatile uint32_t MACLCSR;
+    volatile uint32_t MACLTCR;
+    volatile uint32_t MACLETR;
+    volatile uint32_t MAC1USTCR;
+    volatile const uint32_t RESERVED_224[12];
+    volatile const uint32_t MACVR;
+    volatile const uint32_t MACDR;
+    volatile const uint32_t RESERVED_280[2];
+    volatile const uint32_t MACHWF1R;
+    volatile const uint32_t MACHWF2R;
+    volatile const uint32_t RESERVED_296[54];
+    volatile uint32_t MACMDIOAR;
+    volatile uint32_t MACMDIODR;
+    volatile const uint32_t RESERVED_520[62];
+    volatile uint32_t MACA0HR;
+    volatile uint32_t MACA0LR;
+    volatile uint32_t MACA1HR;
+    volatile uint32_t MACA1LR;
+    volatile uint32_t MACA2HR;
+    volatile uint32_t MACA2LR;
+    volatile uint32_t MACA3HR;
+    volatile uint32_t MACA3LR;
+    volatile const uint32_t RESERVED_800[248];
+    volatile uint32_t MMC_CONTROL;
+    volatile const uint32_t MMC_RX_INTERRUPT;
+    volatile const uint32_t MMC_TX_INTERRUPT;
+    volatile uint32_t MMC_RX_INTERRUPT_MASK;
+    volatile uint32_t MMC_TX_INTERRUPT_MASK;
+    volatile const uint32_t RESERVED_1812[14];
+    volatile const uint32_t TX_SINGLE_COLLISION_GOOD_PACKETS;
+    volatile const uint32_t TX_MULTIPLE_COLLISION_GOOD_PACKETS;
+    volatile const uint32_t RESERVED_1876[5];
+    volatile const uint32_t TX_PACKET_COUNT_GOOD;
+    volatile const uint32_t RESERVED_1900[10];
+    volatile const uint32_t RX_CRC_ERROR_PACKETS;
+    volatile const uint32_t RX_ALIGNMENT_ERROR_PACKETS;
+    volatile const uint32_t RESERVED_1948[10];
+    volatile const uint32_t RX_UNICAST_PACKETS_GOOD;
+    volatile const uint32_t RESERVED_1992[9];
+    volatile const uint32_t TX_LPI_USEC_CNTR;
+    volatile const uint32_t TX_LPI_TRAN_CNTR;
+    volatile const uint32_t RX_LPI_USEC_CNTR;
+    volatile const uint32_t RX_LPI_TRAN_CNTR;
+    volatile const uint32_t RESERVED_2044[65];
+    volatile uint32_t MACL3L4C0R;
+    volatile uint32_t MACL4A0R;
+    volatile const uint32_t RESERVED_2312[2];
+    volatile uint32_t MACL3A00R;
+    volatile uint32_t MACL3A10R;
+    volatile uint32_t MACL3A20;
+    volatile uint32_t MACL3A30;
+    volatile const uint32_t RESERVED_2336[4];
+    volatile uint32_t MACL3L4C1R;
+    volatile uint32_t MACL4A1R;
+    volatile const uint32_t RESERVED_2360[2];
+    volatile uint32_t MACL3A01R;
+    volatile uint32_t MACL3A11R;
+    volatile uint32_t MACL3A21R;
+    volatile uint32_t MACL3A31R;
+    volatile const uint32_t RESERVED_2384[100];
+    volatile uint32_t MACARPAR;
+    volatile const uint32_t RESERVED_2788[7];
+    volatile uint32_t MACTSCR;
+    volatile uint32_t MACSSIR;
+    volatile const uint32_t MACSTSR;
+    volatile const uint32_t MACSTNR;
+    volatile uint32_t MACSTSUR;
+    volatile uint32_t MACSTNUR;
+    volatile uint32_t MACTSAR;
+    volatile const uint32_t RESERVED_2844;
+    volatile const uint32_t MACTSSR;
+    volatile const uint32_t RESERVED_2852[3];
+    volatile const uint32_t MACTxTSSNR;
+    volatile const uint32_t MACTxTSSSR;
+    volatile const uint32_t RESERVED_2872[2];
+    volatile uint32_t MACACR;
+    volatile const uint32_t RESERVED_2884;
+    volatile const uint32_t MACATSNR;
+    volatile const uint32_t MACATSSR;
+    volatile uint32_t MACTSIACR;
+    volatile uint32_t MACTSEACR;
+    volatile uint32_t MACTSICNR;
+    volatile uint32_t MACTSECNR;
+    volatile const uint32_t RESERVED_2912[4];
+    volatile uint32_t MACPPSCR;
+    volatile const uint32_t RESERVED_2932[3];
+    volatile uint32_t MACPPSTTSR;
+    volatile uint32_t MACPPSTTNR;
+    volatile uint32_t MACPPSIR;
+    volatile uint32_t MACPPSWR;
+    volatile const uint32_t RESERVED_2960[12];
+    volatile uint32_t MACPOCR;
+    volatile uint32_t MACSPI0R;
+    volatile uint32_t MACSPI1R;
+    volatile uint32_t MACSPI2R;
+    volatile uint32_t MACLMIR;
 };
 #define Ethernet_MAC_MACCR_RE          (0x1UL << 0) 
 #define Ethernet_MAC_MACCR_RE_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -24891,18 +25155,12 @@ struct Ethernet_MAC {
 #define Ethernet_MAC_MACMDIODR_MD_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 #define Ethernet_MAC_MACMDIODR_RA          (0xFFFFUL << 16) 
 #define Ethernet_MAC_MACMDIODR_RA_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 16)
-#define Ethernet_MAC_MACARPAR_ARPPA          (0xFFFFFFFFUL << 0) 
-#define Ethernet_MAC_MACARPAR_ARPPA_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
 #define Ethernet_MAC_MACA0HR_ADDRHI          (0xFFFFUL << 0) 
 #define Ethernet_MAC_MACA0HR_ADDRHI_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 #define Ethernet_MAC_MACA0HR_AE          (0x1UL << 31) 
 #define Ethernet_MAC_MACA0HR_AE_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
 #define Ethernet_MAC_MACA0LR_ADDRLO          (0xFFFFFFFFUL << 0) 
 #define Ethernet_MAC_MACA0LR_ADDRLO_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
-#define Ethernet_MAC_MACA1LR_ADDRLO          (0xFFFFFFFFUL << 0) 
-#define Ethernet_MAC_MACA1LR_ADDRLO_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
-#define Ethernet_MAC_MACA2LR_ADDRLO          (0xFFFFFFFFUL << 0) 
-#define Ethernet_MAC_MACA2LR_ADDRLO_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
 #define Ethernet_MAC_MACA1HR_ADDRHI          (0xFFFFUL << 0) 
 #define Ethernet_MAC_MACA1HR_ADDRHI_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 #define Ethernet_MAC_MACA1HR_MBC          (0x3FUL << 24) 
@@ -24911,6 +25169,8 @@ struct Ethernet_MAC {
 #define Ethernet_MAC_MACA1HR_SA_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define Ethernet_MAC_MACA1HR_AE          (0x1UL << 31) 
 #define Ethernet_MAC_MACA1HR_AE_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define Ethernet_MAC_MACA1LR_ADDRLO          (0xFFFFFFFFUL << 0) 
+#define Ethernet_MAC_MACA1LR_ADDRLO_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
 #define Ethernet_MAC_MACA2HR_ADDRHI          (0xFFFFUL << 0) 
 #define Ethernet_MAC_MACA2HR_ADDRHI_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 #define Ethernet_MAC_MACA2HR_MBC          (0x3FUL << 24) 
@@ -24919,6 +25179,8 @@ struct Ethernet_MAC {
 #define Ethernet_MAC_MACA2HR_SA_VAL(X) (((uint32_t)(X) & 0x1UL) << 30)
 #define Ethernet_MAC_MACA2HR_AE          (0x1UL << 31) 
 #define Ethernet_MAC_MACA2HR_AE_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
+#define Ethernet_MAC_MACA2LR_ADDRLO          (0xFFFFFFFFUL << 0) 
+#define Ethernet_MAC_MACA2LR_ADDRLO_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
 #define Ethernet_MAC_MACA3HR_ADDRHI          (0xFFFFUL << 0) 
 #define Ethernet_MAC_MACA3HR_ADDRHI_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 #define Ethernet_MAC_MACA3HR_MBC          (0x3FUL << 24) 
@@ -25075,6 +25337,8 @@ struct Ethernet_MAC {
 #define Ethernet_MAC_MACL3A21R_L3A21_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
 #define Ethernet_MAC_MACL3A31R_L3A31          (0xFFFFFFFFUL << 0) 
 #define Ethernet_MAC_MACL3A31R_L3A31_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
+#define Ethernet_MAC_MACARPAR_ARPPA          (0xFFFFFFFFUL << 0) 
+#define Ethernet_MAC_MACARPAR_ARPPA_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
 #define Ethernet_MAC_MACTSCR_TSENA          (0x1UL << 0) 
 #define Ethernet_MAC_MACTSCR_TSENA_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 #define Ethernet_MAC_MACTSCR_TSCFUPDT          (0x1UL << 1) 
@@ -25213,59 +25477,62 @@ struct Ethernet_MAC {
 #define Ethernet_MAC_MACLMIR_LMPDRI_VAL(X) (((uint32_t)(X) & 0xFFUL) << 24)
 
 #define Ethernet_MAC  ((struct Ethernet_MAC*)(0x40028000UL))
+
+
+
 struct DMA1 {
-  volatile const uint32_t LISR;
-  volatile const uint32_t HISR;
-  volatile uint32_t LIFCR;
-  volatile uint32_t HIFCR;
-  volatile uint32_t S0CR;
-  volatile uint32_t S0NDTR;
-  volatile uint32_t S0PAR;
-  volatile uint32_t S0M0AR;
-  volatile uint32_t S0M1AR;
-  volatile uint32_t S0FCR;
-  volatile uint32_t S1CR;
-  volatile uint32_t S1NDTR;
-  volatile uint32_t S1PAR;
-  volatile uint32_t S1M0AR;
-  volatile uint32_t S1M1AR;
-  volatile uint32_t S1FCR;
-  volatile uint32_t S2CR;
-  volatile uint32_t S2NDTR;
-  volatile uint32_t S2PAR;
-  volatile uint32_t S2M0AR;
-  volatile uint32_t S2M1AR;
-  volatile uint32_t S2FCR;
-  volatile uint32_t S3CR;
-  volatile uint32_t S3NDTR;
-  volatile uint32_t S3PAR;
-  volatile uint32_t S3M0AR;
-  volatile uint32_t S3M1AR;
-  volatile uint32_t S3FCR;
-  volatile uint32_t S4CR;
-  volatile uint32_t S4NDTR;
-  volatile uint32_t S4PAR;
-  volatile uint32_t S4M0AR;
-  volatile uint32_t S4M1AR;
-  volatile uint32_t S4FCR;
-  volatile uint32_t S5CR;
-  volatile uint32_t S5NDTR;
-  volatile uint32_t S5PAR;
-  volatile uint32_t S5M0AR;
-  volatile uint32_t S5M1AR;
-  volatile uint32_t S5FCR;
-  volatile uint32_t S6CR;
-  volatile uint32_t S6NDTR;
-  volatile uint32_t S6PAR;
-  volatile uint32_t S6M0AR;
-  volatile uint32_t S6M1AR;
-  volatile uint32_t S6FCR;
-  volatile uint32_t S7CR;
-  volatile uint32_t S7NDTR;
-  volatile uint32_t S7PAR;
-  volatile uint32_t S7M0AR;
-  volatile uint32_t S7M1AR;
-  volatile uint32_t S7FCR;
+    volatile const uint32_t LISR;
+    volatile const uint32_t HISR;
+    volatile uint32_t LIFCR;
+    volatile uint32_t HIFCR;
+    volatile uint32_t S0CR;
+    volatile uint32_t S0NDTR;
+    volatile uint32_t S0PAR;
+    volatile uint32_t S0M0AR;
+    volatile uint32_t S0M1AR;
+    volatile uint32_t S0FCR;
+    volatile uint32_t S1CR;
+    volatile uint32_t S1NDTR;
+    volatile uint32_t S1PAR;
+    volatile uint32_t S1M0AR;
+    volatile uint32_t S1M1AR;
+    volatile uint32_t S1FCR;
+    volatile uint32_t S2CR;
+    volatile uint32_t S2NDTR;
+    volatile uint32_t S2PAR;
+    volatile uint32_t S2M0AR;
+    volatile uint32_t S2M1AR;
+    volatile uint32_t S2FCR;
+    volatile uint32_t S3CR;
+    volatile uint32_t S3NDTR;
+    volatile uint32_t S3PAR;
+    volatile uint32_t S3M0AR;
+    volatile uint32_t S3M1AR;
+    volatile uint32_t S3FCR;
+    volatile uint32_t S4CR;
+    volatile uint32_t S4NDTR;
+    volatile uint32_t S4PAR;
+    volatile uint32_t S4M0AR;
+    volatile uint32_t S4M1AR;
+    volatile uint32_t S4FCR;
+    volatile uint32_t S5CR;
+    volatile uint32_t S5NDTR;
+    volatile uint32_t S5PAR;
+    volatile uint32_t S5M0AR;
+    volatile uint32_t S5M1AR;
+    volatile uint32_t S5FCR;
+    volatile uint32_t S6CR;
+    volatile uint32_t S6NDTR;
+    volatile uint32_t S6PAR;
+    volatile uint32_t S6M0AR;
+    volatile uint32_t S6M1AR;
+    volatile uint32_t S6FCR;
+    volatile uint32_t S7CR;
+    volatile uint32_t S7NDTR;
+    volatile uint32_t S7PAR;
+    volatile uint32_t S7M0AR;
+    volatile uint32_t S7M1AR;
+    volatile uint32_t S7FCR;
 };
 #define DMA1_LISR_TCIF3          (0x1UL << 27) 
 #define DMA1_LISR_TCIF3_VAL(X) (((uint32_t)(X) & 0x1UL) << 27)
@@ -25859,59 +26126,62 @@ struct DMA1 {
 #define DMA1_S7FCR_FTH_VAL(X) (((uint32_t)(X) & 0x3UL) << 0)
 
 #define DMA1  ((struct DMA1*)(0x40020000UL))
+
+
+
 struct DMA2 {
-  volatile const uint32_t LISR;
-  volatile const uint32_t HISR;
-  volatile uint32_t LIFCR;
-  volatile uint32_t HIFCR;
-  volatile uint32_t S0CR;
-  volatile uint32_t S0NDTR;
-  volatile uint32_t S0PAR;
-  volatile uint32_t S0M0AR;
-  volatile uint32_t S0M1AR;
-  volatile uint32_t S0FCR;
-  volatile uint32_t S1CR;
-  volatile uint32_t S1NDTR;
-  volatile uint32_t S1PAR;
-  volatile uint32_t S1M0AR;
-  volatile uint32_t S1M1AR;
-  volatile uint32_t S1FCR;
-  volatile uint32_t S2CR;
-  volatile uint32_t S2NDTR;
-  volatile uint32_t S2PAR;
-  volatile uint32_t S2M0AR;
-  volatile uint32_t S2M1AR;
-  volatile uint32_t S2FCR;
-  volatile uint32_t S3CR;
-  volatile uint32_t S3NDTR;
-  volatile uint32_t S3PAR;
-  volatile uint32_t S3M0AR;
-  volatile uint32_t S3M1AR;
-  volatile uint32_t S3FCR;
-  volatile uint32_t S4CR;
-  volatile uint32_t S4NDTR;
-  volatile uint32_t S4PAR;
-  volatile uint32_t S4M0AR;
-  volatile uint32_t S4M1AR;
-  volatile uint32_t S4FCR;
-  volatile uint32_t S5CR;
-  volatile uint32_t S5NDTR;
-  volatile uint32_t S5PAR;
-  volatile uint32_t S5M0AR;
-  volatile uint32_t S5M1AR;
-  volatile uint32_t S5FCR;
-  volatile uint32_t S6CR;
-  volatile uint32_t S6NDTR;
-  volatile uint32_t S6PAR;
-  volatile uint32_t S6M0AR;
-  volatile uint32_t S6M1AR;
-  volatile uint32_t S6FCR;
-  volatile uint32_t S7CR;
-  volatile uint32_t S7NDTR;
-  volatile uint32_t S7PAR;
-  volatile uint32_t S7M0AR;
-  volatile uint32_t S7M1AR;
-  volatile uint32_t S7FCR;
+    volatile const uint32_t LISR;
+    volatile const uint32_t HISR;
+    volatile uint32_t LIFCR;
+    volatile uint32_t HIFCR;
+    volatile uint32_t S0CR;
+    volatile uint32_t S0NDTR;
+    volatile uint32_t S0PAR;
+    volatile uint32_t S0M0AR;
+    volatile uint32_t S0M1AR;
+    volatile uint32_t S0FCR;
+    volatile uint32_t S1CR;
+    volatile uint32_t S1NDTR;
+    volatile uint32_t S1PAR;
+    volatile uint32_t S1M0AR;
+    volatile uint32_t S1M1AR;
+    volatile uint32_t S1FCR;
+    volatile uint32_t S2CR;
+    volatile uint32_t S2NDTR;
+    volatile uint32_t S2PAR;
+    volatile uint32_t S2M0AR;
+    volatile uint32_t S2M1AR;
+    volatile uint32_t S2FCR;
+    volatile uint32_t S3CR;
+    volatile uint32_t S3NDTR;
+    volatile uint32_t S3PAR;
+    volatile uint32_t S3M0AR;
+    volatile uint32_t S3M1AR;
+    volatile uint32_t S3FCR;
+    volatile uint32_t S4CR;
+    volatile uint32_t S4NDTR;
+    volatile uint32_t S4PAR;
+    volatile uint32_t S4M0AR;
+    volatile uint32_t S4M1AR;
+    volatile uint32_t S4FCR;
+    volatile uint32_t S5CR;
+    volatile uint32_t S5NDTR;
+    volatile uint32_t S5PAR;
+    volatile uint32_t S5M0AR;
+    volatile uint32_t S5M1AR;
+    volatile uint32_t S5FCR;
+    volatile uint32_t S6CR;
+    volatile uint32_t S6NDTR;
+    volatile uint32_t S6PAR;
+    volatile uint32_t S6M0AR;
+    volatile uint32_t S6M1AR;
+    volatile uint32_t S6FCR;
+    volatile uint32_t S7CR;
+    volatile uint32_t S7NDTR;
+    volatile uint32_t S7PAR;
+    volatile uint32_t S7M0AR;
+    volatile uint32_t S7M1AR;
+    volatile uint32_t S7FCR;
 };
 #define DMA2_LISR_TCIF3          (0x1UL << 27) 
 #define DMA2_LISR_TCIF3_VAL(X) (((uint32_t)(X) & 0x1UL) << 27)
@@ -26505,19 +26775,22 @@ struct DMA2 {
 #define DMA2_S7FCR_FTH_VAL(X) (((uint32_t)(X) & 0x3UL) << 0)
 
 #define DMA2  ((struct DMA2*)(0x40020400UL))
+
+
+
 struct HRTIM_Master {
-  volatile uint32_t MCR;
-  volatile const uint32_t MISR;
-  volatile uint32_t MICR;
-  volatile uint32_t MDIER4;
-  volatile uint32_t MCNTR;
-  volatile uint32_t MPER;
-  volatile uint32_t MREP;
-  volatile uint32_t MCMP1R;
-  const volatile uint32_t RESERVED36[1];
-  volatile uint32_t MCMP2R;
-  volatile uint32_t MCMP3R;
-  volatile uint32_t MCMP4R;
+    volatile uint32_t MCR;
+    volatile const uint32_t MISR;
+    volatile uint32_t MICR;
+    volatile uint32_t MDIER4;
+    volatile uint32_t MCNTR;
+    volatile uint32_t MPER;
+    volatile uint32_t MREP;
+    volatile uint32_t MCMP1R;
+    volatile const uint32_t RESERVED_32;
+    volatile uint32_t MCMP2R;
+    volatile uint32_t MCMP3R;
+    volatile uint32_t MCMP4R;
 };
 #define HRTIM_Master_MCR_BRSTDMA          (0x3UL << 30) 
 #define HRTIM_Master_MCR_BRSTDMA_VAL(X) (((uint32_t)(X) & 0x3UL) << 30)
@@ -26629,34 +26902,37 @@ struct HRTIM_Master {
 #define HRTIM_Master_MCMP4R_MCMP4_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 
 #define HRTIM_Master  ((struct HRTIM_Master*)(0x40017400UL))
+
+
+
 struct HRTIM_TIMA {
-  volatile uint32_t TIMACR;
-  volatile const uint32_t TIMAISR;
-  volatile uint32_t TIMAICR;
-  volatile uint32_t TIMADIER5;
-  volatile uint32_t CNTAR;
-  volatile uint32_t PERAR;
-  volatile uint32_t REPAR;
-  volatile uint32_t CMP1AR;
-  volatile uint32_t CMP1CAR;
-  volatile uint32_t CMP2AR;
-  volatile uint32_t CMP3AR;
-  volatile uint32_t CMP4AR;
-  volatile const uint32_t CPT1AR;
-  volatile const uint32_t CPT2AR;
-  volatile uint32_t DTAR;
-  volatile uint32_t SETA1R;
-  volatile uint32_t RSTA1R;
-  volatile uint32_t SETA2R;
-  volatile uint32_t RSTA2R;
-  volatile uint32_t EEFAR1;
-  volatile uint32_t EEFAR2;
-  volatile uint32_t RSTAR;
-  volatile uint32_t CHPAR;
-  volatile uint32_t CPT1ACR;
-  volatile uint32_t CPT2ACR;
-  volatile uint32_t OUTAR;
-  volatile uint32_t FLTAR;
+    volatile uint32_t TIMACR;
+    volatile const uint32_t TIMAISR;
+    volatile uint32_t TIMAICR;
+    volatile uint32_t TIMADIER5;
+    volatile uint32_t CNTAR;
+    volatile uint32_t PERAR;
+    volatile uint32_t REPAR;
+    volatile uint32_t CMP1AR;
+    volatile uint32_t CMP1CAR;
+    volatile uint32_t CMP2AR;
+    volatile uint32_t CMP3AR;
+    volatile uint32_t CMP4AR;
+    volatile const uint32_t CPT1AR;
+    volatile const uint32_t CPT2AR;
+    volatile uint32_t DTAR;
+    volatile uint32_t SETA1R;
+    volatile uint32_t RSTA1R;
+    volatile uint32_t SETA2R;
+    volatile uint32_t RSTA2R;
+    volatile uint32_t EEFAR1;
+    volatile uint32_t EEFAR2;
+    volatile uint32_t RSTAR;
+    volatile uint32_t CHPAR;
+    volatile uint32_t CPT1ACR;
+    volatile uint32_t CPT2ACR;
+    volatile uint32_t OUTAR;
+    volatile uint32_t FLTAR;
 };
 #define HRTIM_TIMA_TIMACR_UPDGAT          (0xFUL << 28) 
 #define HRTIM_TIMA_TIMACR_UPDGAT_VAL(X) (((uint32_t)(X) & 0xFUL) << 28)
@@ -27374,34 +27650,37 @@ struct HRTIM_TIMA {
 #define HRTIM_TIMA_FLTAR_FLT1EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 
 #define HRTIM_TIMA  ((struct HRTIM_TIMA*)(0x40017480UL))
+
+
+
 struct HRTIM_TIMB {
-  volatile uint32_t TIMBCR;
-  volatile const uint32_t TIMBISR;
-  volatile uint32_t TIMBICR;
-  volatile uint32_t TIMBDIER5;
-  volatile uint32_t CNTR;
-  volatile uint32_t PERBR;
-  volatile uint32_t REPBR;
-  volatile uint32_t CMP1BR;
-  volatile uint32_t CMP1CBR;
-  volatile uint32_t CMP2BR;
-  volatile uint32_t CMP3BR;
-  volatile uint32_t CMP4BR;
-  volatile const uint32_t CPT1BR;
-  volatile const uint32_t CPT2BR;
-  volatile uint32_t DTBR;
-  volatile uint32_t SETB1R;
-  volatile uint32_t RSTB1R;
-  volatile uint32_t SETB2R;
-  volatile uint32_t RSTB2R;
-  volatile uint32_t EEFBR1;
-  volatile uint32_t EEFBR2;
-  volatile uint32_t RSTBR;
-  volatile uint32_t CHPBR;
-  volatile uint32_t CPT1BCR;
-  volatile uint32_t CPT2BCR;
-  volatile uint32_t OUTBR;
-  volatile uint32_t FLTBR;
+    volatile uint32_t TIMBCR;
+    volatile const uint32_t TIMBISR;
+    volatile uint32_t TIMBICR;
+    volatile uint32_t TIMBDIER5;
+    volatile uint32_t CNTR;
+    volatile uint32_t PERBR;
+    volatile uint32_t REPBR;
+    volatile uint32_t CMP1BR;
+    volatile uint32_t CMP1CBR;
+    volatile uint32_t CMP2BR;
+    volatile uint32_t CMP3BR;
+    volatile uint32_t CMP4BR;
+    volatile const uint32_t CPT1BR;
+    volatile const uint32_t CPT2BR;
+    volatile uint32_t DTBR;
+    volatile uint32_t SETB1R;
+    volatile uint32_t RSTB1R;
+    volatile uint32_t SETB2R;
+    volatile uint32_t RSTB2R;
+    volatile uint32_t EEFBR1;
+    volatile uint32_t EEFBR2;
+    volatile uint32_t RSTBR;
+    volatile uint32_t CHPBR;
+    volatile uint32_t CPT1BCR;
+    volatile uint32_t CPT2BCR;
+    volatile uint32_t OUTBR;
+    volatile uint32_t FLTBR;
 };
 #define HRTIM_TIMB_TIMBCR_UPDGAT          (0xFUL << 28) 
 #define HRTIM_TIMB_TIMBCR_UPDGAT_VAL(X) (((uint32_t)(X) & 0xFUL) << 28)
@@ -28119,34 +28398,37 @@ struct HRTIM_TIMB {
 #define HRTIM_TIMB_FLTBR_FLT1EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 
 #define HRTIM_TIMB  ((struct HRTIM_TIMB*)(0x40017500UL))
+
+
+
 struct HRTIM_TIMC {
-  volatile uint32_t TIMCCR;
-  volatile const uint32_t TIMCISR;
-  volatile uint32_t TIMCICR;
-  volatile uint32_t TIMCDIER5;
-  volatile uint32_t CNTCR;
-  volatile uint32_t PERCR;
-  volatile uint32_t REPCR;
-  volatile uint32_t CMP1CR;
-  volatile uint32_t CMP1CCR;
-  volatile uint32_t CMP2CR;
-  volatile uint32_t CMP3CR;
-  volatile uint32_t CMP4CR;
-  volatile const uint32_t CPT1CR;
-  volatile const uint32_t CPT2CR;
-  volatile uint32_t DTCR;
-  volatile uint32_t SETC1R;
-  volatile uint32_t RSTC1R;
-  volatile uint32_t SETC2R;
-  volatile uint32_t RSTC2R;
-  volatile uint32_t EEFCR1;
-  volatile uint32_t EEFCR2;
-  volatile uint32_t RSTCR;
-  volatile uint32_t CHPCR;
-  volatile uint32_t CPT1CCR;
-  volatile uint32_t CPT2CCR;
-  volatile uint32_t OUTCR;
-  volatile uint32_t FLTCR;
+    volatile uint32_t TIMCCR;
+    volatile const uint32_t TIMCISR;
+    volatile uint32_t TIMCICR;
+    volatile uint32_t TIMCDIER5;
+    volatile uint32_t CNTCR;
+    volatile uint32_t PERCR;
+    volatile uint32_t REPCR;
+    volatile uint32_t CMP1CR;
+    volatile uint32_t CMP1CCR;
+    volatile uint32_t CMP2CR;
+    volatile uint32_t CMP3CR;
+    volatile uint32_t CMP4CR;
+    volatile const uint32_t CPT1CR;
+    volatile const uint32_t CPT2CR;
+    volatile uint32_t DTCR;
+    volatile uint32_t SETC1R;
+    volatile uint32_t RSTC1R;
+    volatile uint32_t SETC2R;
+    volatile uint32_t RSTC2R;
+    volatile uint32_t EEFCR1;
+    volatile uint32_t EEFCR2;
+    volatile uint32_t RSTCR;
+    volatile uint32_t CHPCR;
+    volatile uint32_t CPT1CCR;
+    volatile uint32_t CPT2CCR;
+    volatile uint32_t OUTCR;
+    volatile uint32_t FLTCR;
 };
 #define HRTIM_TIMC_TIMCCR_UPDGAT          (0xFUL << 28) 
 #define HRTIM_TIMC_TIMCCR_UPDGAT_VAL(X) (((uint32_t)(X) & 0xFUL) << 28)
@@ -28864,34 +29146,37 @@ struct HRTIM_TIMC {
 #define HRTIM_TIMC_FLTCR_FLT1EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 
 #define HRTIM_TIMC  ((struct HRTIM_TIMC*)(0x40017580UL))
+
+
+
 struct HRTIM_TIMD {
-  volatile uint32_t TIMDCR;
-  volatile const uint32_t TIMDISR;
-  volatile uint32_t TIMDICR;
-  volatile uint32_t TIMDDIER5;
-  volatile uint32_t CNTDR;
-  volatile uint32_t PERDR;
-  volatile uint32_t REPDR;
-  volatile uint32_t CMP1DR;
-  volatile uint32_t CMP1CDR;
-  volatile uint32_t CMP2DR;
-  volatile uint32_t CMP3DR;
-  volatile uint32_t CMP4DR;
-  volatile const uint32_t CPT1DR;
-  volatile const uint32_t CPT2DR;
-  volatile uint32_t DTDR;
-  volatile uint32_t SETD1R;
-  volatile uint32_t RSTD1R;
-  volatile uint32_t SETD2R;
-  volatile uint32_t RSTD2R;
-  volatile uint32_t EEFDR1;
-  volatile uint32_t EEFDR2;
-  volatile uint32_t RSTDR;
-  volatile uint32_t CHPDR;
-  volatile uint32_t CPT1DCR;
-  volatile uint32_t CPT2DCR;
-  volatile uint32_t OUTDR;
-  volatile uint32_t FLTDR;
+    volatile uint32_t TIMDCR;
+    volatile const uint32_t TIMDISR;
+    volatile uint32_t TIMDICR;
+    volatile uint32_t TIMDDIER5;
+    volatile uint32_t CNTDR;
+    volatile uint32_t PERDR;
+    volatile uint32_t REPDR;
+    volatile uint32_t CMP1DR;
+    volatile uint32_t CMP1CDR;
+    volatile uint32_t CMP2DR;
+    volatile uint32_t CMP3DR;
+    volatile uint32_t CMP4DR;
+    volatile const uint32_t CPT1DR;
+    volatile const uint32_t CPT2DR;
+    volatile uint32_t DTDR;
+    volatile uint32_t SETD1R;
+    volatile uint32_t RSTD1R;
+    volatile uint32_t SETD2R;
+    volatile uint32_t RSTD2R;
+    volatile uint32_t EEFDR1;
+    volatile uint32_t EEFDR2;
+    volatile uint32_t RSTDR;
+    volatile uint32_t CHPDR;
+    volatile uint32_t CPT1DCR;
+    volatile uint32_t CPT2DCR;
+    volatile uint32_t OUTDR;
+    volatile uint32_t FLTDR;
 };
 #define HRTIM_TIMD_TIMDCR_UPDGAT          (0xFUL << 28) 
 #define HRTIM_TIMD_TIMDCR_UPDGAT_VAL(X) (((uint32_t)(X) & 0xFUL) << 28)
@@ -29609,34 +29894,37 @@ struct HRTIM_TIMD {
 #define HRTIM_TIMD_FLTDR_FLT1EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 
 #define HRTIM_TIMD  ((struct HRTIM_TIMD*)(0x40017600UL))
+
+
+
 struct HRTIM_TIME {
-  volatile uint32_t TIMECR;
-  volatile const uint32_t TIMEISR;
-  volatile uint32_t TIMEICR;
-  volatile uint32_t TIMEDIER5;
-  volatile uint32_t CNTER;
-  volatile uint32_t PERER;
-  volatile uint32_t REPER;
-  volatile uint32_t CMP1ER;
-  volatile uint32_t CMP1CER;
-  volatile uint32_t CMP2ER;
-  volatile uint32_t CMP3ER;
-  volatile uint32_t CMP4ER;
-  volatile const uint32_t CPT1ER;
-  volatile const uint32_t CPT2ER;
-  volatile uint32_t DTER;
-  volatile uint32_t SETE1R;
-  volatile uint32_t RSTE1R;
-  volatile uint32_t SETE2R;
-  volatile uint32_t RSTE2R;
-  volatile uint32_t EEFER1;
-  volatile uint32_t EEFER2;
-  volatile uint32_t RSTER;
-  volatile uint32_t CHPER;
-  volatile uint32_t CPT1ECR;
-  volatile uint32_t CPT2ECR;
-  volatile uint32_t OUTER;
-  volatile uint32_t FLTER;
+    volatile uint32_t TIMECR;
+    volatile const uint32_t TIMEISR;
+    volatile uint32_t TIMEICR;
+    volatile uint32_t TIMEDIER5;
+    volatile uint32_t CNTER;
+    volatile uint32_t PERER;
+    volatile uint32_t REPER;
+    volatile uint32_t CMP1ER;
+    volatile uint32_t CMP1CER;
+    volatile uint32_t CMP2ER;
+    volatile uint32_t CMP3ER;
+    volatile uint32_t CMP4ER;
+    volatile const uint32_t CPT1ER;
+    volatile const uint32_t CPT2ER;
+    volatile uint32_t DTER;
+    volatile uint32_t SETE1R;
+    volatile uint32_t RSTE1R;
+    volatile uint32_t SETE2R;
+    volatile uint32_t RSTE2R;
+    volatile uint32_t EEFER1;
+    volatile uint32_t EEFER2;
+    volatile uint32_t RSTER;
+    volatile uint32_t CHPER;
+    volatile uint32_t CPT1ECR;
+    volatile uint32_t CPT2ECR;
+    volatile uint32_t OUTER;
+    volatile uint32_t FLTER;
 };
 #define HRTIM_TIME_TIMECR_UPDGAT          (0xFUL << 28) 
 #define HRTIM_TIME_TIMECR_UPDGAT_VAL(X) (((uint32_t)(X) & 0xFUL) << 28)
@@ -30354,32 +30642,35 @@ struct HRTIM_TIME {
 #define HRTIM_TIME_FLTER_FLT1EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
 
 #define HRTIM_TIME  ((struct HRTIM_TIME*)(0x40017680UL))
+
+
+
 struct HRTIM_Common {
-  volatile uint32_t CR1;
-  volatile uint32_t CR2;
-  volatile uint32_t ISR;
-  volatile uint32_t ICR;
-  volatile uint32_t IER;
-  volatile uint32_t OENR;
-  volatile uint32_t DISR;
-  volatile const uint32_t ODSR;
-  volatile uint32_t BMCR;
-  volatile uint32_t BMTRG;
-  volatile uint32_t BMCMPR6;
-  volatile uint32_t BMPER;
-  volatile uint32_t EECR1;
-  volatile uint32_t EECR2;
-  volatile uint32_t EECR3;
-  volatile uint32_t ADC1R;
-  volatile uint32_t ADC2R;
-  volatile uint32_t ADC3R;
-  volatile uint32_t ADC4R;
-  volatile uint32_t DLLCR;
-  volatile uint32_t FLTINR1;
-  volatile uint32_t FLTINR2;
-  volatile uint32_t BDMUPDR;
-  volatile uint32_t BDTxUPR;
-  volatile uint32_t BDMADR;
+    volatile uint32_t CR1;
+    volatile uint32_t CR2;
+    volatile uint32_t ISR;
+    volatile uint32_t ICR;
+    volatile uint32_t IER;
+    volatile uint32_t OENR;
+    volatile uint32_t DISR;
+    volatile const uint32_t ODSR;
+    volatile uint32_t BMCR;
+    volatile uint32_t BMTRG;
+    volatile uint32_t BMCMPR6;
+    volatile uint32_t BMPER;
+    volatile uint32_t EECR1;
+    volatile uint32_t EECR2;
+    volatile uint32_t EECR3;
+    volatile uint32_t ADC1R;
+    volatile uint32_t ADC2R;
+    volatile uint32_t ADC3R;
+    volatile uint32_t ADC4R;
+    volatile uint32_t DLLCR;
+    volatile uint32_t FLTINR1;
+    volatile uint32_t FLTINR2;
+    volatile uint32_t BDMUPDR;
+    volatile uint32_t BDTxUPR;
+    volatile uint32_t BDMADR;
 };
 #define HRTIM_Common_CR1_AD4USRC          (0x7UL << 25) 
 #define HRTIM_Common_CR1_AD4USRC_VAL(X) (((uint32_t)(X) & 0x7UL) << 25)
@@ -31097,107 +31388,110 @@ struct HRTIM_Common {
 #define HRTIM_Common_BDMADR_BDMADR_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
 
 #define HRTIM_Common  ((struct HRTIM_Common*)(0x40017780UL))
+
+
+
 struct DFSDM {
-  volatile uint32_t DFSDM_CHCFG0R1;
-  volatile uint32_t DFSDM_CHCFG1R1;
-  volatile uint32_t DFSDM_CHCFG2R1;
-  volatile uint32_t DFSDM_CHCFG3R1;
-  volatile uint32_t DFSDM_CHCFG4R1;
-  volatile uint32_t DFSDM_CHCFG5R1;
-  volatile uint32_t DFSDM_CHCFG6R1;
-  volatile uint32_t DFSDM_CHCFG7R1;
-  volatile uint32_t DFSDM_CHCFG0R2;
-  volatile uint32_t DFSDM_CHCFG1R2;
-  volatile uint32_t DFSDM_CHCFG2R2;
-  volatile uint32_t DFSDM_CHCFG3R2;
-  volatile uint32_t DFSDM_CHCFG4R2;
-  volatile uint32_t DFSDM_CHCFG5R2;
-  volatile uint32_t DFSDM_CHCFG6R2;
-  volatile uint32_t DFSDM_CHCFG7R2;
-  volatile uint32_t DFSDM_AWSCD0R;
-  volatile uint32_t DFSDM_AWSCD1R;
-  volatile uint32_t DFSDM_AWSCD2R;
-  volatile uint32_t DFSDM_AWSCD3R;
-  volatile uint32_t DFSDM_AWSCD4R;
-  volatile uint32_t DFSDM_AWSCD5R;
-  volatile uint32_t DFSDM_AWSCD6R;
-  volatile uint32_t DFSDM_AWSCD7R;
-  volatile const uint32_t DFSDM_CHWDAT0R;
-  volatile const uint32_t DFSDM_CHWDAT1R;
-  volatile const uint32_t DFSDM_CHWDAT2R;
-  volatile const uint32_t DFSDM_CHWDAT3R;
-  volatile const uint32_t DFSDM_CHWDAT4R;
-  volatile const uint32_t DFSDM_CHWDAT5R;
-  volatile const uint32_t DFSDM_CHWDAT6R;
-  volatile const uint32_t DFSDM_CHWDAT7R;
-  volatile uint32_t DFSDM_CHDATIN0R;
-  volatile uint32_t DFSDM_CHDATIN1R;
-  volatile uint32_t DFSDM_CHDATIN2R;
-  volatile uint32_t DFSDM_CHDATIN3R;
-  volatile uint32_t DFSDM_CHDATIN4R;
-  volatile uint32_t DFSDM_CHDATIN5R;
-  volatile uint32_t DFSDM_CHDATIN6R;
-  volatile uint32_t DFSDM_CHDATIN7R;
-  volatile uint32_t DFSDM0_CR1;
-  volatile uint32_t DFSDM1_CR1;
-  volatile uint32_t DFSDM2_CR1;
-  volatile uint32_t DFSDM3_CR1;
-  volatile uint32_t DFSDM0_CR2;
-  volatile uint32_t DFSDM1_CR2;
-  volatile uint32_t DFSDM2_CR2;
-  volatile uint32_t DFSDM3_CR2;
-  volatile const uint32_t DFSDM0_ISR;
-  volatile const uint32_t DFSDM1_ISR;
-  volatile const uint32_t DFSDM2_ISR;
-  volatile const uint32_t DFSDM3_ISR;
-  volatile uint32_t DFSDM0_ICR;
-  volatile uint32_t DFSDM1_ICR;
-  volatile uint32_t DFSDM2_ICR;
-  volatile uint32_t DFSDM3_ICR;
-  volatile uint32_t DFSDM0_JCHGR;
-  volatile uint32_t DFSDM1_JCHGR;
-  volatile uint32_t DFSDM2_JCHGR;
-  volatile uint32_t DFSDM3_JCHGR;
-  volatile uint32_t DFSDM0_FCR;
-  volatile uint32_t DFSDM1_FCR;
-  volatile uint32_t DFSDM2_FCR;
-  volatile uint32_t DFSDM3_FCR;
-  volatile const uint32_t DFSDM0_JDATAR;
-  volatile const uint32_t DFSDM1_JDATAR;
-  volatile const uint32_t DFSDM2_JDATAR;
-  volatile const uint32_t DFSDM3_JDATAR;
-  volatile const uint32_t DFSDM0_RDATAR;
-  volatile const uint32_t DFSDM1_RDATAR;
-  volatile const uint32_t DFSDM2_RDATAR;
-  volatile const uint32_t DFSDM3_RDATAR;
-  volatile uint32_t DFSDM0_AWHTR;
-  volatile uint32_t DFSDM1_AWHTR;
-  volatile uint32_t DFSDM2_AWHTR;
-  volatile uint32_t DFSDM3_AWHTR;
-  volatile uint32_t DFSDM0_AWLTR;
-  volatile uint32_t DFSDM1_AWLTR;
-  volatile uint32_t DFSDM2_AWLTR;
-  volatile uint32_t DFSDM3_AWLTR;
-  volatile const uint32_t DFSDM0_AWSR;
-  volatile const uint32_t DFSDM1_AWSR;
-  volatile const uint32_t DFSDM2_AWSR;
-  volatile const uint32_t DFSDM3_AWSR;
-  volatile uint32_t DFSDM0_AWCFR;
-  volatile uint32_t DFSDM1_AWCFR;
-  volatile uint32_t DFSDM2_AWCFR;
-  volatile uint32_t DFSDM3_AWCFR;
-  volatile const uint32_t DFSDM0_EXMAX;
-  volatile const uint32_t DFSDM1_EXMAX;
-  volatile const uint32_t DFSDM2_EXMAX;
-  volatile const uint32_t DFSDM3_EXMAX;
-  volatile const uint32_t DFSDM0_EXMIN;
-  volatile const uint32_t DFSDM1_EXMIN;
-  volatile const uint32_t DFSDM2_EXMIN;
-  volatile const uint32_t DFSDM3_EXMIN;
-  volatile const uint32_t DFSDM0_CNVTIMR;
-  volatile const uint32_t DFSDM1_CNVTIMR;
-  volatile const uint32_t DFSDM2_CNVTIMR;
-  volatile const uint32_t DFSDM3_CNVTIMR;
+    volatile uint32_t DFSDM_CHCFG0R1;
+    volatile uint32_t DFSDM_CHCFG1R1;
+    volatile uint32_t DFSDM_CHCFG2R1;
+    volatile uint32_t DFSDM_CHCFG3R1;
+    volatile uint32_t DFSDM_CHCFG4R1;
+    volatile uint32_t DFSDM_CHCFG5R1;
+    volatile uint32_t DFSDM_CHCFG6R1;
+    volatile uint32_t DFSDM_CHCFG7R1;
+    volatile uint32_t DFSDM_CHCFG0R2;
+    volatile uint32_t DFSDM_CHCFG1R2;
+    volatile uint32_t DFSDM_CHCFG2R2;
+    volatile uint32_t DFSDM_CHCFG3R2;
+    volatile uint32_t DFSDM_CHCFG4R2;
+    volatile uint32_t DFSDM_CHCFG5R2;
+    volatile uint32_t DFSDM_CHCFG6R2;
+    volatile uint32_t DFSDM_CHCFG7R2;
+    volatile uint32_t DFSDM_AWSCD0R;
+    volatile uint32_t DFSDM_AWSCD1R;
+    volatile uint32_t DFSDM_AWSCD2R;
+    volatile uint32_t DFSDM_AWSCD3R;
+    volatile uint32_t DFSDM_AWSCD4R;
+    volatile uint32_t DFSDM_AWSCD5R;
+    volatile uint32_t DFSDM_AWSCD6R;
+    volatile uint32_t DFSDM_AWSCD7R;
+    volatile const uint32_t DFSDM_CHWDAT0R;
+    volatile const uint32_t DFSDM_CHWDAT1R;
+    volatile const uint32_t DFSDM_CHWDAT2R;
+    volatile const uint32_t DFSDM_CHWDAT3R;
+    volatile const uint32_t DFSDM_CHWDAT4R;
+    volatile const uint32_t DFSDM_CHWDAT5R;
+    volatile const uint32_t DFSDM_CHWDAT6R;
+    volatile const uint32_t DFSDM_CHWDAT7R;
+    volatile uint32_t DFSDM_CHDATIN0R;
+    volatile uint32_t DFSDM_CHDATIN1R;
+    volatile uint32_t DFSDM_CHDATIN2R;
+    volatile uint32_t DFSDM_CHDATIN3R;
+    volatile uint32_t DFSDM_CHDATIN4R;
+    volatile uint32_t DFSDM_CHDATIN5R;
+    volatile uint32_t DFSDM_CHDATIN6R;
+    volatile uint32_t DFSDM_CHDATIN7R;
+    volatile uint32_t DFSDM0_CR1;
+    volatile uint32_t DFSDM1_CR1;
+    volatile uint32_t DFSDM2_CR1;
+    volatile uint32_t DFSDM3_CR1;
+    volatile uint32_t DFSDM0_CR2;
+    volatile uint32_t DFSDM1_CR2;
+    volatile uint32_t DFSDM2_CR2;
+    volatile uint32_t DFSDM3_CR2;
+    volatile const uint32_t DFSDM0_ISR;
+    volatile const uint32_t DFSDM1_ISR;
+    volatile const uint32_t DFSDM2_ISR;
+    volatile const uint32_t DFSDM3_ISR;
+    volatile uint32_t DFSDM0_ICR;
+    volatile uint32_t DFSDM1_ICR;
+    volatile uint32_t DFSDM2_ICR;
+    volatile uint32_t DFSDM3_ICR;
+    volatile uint32_t DFSDM0_JCHGR;
+    volatile uint32_t DFSDM1_JCHGR;
+    volatile uint32_t DFSDM2_JCHGR;
+    volatile uint32_t DFSDM3_JCHGR;
+    volatile uint32_t DFSDM0_FCR;
+    volatile uint32_t DFSDM1_FCR;
+    volatile uint32_t DFSDM2_FCR;
+    volatile uint32_t DFSDM3_FCR;
+    volatile const uint32_t DFSDM0_JDATAR;
+    volatile const uint32_t DFSDM1_JDATAR;
+    volatile const uint32_t DFSDM2_JDATAR;
+    volatile const uint32_t DFSDM3_JDATAR;
+    volatile const uint32_t DFSDM0_RDATAR;
+    volatile const uint32_t DFSDM1_RDATAR;
+    volatile const uint32_t DFSDM2_RDATAR;
+    volatile const uint32_t DFSDM3_RDATAR;
+    volatile uint32_t DFSDM0_AWHTR;
+    volatile uint32_t DFSDM1_AWHTR;
+    volatile uint32_t DFSDM2_AWHTR;
+    volatile uint32_t DFSDM3_AWHTR;
+    volatile uint32_t DFSDM0_AWLTR;
+    volatile uint32_t DFSDM1_AWLTR;
+    volatile uint32_t DFSDM2_AWLTR;
+    volatile uint32_t DFSDM3_AWLTR;
+    volatile const uint32_t DFSDM0_AWSR;
+    volatile const uint32_t DFSDM1_AWSR;
+    volatile const uint32_t DFSDM2_AWSR;
+    volatile const uint32_t DFSDM3_AWSR;
+    volatile uint32_t DFSDM0_AWCFR;
+    volatile uint32_t DFSDM1_AWCFR;
+    volatile uint32_t DFSDM2_AWCFR;
+    volatile uint32_t DFSDM3_AWCFR;
+    volatile const uint32_t DFSDM0_EXMAX;
+    volatile const uint32_t DFSDM1_EXMAX;
+    volatile const uint32_t DFSDM2_EXMAX;
+    volatile const uint32_t DFSDM3_EXMAX;
+    volatile const uint32_t DFSDM0_EXMIN;
+    volatile const uint32_t DFSDM1_EXMIN;
+    volatile const uint32_t DFSDM2_EXMIN;
+    volatile const uint32_t DFSDM3_EXMIN;
+    volatile const uint32_t DFSDM0_CNVTIMR;
+    volatile const uint32_t DFSDM1_CNVTIMR;
+    volatile const uint32_t DFSDM2_CNVTIMR;
+    volatile const uint32_t DFSDM3_CNVTIMR;
 };
 #define DFSDM_DFSDM_CHCFG0R1_SITP          (0x3UL << 0) 
 #define DFSDM_DFSDM_CHCFG0R1_SITP_VAL(X) (((uint32_t)(X) & 0x3UL) << 0)
@@ -31985,30 +32279,35 @@ struct DFSDM {
 #define DFSDM_DFSDM3_CNVTIMR_CNVCNT_VAL(X) (((uint32_t)(X) & 0xFFFFFFFUL) << 4)
 
 #define DFSDM  ((struct DFSDM*)(0x40017000UL))
+
+
+
 struct TIM16 {
-  volatile uint32_t CR1;
-  volatile uint32_t CR2;
-  const volatile uint32_t RESERVED12[1];
-  volatile uint32_t DIER;
-  volatile uint32_t SR;
-  volatile uint32_t EGR;
-  volatile uint32_t CCMR1_Output;
-  volatile uint32_t CCMR1_Input;
-  const volatile uint32_t RESERVED32[1];
-  volatile uint32_t CCER;
-  volatile uint32_t CNT;
-  volatile uint32_t PSC;
-  volatile uint32_t ARR;
-  volatile uint32_t RCR;
-  volatile uint32_t CCR1;
-  const volatile uint32_t RESERVED68[3];
-  volatile uint32_t BDTR;
-  volatile uint32_t DCR;
-  volatile uint32_t DMAR;
-  const volatile uint32_t RESERVED96[4];
-  volatile uint32_t TIM16_AF1;
-  const volatile uint32_t RESERVED104[1];
-  volatile uint32_t TIM16_TISEL;
+    volatile uint32_t CR1;
+    volatile uint32_t CR2;
+    volatile const uint32_t RESERVED_8;
+    volatile uint32_t DIER;
+    volatile uint32_t SR;
+    volatile uint32_t EGR;
+  union {
+      volatile uint32_t CCMR1_Output;
+      volatile uint32_t CCMR1_Input;
+  };
+    volatile const uint32_t RESERVED_28;
+    volatile uint32_t CCER;
+    volatile uint32_t CNT;
+    volatile uint32_t PSC;
+    volatile uint32_t ARR;
+    volatile uint32_t RCR;
+    volatile uint32_t CCR1;
+    volatile const uint32_t RESERVED_56[3];
+    volatile uint32_t BDTR;
+    volatile uint32_t DCR;
+    volatile uint32_t DMAR;
+    volatile const uint32_t RESERVED_80[4];
+    volatile uint32_t TIM16_AF1;
+    volatile const uint32_t RESERVED_100;
+    volatile uint32_t TIM16_TISEL;
 };
 #define TIM16_CR1_CEN          (0x1UL << 0) 
 #define TIM16_CR1_CEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -32144,30 +32443,35 @@ struct TIM16 {
 #define TIM16_TIM16_TISEL_TI1SEL_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
 
 #define TIM16  ((struct TIM16*)(0x40014400UL))
+
+
+
 struct TIM17 {
-  volatile uint32_t CR1;
-  volatile uint32_t CR2;
-  const volatile uint32_t RESERVED12[1];
-  volatile uint32_t DIER;
-  volatile uint32_t SR;
-  volatile uint32_t EGR;
-  volatile uint32_t CCMR1_Output;
-  volatile uint32_t CCMR1_Input;
-  const volatile uint32_t RESERVED32[1];
-  volatile uint32_t CCER;
-  volatile uint32_t CNT;
-  volatile uint32_t PSC;
-  volatile uint32_t ARR;
-  volatile uint32_t RCR;
-  volatile uint32_t CCR1;
-  const volatile uint32_t RESERVED68[3];
-  volatile uint32_t BDTR;
-  volatile uint32_t DCR;
-  volatile uint32_t DMAR;
-  const volatile uint32_t RESERVED96[4];
-  volatile uint32_t TIM17_AF1;
-  const volatile uint32_t RESERVED104[1];
-  volatile uint32_t TIM17_TISEL;
+    volatile uint32_t CR1;
+    volatile uint32_t CR2;
+    volatile const uint32_t RESERVED_8;
+    volatile uint32_t DIER;
+    volatile uint32_t SR;
+    volatile uint32_t EGR;
+  union {
+      volatile uint32_t CCMR1_Output;
+      volatile uint32_t CCMR1_Input;
+  };
+    volatile const uint32_t RESERVED_28;
+    volatile uint32_t CCER;
+    volatile uint32_t CNT;
+    volatile uint32_t PSC;
+    volatile uint32_t ARR;
+    volatile uint32_t RCR;
+    volatile uint32_t CCR1;
+    volatile const uint32_t RESERVED_56[3];
+    volatile uint32_t BDTR;
+    volatile uint32_t DCR;
+    volatile uint32_t DMAR;
+    volatile const uint32_t RESERVED_80[4];
+    volatile uint32_t TIM17_AF1;
+    volatile const uint32_t RESERVED_100;
+    volatile uint32_t TIM17_TISEL;
 };
 #define TIM17_CR1_CEN          (0x1UL << 0) 
 #define TIM17_CR1_CEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -32303,31 +32607,36 @@ struct TIM17 {
 #define TIM17_TIM17_TISEL_TI1SEL_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
 
 #define TIM17  ((struct TIM17*)(0x40014800UL))
+
+
+
 struct TIM15 {
-  volatile uint32_t CR1;
-  volatile uint32_t CR2;
-  volatile uint32_t SMCR;
-  volatile uint32_t DIER;
-  volatile uint32_t SR;
-  volatile uint32_t EGR;
-  volatile uint32_t CCMR1_Output;
-  volatile uint32_t CCMR1_Input;
-  const volatile uint32_t RESERVED32[1];
-  volatile uint32_t CCER;
-  volatile uint32_t CNT;
-  volatile uint32_t PSC;
-  volatile uint32_t ARR;
-  volatile uint32_t RCR;
-  volatile uint32_t CCR1;
-  volatile uint32_t CCR2;
-  const volatile uint32_t RESERVED68[2];
-  volatile uint32_t BDTR;
-  volatile uint32_t DCR;
-  volatile uint32_t DMAR;
-  const volatile uint32_t RESERVED96[4];
-  volatile uint32_t AF1;
-  const volatile uint32_t RESERVED104[1];
-  volatile uint32_t TISEL;
+    volatile uint32_t CR1;
+    volatile uint32_t CR2;
+    volatile uint32_t SMCR;
+    volatile uint32_t DIER;
+    volatile uint32_t SR;
+    volatile uint32_t EGR;
+  union {
+      volatile uint32_t CCMR1_Output;
+      volatile uint32_t CCMR1_Input;
+  };
+    volatile const uint32_t RESERVED_28;
+    volatile uint32_t CCER;
+    volatile uint32_t CNT;
+    volatile uint32_t PSC;
+    volatile uint32_t ARR;
+    volatile uint32_t RCR;
+    volatile uint32_t CCR1;
+    volatile uint32_t CCR2;
+    volatile const uint32_t RESERVED_60[2];
+    volatile uint32_t BDTR;
+    volatile uint32_t DCR;
+    volatile uint32_t DMAR;
+    volatile const uint32_t RESERVED_80[4];
+    volatile uint32_t AF1;
+    volatile const uint32_t RESERVED_100;
+    volatile uint32_t TISEL;
 };
 #define TIM15_CR1_CEN          (0x1UL << 0) 
 #define TIM15_CR1_CEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -32523,19 +32832,22 @@ struct TIM15 {
 #define TIM15_TISEL_TI2SEL_VAL(X) (((uint32_t)(X) & 0xFUL) << 8)
 
 #define TIM15  ((struct TIM15*)(0x40014000UL))
+
+
+
 struct USART1 {
-  volatile uint32_t CR1;
-  volatile uint32_t CR2;
-  volatile uint32_t CR3;
-  volatile uint32_t BRR;
-  volatile uint32_t GTPR;
-  volatile uint32_t RTOR;
-  volatile uint32_t RQR;
-  volatile const uint32_t ISR;
-  volatile uint32_t ICR;
-  volatile const uint32_t RDR;
-  volatile uint32_t TDR;
-  volatile uint32_t PRESC;
+    volatile uint32_t CR1;
+    volatile uint32_t CR2;
+    volatile uint32_t CR3;
+    volatile uint32_t BRR;
+    volatile uint32_t GTPR;
+    volatile uint32_t RTOR;
+    volatile uint32_t RQR;
+    volatile const uint32_t ISR;
+    volatile uint32_t ICR;
+    volatile const uint32_t RDR;
+    volatile uint32_t TDR;
+    volatile uint32_t PRESC;
 };
 #define USART1_CR1_RXFFIE          (0x1UL << 31) 
 #define USART1_CR1_RXFFIE_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
@@ -32809,19 +33121,22 @@ struct USART1 {
 #define USART1_PRESC_PRESCALER_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
 
 #define USART1  ((struct USART1*)(0x40011000UL))
+
+
+
 struct USART2 {
-  volatile uint32_t CR1;
-  volatile uint32_t CR2;
-  volatile uint32_t CR3;
-  volatile uint32_t BRR;
-  volatile uint32_t GTPR;
-  volatile uint32_t RTOR;
-  volatile uint32_t RQR;
-  volatile const uint32_t ISR;
-  volatile uint32_t ICR;
-  volatile const uint32_t RDR;
-  volatile uint32_t TDR;
-  volatile uint32_t PRESC;
+    volatile uint32_t CR1;
+    volatile uint32_t CR2;
+    volatile uint32_t CR3;
+    volatile uint32_t BRR;
+    volatile uint32_t GTPR;
+    volatile uint32_t RTOR;
+    volatile uint32_t RQR;
+    volatile const uint32_t ISR;
+    volatile uint32_t ICR;
+    volatile const uint32_t RDR;
+    volatile uint32_t TDR;
+    volatile uint32_t PRESC;
 };
 #define USART2_CR1_RXFFIE          (0x1UL << 31) 
 #define USART2_CR1_RXFFIE_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
@@ -33095,19 +33410,22 @@ struct USART2 {
 #define USART2_PRESC_PRESCALER_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
 
 #define USART2  ((struct USART2*)(0x40004400UL))
+
+
+
 struct USART3 {
-  volatile uint32_t CR1;
-  volatile uint32_t CR2;
-  volatile uint32_t CR3;
-  volatile uint32_t BRR;
-  volatile uint32_t GTPR;
-  volatile uint32_t RTOR;
-  volatile uint32_t RQR;
-  volatile const uint32_t ISR;
-  volatile uint32_t ICR;
-  volatile const uint32_t RDR;
-  volatile uint32_t TDR;
-  volatile uint32_t PRESC;
+    volatile uint32_t CR1;
+    volatile uint32_t CR2;
+    volatile uint32_t CR3;
+    volatile uint32_t BRR;
+    volatile uint32_t GTPR;
+    volatile uint32_t RTOR;
+    volatile uint32_t RQR;
+    volatile const uint32_t ISR;
+    volatile uint32_t ICR;
+    volatile const uint32_t RDR;
+    volatile uint32_t TDR;
+    volatile uint32_t PRESC;
 };
 #define USART3_CR1_RXFFIE          (0x1UL << 31) 
 #define USART3_CR1_RXFFIE_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
@@ -33381,19 +33699,22 @@ struct USART3 {
 #define USART3_PRESC_PRESCALER_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
 
 #define USART3  ((struct USART3*)(0x40004800UL))
+
+
+
 struct UART4 {
-  volatile uint32_t CR1;
-  volatile uint32_t CR2;
-  volatile uint32_t CR3;
-  volatile uint32_t BRR;
-  volatile uint32_t GTPR;
-  volatile uint32_t RTOR;
-  volatile uint32_t RQR;
-  volatile const uint32_t ISR;
-  volatile uint32_t ICR;
-  volatile const uint32_t RDR;
-  volatile uint32_t TDR;
-  volatile uint32_t PRESC;
+    volatile uint32_t CR1;
+    volatile uint32_t CR2;
+    volatile uint32_t CR3;
+    volatile uint32_t BRR;
+    volatile uint32_t GTPR;
+    volatile uint32_t RTOR;
+    volatile uint32_t RQR;
+    volatile const uint32_t ISR;
+    volatile uint32_t ICR;
+    volatile const uint32_t RDR;
+    volatile uint32_t TDR;
+    volatile uint32_t PRESC;
 };
 #define UART4_CR1_RXFFIE          (0x1UL << 31) 
 #define UART4_CR1_RXFFIE_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
@@ -33667,19 +33988,22 @@ struct UART4 {
 #define UART4_PRESC_PRESCALER_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
 
 #define UART4  ((struct UART4*)(0x40004C00UL))
+
+
+
 struct UART5 {
-  volatile uint32_t CR1;
-  volatile uint32_t CR2;
-  volatile uint32_t CR3;
-  volatile uint32_t BRR;
-  volatile uint32_t GTPR;
-  volatile uint32_t RTOR;
-  volatile uint32_t RQR;
-  volatile const uint32_t ISR;
-  volatile uint32_t ICR;
-  volatile const uint32_t RDR;
-  volatile uint32_t TDR;
-  volatile uint32_t PRESC;
+    volatile uint32_t CR1;
+    volatile uint32_t CR2;
+    volatile uint32_t CR3;
+    volatile uint32_t BRR;
+    volatile uint32_t GTPR;
+    volatile uint32_t RTOR;
+    volatile uint32_t RQR;
+    volatile const uint32_t ISR;
+    volatile uint32_t ICR;
+    volatile const uint32_t RDR;
+    volatile uint32_t TDR;
+    volatile uint32_t PRESC;
 };
 #define UART5_CR1_RXFFIE          (0x1UL << 31) 
 #define UART5_CR1_RXFFIE_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
@@ -33953,19 +34277,22 @@ struct UART5 {
 #define UART5_PRESC_PRESCALER_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
 
 #define UART5  ((struct UART5*)(0x40005000UL))
+
+
+
 struct USART6 {
-  volatile uint32_t CR1;
-  volatile uint32_t CR2;
-  volatile uint32_t CR3;
-  volatile uint32_t BRR;
-  volatile uint32_t GTPR;
-  volatile uint32_t RTOR;
-  volatile uint32_t RQR;
-  volatile const uint32_t ISR;
-  volatile uint32_t ICR;
-  volatile const uint32_t RDR;
-  volatile uint32_t TDR;
-  volatile uint32_t PRESC;
+    volatile uint32_t CR1;
+    volatile uint32_t CR2;
+    volatile uint32_t CR3;
+    volatile uint32_t BRR;
+    volatile uint32_t GTPR;
+    volatile uint32_t RTOR;
+    volatile uint32_t RQR;
+    volatile const uint32_t ISR;
+    volatile uint32_t ICR;
+    volatile const uint32_t RDR;
+    volatile uint32_t TDR;
+    volatile uint32_t PRESC;
 };
 #define USART6_CR1_RXFFIE          (0x1UL << 31) 
 #define USART6_CR1_RXFFIE_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
@@ -34239,19 +34566,22 @@ struct USART6 {
 #define USART6_PRESC_PRESCALER_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
 
 #define USART6  ((struct USART6*)(0x40011400UL))
+
+
+
 struct UART7 {
-  volatile uint32_t CR1;
-  volatile uint32_t CR2;
-  volatile uint32_t CR3;
-  volatile uint32_t BRR;
-  volatile uint32_t GTPR;
-  volatile uint32_t RTOR;
-  volatile uint32_t RQR;
-  volatile const uint32_t ISR;
-  volatile uint32_t ICR;
-  volatile const uint32_t RDR;
-  volatile uint32_t TDR;
-  volatile uint32_t PRESC;
+    volatile uint32_t CR1;
+    volatile uint32_t CR2;
+    volatile uint32_t CR3;
+    volatile uint32_t BRR;
+    volatile uint32_t GTPR;
+    volatile uint32_t RTOR;
+    volatile uint32_t RQR;
+    volatile const uint32_t ISR;
+    volatile uint32_t ICR;
+    volatile const uint32_t RDR;
+    volatile uint32_t TDR;
+    volatile uint32_t PRESC;
 };
 #define UART7_CR1_RXFFIE          (0x1UL << 31) 
 #define UART7_CR1_RXFFIE_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
@@ -34525,19 +34855,22 @@ struct UART7 {
 #define UART7_PRESC_PRESCALER_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
 
 #define UART7  ((struct UART7*)(0x40007800UL))
+
+
+
 struct UART8 {
-  volatile uint32_t CR1;
-  volatile uint32_t CR2;
-  volatile uint32_t CR3;
-  volatile uint32_t BRR;
-  volatile uint32_t GTPR;
-  volatile uint32_t RTOR;
-  volatile uint32_t RQR;
-  volatile const uint32_t ISR;
-  volatile uint32_t ICR;
-  volatile const uint32_t RDR;
-  volatile uint32_t TDR;
-  volatile uint32_t PRESC;
+    volatile uint32_t CR1;
+    volatile uint32_t CR2;
+    volatile uint32_t CR3;
+    volatile uint32_t BRR;
+    volatile uint32_t GTPR;
+    volatile uint32_t RTOR;
+    volatile uint32_t RQR;
+    volatile const uint32_t ISR;
+    volatile uint32_t ICR;
+    volatile const uint32_t RDR;
+    volatile uint32_t TDR;
+    volatile uint32_t PRESC;
 };
 #define UART8_CR1_RXFFIE          (0x1UL << 31) 
 #define UART8_CR1_RXFFIE_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
@@ -34811,36 +35144,43 @@ struct UART8 {
 #define UART8_PRESC_PRESCALER_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
 
 #define UART8  ((struct UART8*)(0x40007C00UL))
+
+
+
 struct TIM1 {
-  volatile uint32_t CR1;
-  volatile uint32_t CR2;
-  volatile uint32_t SMCR;
-  volatile uint32_t DIER;
-  volatile uint32_t SR;
-  volatile uint32_t EGR;
-  volatile uint32_t CCMR1_Output;
-  volatile uint32_t CCMR1_Input;
-  volatile uint32_t CCMR2_Output;
-  volatile uint32_t CCMR2_Input;
-  volatile uint32_t CCER;
-  volatile uint32_t CNT;
-  volatile uint32_t PSC;
-  volatile uint32_t ARR;
-  volatile uint32_t RCR;
-  volatile uint32_t CCR1;
-  volatile uint32_t CCR2;
-  volatile uint32_t CCR3;
-  volatile uint32_t CCR4;
-  volatile uint32_t BDTR;
-  volatile uint32_t DCR;
-  volatile uint32_t DMAR;
-  const volatile uint32_t RESERVED84[1];
-  volatile uint32_t CCMR3_Output;
-  volatile uint32_t CCR5;
-  volatile uint32_t CRR6;
-  volatile uint32_t AF1;
-  volatile uint32_t AF2;
-  volatile uint32_t TISEL;
+    volatile uint32_t CR1;
+    volatile uint32_t CR2;
+    volatile uint32_t SMCR;
+    volatile uint32_t DIER;
+    volatile uint32_t SR;
+    volatile uint32_t EGR;
+  union {
+      volatile uint32_t CCMR1_Output;
+      volatile uint32_t CCMR1_Input;
+  };
+  union {
+      volatile uint32_t CCMR2_Output;
+      volatile uint32_t CCMR2_Input;
+  };
+    volatile uint32_t CCER;
+    volatile uint32_t CNT;
+    volatile uint32_t PSC;
+    volatile uint32_t ARR;
+    volatile uint32_t RCR;
+    volatile uint32_t CCR1;
+    volatile uint32_t CCR2;
+    volatile uint32_t CCR3;
+    volatile uint32_t CCR4;
+    volatile uint32_t BDTR;
+    volatile uint32_t DCR;
+    volatile uint32_t DMAR;
+    volatile const uint32_t RESERVED_80;
+    volatile uint32_t CCMR3_Output;
+    volatile uint32_t CCR5;
+    volatile uint32_t CRR6;
+    volatile uint32_t AF1;
+    volatile uint32_t AF2;
+    volatile uint32_t TISEL;
 };
 #define TIM1_CR1_CEN          (0x1UL << 0) 
 #define TIM1_CR1_CEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -35106,6 +35446,8 @@ struct TIM1 {
 #define TIM1_PSC_PSC_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 #define TIM1_ARR_ARR          (0xFFFFUL << 0) 
 #define TIM1_ARR_ARR_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
+#define TIM1_RCR_REP          (0xFFUL << 0) 
+#define TIM1_RCR_REP_VAL(X) (((uint32_t)(X) & 0xFFUL) << 0)
 #define TIM1_CCR1_CCR1          (0xFFFFUL << 0) 
 #define TIM1_CCR1_CCR1_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 #define TIM1_CCR2_CCR2          (0xFFFFUL << 0) 
@@ -35114,14 +35456,6 @@ struct TIM1 {
 #define TIM1_CCR3_CCR3_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 #define TIM1_CCR4_CCR4          (0xFFFFUL << 0) 
 #define TIM1_CCR4_CCR4_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
-#define TIM1_DCR_DBL          (0x1FUL << 8) 
-#define TIM1_DCR_DBL_VAL(X) (((uint32_t)(X) & 0x1FUL) << 8)
-#define TIM1_DCR_DBA          (0x1FUL << 0) 
-#define TIM1_DCR_DBA_VAL(X) (((uint32_t)(X) & 0x1FUL) << 0)
-#define TIM1_DMAR_DMAB          (0xFFFFUL << 0) 
-#define TIM1_DMAR_DMAB_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
-#define TIM1_RCR_REP          (0xFFUL << 0) 
-#define TIM1_RCR_REP_VAL(X) (((uint32_t)(X) & 0xFFUL) << 0)
 #define TIM1_BDTR_DTG          (0xFFUL << 0) 
 #define TIM1_BDTR_DTG_VAL(X) (((uint32_t)(X) & 0xFFUL) << 0)
 #define TIM1_BDTR_LOCK          (0x3UL << 8) 
@@ -35146,6 +35480,12 @@ struct TIM1 {
 #define TIM1_BDTR_BK2E_VAL(X) (((uint32_t)(X) & 0x1UL) << 24)
 #define TIM1_BDTR_BK2P          (0x1UL << 25) 
 #define TIM1_BDTR_BK2P_VAL(X) (((uint32_t)(X) & 0x1UL) << 25)
+#define TIM1_DCR_DBL          (0x1FUL << 8) 
+#define TIM1_DCR_DBL_VAL(X) (((uint32_t)(X) & 0x1FUL) << 8)
+#define TIM1_DCR_DBA          (0x1FUL << 0) 
+#define TIM1_DCR_DBA_VAL(X) (((uint32_t)(X) & 0x1FUL) << 0)
+#define TIM1_DMAR_DMAB          (0xFFFFUL << 0) 
+#define TIM1_DMAR_DMAB_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 #define TIM1_CCMR3_Output_OC5FE          (0x1UL << 2) 
 #define TIM1_CCMR3_Output_OC5FE_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
 #define TIM1_CCMR3_Output_OC5PE          (0x1UL << 3) 
@@ -35216,36 +35556,43 @@ struct TIM1 {
 #define TIM1_TISEL_TI4SEL_VAL(X) (((uint32_t)(X) & 0xFUL) << 24)
 
 #define TIM1  ((struct TIM1*)(0x40010000UL))
+
+
+
 struct TIM8 {
-  volatile uint32_t CR1;
-  volatile uint32_t CR2;
-  volatile uint32_t SMCR;
-  volatile uint32_t DIER;
-  volatile uint32_t SR;
-  volatile uint32_t EGR;
-  volatile uint32_t CCMR1_Output;
-  volatile uint32_t CCMR1_Input;
-  volatile uint32_t CCMR2_Output;
-  volatile uint32_t CCMR2_Input;
-  volatile uint32_t CCER;
-  volatile uint32_t CNT;
-  volatile uint32_t PSC;
-  volatile uint32_t ARR;
-  volatile uint32_t RCR;
-  volatile uint32_t CCR1;
-  volatile uint32_t CCR2;
-  volatile uint32_t CCR3;
-  volatile uint32_t CCR4;
-  volatile uint32_t BDTR;
-  volatile uint32_t DCR;
-  volatile uint32_t DMAR;
-  const volatile uint32_t RESERVED84[1];
-  volatile uint32_t CCMR3_Output;
-  volatile uint32_t CCR5;
-  volatile uint32_t CRR6;
-  volatile uint32_t AF1;
-  volatile uint32_t AF2;
-  volatile uint32_t TISEL;
+    volatile uint32_t CR1;
+    volatile uint32_t CR2;
+    volatile uint32_t SMCR;
+    volatile uint32_t DIER;
+    volatile uint32_t SR;
+    volatile uint32_t EGR;
+  union {
+      volatile uint32_t CCMR1_Output;
+      volatile uint32_t CCMR1_Input;
+  };
+  union {
+      volatile uint32_t CCMR2_Output;
+      volatile uint32_t CCMR2_Input;
+  };
+    volatile uint32_t CCER;
+    volatile uint32_t CNT;
+    volatile uint32_t PSC;
+    volatile uint32_t ARR;
+    volatile uint32_t RCR;
+    volatile uint32_t CCR1;
+    volatile uint32_t CCR2;
+    volatile uint32_t CCR3;
+    volatile uint32_t CCR4;
+    volatile uint32_t BDTR;
+    volatile uint32_t DCR;
+    volatile uint32_t DMAR;
+    volatile const uint32_t RESERVED_80;
+    volatile uint32_t CCMR3_Output;
+    volatile uint32_t CCR5;
+    volatile uint32_t CRR6;
+    volatile uint32_t AF1;
+    volatile uint32_t AF2;
+    volatile uint32_t TISEL;
 };
 #define TIM8_CR1_CEN          (0x1UL << 0) 
 #define TIM8_CR1_CEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -35511,6 +35858,8 @@ struct TIM8 {
 #define TIM8_PSC_PSC_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 #define TIM8_ARR_ARR          (0xFFFFUL << 0) 
 #define TIM8_ARR_ARR_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
+#define TIM8_RCR_REP          (0xFFUL << 0) 
+#define TIM8_RCR_REP_VAL(X) (((uint32_t)(X) & 0xFFUL) << 0)
 #define TIM8_CCR1_CCR1          (0xFFFFUL << 0) 
 #define TIM8_CCR1_CCR1_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 #define TIM8_CCR2_CCR2          (0xFFFFUL << 0) 
@@ -35519,14 +35868,6 @@ struct TIM8 {
 #define TIM8_CCR3_CCR3_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 #define TIM8_CCR4_CCR4          (0xFFFFUL << 0) 
 #define TIM8_CCR4_CCR4_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
-#define TIM8_DCR_DBL          (0x1FUL << 8) 
-#define TIM8_DCR_DBL_VAL(X) (((uint32_t)(X) & 0x1FUL) << 8)
-#define TIM8_DCR_DBA          (0x1FUL << 0) 
-#define TIM8_DCR_DBA_VAL(X) (((uint32_t)(X) & 0x1FUL) << 0)
-#define TIM8_DMAR_DMAB          (0xFFFFUL << 0) 
-#define TIM8_DMAR_DMAB_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
-#define TIM8_RCR_REP          (0xFFUL << 0) 
-#define TIM8_RCR_REP_VAL(X) (((uint32_t)(X) & 0xFFUL) << 0)
 #define TIM8_BDTR_DTG          (0xFFUL << 0) 
 #define TIM8_BDTR_DTG_VAL(X) (((uint32_t)(X) & 0xFFUL) << 0)
 #define TIM8_BDTR_LOCK          (0x3UL << 8) 
@@ -35551,6 +35892,12 @@ struct TIM8 {
 #define TIM8_BDTR_BK2E_VAL(X) (((uint32_t)(X) & 0x1UL) << 24)
 #define TIM8_BDTR_BK2P          (0x1UL << 25) 
 #define TIM8_BDTR_BK2P_VAL(X) (((uint32_t)(X) & 0x1UL) << 25)
+#define TIM8_DCR_DBL          (0x1FUL << 8) 
+#define TIM8_DCR_DBL_VAL(X) (((uint32_t)(X) & 0x1FUL) << 8)
+#define TIM8_DCR_DBA          (0x1FUL << 0) 
+#define TIM8_DCR_DBA_VAL(X) (((uint32_t)(X) & 0x1FUL) << 0)
+#define TIM8_DMAR_DMAB          (0xFFFFUL << 0) 
+#define TIM8_DMAR_DMAB_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 #define TIM8_CCMR3_Output_OC5FE          (0x1UL << 2) 
 #define TIM8_CCMR3_Output_OC5FE_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
 #define TIM8_CCMR3_Output_OC5PE          (0x1UL << 3) 
@@ -35621,79 +35968,82 @@ struct TIM8 {
 #define TIM8_TISEL_TI4SEL_VAL(X) (((uint32_t)(X) & 0xFUL) << 24)
 
 #define TIM8  ((struct TIM8*)(0x40010400UL))
+
+
+
 struct FDCAN1 {
-  volatile const uint32_t FDCAN_CREL;
-  volatile const uint32_t FDCAN_ENDN;
-  const volatile uint32_t RESERVED12[1];
-  volatile const uint32_t FDCAN_DBTP;
-  volatile const uint32_t FDCAN_TEST;
-  volatile const uint32_t FDCAN_RWD;
-  volatile uint32_t FDCAN_CCCR;
-  volatile uint32_t FDCAN_NBTP;
-  volatile uint32_t FDCAN_TSCC;
-  volatile uint32_t FDCAN_TSCV;
-  volatile uint32_t FDCAN_TOCC;
-  volatile uint32_t FDCAN_TOCV;
-  const volatile uint32_t RESERVED64[4];
-  volatile uint32_t FDCAN_ECR;
-  volatile uint32_t FDCAN_PSR;
-  volatile const uint32_t FDCAN_TDCR;
-  const volatile uint32_t RESERVED80[1];
-  volatile const uint32_t FDCAN_IR;
-  volatile const uint32_t FDCAN_IE;
-  volatile const uint32_t FDCAN_ILS;
-  volatile uint32_t FDCAN_ILE;
-  const volatile uint32_t RESERVED128[8];
-  volatile uint32_t FDCAN_GFC;
-  volatile uint32_t FDCAN_SIDFC;
-  volatile uint32_t FDCAN_XIDFC;
-  const volatile uint32_t RESERVED144[1];
-  volatile uint32_t FDCAN_XIDAM;
-  volatile const uint32_t FDCAN_HPMS;
-  volatile const uint32_t FDCAN_NDAT1;
-  volatile const uint32_t FDCAN_NDAT2;
-  volatile uint32_t FDCAN_RXF0C;
-  volatile uint32_t FDCAN_RXF0S;
-  volatile uint32_t FDCAN_RXF0A;
-  volatile uint32_t FDCAN_RXBC;
-  volatile uint32_t FDCAN_RXF1C;
-  volatile uint32_t FDCAN_RXF1S;
-  volatile uint32_t FDCAN_RXF1A;
-  volatile uint32_t FDCAN_RXESC;
-  volatile uint32_t FDCAN_TXBC;
-  volatile const uint32_t FDCAN_TXFQS;
-  volatile uint32_t FDCAN_TXESC;
-  volatile const uint32_t FDCAN_TXBRP;
-  volatile uint32_t FDCAN_TXBAR;
-  volatile uint32_t FDCAN_TXBCR;
-  volatile uint32_t FDCAN_TXBTO;
-  volatile const uint32_t FDCAN_TXBCF;
-  volatile uint32_t FDCAN_TXBTIE;
-  volatile uint32_t FDCAN_TXBCIE;
-  const volatile uint32_t RESERVED240[2];
-  volatile uint32_t FDCAN_TXEFC;
-  volatile uint32_t FDCAN_TXEFS;
-  volatile uint32_t FDCAN_TXEFA;
-  const volatile uint32_t RESERVED256[1];
-  volatile uint32_t FDCAN_TTTMC;
-  volatile uint32_t FDCAN_TTRMC;
-  volatile uint32_t FDCAN_TTOCF;
-  volatile uint32_t FDCAN_TTMLM;
-  volatile uint32_t FDCAN_TURCF;
-  volatile uint32_t FDCAN_TTOCN;
-  volatile uint32_t CAN_TTGTP;
-  volatile uint32_t FDCAN_TTTMK;
-  volatile uint32_t FDCAN_TTIR;
-  volatile uint32_t FDCAN_TTIE;
-  volatile uint32_t FDCAN_TTILS;
-  volatile uint32_t FDCAN_TTOST;
-  volatile const uint32_t FDCAN_TURNA;
-  volatile const uint32_t FDCAN_TTLGT;
-  volatile const uint32_t FDCAN_TTCTC;
-  volatile const uint32_t FDCAN_TTCPT;
-  volatile const uint32_t FDCAN_TTCSM;
-  const volatile uint32_t RESERVED768[111];
-  volatile uint32_t FDCAN_TTTS;
+    volatile const uint32_t FDCAN_CREL;
+    volatile const uint32_t FDCAN_ENDN;
+    volatile const uint32_t RESERVED_8;
+    volatile const uint32_t FDCAN_DBTP;
+    volatile const uint32_t FDCAN_TEST;
+    volatile const uint32_t FDCAN_RWD;
+    volatile uint32_t FDCAN_CCCR;
+    volatile uint32_t FDCAN_NBTP;
+    volatile uint32_t FDCAN_TSCC;
+    volatile uint32_t FDCAN_TSCV;
+    volatile uint32_t FDCAN_TOCC;
+    volatile uint32_t FDCAN_TOCV;
+    volatile const uint32_t RESERVED_48[4];
+    volatile uint32_t FDCAN_ECR;
+    volatile uint32_t FDCAN_PSR;
+    volatile const uint32_t FDCAN_TDCR;
+    volatile const uint32_t RESERVED_76;
+    volatile const uint32_t FDCAN_IR;
+    volatile const uint32_t FDCAN_IE;
+    volatile const uint32_t FDCAN_ILS;
+    volatile uint32_t FDCAN_ILE;
+    volatile const uint32_t RESERVED_96[8];
+    volatile uint32_t FDCAN_GFC;
+    volatile uint32_t FDCAN_SIDFC;
+    volatile uint32_t FDCAN_XIDFC;
+    volatile const uint32_t RESERVED_140;
+    volatile uint32_t FDCAN_XIDAM;
+    volatile const uint32_t FDCAN_HPMS;
+    volatile const uint32_t FDCAN_NDAT1;
+    volatile const uint32_t FDCAN_NDAT2;
+    volatile uint32_t FDCAN_RXF0C;
+    volatile uint32_t FDCAN_RXF0S;
+    volatile uint32_t FDCAN_RXF0A;
+    volatile uint32_t FDCAN_RXBC;
+    volatile uint32_t FDCAN_RXF1C;
+    volatile uint32_t FDCAN_RXF1S;
+    volatile uint32_t FDCAN_RXF1A;
+    volatile uint32_t FDCAN_RXESC;
+    volatile uint32_t FDCAN_TXBC;
+    volatile const uint32_t FDCAN_TXFQS;
+    volatile uint32_t FDCAN_TXESC;
+    volatile const uint32_t FDCAN_TXBRP;
+    volatile uint32_t FDCAN_TXBAR;
+    volatile uint32_t FDCAN_TXBCR;
+    volatile uint32_t FDCAN_TXBTO;
+    volatile const uint32_t FDCAN_TXBCF;
+    volatile uint32_t FDCAN_TXBTIE;
+    volatile uint32_t FDCAN_TXBCIE;
+    volatile const uint32_t RESERVED_232[2];
+    volatile uint32_t FDCAN_TXEFC;
+    volatile uint32_t FDCAN_TXEFS;
+    volatile uint32_t FDCAN_TXEFA;
+    volatile const uint32_t RESERVED_252;
+    volatile uint32_t FDCAN_TTTMC;
+    volatile uint32_t FDCAN_TTRMC;
+    volatile uint32_t FDCAN_TTOCF;
+    volatile uint32_t FDCAN_TTMLM;
+    volatile uint32_t FDCAN_TURCF;
+    volatile uint32_t FDCAN_TTOCN;
+    volatile uint32_t CAN_TTGTP;
+    volatile uint32_t FDCAN_TTTMK;
+    volatile uint32_t FDCAN_TTIR;
+    volatile uint32_t FDCAN_TTIE;
+    volatile uint32_t FDCAN_TTILS;
+    volatile uint32_t FDCAN_TTOST;
+    volatile const uint32_t FDCAN_TURNA;
+    volatile const uint32_t FDCAN_TTLGT;
+    volatile const uint32_t FDCAN_TTCTC;
+    volatile const uint32_t FDCAN_TTCPT;
+    volatile const uint32_t FDCAN_TTCSM;
+    volatile const uint32_t RESERVED_324[111];
+    volatile uint32_t FDCAN_TTTS;
 };
 #define FDCAN1_FDCAN_CREL_REL          (0xFUL << 28) 
 #define FDCAN1_FDCAN_CREL_REL_VAL(X) (((uint32_t)(X) & 0xFUL) << 28)
@@ -36485,79 +36835,82 @@ struct FDCAN1 {
 #define FDCAN1_FDCAN_TTTS_EVTSEL_VAL(X) (((uint32_t)(X) & 0x3UL) << 4)
 
 #define FDCAN1  ((struct FDCAN1*)(0x4000A000UL))
+
+
+
 struct FDCAN2 {
-  volatile const uint32_t FDCAN_CREL;
-  volatile const uint32_t FDCAN_ENDN;
-  const volatile uint32_t RESERVED12[1];
-  volatile const uint32_t FDCAN_DBTP;
-  volatile const uint32_t FDCAN_TEST;
-  volatile const uint32_t FDCAN_RWD;
-  volatile uint32_t FDCAN_CCCR;
-  volatile uint32_t FDCAN_NBTP;
-  volatile uint32_t FDCAN_TSCC;
-  volatile uint32_t FDCAN_TSCV;
-  volatile uint32_t FDCAN_TOCC;
-  volatile uint32_t FDCAN_TOCV;
-  const volatile uint32_t RESERVED64[4];
-  volatile uint32_t FDCAN_ECR;
-  volatile uint32_t FDCAN_PSR;
-  volatile const uint32_t FDCAN_TDCR;
-  const volatile uint32_t RESERVED80[1];
-  volatile const uint32_t FDCAN_IR;
-  volatile const uint32_t FDCAN_IE;
-  volatile const uint32_t FDCAN_ILS;
-  volatile uint32_t FDCAN_ILE;
-  const volatile uint32_t RESERVED128[8];
-  volatile uint32_t FDCAN_GFC;
-  volatile uint32_t FDCAN_SIDFC;
-  volatile uint32_t FDCAN_XIDFC;
-  const volatile uint32_t RESERVED144[1];
-  volatile uint32_t FDCAN_XIDAM;
-  volatile const uint32_t FDCAN_HPMS;
-  volatile const uint32_t FDCAN_NDAT1;
-  volatile const uint32_t FDCAN_NDAT2;
-  volatile uint32_t FDCAN_RXF0C;
-  volatile uint32_t FDCAN_RXF0S;
-  volatile uint32_t FDCAN_RXF0A;
-  volatile uint32_t FDCAN_RXBC;
-  volatile uint32_t FDCAN_RXF1C;
-  volatile uint32_t FDCAN_RXF1S;
-  volatile uint32_t FDCAN_RXF1A;
-  volatile uint32_t FDCAN_RXESC;
-  volatile uint32_t FDCAN_TXBC;
-  volatile const uint32_t FDCAN_TXFQS;
-  volatile uint32_t FDCAN_TXESC;
-  volatile const uint32_t FDCAN_TXBRP;
-  volatile uint32_t FDCAN_TXBAR;
-  volatile uint32_t FDCAN_TXBCR;
-  volatile uint32_t FDCAN_TXBTO;
-  volatile const uint32_t FDCAN_TXBCF;
-  volatile uint32_t FDCAN_TXBTIE;
-  volatile uint32_t FDCAN_TXBCIE;
-  const volatile uint32_t RESERVED240[2];
-  volatile uint32_t FDCAN_TXEFC;
-  volatile uint32_t FDCAN_TXEFS;
-  volatile uint32_t FDCAN_TXEFA;
-  const volatile uint32_t RESERVED256[1];
-  volatile uint32_t FDCAN_TTTMC;
-  volatile uint32_t FDCAN_TTRMC;
-  volatile uint32_t FDCAN_TTOCF;
-  volatile uint32_t FDCAN_TTMLM;
-  volatile uint32_t FDCAN_TURCF;
-  volatile uint32_t FDCAN_TTOCN;
-  volatile uint32_t CAN_TTGTP;
-  volatile uint32_t FDCAN_TTTMK;
-  volatile uint32_t FDCAN_TTIR;
-  volatile uint32_t FDCAN_TTIE;
-  volatile uint32_t FDCAN_TTILS;
-  volatile uint32_t FDCAN_TTOST;
-  volatile const uint32_t FDCAN_TURNA;
-  volatile const uint32_t FDCAN_TTLGT;
-  volatile const uint32_t FDCAN_TTCTC;
-  volatile const uint32_t FDCAN_TTCPT;
-  volatile const uint32_t FDCAN_TTCSM;
-  const volatile uint32_t RESERVED768[111];
-  volatile uint32_t FDCAN_TTTS;
+    volatile const uint32_t FDCAN_CREL;
+    volatile const uint32_t FDCAN_ENDN;
+    volatile const uint32_t RESERVED_8;
+    volatile const uint32_t FDCAN_DBTP;
+    volatile const uint32_t FDCAN_TEST;
+    volatile const uint32_t FDCAN_RWD;
+    volatile uint32_t FDCAN_CCCR;
+    volatile uint32_t FDCAN_NBTP;
+    volatile uint32_t FDCAN_TSCC;
+    volatile uint32_t FDCAN_TSCV;
+    volatile uint32_t FDCAN_TOCC;
+    volatile uint32_t FDCAN_TOCV;
+    volatile const uint32_t RESERVED_48[4];
+    volatile uint32_t FDCAN_ECR;
+    volatile uint32_t FDCAN_PSR;
+    volatile const uint32_t FDCAN_TDCR;
+    volatile const uint32_t RESERVED_76;
+    volatile const uint32_t FDCAN_IR;
+    volatile const uint32_t FDCAN_IE;
+    volatile const uint32_t FDCAN_ILS;
+    volatile uint32_t FDCAN_ILE;
+    volatile const uint32_t RESERVED_96[8];
+    volatile uint32_t FDCAN_GFC;
+    volatile uint32_t FDCAN_SIDFC;
+    volatile uint32_t FDCAN_XIDFC;
+    volatile const uint32_t RESERVED_140;
+    volatile uint32_t FDCAN_XIDAM;
+    volatile const uint32_t FDCAN_HPMS;
+    volatile const uint32_t FDCAN_NDAT1;
+    volatile const uint32_t FDCAN_NDAT2;
+    volatile uint32_t FDCAN_RXF0C;
+    volatile uint32_t FDCAN_RXF0S;
+    volatile uint32_t FDCAN_RXF0A;
+    volatile uint32_t FDCAN_RXBC;
+    volatile uint32_t FDCAN_RXF1C;
+    volatile uint32_t FDCAN_RXF1S;
+    volatile uint32_t FDCAN_RXF1A;
+    volatile uint32_t FDCAN_RXESC;
+    volatile uint32_t FDCAN_TXBC;
+    volatile const uint32_t FDCAN_TXFQS;
+    volatile uint32_t FDCAN_TXESC;
+    volatile const uint32_t FDCAN_TXBRP;
+    volatile uint32_t FDCAN_TXBAR;
+    volatile uint32_t FDCAN_TXBCR;
+    volatile uint32_t FDCAN_TXBTO;
+    volatile const uint32_t FDCAN_TXBCF;
+    volatile uint32_t FDCAN_TXBTIE;
+    volatile uint32_t FDCAN_TXBCIE;
+    volatile const uint32_t RESERVED_232[2];
+    volatile uint32_t FDCAN_TXEFC;
+    volatile uint32_t FDCAN_TXEFS;
+    volatile uint32_t FDCAN_TXEFA;
+    volatile const uint32_t RESERVED_252;
+    volatile uint32_t FDCAN_TTTMC;
+    volatile uint32_t FDCAN_TTRMC;
+    volatile uint32_t FDCAN_TTOCF;
+    volatile uint32_t FDCAN_TTMLM;
+    volatile uint32_t FDCAN_TURCF;
+    volatile uint32_t FDCAN_TTOCN;
+    volatile uint32_t CAN_TTGTP;
+    volatile uint32_t FDCAN_TTTMK;
+    volatile uint32_t FDCAN_TTIR;
+    volatile uint32_t FDCAN_TTIE;
+    volatile uint32_t FDCAN_TTILS;
+    volatile uint32_t FDCAN_TTOST;
+    volatile const uint32_t FDCAN_TURNA;
+    volatile const uint32_t FDCAN_TTLGT;
+    volatile const uint32_t FDCAN_TTCTC;
+    volatile const uint32_t FDCAN_TTCPT;
+    volatile const uint32_t FDCAN_TTCSM;
+    volatile const uint32_t RESERVED_324[111];
+    volatile uint32_t FDCAN_TTTS;
 };
 #define FDCAN2_FDCAN_CREL_REL          (0xFUL << 28) 
 #define FDCAN2_FDCAN_CREL_REL_VAL(X) (((uint32_t)(X) & 0xFUL) << 28)
@@ -37349,13 +37702,16 @@ struct FDCAN2 {
 #define FDCAN2_FDCAN_TTTS_EVTSEL_VAL(X) (((uint32_t)(X) & 0x3UL) << 4)
 
 #define FDCAN2  ((struct FDCAN2*)(0x4000A400UL))
+
+
+
 struct CAN_CCU {
-  volatile uint32_t CREL;
-  volatile uint32_t CCFG;
-  volatile uint32_t CSTAT;
-  volatile uint32_t CWD;
-  volatile uint32_t IR;
-  volatile uint32_t IE;
+    volatile uint32_t CREL;
+    volatile uint32_t CCFG;
+    volatile uint32_t CSTAT;
+    volatile uint32_t CWD;
+    volatile uint32_t IR;
+    volatile uint32_t IE;
 };
 #define CAN_CCU_CREL_DAY          (0xFFUL << 0) 
 #define CAN_CCU_CREL_DAY_VAL(X) (((uint32_t)(X) & 0xFFUL) << 0)
@@ -37401,78 +37757,81 @@ struct CAN_CCU {
 #define CAN_CCU_IE_CSCE_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
 
 #define CAN_CCU  ((struct CAN_CCU*)(0x4000A800UL))
+
+
+
 struct MDIOS {
-  volatile uint32_t CR;
-  volatile const uint32_t WRFR;
-  volatile uint32_t CWRFR;
-  volatile const uint32_t RDFR;
-  volatile uint32_t CRDFR;
-  volatile const uint32_t SR;
-  volatile uint32_t CLRFR;
-  volatile const uint32_t DINR0;
-  volatile const uint32_t DINR1;
-  volatile const uint32_t DINR2;
-  volatile const uint32_t DINR3;
-  volatile const uint32_t DINR4;
-  volatile const uint32_t DINR5;
-  volatile const uint32_t DINR6;
-  volatile const uint32_t DINR7;
-  volatile const uint32_t DINR8;
-  volatile const uint32_t DINR9;
-  volatile const uint32_t DINR10;
-  volatile const uint32_t DINR11;
-  volatile const uint32_t DINR12;
-  volatile const uint32_t DINR13;
-  volatile const uint32_t DINR14;
-  volatile const uint32_t DINR15;
-  volatile const uint32_t DINR16;
-  volatile const uint32_t DINR17;
-  volatile const uint32_t DINR18;
-  volatile const uint32_t DINR19;
-  volatile const uint32_t DINR20;
-  volatile const uint32_t DINR21;
-  volatile const uint32_t DINR22;
-  volatile const uint32_t DINR23;
-  volatile const uint32_t DINR24;
-  volatile const uint32_t DINR25;
-  volatile const uint32_t DINR26;
-  volatile const uint32_t DINR27;
-  volatile const uint32_t DINR28;
-  volatile const uint32_t DINR29;
-  volatile const uint32_t DINR30;
-  volatile const uint32_t DINR31;
-  volatile uint32_t DOUTR0;
-  volatile uint32_t DOUTR1;
-  volatile uint32_t DOUTR2;
-  volatile uint32_t DOUTR3;
-  volatile uint32_t DOUTR4;
-  volatile uint32_t DOUTR5;
-  volatile uint32_t DOUTR6;
-  volatile uint32_t DOUTR7;
-  volatile uint32_t DOUTR8;
-  volatile uint32_t DOUTR9;
-  volatile uint32_t DOUTR10;
-  volatile uint32_t DOUTR11;
-  volatile uint32_t DOUTR12;
-  volatile uint32_t DOUTR13;
-  volatile uint32_t DOUTR14;
-  volatile uint32_t DOUTR15;
-  volatile uint32_t DOUTR16;
-  volatile uint32_t DOUTR17;
-  volatile uint32_t DOUTR18;
-  volatile uint32_t DOUTR19;
-  volatile uint32_t DOUTR20;
-  volatile uint32_t DOUTR21;
-  volatile uint32_t DOUTR22;
-  volatile uint32_t DOUTR23;
-  volatile uint32_t DOUTR24;
-  volatile uint32_t DOUTR25;
-  volatile uint32_t DOUTR26;
-  volatile uint32_t DOUTR27;
-  volatile uint32_t DOUTR28;
-  volatile uint32_t DOUTR29;
-  volatile uint32_t DOUTR30;
-  volatile uint32_t DOUTR31;
+    volatile uint32_t CR;
+    volatile const uint32_t WRFR;
+    volatile uint32_t CWRFR;
+    volatile const uint32_t RDFR;
+    volatile uint32_t CRDFR;
+    volatile const uint32_t SR;
+    volatile uint32_t CLRFR;
+    volatile const uint32_t DINR0;
+    volatile const uint32_t DINR1;
+    volatile const uint32_t DINR2;
+    volatile const uint32_t DINR3;
+    volatile const uint32_t DINR4;
+    volatile const uint32_t DINR5;
+    volatile const uint32_t DINR6;
+    volatile const uint32_t DINR7;
+    volatile const uint32_t DINR8;
+    volatile const uint32_t DINR9;
+    volatile const uint32_t DINR10;
+    volatile const uint32_t DINR11;
+    volatile const uint32_t DINR12;
+    volatile const uint32_t DINR13;
+    volatile const uint32_t DINR14;
+    volatile const uint32_t DINR15;
+    volatile const uint32_t DINR16;
+    volatile const uint32_t DINR17;
+    volatile const uint32_t DINR18;
+    volatile const uint32_t DINR19;
+    volatile const uint32_t DINR20;
+    volatile const uint32_t DINR21;
+    volatile const uint32_t DINR22;
+    volatile const uint32_t DINR23;
+    volatile const uint32_t DINR24;
+    volatile const uint32_t DINR25;
+    volatile const uint32_t DINR26;
+    volatile const uint32_t DINR27;
+    volatile const uint32_t DINR28;
+    volatile const uint32_t DINR29;
+    volatile const uint32_t DINR30;
+    volatile const uint32_t DINR31;
+    volatile uint32_t DOUTR0;
+    volatile uint32_t DOUTR1;
+    volatile uint32_t DOUTR2;
+    volatile uint32_t DOUTR3;
+    volatile uint32_t DOUTR4;
+    volatile uint32_t DOUTR5;
+    volatile uint32_t DOUTR6;
+    volatile uint32_t DOUTR7;
+    volatile uint32_t DOUTR8;
+    volatile uint32_t DOUTR9;
+    volatile uint32_t DOUTR10;
+    volatile uint32_t DOUTR11;
+    volatile uint32_t DOUTR12;
+    volatile uint32_t DOUTR13;
+    volatile uint32_t DOUTR14;
+    volatile uint32_t DOUTR15;
+    volatile uint32_t DOUTR16;
+    volatile uint32_t DOUTR17;
+    volatile uint32_t DOUTR18;
+    volatile uint32_t DOUTR19;
+    volatile uint32_t DOUTR20;
+    volatile uint32_t DOUTR21;
+    volatile uint32_t DOUTR22;
+    volatile uint32_t DOUTR23;
+    volatile uint32_t DOUTR24;
+    volatile uint32_t DOUTR25;
+    volatile uint32_t DOUTR26;
+    volatile uint32_t DOUTR27;
+    volatile uint32_t DOUTR28;
+    volatile uint32_t DOUTR29;
+    volatile uint32_t DOUTR30;
+    volatile uint32_t DOUTR31;
 };
 #define MDIOS_CR_EN          (0x1UL << 0) 
 #define MDIOS_CR_EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -37636,14 +37995,17 @@ struct MDIOS {
 #define MDIOS_DOUTR31_DOUT31_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 
 #define MDIOS  ((struct MDIOS*)(0x40009400UL))
+
+
+
 struct OPAMP {
-  volatile uint32_t OPAMP1_CSR;
-  volatile uint32_t OPAMP1_OTR;
-  volatile uint32_t OPAMP1_HSOTR;
-  const volatile uint32_t RESERVED16[1];
-  volatile uint32_t OPAMP2_CSR;
-  volatile uint32_t OPAMP2_OTR;
-  volatile uint32_t OPAMP2_HSOTR;
+    volatile uint32_t OPAMP1_CSR;
+    volatile uint32_t OPAMP1_OTR;
+    volatile uint32_t OPAMP1_HSOTR;
+    volatile const uint32_t RESERVED_12;
+    volatile uint32_t OPAMP2_CSR;
+    volatile uint32_t OPAMP2_OTR;
+    volatile uint32_t OPAMP2_HSOTR;
 };
 #define OPAMP_OPAMP1_CSR_OPAEN          (0x1UL << 0) 
 #define OPAMP_OPAMP1_CSR_OPAEN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -37705,17 +38067,20 @@ struct OPAMP {
 #define OPAMP_OPAMP2_HSOTR_TRIMLPOFFSETP_VAL(X) (((uint32_t)(X) & 0x1FUL) << 8)
 
 #define OPAMP  ((struct OPAMP*)(0x40009000UL))
+
+
+
 struct SWPMI {
-  volatile uint32_t CR;
-  volatile uint32_t BRR;
-  const volatile uint32_t RESERVED12[1];
-  volatile const uint32_t ISR;
-  volatile uint32_t ICR;
-  volatile uint32_t IER;
-  volatile const uint32_t RFL;
-  volatile uint32_t TDR;
-  volatile const uint32_t RDR;
-  volatile uint32_t OR;
+    volatile uint32_t CR;
+    volatile uint32_t BRR;
+    volatile const uint32_t RESERVED_8;
+    volatile const uint32_t ISR;
+    volatile uint32_t ICR;
+    volatile uint32_t IER;
+    volatile const uint32_t RFL;
+    volatile uint32_t TDR;
+    volatile const uint32_t RDR;
+    volatile uint32_t OR;
 };
 #define SWPMI_CR_RXDMA          (0x1UL << 0) 
 #define SWPMI_CR_RXDMA_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -37807,33 +38172,40 @@ struct SWPMI {
 #define SWPMI_OR_SWP_CLASS_VAL(X) (((uint32_t)(X) & 0x1UL) << 1)
 
 #define SWPMI  ((struct SWPMI*)(0x40008800UL))
+
+
+
 struct TIM2 {
-  volatile uint32_t CR1;
-  volatile uint32_t CR2;
-  volatile uint32_t SMCR;
-  volatile uint32_t DIER;
-  volatile uint32_t SR;
-  volatile uint32_t EGR;
-  volatile uint32_t CCMR1_Output;
-  volatile uint32_t CCMR1_Input;
-  volatile uint32_t CCMR2_Output;
-  volatile uint32_t CCMR2_Input;
-  volatile uint32_t CCER;
-  volatile uint32_t CNT;
-  volatile uint32_t PSC;
-  volatile uint32_t ARR;
-  const volatile uint32_t RESERVED52[1];
-  volatile uint32_t CCR1;
-  volatile uint32_t CCR2;
-  volatile uint32_t CCR3;
-  volatile uint32_t CCR4;
-  const volatile uint32_t RESERVED72[1];
-  volatile uint32_t DCR;
-  volatile uint32_t DMAR;
-  const volatile uint32_t RESERVED96[4];
-  volatile uint32_t AF1;
-  const volatile uint32_t RESERVED104[1];
-  volatile uint32_t TISEL;
+    volatile uint32_t CR1;
+    volatile uint32_t CR2;
+    volatile uint32_t SMCR;
+    volatile uint32_t DIER;
+    volatile uint32_t SR;
+    volatile uint32_t EGR;
+  union {
+      volatile uint32_t CCMR1_Output;
+      volatile uint32_t CCMR1_Input;
+  };
+  union {
+      volatile uint32_t CCMR2_Output;
+      volatile uint32_t CCMR2_Input;
+  };
+    volatile uint32_t CCER;
+    volatile uint32_t CNT;
+    volatile uint32_t PSC;
+    volatile uint32_t ARR;
+    volatile const uint32_t RESERVED_48;
+    volatile uint32_t CCR1;
+    volatile uint32_t CCR2;
+    volatile uint32_t CCR3;
+    volatile uint32_t CCR4;
+    volatile const uint32_t RESERVED_68;
+    volatile uint32_t DCR;
+    volatile uint32_t DMAR;
+    volatile const uint32_t RESERVED_80[4];
+    volatile uint32_t AF1;
+    volatile const uint32_t RESERVED_100;
+    volatile uint32_t TISEL;
 };
 #define TIM2_CR1_UIFREMAP          (0x1UL << 11) 
 #define TIM2_CR1_UIFREMAP_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
@@ -38073,33 +38445,40 @@ struct TIM2 {
 #define TIM2_TISEL_TI4SEL_VAL(X) (((uint32_t)(X) & 0xFUL) << 24)
 
 #define TIM2  ((struct TIM2*)(0x40000000UL))
+
+
+
 struct TIM3 {
-  volatile uint32_t CR1;
-  volatile uint32_t CR2;
-  volatile uint32_t SMCR;
-  volatile uint32_t DIER;
-  volatile uint32_t SR;
-  volatile uint32_t EGR;
-  volatile uint32_t CCMR1_Output;
-  volatile uint32_t CCMR1_Input;
-  volatile uint32_t CCMR2_Output;
-  volatile uint32_t CCMR2_Input;
-  volatile uint32_t CCER;
-  volatile uint32_t CNT;
-  volatile uint32_t PSC;
-  volatile uint32_t ARR;
-  const volatile uint32_t RESERVED52[1];
-  volatile uint32_t CCR1;
-  volatile uint32_t CCR2;
-  volatile uint32_t CCR3;
-  volatile uint32_t CCR4;
-  const volatile uint32_t RESERVED72[1];
-  volatile uint32_t DCR;
-  volatile uint32_t DMAR;
-  const volatile uint32_t RESERVED96[4];
-  volatile uint32_t AF1;
-  const volatile uint32_t RESERVED104[1];
-  volatile uint32_t TISEL;
+    volatile uint32_t CR1;
+    volatile uint32_t CR2;
+    volatile uint32_t SMCR;
+    volatile uint32_t DIER;
+    volatile uint32_t SR;
+    volatile uint32_t EGR;
+  union {
+      volatile uint32_t CCMR1_Output;
+      volatile uint32_t CCMR1_Input;
+  };
+  union {
+      volatile uint32_t CCMR2_Output;
+      volatile uint32_t CCMR2_Input;
+  };
+    volatile uint32_t CCER;
+    volatile uint32_t CNT;
+    volatile uint32_t PSC;
+    volatile uint32_t ARR;
+    volatile const uint32_t RESERVED_48;
+    volatile uint32_t CCR1;
+    volatile uint32_t CCR2;
+    volatile uint32_t CCR3;
+    volatile uint32_t CCR4;
+    volatile const uint32_t RESERVED_68;
+    volatile uint32_t DCR;
+    volatile uint32_t DMAR;
+    volatile const uint32_t RESERVED_80[4];
+    volatile uint32_t AF1;
+    volatile const uint32_t RESERVED_100;
+    volatile uint32_t TISEL;
 };
 #define TIM3_CR1_UIFREMAP          (0x1UL << 11) 
 #define TIM3_CR1_UIFREMAP_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
@@ -38339,33 +38718,40 @@ struct TIM3 {
 #define TIM3_TISEL_TI4SEL_VAL(X) (((uint32_t)(X) & 0xFUL) << 24)
 
 #define TIM3  ((struct TIM3*)(0x40000400UL))
+
+
+
 struct TIM4 {
-  volatile uint32_t CR1;
-  volatile uint32_t CR2;
-  volatile uint32_t SMCR;
-  volatile uint32_t DIER;
-  volatile uint32_t SR;
-  volatile uint32_t EGR;
-  volatile uint32_t CCMR1_Output;
-  volatile uint32_t CCMR1_Input;
-  volatile uint32_t CCMR2_Output;
-  volatile uint32_t CCMR2_Input;
-  volatile uint32_t CCER;
-  volatile uint32_t CNT;
-  volatile uint32_t PSC;
-  volatile uint32_t ARR;
-  const volatile uint32_t RESERVED52[1];
-  volatile uint32_t CCR1;
-  volatile uint32_t CCR2;
-  volatile uint32_t CCR3;
-  volatile uint32_t CCR4;
-  const volatile uint32_t RESERVED72[1];
-  volatile uint32_t DCR;
-  volatile uint32_t DMAR;
-  const volatile uint32_t RESERVED96[4];
-  volatile uint32_t AF1;
-  const volatile uint32_t RESERVED104[1];
-  volatile uint32_t TISEL;
+    volatile uint32_t CR1;
+    volatile uint32_t CR2;
+    volatile uint32_t SMCR;
+    volatile uint32_t DIER;
+    volatile uint32_t SR;
+    volatile uint32_t EGR;
+  union {
+      volatile uint32_t CCMR1_Output;
+      volatile uint32_t CCMR1_Input;
+  };
+  union {
+      volatile uint32_t CCMR2_Output;
+      volatile uint32_t CCMR2_Input;
+  };
+    volatile uint32_t CCER;
+    volatile uint32_t CNT;
+    volatile uint32_t PSC;
+    volatile uint32_t ARR;
+    volatile const uint32_t RESERVED_48;
+    volatile uint32_t CCR1;
+    volatile uint32_t CCR2;
+    volatile uint32_t CCR3;
+    volatile uint32_t CCR4;
+    volatile const uint32_t RESERVED_68;
+    volatile uint32_t DCR;
+    volatile uint32_t DMAR;
+    volatile const uint32_t RESERVED_80[4];
+    volatile uint32_t AF1;
+    volatile const uint32_t RESERVED_100;
+    volatile uint32_t TISEL;
 };
 #define TIM4_CR1_UIFREMAP          (0x1UL << 11) 
 #define TIM4_CR1_UIFREMAP_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
@@ -38605,33 +38991,40 @@ struct TIM4 {
 #define TIM4_TISEL_TI4SEL_VAL(X) (((uint32_t)(X) & 0xFUL) << 24)
 
 #define TIM4  ((struct TIM4*)(0x40000800UL))
+
+
+
 struct TIM5 {
-  volatile uint32_t CR1;
-  volatile uint32_t CR2;
-  volatile uint32_t SMCR;
-  volatile uint32_t DIER;
-  volatile uint32_t SR;
-  volatile uint32_t EGR;
-  volatile uint32_t CCMR1_Output;
-  volatile uint32_t CCMR1_Input;
-  volatile uint32_t CCMR2_Output;
-  volatile uint32_t CCMR2_Input;
-  volatile uint32_t CCER;
-  volatile uint32_t CNT;
-  volatile uint32_t PSC;
-  volatile uint32_t ARR;
-  const volatile uint32_t RESERVED52[1];
-  volatile uint32_t CCR1;
-  volatile uint32_t CCR2;
-  volatile uint32_t CCR3;
-  volatile uint32_t CCR4;
-  const volatile uint32_t RESERVED72[1];
-  volatile uint32_t DCR;
-  volatile uint32_t DMAR;
-  const volatile uint32_t RESERVED96[4];
-  volatile uint32_t AF1;
-  const volatile uint32_t RESERVED104[1];
-  volatile uint32_t TISEL;
+    volatile uint32_t CR1;
+    volatile uint32_t CR2;
+    volatile uint32_t SMCR;
+    volatile uint32_t DIER;
+    volatile uint32_t SR;
+    volatile uint32_t EGR;
+  union {
+      volatile uint32_t CCMR1_Output;
+      volatile uint32_t CCMR1_Input;
+  };
+  union {
+      volatile uint32_t CCMR2_Output;
+      volatile uint32_t CCMR2_Input;
+  };
+    volatile uint32_t CCER;
+    volatile uint32_t CNT;
+    volatile uint32_t PSC;
+    volatile uint32_t ARR;
+    volatile const uint32_t RESERVED_48;
+    volatile uint32_t CCR1;
+    volatile uint32_t CCR2;
+    volatile uint32_t CCR3;
+    volatile uint32_t CCR4;
+    volatile const uint32_t RESERVED_68;
+    volatile uint32_t DCR;
+    volatile uint32_t DMAR;
+    volatile const uint32_t RESERVED_80[4];
+    volatile uint32_t AF1;
+    volatile const uint32_t RESERVED_100;
+    volatile uint32_t TISEL;
 };
 #define TIM5_CR1_UIFREMAP          (0x1UL << 11) 
 #define TIM5_CR1_UIFREMAP_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
@@ -38871,33 +39264,40 @@ struct TIM5 {
 #define TIM5_TISEL_TI4SEL_VAL(X) (((uint32_t)(X) & 0xFUL) << 24)
 
 #define TIM5  ((struct TIM5*)(0x40000C00UL))
+
+
+
 struct TIM12 {
-  volatile uint32_t CR1;
-  volatile uint32_t CR2;
-  volatile uint32_t SMCR;
-  volatile uint32_t DIER;
-  volatile uint32_t SR;
-  volatile uint32_t EGR;
-  volatile uint32_t CCMR1_Output;
-  volatile uint32_t CCMR1_Input;
-  volatile uint32_t CCMR2_Output;
-  volatile uint32_t CCMR2_Input;
-  volatile uint32_t CCER;
-  volatile uint32_t CNT;
-  volatile uint32_t PSC;
-  volatile uint32_t ARR;
-  const volatile uint32_t RESERVED52[1];
-  volatile uint32_t CCR1;
-  volatile uint32_t CCR2;
-  volatile uint32_t CCR3;
-  volatile uint32_t CCR4;
-  const volatile uint32_t RESERVED72[1];
-  volatile uint32_t DCR;
-  volatile uint32_t DMAR;
-  const volatile uint32_t RESERVED96[4];
-  volatile uint32_t AF1;
-  const volatile uint32_t RESERVED104[1];
-  volatile uint32_t TISEL;
+    volatile uint32_t CR1;
+    volatile uint32_t CR2;
+    volatile uint32_t SMCR;
+    volatile uint32_t DIER;
+    volatile uint32_t SR;
+    volatile uint32_t EGR;
+  union {
+      volatile uint32_t CCMR1_Output;
+      volatile uint32_t CCMR1_Input;
+  };
+  union {
+      volatile uint32_t CCMR2_Output;
+      volatile uint32_t CCMR2_Input;
+  };
+    volatile uint32_t CCER;
+    volatile uint32_t CNT;
+    volatile uint32_t PSC;
+    volatile uint32_t ARR;
+    volatile const uint32_t RESERVED_48;
+    volatile uint32_t CCR1;
+    volatile uint32_t CCR2;
+    volatile uint32_t CCR3;
+    volatile uint32_t CCR4;
+    volatile const uint32_t RESERVED_68;
+    volatile uint32_t DCR;
+    volatile uint32_t DMAR;
+    volatile const uint32_t RESERVED_80[4];
+    volatile uint32_t AF1;
+    volatile const uint32_t RESERVED_100;
+    volatile uint32_t TISEL;
 };
 #define TIM12_CR1_UIFREMAP          (0x1UL << 11) 
 #define TIM12_CR1_UIFREMAP_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
@@ -39137,33 +39537,40 @@ struct TIM12 {
 #define TIM12_TISEL_TI4SEL_VAL(X) (((uint32_t)(X) & 0xFUL) << 24)
 
 #define TIM12  ((struct TIM12*)(0x40001800UL))
+
+
+
 struct TIM13 {
-  volatile uint32_t CR1;
-  volatile uint32_t CR2;
-  volatile uint32_t SMCR;
-  volatile uint32_t DIER;
-  volatile uint32_t SR;
-  volatile uint32_t EGR;
-  volatile uint32_t CCMR1_Output;
-  volatile uint32_t CCMR1_Input;
-  volatile uint32_t CCMR2_Output;
-  volatile uint32_t CCMR2_Input;
-  volatile uint32_t CCER;
-  volatile uint32_t CNT;
-  volatile uint32_t PSC;
-  volatile uint32_t ARR;
-  const volatile uint32_t RESERVED52[1];
-  volatile uint32_t CCR1;
-  volatile uint32_t CCR2;
-  volatile uint32_t CCR3;
-  volatile uint32_t CCR4;
-  const volatile uint32_t RESERVED72[1];
-  volatile uint32_t DCR;
-  volatile uint32_t DMAR;
-  const volatile uint32_t RESERVED96[4];
-  volatile uint32_t AF1;
-  const volatile uint32_t RESERVED104[1];
-  volatile uint32_t TISEL;
+    volatile uint32_t CR1;
+    volatile uint32_t CR2;
+    volatile uint32_t SMCR;
+    volatile uint32_t DIER;
+    volatile uint32_t SR;
+    volatile uint32_t EGR;
+  union {
+      volatile uint32_t CCMR1_Output;
+      volatile uint32_t CCMR1_Input;
+  };
+  union {
+      volatile uint32_t CCMR2_Output;
+      volatile uint32_t CCMR2_Input;
+  };
+    volatile uint32_t CCER;
+    volatile uint32_t CNT;
+    volatile uint32_t PSC;
+    volatile uint32_t ARR;
+    volatile const uint32_t RESERVED_48;
+    volatile uint32_t CCR1;
+    volatile uint32_t CCR2;
+    volatile uint32_t CCR3;
+    volatile uint32_t CCR4;
+    volatile const uint32_t RESERVED_68;
+    volatile uint32_t DCR;
+    volatile uint32_t DMAR;
+    volatile const uint32_t RESERVED_80[4];
+    volatile uint32_t AF1;
+    volatile const uint32_t RESERVED_100;
+    volatile uint32_t TISEL;
 };
 #define TIM13_CR1_UIFREMAP          (0x1UL << 11) 
 #define TIM13_CR1_UIFREMAP_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
@@ -39403,33 +39810,40 @@ struct TIM13 {
 #define TIM13_TISEL_TI4SEL_VAL(X) (((uint32_t)(X) & 0xFUL) << 24)
 
 #define TIM13  ((struct TIM13*)(0x40001C00UL))
+
+
+
 struct TIM14 {
-  volatile uint32_t CR1;
-  volatile uint32_t CR2;
-  volatile uint32_t SMCR;
-  volatile uint32_t DIER;
-  volatile uint32_t SR;
-  volatile uint32_t EGR;
-  volatile uint32_t CCMR1_Output;
-  volatile uint32_t CCMR1_Input;
-  volatile uint32_t CCMR2_Output;
-  volatile uint32_t CCMR2_Input;
-  volatile uint32_t CCER;
-  volatile uint32_t CNT;
-  volatile uint32_t PSC;
-  volatile uint32_t ARR;
-  const volatile uint32_t RESERVED52[1];
-  volatile uint32_t CCR1;
-  volatile uint32_t CCR2;
-  volatile uint32_t CCR3;
-  volatile uint32_t CCR4;
-  const volatile uint32_t RESERVED72[1];
-  volatile uint32_t DCR;
-  volatile uint32_t DMAR;
-  const volatile uint32_t RESERVED96[4];
-  volatile uint32_t AF1;
-  const volatile uint32_t RESERVED104[1];
-  volatile uint32_t TISEL;
+    volatile uint32_t CR1;
+    volatile uint32_t CR2;
+    volatile uint32_t SMCR;
+    volatile uint32_t DIER;
+    volatile uint32_t SR;
+    volatile uint32_t EGR;
+  union {
+      volatile uint32_t CCMR1_Output;
+      volatile uint32_t CCMR1_Input;
+  };
+  union {
+      volatile uint32_t CCMR2_Output;
+      volatile uint32_t CCMR2_Input;
+  };
+    volatile uint32_t CCER;
+    volatile uint32_t CNT;
+    volatile uint32_t PSC;
+    volatile uint32_t ARR;
+    volatile const uint32_t RESERVED_48;
+    volatile uint32_t CCR1;
+    volatile uint32_t CCR2;
+    volatile uint32_t CCR3;
+    volatile uint32_t CCR4;
+    volatile const uint32_t RESERVED_68;
+    volatile uint32_t DCR;
+    volatile uint32_t DMAR;
+    volatile const uint32_t RESERVED_80[4];
+    volatile uint32_t AF1;
+    volatile const uint32_t RESERVED_100;
+    volatile uint32_t TISEL;
 };
 #define TIM14_CR1_UIFREMAP          (0x1UL << 11) 
 #define TIM14_CR1_UIFREMAP_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
@@ -39669,17 +40083,20 @@ struct TIM14 {
 #define TIM14_TISEL_TI4SEL_VAL(X) (((uint32_t)(X) & 0xFUL) << 24)
 
 #define TIM14  ((struct TIM14*)(0x40002000UL))
+
+
+
 struct TIM6 {
-  volatile uint32_t CR1;
-  volatile uint32_t CR2;
-  const volatile uint32_t RESERVED12[1];
-  volatile uint32_t DIER;
-  volatile uint32_t SR;
-  volatile uint32_t EGR;
-  const volatile uint32_t RESERVED36[3];
-  volatile uint32_t CNT;
-  volatile uint32_t PSC;
-  volatile uint32_t ARR;
+    volatile uint32_t CR1;
+    volatile uint32_t CR2;
+    volatile const uint32_t RESERVED_8;
+    volatile uint32_t DIER;
+    volatile uint32_t SR;
+    volatile uint32_t EGR;
+    volatile const uint32_t RESERVED_24[3];
+    volatile uint32_t CNT;
+    volatile uint32_t PSC;
+    volatile uint32_t ARR;
 };
 #define TIM6_CR1_UIFREMAP          (0x1UL << 11) 
 #define TIM6_CR1_UIFREMAP_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
@@ -39713,17 +40130,20 @@ struct TIM6 {
 #define TIM6_ARR_ARR_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 
 #define TIM6  ((struct TIM6*)(0x40001000UL))
+
+
+
 struct TIM7 {
-  volatile uint32_t CR1;
-  volatile uint32_t CR2;
-  const volatile uint32_t RESERVED12[1];
-  volatile uint32_t DIER;
-  volatile uint32_t SR;
-  volatile uint32_t EGR;
-  const volatile uint32_t RESERVED36[3];
-  volatile uint32_t CNT;
-  volatile uint32_t PSC;
-  volatile uint32_t ARR;
+    volatile uint32_t CR1;
+    volatile uint32_t CR2;
+    volatile const uint32_t RESERVED_8;
+    volatile uint32_t DIER;
+    volatile uint32_t SR;
+    volatile uint32_t EGR;
+    volatile const uint32_t RESERVED_24[3];
+    volatile uint32_t CNT;
+    volatile uint32_t PSC;
+    volatile uint32_t ARR;
 };
 #define TIM7_CR1_UIFREMAP          (0x1UL << 11) 
 #define TIM7_CR1_UIFREMAP_VAL(X) (((uint32_t)(X) & 0x1UL) << 11)
@@ -39757,78 +40177,81 @@ struct TIM7 {
 #define TIM7_ARR_ARR_VAL(X) (((uint32_t)(X) & 0xFFFFUL) << 0)
 
 #define TIM7  ((struct TIM7*)(0x40001400UL))
+
+
+
 struct NVIC {
-  volatile uint32_t ISER0;
-  volatile uint32_t ISER1;
-  volatile uint32_t ISER2;
-  volatile uint32_t ISER3;
-  volatile uint32_t ISER4;
-  const volatile uint32_t RESERVED128[27];
-  volatile uint32_t ICER0;
-  volatile uint32_t ICER1;
-  volatile uint32_t ICER2;
-  volatile uint32_t ICER3;
-  volatile uint32_t ICER4;
-  const volatile uint32_t RESERVED256[27];
-  volatile uint32_t ISPR0;
-  volatile uint32_t ISPR1;
-  volatile uint32_t ISPR2;
-  volatile uint32_t ISPR3;
-  volatile uint32_t ISPR4;
-  const volatile uint32_t RESERVED384[27];
-  volatile uint32_t ICPR0;
-  volatile uint32_t ICPR1;
-  volatile uint32_t ICPR2;
-  const volatile uint32_t RESERVED448[13];
-  volatile uint32_t ICPR3;
-  volatile uint32_t ICPR4;
-  const volatile uint32_t RESERVED512[14];
-  volatile const uint32_t IABR0;
-  volatile const uint32_t IABR1;
-  volatile const uint32_t IABR2;
-  volatile uint32_t IABR3;
-  volatile uint32_t IABR4;
-  const volatile uint32_t RESERVED768[59];
-  volatile uint32_t IPR0;
-  volatile uint32_t IPR1;
-  volatile uint32_t IPR2;
-  volatile uint32_t IPR3;
-  volatile uint32_t IPR4;
-  volatile uint32_t IPR5;
-  volatile uint32_t IPR6;
-  volatile uint32_t IPR7;
-  volatile uint32_t IPR8;
-  volatile uint32_t IPR9;
-  volatile uint32_t IPR10;
-  volatile uint32_t IPR11;
-  volatile uint32_t IPR12;
-  volatile uint32_t IPR13;
-  volatile uint32_t IPR14;
-  volatile uint32_t IPR15;
-  volatile uint32_t IPR16;
-  volatile uint32_t IPR17;
-  volatile uint32_t IPR18;
-  volatile uint32_t IPR19;
-  volatile uint32_t IPR20;
-  volatile uint32_t IPR21;
-  volatile uint32_t IPR22;
-  volatile uint32_t IPR23;
-  volatile uint32_t IPR24;
-  volatile uint32_t IPR25;
-  volatile uint32_t IPR26;
-  volatile uint32_t IPR27;
-  volatile uint32_t IPR28;
-  volatile uint32_t IPR29;
-  volatile uint32_t IPR30;
-  volatile uint32_t IPR31;
-  volatile uint32_t IPR32;
-  volatile uint32_t IPR33;
-  volatile uint32_t IPR34;
-  volatile uint32_t IPR35;
-  volatile uint32_t IPR36;
-  volatile uint32_t IPR37;
-  volatile uint32_t IPR38;
-  volatile uint32_t IPR39;
+    volatile uint32_t ISER0;
+    volatile uint32_t ISER1;
+    volatile uint32_t ISER2;
+    volatile uint32_t ISER3;
+    volatile uint32_t ISER4;
+    volatile const uint32_t RESERVED_20[27];
+    volatile uint32_t ICER0;
+    volatile uint32_t ICER1;
+    volatile uint32_t ICER2;
+    volatile uint32_t ICER3;
+    volatile uint32_t ICER4;
+    volatile const uint32_t RESERVED_148[27];
+    volatile uint32_t ISPR0;
+    volatile uint32_t ISPR1;
+    volatile uint32_t ISPR2;
+    volatile uint32_t ISPR3;
+    volatile uint32_t ISPR4;
+    volatile const uint32_t RESERVED_276[27];
+    volatile uint32_t ICPR0;
+    volatile uint32_t ICPR1;
+    volatile uint32_t ICPR2;
+    volatile const uint32_t RESERVED_396[13];
+    volatile uint32_t ICPR3;
+    volatile uint32_t ICPR4;
+    volatile const uint32_t RESERVED_456[14];
+    volatile const uint32_t IABR0;
+    volatile const uint32_t IABR1;
+    volatile const uint32_t IABR2;
+    volatile uint32_t IABR3;
+    volatile uint32_t IABR4;
+    volatile const uint32_t RESERVED_532[59];
+    volatile uint32_t IPR0;
+    volatile uint32_t IPR1;
+    volatile uint32_t IPR2;
+    volatile uint32_t IPR3;
+    volatile uint32_t IPR4;
+    volatile uint32_t IPR5;
+    volatile uint32_t IPR6;
+    volatile uint32_t IPR7;
+    volatile uint32_t IPR8;
+    volatile uint32_t IPR9;
+    volatile uint32_t IPR10;
+    volatile uint32_t IPR11;
+    volatile uint32_t IPR12;
+    volatile uint32_t IPR13;
+    volatile uint32_t IPR14;
+    volatile uint32_t IPR15;
+    volatile uint32_t IPR16;
+    volatile uint32_t IPR17;
+    volatile uint32_t IPR18;
+    volatile uint32_t IPR19;
+    volatile uint32_t IPR20;
+    volatile uint32_t IPR21;
+    volatile uint32_t IPR22;
+    volatile uint32_t IPR23;
+    volatile uint32_t IPR24;
+    volatile uint32_t IPR25;
+    volatile uint32_t IPR26;
+    volatile uint32_t IPR27;
+    volatile uint32_t IPR28;
+    volatile uint32_t IPR29;
+    volatile uint32_t IPR30;
+    volatile uint32_t IPR31;
+    volatile uint32_t IPR32;
+    volatile uint32_t IPR33;
+    volatile uint32_t IPR34;
+    volatile uint32_t IPR35;
+    volatile uint32_t IPR36;
+    volatile uint32_t IPR37;
+    volatile uint32_t IPR38;
+    volatile uint32_t IPR39;
 };
 #define NVIC_ISER0_SETENA          (0xFFFFFFFFUL << 0) 
 #define NVIC_ISER0_SETENA_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
@@ -40182,17 +40605,20 @@ struct NVIC {
 #define NVIC_IPR39_IPR_N3_VAL(X) (((uint32_t)(X) & 0xFFUL) << 24)
 
 #define NVIC  ((struct NVIC*)(0xE000E100UL))
+
+
+
 struct DBGMCU {
-  volatile const uint32_t IDC;
-  volatile uint32_t CR;
-  const volatile uint32_t RESERVED52[11];
-  volatile uint32_t APB3FZ1;
-  const volatile uint32_t RESERVED60[1];
-  volatile uint32_t APB1LFZ1;
-  const volatile uint32_t RESERVED76[3];
-  volatile uint32_t APB2FZ1;
-  const volatile uint32_t RESERVED84[1];
-  volatile uint32_t APB4FZ1;
+    volatile const uint32_t IDC;
+    volatile uint32_t CR;
+    volatile const uint32_t RESERVED_8[11];
+    volatile uint32_t APB3FZ1;
+    volatile const uint32_t RESERVED_56;
+    volatile uint32_t APB1LFZ1;
+    volatile const uint32_t RESERVED_64[3];
+    volatile uint32_t APB2FZ1;
+    volatile const uint32_t RESERVED_80;
+    volatile uint32_t APB4FZ1;
 };
 #define DBGMCU_IDC_DEV_ID          (0xFFFUL << 0) 
 #define DBGMCU_IDC_DEV_ID_VAL(X) (((uint32_t)(X) & 0xFFFUL) << 0)
@@ -40278,12 +40704,15 @@ struct DBGMCU {
 #define DBGMCU_APB4FZ1_DBG_IWDG1_VAL(X) (((uint32_t)(X) & 0x1UL) << 18)
 
 #define DBGMCU  ((struct DBGMCU*)(0x5C001000UL))
+
+
+
 struct MPU {
-  volatile const uint32_t MPU_TYPER;
-  volatile uint32_t MPU_CTRL;
-  volatile uint32_t MPU_RNR;
-  volatile uint32_t MPU_RBAR;
-  volatile uint32_t MPU_RASR;
+    volatile const uint32_t MPU_TYPER;
+    volatile uint32_t MPU_CTRL;
+    volatile uint32_t MPU_RNR;
+    volatile uint32_t MPU_RBAR;
+    volatile uint32_t MPU_RASR;
 };
 #define MPU_MPU_TYPER_SEPARATE          (0x1UL << 0) 
 #define MPU_MPU_TYPER_SEPARATE_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -40325,11 +40754,14 @@ struct MPU {
 #define MPU_MPU_RASR_XN_VAL(X) (((uint32_t)(X) & 0x1UL) << 28)
 
 #define MPU  ((struct MPU*)(0xE000ED90UL))
+
+
+
 struct STK {
-  volatile uint32_t CSR;
-  volatile uint32_t RVR;
-  volatile uint32_t CVR;
-  volatile uint32_t CALIB;
+    volatile uint32_t CSR;
+    volatile uint32_t RVR;
+    volatile uint32_t CVR;
+    volatile uint32_t CALIB;
 };
 #define STK_CSR_ENABLE          (0x1UL << 0) 
 #define STK_CSR_ENABLE_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -40351,22 +40783,31 @@ struct STK {
 #define STK_CALIB_NOREF_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
 
 #define STK  ((struct STK*)(0xE000E010UL))
+
+
+
 struct NVIC_STIR {
-  volatile uint32_t STIR;
+    volatile uint32_t STIR;
 };
 #define NVIC_STIR_STIR_INTID          (0x1FFUL << 0) 
 #define NVIC_STIR_STIR_INTID_VAL(X) (((uint32_t)(X) & 0x1FFUL) << 0)
 
 #define NVIC_STIR  ((struct NVIC_STIR*)(0xE000EF00UL))
+
+
+
 struct FPU_CPACR {
-  volatile uint32_t CPACR;
+    volatile uint32_t CPACR;
 };
 #define FPU_CPACR_CPACR_CP          (0xFUL << 20) 
 #define FPU_CPACR_CPACR_CP_VAL(X) (((uint32_t)(X) & 0xFUL) << 20)
 
 #define FPU_CPACR  ((struct FPU_CPACR*)(0xE000ED88UL))
+
+
+
 struct SCB_ACTRL {
-  volatile uint32_t ACTRL;
+    volatile uint32_t ACTRL;
 };
 #define SCB_ACTRL_ACTRL_DISFOLD          (0x1UL << 2) 
 #define SCB_ACTRL_ACTRL_DISFOLD_VAL(X) (((uint32_t)(X) & 0x1UL) << 2)
@@ -40378,10 +40819,13 @@ struct SCB_ACTRL {
 #define SCB_ACTRL_ACTRL_DISITMATBFLUSH_VAL(X) (((uint32_t)(X) & 0x1UL) << 12)
 
 #define SCB_ACTRL  ((struct SCB_ACTRL*)(0xE000E008UL))
+
+
+
 struct FPU {
-  volatile uint32_t FPCCR;
-  volatile uint32_t FPCAR;
-  volatile uint32_t FPSCR;
+    volatile uint32_t FPCCR;
+    volatile uint32_t FPCAR;
+    volatile uint32_t FPSCR;
 };
 #define FPU_FPCCR_LSPACT          (0x1UL << 0) 
 #define FPU_FPCCR_LSPACT_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -40433,22 +40877,25 @@ struct FPU {
 #define FPU_FPSCR_N_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
 
 #define FPU  ((struct FPU*)(0xE000EF34UL))
+
+
+
 struct SCB {
-  volatile const uint32_t CPUID;
-  volatile uint32_t ICSR;
-  volatile uint32_t VTOR;
-  volatile uint32_t AIRCR;
-  volatile uint32_t SCR;
-  volatile uint32_t CCR;
-  volatile uint32_t SHPR1;
-  volatile uint32_t SHPR2;
-  volatile uint32_t SHPR3;
-  volatile uint32_t SHCSR;
-  volatile uint32_t CFSR_UFSR_BFSR_MMFSR;
-  volatile uint32_t HFSR;
-  const volatile uint32_t RESERVED52[1];
-  volatile uint32_t MMFAR;
-  volatile uint32_t BFAR;
+    volatile const uint32_t CPUID;
+    volatile uint32_t ICSR;
+    volatile uint32_t VTOR;
+    volatile uint32_t AIRCR;
+    volatile uint32_t SCR;
+    volatile uint32_t CCR;
+    volatile uint32_t SHPR1;
+    volatile uint32_t SHPR2;
+    volatile uint32_t SHPR3;
+    volatile uint32_t SHCSR;
+    volatile uint32_t CFSR_UFSR_BFSR_MMFSR;
+    volatile uint32_t HFSR;
+    volatile const uint32_t RESERVED_48;
+    volatile uint32_t MMFAR;
+    volatile uint32_t BFAR;
 };
 #define SCB_CPUID_Revision          (0xFUL << 0) 
 #define SCB_CPUID_Revision_VAL(X) (((uint32_t)(X) & 0xFUL) << 0)
@@ -40606,10 +41053,13 @@ struct SCB {
 #define SCB_BFAR_ADDRESS_VAL(X) (((uint32_t)(X) & 0xFFFFFFFFUL) << 0)
 
 #define SCB  ((struct SCB*)(0xE000ED00UL))
+
+
+
 struct PF {
-  volatile const uint32_t CLIDR;
-  volatile const uint32_t CTR;
-  volatile const uint32_t CCSIDR;
+    volatile const uint32_t CLIDR;
+    volatile const uint32_t CTR;
+    volatile const uint32_t CCSIDR;
 };
 #define PF_CLIDR_CL1          (0x7UL << 0) 
 #define PF_CLIDR_CL1_VAL(X) (((uint32_t)(X) & 0x7UL) << 0)
@@ -40657,14 +41107,17 @@ struct PF {
 #define PF_CCSIDR_WT_VAL(X) (((uint32_t)(X) & 0x1UL) << 31)
 
 #define PF  ((struct PF*)(0xE000ED78UL))
+
+
+
 struct AC {
-  volatile uint32_t ITCMCR;
-  volatile uint32_t DTCMCR;
-  volatile uint32_t AHBPCR;
-  volatile uint32_t CACR;
-  volatile uint32_t AHBSCR;
-  const volatile uint32_t RESERVED24[1];
-  volatile uint32_t ABFSR;
+    volatile uint32_t ITCMCR;
+    volatile uint32_t DTCMCR;
+    volatile uint32_t AHBPCR;
+    volatile uint32_t CACR;
+    volatile uint32_t AHBSCR;
+    volatile const uint32_t RESERVED_20;
+    volatile uint32_t ABFSR;
 };
 #define AC_ITCMCR_EN          (0x1UL << 0) 
 #define AC_ITCMCR_EN_VAL(X) (((uint32_t)(X) & 0x1UL) << 0)
@@ -40712,4 +41165,7 @@ struct AC {
 #define AC_ABFSR_AXIMTYPE_VAL(X) (((uint32_t)(X) & 0x3UL) << 8)
 
 #define AC  ((struct AC*)(0xE000EF90UL))
+
+
+
 #endif

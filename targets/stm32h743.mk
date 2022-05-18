@@ -4,11 +4,11 @@ LD=arm-none-eabi-ld
 OBJCOPY=arm-none-eabi-objcopy
 
 
-OBJS+= stm32h743_init.o stm32h743_vectors.o
+OBJS+= stm32h743_init.o stm32h743_vectors.o stm32h743_sched.o
 OBJS+= libssp.a libssp_nonshared.a
 
 CFLAGS+= -D TICKRATE=4000000 -DNDEBUG -ffunction-sections -fdata-sections
-CFLAGS+= -O -ggdb 
+CFLAGS+= -Og -ggdb 
 CFLAGS+= -mfloat-abi=hard -mfpu=fpv5-d16 -mthumb -mcpu=cortex-m7
 
 LDFLAGS+= -lc -lnosys -L ${OBJDIR} -Wl,--gc-sections
