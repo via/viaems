@@ -4,7 +4,7 @@ MEMORY
   configrom (rx)    : ORIGIN = 0x8020000, LENGTH = 128K
   rom (rx)          : ORIGIN = 0x8040000, LENGTH = 768K
   dtcmram (rwx)     : ORIGIN = 0x20000000, LENGTH = 128K
-  ram (rwx)         : ORIGIN = 0x24000000, LENGTH = 512K
+  axiram (rwx)         : ORIGIN = 0x24000000, LENGTH = 512K
   ram_d1 (rwx)      : ORIGIN = 0x30000000, LENGTH = 128K
   ram_d2 (rwx)      : ORIGIN = 0x30020000, LENGTH = 128K
   ram_d3 (rwx)      : ORIGIN = 0x30040000, LENGTH = 128K
@@ -70,7 +70,7 @@ SECTIONS {
 		*(.data*)	/* Read-write initialized data */
 		. = ALIGN(4);
 		_edata = .;
-	} >ram AT >rom
+	} >dtcmram AT >rom
 	_data_loadaddr = LOADADDR(.data);
 
 	.configdata : {
@@ -78,7 +78,7 @@ SECTIONS {
 		*(.configdata*)
 		. = ALIGN(4);
 		_econfigdata = .;
-	} >ram AT >configrom
+	} >dtcmram AT >configrom
 	_configdata_loadaddr = LOADADDR(.configdata);
 
 	.bss : {
@@ -86,7 +86,7 @@ SECTIONS {
 		*(COMMON)
 		. = ALIGN(4);
 		_ebss = .;
-	} >ram
+	} >dtcmram
 
 	/*
 	 * The .eh_frame section appears to be used for C++ exception handling.
@@ -98,5 +98,5 @@ SECTIONS {
 	end = .;
 }
 
-PROVIDE(_stack = ORIGIN(ram) + LENGTH(ram));
+PROVIDE(_stack = ORIGIN(dtcmram) + LENGTH(dtcmram));
 

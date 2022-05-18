@@ -23,8 +23,12 @@ timeval_t current_time() {
   return 0;
 }
 
+uint64_t cycles_to_ns(uint64_t cycles) {
+  return cycles * 1000 / 400;
+}
+
 uint64_t cycle_count() {
-  return 0;
+  return *((uint32_t *)0xE0001004);
 }
 
 timeval_t platform_output_earliest_schedulable_time() {
@@ -89,7 +93,16 @@ size_t console_write(const void *ptr, size_t max) {
   }
   return max;
 }
-void platform_benchmark_init() {}
+
+int __attribute__((externally_visible))
+_write(int fd, const char *buf, size_t count) {
+  (void)fd;
+  size_t pos = 0;
+  while (pos < count) {
+    pos += console_write(buf + pos, count - pos);
+  }
+  return count;
+}
 
 /* Common symbols exported by the linker script(s): */
 typedef void (*funcp_t) (void);
@@ -256,6 +269,10 @@ static void configure_usart1() {
 static void setup_caches() {
   *((uint32_t *)0xE000EF50) = 0; /* Invalidate I-cache */
   SCB->CCR |= SCB_CCR_IC; /* Enable I-Cache */
+
+  *((uint32_t *)0xE0001000) |= 1; /* Enable DWT Cycle Counter */
+  *((uint32_t *)0xE0001004) = 0; /* Reset cycle counter */
+
 }
 void platform_init() {
   lowlevel_init();
@@ -277,3 +294,18 @@ void platform_init() {
   configure_usart1();
   setup_tim8();
 }
+
+void platform_benchmark_init() {
+  lowlevel_init();
+
+  setup_clocks();
+
+  RCC->APB4ENR |= RCC_APB4ENR_SYSCFGEN;
+  RCC->AHB4ENR |= RCC_AHB4ENR_GPIOCEN; /*Enable GPIOC Clock */
+  RCC->AHB4ENR |= RCC_AHB4ENR_GPIOAEN; /*Enable GPIOA Clock */
+  RCC->APB2ENR |= RCC_APB2ENR_USART1EN; /*Enable USART1 Clock */
+
+  setup_caches();
+  configure_usart1();
+}
+
