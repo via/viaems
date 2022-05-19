@@ -24,19 +24,15 @@ timeval_t current_time() {
   return TIM2->CNT;
 }
 
-
 void tim2_isr(void) {
-  struct decoder_event evs[2];
-  int n_events = 0;
   bool cc1_fired = false;
   bool cc2_fired = false;
-  timeval_t cc1;
-  timeval_t cc2;
+  timeval_t cc1 = TIM2->CCR1;
+  timeval_t cc2 = TIM2->CCR2;
 
   if ((TIM2->SR & TIM2_SR_CC1IF) == TIM2_SR_CC1IF) {
     /* TI1 capture */
     cc1_fired = true;
-    cc1 = TIM2->CCR1;
     TIM2->SR &= ~TIM2_SR_CC1IF;
   }
 
@@ -66,6 +62,30 @@ void tim2_isr(void) {
     }
   }
 
+  if ((TIM2->SR & TIM2_SR_CC4IF) == TIM2_SR_CC4IF) {
+    /* TI1 capture */
+    TIM2->SR &= ~TIM2_SR_CC4IF;
+    scheduler_callback_timer_execute();
+  }
+
+}
+
+void set_event_timer(timeval_t t) {
+  TIM2->CCR4 = t;
+  TIM2->DIER |= TIM2_DIER_CC4IE;
+}
+
+timeval_t get_event_timer() {
+  return TIM2->CCR4;
+}
+
+void clear_event_timer() {
+  TIM2->SR &= ~TIM2_SR_CC4IF;
+}
+
+void disable_event_timer() {
+  TIM2->DIER &= ~TIM2_DIER_CC4IE;
+  clear_event_timer();
 }
 
 static void setup_tim2(void) {
@@ -80,9 +100,13 @@ static void setup_tim2(void) {
                       TIM2_CCMR1_Input_CC1S_VAL(1) | /* IC1 */
                       TIM2_CCMR1_Input_IC2F_VAL(1) | /* CK_INT, N=2 filter */
                       TIM2_CCMR1_Input_CC2S_VAL(1);  /* IC2 */
+  TIM2->CCMR2_Output = TIM2_CCMR2_Output_CC4S_VAL(0) | /* CC4 Output */
+                       TIM2_CCMR2_Output_OC4M_VAL(0);
   TIM2->CCER = TIM2_CCER_CC1P_VAL(0) | TIM2_CCER_CC1NP_VAL(0) | /* Rising edge */
                TIM2_CCER_CC2P_VAL(0) | TIM2_CCER_CC2NP_VAL(0) | /* Rising edge */
-               TIM2_CCER_CC1E | TIM2_CCER_CC2E; /* Enable */
+               TIM2_CCER_CC1E | TIM2_CCER_CC2E | /* Enable CC1/CC2 */
+               TIM2_CCER_CC4E; /* Enable CC4 (Output) */
+
 
   /*Enable interrupts for CC1/CC2 */
   TIM2->DIER = TIM8_DIER_CC1IE | TIM8_DIER_CC2IE;

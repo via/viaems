@@ -14,9 +14,11 @@ void set_pwm(int pin, float val) {
 }
 
 void disable_interrupts() {
+  __asm__("cpsid i");
 }
 
 void enable_interrupts() {
+  __asm__("cpsie i");
 }
 
 uint64_t cycles_to_ns(uint64_t cycles) {
@@ -28,20 +30,6 @@ uint64_t cycle_count() {
 }
 
 timeval_t platform_output_earliest_schedulable_time() {
-}
-
-
-void set_event_timer(timeval_t t) {
-}
-
-timeval_t get_event_timer() {
-  return 0;
-}
-
-void clear_event_timer() {
-}
-
-void disable_event_timer() {
 }
 
 int interrupts_enabled() {
