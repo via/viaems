@@ -258,14 +258,12 @@ void *platform_interrupt_thread(void *_interrupt_fd) {
     case TRIGGER0:
       sprintf(output, "# TRIGGER0 %lu\n", (unsigned long)msg.time);
       write(STDERR_FILENO, output, strlen(output));
-      decoder_update_scheduling(
-        &(struct decoder_event){ .trigger = 0, .time = msg.time }, 1);
+      decoder_update_scheduling(0, msg.time);
       break;
     case TRIGGER1:
       sprintf(output, "# TRIGGER1 %lu\n", (unsigned long)msg.time);
       write(STDERR_FILENO, output, strlen(output));
-      decoder_update_scheduling(
-        &(struct decoder_event){ .trigger = 1, .time = msg.time }, 1);
+      decoder_update_scheduling(1, msg.time);
       break;
     case SCHEDULED_EVENT:
       if (eventtimer_enable) {

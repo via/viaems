@@ -5,14 +5,7 @@
 #include "util.h"
 #include "device.h"
 
-uint32_t counter = 0;
-
-void tim8_up_tim13_isr(void) {
-  TIM8->SR &= ~TIM8_SR_UIF;
-  counter++;
-}
-
-void setup_tim8(void) {
+static void setup_tim8(void) {
   RCC->APB2ENR |= RCC_APB2ENR_TIM8EN;
 
   TIM8->CR1 = TIM8_CR1_DIR_VAL(0) | /* Upcounting */
@@ -58,31 +51,24 @@ void tim2_isr(void) {
       ((TIM2->SR & TIM2_SR_CC2OF) == TIM2_SR_CC2OF)) {
     TIM2->SR &= ~(TIM2_SR_CC1OF | TIM2_SR_CC2OF);
     decoder_desync(DECODER_OVERFLOW);
+    return;
   }
 
-  if (cc1_fired && cc2_fired) {
-    if (time_before(cc2, cc1)) {
-      evs[0] = (struct decoder_event){ .trigger = 1, .time = cc2 };
-      evs[1] = (struct decoder_event){ .trigger = 0, .time = cc1 };
-      n_events = 2;
-    } else {
-      evs[0] = (struct decoder_event){ .trigger = 0, .time = cc1 };
-      evs[1] = (struct decoder_event){ .trigger = 1, .time = cc2 };
-      n_events = 2;
+  if (cc1_fired && cc2_fired && time_before(cc2, cc1)) {
+    decoder_update_scheduling(1, cc2);
+    decoder_update_scheduling(0, cc1);
+  } else {
+    if (cc1_fired) {
+      decoder_update_scheduling(0, cc1);
     }
-  } else if (cc1_fired) {
-    evs[0] = (struct decoder_event){ .trigger = 0, .time = cc1 };
-    n_events = 1;
-  } else if (cc2_fired) {
-    evs[0] = (struct decoder_event){ .trigger = 1, .time = cc2 };
-    n_events = 1;
+    if (cc2_fired) {
+      decoder_update_scheduling(1, cc2);
+    }
   }
-  if (n_events > 0) {
-    decoder_update_scheduling(&evs[0], n_events);
-  }
+
 }
 
-void setup_tim2(void) {
+static void setup_tim2(void) {
   RCC->APB1LENR |= RCC_APB1LENR_TIM2EN;
   TIM2->CR1 = TIM2_CR1_UDIS; /* Upcounting, no update event */
   TIM2->SMCR = TIM2_SMCR_TS_VAL(1) | /* Trigger ITR1 is TIM8's TRGO */
@@ -95,16 +81,22 @@ void setup_tim2(void) {
                       TIM2_CCMR1_Input_IC2F_VAL(1) | /* CK_INT, N=2 filter */
                       TIM2_CCMR1_Input_CC2S_VAL(1);  /* IC2 */
   TIM2->CCER = TIM2_CCER_CC1P_VAL(0) | TIM2_CCER_CC1NP_VAL(0) | /* Rising edge */
-               TIM2_CCER_CC1P_VAL(0) | TIM2_CCER_CC1NP_VAL(0) | /* Rising edge */
+               TIM2_CCER_CC2P_VAL(0) | TIM2_CCER_CC2NP_VAL(0) | /* Rising edge */
                TIM2_CCER_CC1E | TIM2_CCER_CC2E; /* Enable */
 
+  /*Enable interrupts for CC1/CC2 */
   TIM2->DIER = TIM8_DIER_CC1IE | TIM8_DIER_CC2IE;
-  nvic_enable_irq(TIM2_IRQ);
+  nvic_enable_irq(TIM2_IRQ); 
 
+  /* A0 and A1 as trigger inputs */
   GPIOA->MODER &= ~(GPIOA_MODER_MODE0 | GPIOA_MODER_MODE1);
   GPIOA->MODER |= GPIOA_MODER_MODE0_VAL(2) | GPIOA_MODER_MODE1_VAL(2); /* A0/A1 in AF mode */
   GPIOA->AFRL |= GPIOA_AFRL_AFSEL0_VAL(1) | GPIOA_AFRL_AFSEL1_VAL(1); /* AF1 (TIM2)*/
   
-
   TIM2->CR1 |= TIM2_CR1_CEN; /* Enable clock */
+}
+
+void platform_init_scheduler() {
+  setup_tim2();
+  setup_tim8();
 }

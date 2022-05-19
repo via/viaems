@@ -1036,8 +1036,6 @@ void tim2_isr() {
   stats_increment_counter(STATS_INT_EVENTTIMER_RATE);
   stats_start_timing(STATS_INT_TOTAL_TIME);
 
-  struct decoder_event evs[2];
-  int n_events = 0;
   bool cc1_fired = false;
   bool cc2_fired = false;
   timeval_t cc1;
@@ -1065,25 +1063,16 @@ void tim2_isr() {
     return;
   }
 
-  if (cc1_fired && cc2_fired) {
-    if (time_before(cc2, cc1)) {
-      evs[0] = (struct decoder_event){ .trigger = 1, .time = cc2 };
-      evs[1] = (struct decoder_event){ .trigger = 0, .time = cc1 };
-      n_events = 2;
-    } else {
-      evs[0] = (struct decoder_event){ .trigger = 0, .time = cc1 };
-      evs[1] = (struct decoder_event){ .trigger = 1, .time = cc2 };
-      n_events = 2;
+  if (cc1_fired && cc2_fired && time_before(cc2, cc1)) {
+    decoder_update_scheduling(1, cc2);
+    decoder_update_scheduling(0, cc1);
+  } else {
+    if (cc1_fired) {
+      decoder_update_scheduling(0, cc1);
     }
-  } else if (cc1_fired) {
-    evs[0] = (struct decoder_event){ .trigger = 0, .time = cc1 };
-    n_events = 1;
-  } else if (cc2_fired) {
-    evs[0] = (struct decoder_event){ .trigger = 1, .time = cc2 };
-    n_events = 1;
-  }
-  if (n_events > 0) {
-    decoder_update_scheduling(&evs[0], n_events);
+    if (cc2_fired) {
+      decoder_update_scheduling(1, cc2);
+    }
   }
 
   if (timer_get_flag(TIM2, TIM_SR_CC4IF)) {

@@ -266,10 +266,13 @@ static void setup_caches() {
   *((uint32_t *)0xE000EF50) = 0; /* Invalidate I-cache */
   SCB->CCR |= SCB_CCR_IC; /* Enable I-Cache */
 
+}
+
+static void setup_dwt() {
   *((uint32_t *)0xE0001000) |= 1; /* Enable DWT Cycle Counter */
   *((uint32_t *)0xE0001004) = 0; /* Reset cycle counter */
-
 }
+
 void platform_init() {
   lowlevel_init();
 
@@ -280,16 +283,10 @@ void platform_init() {
   RCC->AHB4ENR |= RCC_AHB4ENR_GPIOAEN; /*Enable GPIOA Clock */
   RCC->APB2ENR |= RCC_APB2ENR_USART1EN; /*Enable USART1 Clock */
 
-  GPIOC->MODER = GPIOC_MODER_MODE0_VAL(1) | GPIOC_MODER_MODE1_VAL(1) | GPIOC_MODER_MODE2_VAL(1);
-  GPIOC->PUPDR = GPIOC_PUPDR_PUPD0_VAL(2) | GPIOC_PUPDR_PUPD1_VAL(2) | GPIOC_PUPDR_PUPD2_VAL(2);
-  GPIOC->OSPEEDR = GPIOC_OSPEEDR_OSPEED0_VAL(3) | GPIOC_OSPEEDR_OSPEED1_VAL(3) | GPIOC_OSPEEDR_OSPEED2_VAL(3);
-
-  GPIOC->ODR = 0x2;
-
   setup_caches();
+  setup_dwt();
   configure_usart1();
-  setup_tim2();
-  setup_tim8();
+  platform_init_scheduler();
 }
 
 void platform_benchmark_init() {
