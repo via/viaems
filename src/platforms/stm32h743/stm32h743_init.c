@@ -19,10 +19,6 @@ void disable_interrupts() {
 void enable_interrupts() {
 }
 
-timeval_t current_time() {
-  return 0;
-}
-
 uint64_t cycles_to_ns(uint64_t cycles) {
   return cycles * 1000 / 400;
 }
@@ -292,6 +288,7 @@ void platform_init() {
 
   setup_caches();
   configure_usart1();
+  setup_tim2();
   setup_tim8();
 }
 

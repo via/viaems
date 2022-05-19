@@ -41168,4 +41168,15 @@ struct AC {
 
 
 
+
+
+static inline void nvic_enable_irq(int irq) {
+  volatile uint32_t *reg = &(NVIC->ISER0) + (irq / 32);
+  *reg = 1 << (irq & 0x1F);
+}
+
+static inline void nvic_disable_irq(int irq) {
+  volatile uint32_t *reg = &(NVIC->ICER0) + (irq / 32);
+  *reg = 1 << (irq & 0x1F);
+}
 #endif
