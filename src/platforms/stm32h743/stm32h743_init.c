@@ -88,6 +88,7 @@ _write(int fd, const char *buf, size_t count) {
 /* Common symbols exported by the linker script(s): */
 typedef void (*funcp_t) (void);
 extern uint32_t _data_loadaddr, _data, _edata, _ebss;
+extern uint32_t _configdata_loadaddr, _sconfigdata, _econfigdata;
 extern funcp_t __preinit_array_start, __preinit_array_end;
 extern funcp_t __init_array_start, __init_array_end;
 extern funcp_t __fini_array_start, __fini_array_end;
@@ -107,6 +108,13 @@ void __attribute__ ((weak)) reset_handler(void)
 	while (dest < &_ebss) {
 		*dest++ = 0;
 	}
+
+	for (src = &_configdata_loadaddr, dest = &_sconfigdata;
+		dest < &_econfigdata;
+		src++, dest++) {
+		*dest = *src;
+	}
+
 
   FPU_CPACR->CPACR |= ((3UL << (10*2))|(3UL << (11*2)));  /* set CP10 and CP11 Full Access */
   SCB->CCR |= SCB_CCR_STKALIGN;
