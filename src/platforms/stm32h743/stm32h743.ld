@@ -81,6 +81,11 @@ SECTIONS {
 	} >dtcmram AT >configrom
 	_configdata_loadaddr = LOADADDR(.configdata);
 
+  .dmadata : {
+    *(.dmadata)
+    . = ALIGN(4);
+  } >axiram
+
 	.bss : {
 		*(.bss*)	/* Read-write zero initialized data */
 		*(COMMON)

@@ -29,9 +29,6 @@ uint64_t cycle_count() {
   return *((uint32_t *)0xE0001004);
 }
 
-timeval_t platform_output_earliest_schedulable_time() {
-}
-
 int interrupts_enabled() {
   return 0;
 }
@@ -253,7 +250,8 @@ static void configure_usart1() {
 static void setup_caches() {
   *((uint32_t *)0xE000EF50) = 0; /* Invalidate I-cache */
   SCB->CCR |= SCB_CCR_IC; /* Enable I-Cache */
-
+  __asm__("dsb");
+  __asm__("isb");
 }
 
 static void setup_dwt() {
