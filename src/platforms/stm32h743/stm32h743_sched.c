@@ -122,7 +122,8 @@ static void setup_tim2(void) {
   /*Enable interrupts for CC1/CC2 if input is TRIGGER */
   TIM2->DIER = (config.freq_inputs[0].type == TRIGGER ? TIM2_DIER_CC1IE : 0) |
                (config.freq_inputs[1].type == TRIGGER ? TIM2_DIER_CC2IE : 0);
-  NVIC->IPR7 = (1 << 4); /* TODO write a helper */
+
+  nvic_set_priority(TIM2_IRQ, 1); 
   nvic_enable_irq(TIM2_IRQ); 
 
   /* A0 and A1 as trigger inputs */
@@ -247,7 +248,6 @@ void dma_str0_isr(void) {
   if ((DMA1->LISR & DMA1_LISR_TCIF0) == DMA1_LISR_TCIF0) {
     DMA1->LIFCR = DMA1_LIFCR_CTCIF0;
     platform_buffer_swap();
-
 
     if ((DMA1->S0CR & DMA1_S0CR_CT) != DMA1_S0CR_CT_VAL(current_buffer)) { 
       /* We have overflowed or gone out of sync, abort immediately */

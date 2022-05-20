@@ -267,6 +267,33 @@ static void setup_dwt() {
   *((uint32_t *)0xE0001004) = 0; /* Reset cycle counter */
 }
 
+static void reset_watchdog() {
+  IWDG->KR = 0x0000AAAA;
+}
+
+static void setup_watchdog() {
+  IWDG->KR = 0x0000CCCC; /* Start watchdog */
+  IWDG->KR = 0x00005555; /* Magic unlock sequence */
+  IWDG->RLR = 240; /* Approx 30 mS */
+  reset_watchdog();
+}
+
+void systick_handler(void) {
+  run_tasks();
+  reset_watchdog();
+}
+
+
+static void setup_systick() {
+  /* Reload value 500000 for 50 MHz Systick and 10 ms period */
+  *((uint32_t *)0xE000E014) = 500000;
+  *((uint32_t *)0xE000E010) = 0x3; /* Enable interrupt and systick */
+
+  /* Systick (15) set to priority 16 */
+  exception_set_priority(15, 16);
+
+}
+
 void platform_init() {
   lowlevel_init();
 
@@ -281,6 +308,8 @@ void platform_init() {
   setup_dwt();
   configure_usart1();
   platform_init_scheduler();
+  setup_systick();
+  setup_watchdog();
 }
 
 void platform_benchmark_init() {

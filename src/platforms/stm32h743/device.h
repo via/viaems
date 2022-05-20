@@ -41169,14 +41169,26 @@ struct AC {
 
 
 
-
-static inline void nvic_enable_irq(int irq) {
+static inline void nvic_enable_irq(uint16_t irq) {
   volatile uint32_t *reg = &(NVIC->ISER0) + (irq / 32);
   *reg = 1 << (irq & 0x1F);
 }
 
-static inline void nvic_disable_irq(int irq) {
+static inline void nvic_disable_irq(uint16_t irq) {
   volatile uint32_t *reg = &(NVIC->ICER0) + (irq / 32);
   *reg = 1 << (irq & 0x1F);
 }
+
+static inline void nvic_set_priority(uint16_t irq, uint8_t priority) {
+  volatile uint32_t *reg = &(NVIC->IPR0) + (irq / 4);
+  uint8_t prio = priority << 4;
+  *reg = prio << ((irq & 0x3) * 8);
+}
+
+static inline void exception_set_priority(uint16_t exc, uint8_t priority) {
+  volatile uint32_t *reg = &(SCB->SHPR1) + (exc / 4);
+  uint8_t prio = priority << 4;
+  *reg = prio << ((exc & 0x3) * 8);
+}
+
 #endif

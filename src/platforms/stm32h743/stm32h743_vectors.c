@@ -22,11 +22,6 @@ struct vector_table {
 	void (*irqs[IRQ_NUMBER_MAX + 1])(void);
 };
 
-void __attribute__((weak)) 
-reset_handler(void) {
-	while (1);
-}
-
 void 
 blocking_handler(void) {
 	while (1);
@@ -34,6 +29,17 @@ blocking_handler(void) {
 
 void null_handler(void) {
 }
+
+void reset_handler(void) __attribute__((weak, alias("blocking_handler")));
+void nmi_handler(void) __attribute__((weak, alias("null_handler")));
+void hard_fault_handler(void) __attribute__((weak, alias("null_handler")));
+void memory_manage_fault_handler(void) __attribute__((weak, alias("null_handler")));
+void bus_fault_handler(void) __attribute__((weak, alias("null_handler")));
+void usage_fault_handler(void) __attribute__((weak, alias("null_handler")));
+void debug_monitor_handler(void) __attribute__((weak, alias("null_handler")));
+void sv_call_handler(void) __attribute__((weak, alias("null_handler")));
+void pend_sv_handler(void) __attribute__((weak, alias("null_handler")));
+void systick_handler(void) __attribute__((weak, alias("null_handler")));
 void wwdg1_isr(void) __attribute__((weak, alias("null_handler")));
 void pvd_pvm_isr(void) __attribute__((weak, alias("null_handler")));
 void rtc_tamp_stamp_css_lse_isr(void) __attribute__((weak, alias("null_handler")));
@@ -177,15 +183,15 @@ __attribute__ ((section(".vectors")))
 struct vector_table vector_table = {
 	.stack_pointer = &_stack,
 	.reset = reset_handler,
-	.nmi = blocking_handler,
-	.hard_fault = blocking_handler,
-	.memory_manage_fault = blocking_handler,
-	.bus_fault = blocking_handler,
-	.usage_fault = blocking_handler,
-	.debug_monitor = blocking_handler,
-	.sv_call = blocking_handler,
-	.pend_sv = blocking_handler,
-	.systick = blocking_handler,
+	.nmi = nmi_handler,
+	.hard_fault = hard_fault_handler,
+	.memory_manage_fault = memory_manage_fault_handler,
+	.bus_fault = bus_fault_handler,
+	.usage_fault = usage_fault_handler,
+	.debug_monitor = debug_monitor_handler,
+	.sv_call = sv_call_handler,
+	.pend_sv = pend_sv_handler,
+	.systick = systick_handler,
   .irqs = {
     [WWDG1_IRQ] = wwdg1_isr,
     [PVD_PVM_IRQ] = pvd_pvm_isr,
