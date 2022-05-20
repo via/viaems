@@ -30,20 +30,19 @@ timeval_t current_time() {
 void tim2_isr(void) {
   bool cc1_fired = false;
   bool cc2_fired = false;
-  timeval_t cc1 = TIM2->CCR1;
-  timeval_t cc2 = TIM2->CCR2;
+  timeval_t cc1;
+  timeval_t cc2;
 
   if ((TIM2->SR & TIM2_SR_CC1IF) == TIM2_SR_CC1IF) {
     /* TI1 capture */
     cc1_fired = true;
-    TIM2->SR &= ~TIM2_SR_CC1IF;
+    cc1 = TIM2->CCR1;
   }
 
   if ((TIM2->SR & TIM2_SR_CC2IF) == TIM2_SR_CC2IF) {
     /* TI1 capture */
     cc2_fired = true;
     cc2 = TIM2->CCR2;
-    TIM2->SR &= ~TIM2_SR_CC2IF;
   }
 
   if (((TIM2->SR & TIM2_SR_CC1OF) == TIM2_SR_CC1OF) ||
@@ -75,7 +74,7 @@ void tim2_isr(void) {
 
 void set_event_timer(timeval_t t) {
   TIM2->CCR4 = t;
-  TIM2->DIER |= TIM2_DIER_CC4IE;
+   TIM2->DIER |= TIM2_DIER_CC4IE;
 }
 
 timeval_t get_event_timer() {
@@ -123,6 +122,7 @@ static void setup_tim2(void) {
   /*Enable interrupts for CC1/CC2 if input is TRIGGER */
   TIM2->DIER = (config.freq_inputs[0].type == TRIGGER ? TIM2_DIER_CC1IE : 0) |
                (config.freq_inputs[1].type == TRIGGER ? TIM2_DIER_CC2IE : 0);
+  NVIC->IPR7 = (1 << 4); /* TODO write a helper */
   nvic_enable_irq(TIM2_IRQ); 
 
   /* A0 and A1 as trigger inputs */
@@ -248,6 +248,7 @@ void dma_str0_isr(void) {
     DMA1->LIFCR = DMA1_LIFCR_CTCIF0;
     platform_buffer_swap();
 
+
     if ((DMA1->S0CR & DMA1_S0CR_CT) != DMA1_S0CR_CT_VAL(current_buffer)) { 
       /* We have overflowed or gone out of sync, abort immediately */
       abort();
@@ -278,8 +279,8 @@ static void setup_scheduled_outputs(void) {
   /* Configure DMA1 Stream 0 */
   DMA1->S0CR = 0; /* Reset */
   DMA1->S0PAR = (uint32_t)&GPIOD->BSRR; /* Peripheral address is GPIOD BSRR */
-  DMA1->S0M0AR = (uint32_t)&output_buffers[0]; /* Memory address 0 and 1 */
-  DMA1->S0M1AR = (uint32_t)&output_buffers[1]; 
+  DMA1->S0M0AR = (uint32_t)&output_buffers[0].slots; /* Memory address 0 and 1 */
+  DMA1->S0M1AR = (uint32_t)&output_buffers[1].slots; 
   DMA1->S0NDTR = NUM_SLOTS;
 
   DMA1->S0CR = DMA1_S0CR_DBM | /* Double Buffer */
@@ -305,7 +306,7 @@ void platform_init_scheduler() {
   *((volatile uint32_t *)0xE0042008) |= 29; /*TIM2, TIM5, and TIM7 and */
   *((volatile uint32_t *)0xE004200C) |= 2;  /* TIM8 stop */
 
-//  setup_scheduled_outputs();
   setup_tim2();
   setup_tim8();
+  setup_scheduled_outputs();
 }
