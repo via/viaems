@@ -218,7 +218,7 @@ static void setup_clocks() {
                  RCC_PLLCFGR_PLL2VCOSEL | /* PLL2 Medium Range VCU */
                  RCC_PLLCFGR_PLL3VCOSEL; /* PLL3 Medium Range VCU */
 
-  RCC->PLL1DIVR = RCC_PLL1DIVR_DIVQ1_VAL(4) | /* PLL1 Q = 5 */
+  RCC->PLL1DIVR = RCC_PLL1DIVR_DIVQ1_VAL(49) | /* PLL1 Q = 50 for SPI1 at 8 MHz */
                   RCC_PLL1DIVR_DIVP1_VAL(0) | /* PLL1 P = 1 */
                   RCC_PLL1DIVR_DIVN1_VAL(49); /* PLL1 N = 50 */
 
@@ -237,7 +237,6 @@ static void setup_clocks() {
 
   /* Enable PLL1P for System clock */
   RCC->CFGR |= RCC_CFGR_SW_VAL(3);
-
 }
 
 static void configure_usart1() {
@@ -310,6 +309,8 @@ void platform_init() {
   platform_init_scheduler();
   setup_systick();
   setup_watchdog();
+
+  setup_spi1();
 }
 
 void platform_benchmark_init() {

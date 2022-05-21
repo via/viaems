@@ -3,8 +3,11 @@ AR=arm-none-eabi-ar
 LD=arm-none-eabi-ld
 OBJCOPY=arm-none-eabi-objcopy
 
+OBJS+= stm32h743_init.o \
+       stm32h743_vectors.o \
+       stm32h743_sched.o \
+       stm32h743_sensors.o
 
-OBJS+= stm32h743_init.o stm32h743_vectors.o stm32h743_sched.o
 OBJS+= libssp.a libssp_nonshared.a
 
 CFLAGS+= -D TICKRATE=4000000 -DNDEBUG -ffunction-sections -fdata-sections
