@@ -151,6 +151,7 @@ void dma_str2_isr(void) {
       }
     }
   }
+  sensors_process(SENSOR_ADC);
 }
 
 static void setup_spi1_rx_dma(void) {
