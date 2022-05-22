@@ -310,7 +310,7 @@ void platform_init() {
   setup_systick();
   setup_watchdog();
 
-  setup_spi1();
+  configure_sensor_inputs();
 }
 
 void platform_benchmark_init() {
