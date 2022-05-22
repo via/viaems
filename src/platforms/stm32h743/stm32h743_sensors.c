@@ -1,5 +1,17 @@
 #include "device.h"
 
+/* Query a MAX11632's 16 inputs in a pattern described below that allows all
+ * inputs to sample at 10 kHz, and 2 inputs at 40 Khz for knock detection.  This
+ * is achieved with pattern of 24 total commands.  We sample at 240 kHz, which
+ * is achievable with a 4.8 MHz SPI clock.
+ *
+ * TIM15 is configured to 240 kHz, and drives the DMA to move the commands to
+ * the SPI TX register.  It is configured to accept a 9.6 MHz clock from the RCC
+ * via PLL1Q, prescaled to 4.8 MHz.  Hardware management of the slave select is
+ * used, allowing the CS to go high between commands.
+ *
+ * SPI RX drives a dma to a double buffered region, and the DMA's completion
+ * drives the sensor conversion interrupt */
 
 /* Configure TIM15 as a trigger source for DMA to/from the SPI */
 static void setup_tim15(void) {
@@ -7,7 +19,7 @@ static void setup_tim15(void) {
 
   TIM15->CR1 = TIM15_CR1_URS_VAL(1); /* overflow generates DMA */
 
-  TIM15->ARR = 1428; /* APB2 timer clock is 200 MHz, divide to get approx 140 kHz */
+  TIM15->ARR = 833; /* APB2 timer clock is 200 MHz, divide to get approx 240 kHz */
 
   TIM15->DIER = TIM15_DIER_UDE; /* DMA on update */
   TIM15->CR1 |= TIM15_CR1_CEN; /* Enable clock */
@@ -37,21 +49,24 @@ static void setup_spi1(void) {
                SPI1_CFG2_MASTER |
                SPI1_CFG2_SSOE |
                SPI1_CFG2_SSOM;
-        //       SPI1_CFG2_SSM; /* Use software slave management, and then
-        //       explicitly set SSI high to operate as a single master */
 
   SPI1->CR1 = SPI1_CR1_SSI;
   SPI1->CR1 |= SPI1_CR1_SPE;
   SPI1->CR1 |= SPI1_CR1_CSTART;
 }
 
-#define NUM_SPI_TX 4
-static const uint16_t max11632_transmit_sequence[] = {
-  0x0A501,
-  0x0A502,
-  0x0A503,
-  0x0A504,
-};
+#define NUM_SPI_TX 24
+#define SPI_SETUP 0x7400 /* Clock mode 11, external reference */
+#define SPI_INPUT(X) (0x86 | ((X) << 3)) /* No scan */
+/* Query the 16 inputs in a pattern that causes input 0 and 1 to get sampled at
+ * 4x the rate of the rest, over a total of 24 spi commands.  The first command
+ * sets the setup register */
+static const uint16_t max11632_transmit_sequence[NUM_SPI_TX] = {
+    SPI_SETUP,     SPI_INPUT(2),  SPI_INPUT(3),  SPI_INPUT(4),  SPI_INPUT(0), SPI_INPUT(1),
+    SPI_INPUT(5),  SPI_INPUT(6),  SPI_INPUT(7),  SPI_INPUT(8),  SPI_INPUT(0), SPI_INPUT(1),
+    SPI_INPUT(9),  SPI_INPUT(10), SPI_INPUT(11), SPI_INPUT(12), SPI_INPUT(0), SPI_INPUT(1),
+    SPI_INPUT(13), SPI_INPUT(14), SPI_INPUT(15), 0x0000,        SPI_INPUT(0), SPI_INPUT(1),
+  };
 
 static void setup_spi1_tx_dma(void) {
   /* TX DMA uses DMA1 stream 1 */
@@ -76,7 +91,7 @@ static void setup_spi1_tx_dma(void) {
 
 static uint16_t __attribute__((aligned(4)))
                 __attribute__((section(".dmadata"))) 
-                spi_rx_buffer[2][4];
+                spi_rx_buffer[2][NUM_SPI_TX];
 
 static void setup_spi1_rx_dma(void) {
   /* TX DMA uses DMA1 stream 2 */
