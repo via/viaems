@@ -17,8 +17,6 @@
 
 /* Configure TIM15 as a trigger source for DMA to/from the SPI */
 static void setup_tim15(void) {
-  RCC->APB2ENR |= RCC_APB2ENR_TIM15EN;
-
   TIM15->CR1 = TIM15_CR1_URS_VAL(1); /* overflow generates DMA */
 
   TIM15->ARR = 833; /* APB2 timer clock is 200 MHz, divide to get approx 240 kHz */
@@ -28,8 +26,6 @@ static void setup_tim15(void) {
 }
 
 static void setup_spi1(void) {
-  RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
-
   /* A4, A5, A6, A7 set to AF5 */
   GPIOA->MODER &= ~(GPIOA_MODER_MODE4 | 
                     GPIOA_MODER_MODE5 | 
@@ -180,7 +176,7 @@ static void setup_spi1_rx_dma(void) {
   DMA1->S2CR |= DMA1_S2CR_EN; /* Enable */
 }
 
-void configure_sensor_inputs(void) {
+void platform_configure_sensors(void) {
   setup_spi1();
   setup_tim15();
   setup_spi1_rx_dma();

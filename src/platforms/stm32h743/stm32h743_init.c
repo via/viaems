@@ -210,7 +210,8 @@ static void setup_clocks() {
                    RCC_PLLCKSELR_PLLSRC_VAL(2); /* HSE Source */
 
   RCC->PLLCFGR = RCC_PLLCFGR_DIVP1EN |  /* Enable PLL1 P */
-                 RCC_PLLCFGR_DIVQ1EN |  /* Enable PLL1 Q */
+                 RCC_PLLCFGR_DIVP3EN |  /* Enable PLL3 P */
+                 RCC_PLLCFGR_DIVQ3EN |  /* Enable PLL3 Q */
                  RCC_PLLCFGR_PLL1RGE_VAL(2) | /* PLL1 Clock range 4-8 MHz */
                  RCC_PLLCFGR_PLL2RGE_VAL(2) | /* PLL2 Clock range 4-8 MHz */
                  RCC_PLLCFGR_PLL3RGE_VAL(2) | /* PLL3 Clock range 4-8 MHz */
@@ -218,9 +219,9 @@ static void setup_clocks() {
                  RCC_PLLCFGR_PLL2VCOSEL | /* PLL2 Medium Range VCU */
                  RCC_PLLCFGR_PLL3VCOSEL; /* PLL3 Medium Range VCU */
 
-  RCC->PLL1DIVR = RCC_PLL1DIVR_DIVQ1_VAL(41) | /* PLL1 Q = 42 for SPI1 at ~4.8 MHz */
-                  RCC_PLL1DIVR_DIVP1_VAL(0) | /* PLL1 P = 1 */
-                  RCC_PLL1DIVR_DIVN1_VAL(49); /* PLL1 N = 50 */
+  RCC->PLL1DIVR =  RCC_PLL1DIVR_DIVN1_VAL(49) |  /* PLL1 N = 50, 400 MHz */
+                   RCC_PLL1DIVR_DIVP1_VAL(0); /* PLL1 P = 1 */
+                  
 
   /* Enable PLL1 and wait for it to be ready */
   RCC->CR |= RCC_CR_PLL1ON;
@@ -237,6 +238,29 @@ static void setup_clocks() {
 
   /* Enable PLL1P for System clock */
   RCC->CFGR |= RCC_CFGR_SW_VAL(3);
+
+  /* Configure PLL3 with a frequency of 48 MHz for SPI and USB */
+  RCC->PLL3DIVR = RCC_PLL3DIVR_DIVN3_VAL(5) | /* N = 6, provides 48 MHz internally */
+                  RCC_PLL3DIVR_DIVP3_VAL(4) | /* P = 5, provides 9.6 MHz to SPI1 */
+                  RCC_PLL3DIVR_DIVQ3_VAL(0); /* Q = 1, 48 MHz for USB1 */
+
+  /* Enable PLL3 and wait for it to be ready */
+  RCC->CR |= RCC_CR_PLL3ON;
+  while (((RCC->CR) & RCC_CR_PLL3RDY) != RCC_CR_PLL3RDY);
+
+  RCC->D2CCIP1R = RCC_D2CCIP1R_SPI123SRC_VAL(2); /* SPI1 uses PLL3P */
+  RCC->D2CCIP2R = RCC_D2CCIP2R_USBSRC_VAL(2); /* USB uses PLL3Q */
+
+  /* Clock enables for all peripherals used */
+  RCC->APB4ENR |= RCC_APB4ENR_SYSCFGEN;
+  RCC->AHB4ENR |= RCC_AHB4ENR_GPIOAEN;
+  RCC->AHB4ENR |= RCC_AHB4ENR_GPIODEN;
+  RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
+  RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
+  RCC->APB2ENR |= RCC_APB2ENR_TIM15EN;
+  RCC->APB2ENR |= RCC_APB2ENR_TIM8EN;
+  RCC->APB1LENR |= RCC_APB1LENR_TIM2EN;
+  RCC->AHB1ENR |= RCC_AHB1ENR_DMA1EN;
 }
 
 static void configure_usart1() {
@@ -298,30 +322,19 @@ void platform_init() {
 
   setup_clocks();
 
-  RCC->APB4ENR |= RCC_APB4ENR_SYSCFGEN;
-  RCC->AHB4ENR |= RCC_AHB4ENR_GPIOCEN; /*Enable GPIOC Clock */
-  RCC->AHB4ENR |= RCC_AHB4ENR_GPIOAEN; /*Enable GPIOA Clock */
-  RCC->APB2ENR |= RCC_APB2ENR_USART1EN; /*Enable USART1 Clock */
-
   setup_caches();
   setup_dwt();
   configure_usart1();
   platform_init_scheduler();
   setup_systick();
   setup_watchdog();
-
-  configure_sensor_inputs();
+  platform_configure_sensors();
 }
 
 void platform_benchmark_init() {
   lowlevel_init();
 
   setup_clocks();
-
-  RCC->APB4ENR |= RCC_APB4ENR_SYSCFGEN;
-  RCC->AHB4ENR |= RCC_AHB4ENR_GPIOCEN; /*Enable GPIOC Clock */
-  RCC->AHB4ENR |= RCC_AHB4ENR_GPIOAEN; /*Enable GPIOA Clock */
-  RCC->APB2ENR |= RCC_APB2ENR_USART1EN; /*Enable USART1 Clock */
 
   setup_caches();
   configure_usart1();

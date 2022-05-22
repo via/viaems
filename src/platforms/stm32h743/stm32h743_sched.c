@@ -9,8 +9,6 @@
 #include "device.h"
 
 static void setup_tim8(void) {
-  RCC->APB2ENR |= RCC_APB2ENR_TIM8EN;
-
   TIM8->CR1 = TIM8_CR1_DIR_VAL(0) | /* Upcounting */
               TIM8_CR1_URS_VAL(1); /* overflow generates DMA */
               /* Leave clock disabled until done */
@@ -91,7 +89,6 @@ void disable_event_timer() {
 }
 
 static void setup_tim2(void) {
-  RCC->APB1LENR |= RCC_APB1LENR_TIM2EN;
   TIM2->CR1 = TIM2_CR1_UDIS; /* Upcounting, no update event */
   TIM2->SMCR = TIM2_SMCR_TS_VAL(1) | /* Trigger ITR1 is TIM8's TRGO */
                TIM2_SMCR_SMS_VAL(7); /* External Clock Mode 1 */
@@ -263,9 +260,6 @@ void dma_str0_isr(void) {
 }
 
 static void setup_scheduled_outputs(void) {
-  RCC->AHB4ENR |= RCC_AHB4ENR_GPIODEN; /*Enable GPIOD Clock */
-  RCC->AHB1ENR |= RCC_AHB1ENR_DMA1EN;
-
   /* While still in hi-z, set outputs that are active-low */
   for (int i = 0; i < MAX_EVENTS; ++i) {
     if (config.events[i].inverted && config.events[i].type != DISABLED_EVENT) {
