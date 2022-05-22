@@ -11,7 +11,7 @@
 #include "tasks.h"
 #include "util.h"
 
-#define MAX_EVENTS 24
+#define MAX_EVENTS 16
 
 struct config {
   /* Event list */
@@ -49,6 +49,6 @@ struct config {
 
 extern struct config config;
 
-int config_valid();
+int config_valid(void);
 
 #endif

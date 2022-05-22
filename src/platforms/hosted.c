@@ -21,16 +21,8 @@ static _Atomic timeval_t curtime;
 static _Atomic timeval_t eventtimer_time;
 static _Atomic uint32_t eventtimer_enable = 0;
 static int event_logging_enabled = 1;
-static uint32_t test_trigger_rpm = 0;
-static _Atomic uint16_t cur_outputs = 0;
-
-struct slot {
-  uint16_t on_mask;
-  uint16_t off_mask;
-} __attribute__((packed)) * output_slots[2] = { 0 };
-static size_t max_slots;
-static _Atomic size_t cur_slot = 0;
-static _Atomic size_t cur_buffer = 0;
+static uint32_t test_trigger_rpm = 100;
+static uint16_t cur_outputs = 0;
 
 void platform_enable_event_logging() {
   event_logging_enabled = 1;
@@ -166,21 +158,6 @@ void platform_load_config() {}
 
 void platform_save_config() {}
 
-timeval_t init_output_thread(uint32_t *buf0, uint32_t *buf1, uint32_t len) {
-  output_slots[0] = (struct slot *)buf0;
-  output_slots[1] = (struct slot *)buf1;
-  max_slots = len;
-  return curtime / len * curtime;
-}
-
-int current_output_buffer() {
-  return cur_buffer;
-}
-
-int current_output_slot() {
-  return cur_slot;
-}
-
 void set_test_trigger_rpm(uint32_t rpm) {
   test_trigger_rpm = rpm;
 }
@@ -224,8 +201,10 @@ struct event {
 };
 
 static void do_test_trigger(int interrupt_fd) {
+  static bool camsync = true;
   static timeval_t last_trigger_time = 0;
   static int trigger = 0;
+  static int cycle = 0;
 
   if (!test_trigger_rpm) {
     return;
@@ -238,20 +217,24 @@ static void do_test_trigger(int interrupt_fd) {
   }
   last_trigger_time = curtime;
 
-  struct event ev = { .type = TRIGGER0, .time = curtime };
-  if (write(interrupt_fd, &ev, sizeof(ev)) < 0) {
-    perror("write");
-    exit(3);
-  }
-
   trigger++;
-  if (trigger == 24) {
-    struct event ev = { .type = TRIGGER1, .time = curtime };
+  if (trigger == 36) {
+    trigger = 0;
+    camsync = !camsync;
+    cycle += 1;
+  } else {
+    if (trigger == 30 && camsync && cycle < 8) {
+      struct event ev = { .type = TRIGGER1, .time = curtime };
+      if (write(interrupt_fd, &ev, sizeof(ev)) < 0) {
+        perror("write");
+        exit(3);
+      }
+    }
+    struct event ev = { .type = TRIGGER0, .time = curtime };
     if (write(interrupt_fd, &ev, sizeof(ev)) < 0) {
       perror("write");
-      exit(4);
+      exit(3);
     }
-    trigger = 0;
   }
 }
 
@@ -296,32 +279,88 @@ void *platform_interrupt_thread(void *_interrupt_fd) {
   } while (1);
 }
 
+#define MAX_SLOTS 128
+static struct sched_entry output_events[64];
+static size_t num_output_events = 0;
+static size_t next_output_event = 0;
+
+static void clear_output_events() {
+  num_output_events = 0;
+  next_output_event = 0;
+}
+
+static void add_output_event(struct sched_entry *se) {
+  output_events[num_output_events] = *se;
+  num_output_events++;
+}
+
+static int output_event_compare(const void *_a, const void *_b) {
+  const struct sched_entry *a = _a;
+  const struct sched_entry *b = _b;
+
+  if (a->time == b->time) {
+    return 0;
+  }
+  return time_before(a->time, b->time) ? -1 : 1;
+}
+
+static void platform_buffer_swap() {
+
+  disable_interrupts();
+  clear_output_events();
+  for (int i = 0; i < MAX_EVENTS; i++) {
+    struct output_event *oev = &config.events[i];
+    if (sched_entry_get_state(&oev->start) == SCHED_SUBMITTED) {
+      sched_entry_set_state(&oev->start, SCHED_FIRED);
+    }
+    if (sched_entry_get_state(&oev->stop) == SCHED_SUBMITTED) {
+      sched_entry_set_state(&oev->stop, SCHED_FIRED);
+    }
+    if (sched_entry_get_state(&oev->start) == SCHED_SCHEDULED &&
+        time_in_range(
+          oev->start.time, current_time(), current_time() + MAX_SLOTS - 1)) {
+      add_output_event(&oev->start);
+      sched_entry_set_state(&oev->start, SCHED_SUBMITTED);
+    }
+    if (sched_entry_get_state(&oev->stop) == SCHED_SCHEDULED &&
+        time_in_range(
+          oev->stop.time, current_time(), current_time() + MAX_SLOTS - 1)) {
+      add_output_event(&oev->stop);
+      sched_entry_set_state(&oev->stop, SCHED_SUBMITTED);
+    }
+  }
+  enable_interrupts();
+  /* Sort the outputs by ascending time */
+  qsort(output_events,
+        num_output_events,
+        sizeof(struct sched_entry),
+        output_event_compare);
+}
+
+timeval_t platform_output_earliest_schedulable_time() {
+  /* Round down to nearest MAX_SLOTS and then go to next window */
+  return current_time() / MAX_SLOTS * MAX_SLOTS + MAX_SLOTS;
+}
+
 static void do_output_slots() {
-  static uint16_t old_outputs = 0;
-  static uint16_t old_fifo_on_mask = 0;
-  static uint16_t old_fifo_off_mask = 0;
-
-  if (!output_slots[0]) {
-    return;
+  /* Only take action on first slot time */
+  if (curtime % MAX_SLOTS == 0) {
+    platform_buffer_swap();
   }
 
-  cur_slot++;
-  if (cur_slot == max_slots) {
-    cur_buffer = (cur_buffer + 1) % 2;
-    cur_slot = 0;
-    scheduler_buffer_swap();
+  uint16_t old_outputs = cur_outputs;
+
+  while ((next_output_event < num_output_events) &&
+         (output_events[next_output_event].time == current_time())) {
+    struct sched_entry s = output_events[next_output_event];
+    next_output_event++;
+    if (s.val) {
+      cur_outputs |= (1 << s.pin);
+    } else {
+      cur_outputs &= ~(1 << s.pin);
+    }
   }
-
-  int read_slot = (cur_slot + 1) % max_slots;
-  int read_buffer = (read_slot == 0) ? !cur_buffer : cur_buffer;
-
-  cur_outputs |= old_fifo_on_mask;
-  cur_outputs &= ~old_fifo_off_mask;
-
-  old_fifo_on_mask = output_slots[read_buffer][read_slot].on_mask;
-  old_fifo_off_mask = output_slots[read_buffer][read_slot].off_mask;
-
-  if (cur_outputs != old_outputs) {
+  if (old_outputs != cur_outputs) {
     char output[64];
     sprintf(output, "# OUTPUTS %lu %2x\n", (long unsigned)curtime, cur_outputs);
     write(STDERR_FILENO, output, strlen(output));
@@ -330,9 +369,9 @@ static void do_output_slots() {
       .value = cur_outputs,
       .type = EVENT_OUTPUT,
     });
-    old_outputs = cur_outputs;
   }
 }
+
 /* Thread that busywaits to increment the primary timebase.  This loop is also
  * responsible for triggering event timer, buffer swap, and trigger events
  */
@@ -353,12 +392,7 @@ void *platform_timebase_thread(void *_interrupt_fd) {
     clock_nanosleep_busywait(next_tick);
     current_time = next_tick;
 
-    if (!output_slots[0]) {
-      continue;
-    }
-
     curtime += 1;
-
     do_output_slots();
 
     if ((curtime % 10000) == 0) {

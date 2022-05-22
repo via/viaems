@@ -40,6 +40,8 @@ struct calculated_values {
   float timing_advance;
   uint32_t dwell_us;
   uint32_t rpm_limit_cut;
+  uint32_t boost_cut;
+  uint32_t fuel_overduty_cut;
 
   /* Fueling */
   uint32_t fueling_us;
@@ -54,10 +56,10 @@ struct calculated_values {
 
 extern struct calculated_values calculated_values;
 
-void calculate_ignition();
-void calculate_fueling();
-bool ignition_cut();
-bool fuel_cut();
+void calculate_ignition(void);
+void calculate_fueling(void);
+bool ignition_cut(void);
+bool fuel_cut(void);
 
 #ifdef UNITTEST
 #include <check.h>

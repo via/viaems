@@ -1,7 +1,7 @@
 #define BENCHMARK
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
-#include <assert.h>
 
 #include "calculations.h"
 #include "config.h"
@@ -20,16 +20,15 @@ static void do_fuel_calculation_bench() {
   uint64_t start = cycle_count();
   calculate_fueling();
   uint64_t end = cycle_count();
-  printf("calculate_fueling: %llu ns\r\n", (unsigned long long)cycles_to_ns(end - start));
+  printf("calculate_fueling: %llu ns\r\n",
+         (unsigned long long)cycles_to_ns(end - start));
 }
 
 static void do_schedule_ignition_event_bench() {
   platform_load_config();
 
-  config.events[0].start.scheduled = 0;
-  config.events[0].start.fired = 0;
-  config.events[0].stop.scheduled = 0;
-  config.events[0].stop.fired = 0;
+  config.events[0].start.state = SCHED_UNSCHEDULED;
+  config.events[0].stop.state = SCHED_UNSCHEDULED;
   config.events[0].angle = 180;
 
   config.decoder.valid = 1;
@@ -39,7 +38,7 @@ static void do_schedule_ignition_event_bench() {
   uint64_t start = cycle_count();
   schedule_event(&config.events[0]);
   uint64_t end = cycle_count();
-  assert(config.events[0].start.scheduled);
+  assert(config.events[0].start.state == SCHED_SCHEDULED);
 
   printf("fresh ignition schedule_event: %llu ns\r\n",
          (unsigned long long)cycles_to_ns(end - start));
@@ -49,14 +48,16 @@ static void do_schedule_ignition_event_bench() {
   schedule_event(&config.events[0]);
   end = cycle_count();
 
-  printf("backward schedule_event: %llu ns\r\n", (unsigned long long)cycles_to_ns(end - start));
+  printf("backward schedule_event: %llu ns\r\n",
+         (unsigned long long)cycles_to_ns(end - start));
 
   calculated_values.timing_advance = 15.0f;
   start = cycle_count();
   schedule_event(&config.events[0]);
   end = cycle_count();
 
-  printf("forward schedule_event: %llu ns\r\n", (unsigned long long)cycles_to_ns(end - start));
+  printf("forward schedule_event: %llu ns\r\n",
+         (unsigned long long)cycles_to_ns(end - start));
 }
 
 static void do_sensor_adc_calcs() {
@@ -68,7 +69,8 @@ static void do_sensor_adc_calcs() {
   sensors_process(SENSOR_ADC);
   uint64_t end = cycle_count();
 
-  printf("process_sensor(adc): %llu ns\r\n", (unsigned long long)cycles_to_ns(end - start));
+  printf("process_sensor(adc): %llu ns\r\n",
+         (unsigned long long)cycles_to_ns(end - start));
 }
 
 static void do_sensor_single_therm() {
@@ -96,45 +98,11 @@ static void do_sensor_single_therm() {
   sensors_process(SENSOR_ADC);
   uint64_t end = cycle_count();
 
-  printf("process_sensor(single-therm): %llu ns\r\n", (unsigned long long)cycles_to_ns(end - start));
-}
-
-void do_buffer_swap_bench_best_case() {
-  platform_load_config();
-
-  uint64_t start = cycle_count();
-  scheduler_buffer_swap();
-  uint64_t end = cycle_count();
-
-  printf("best case buffer_swap: %llu ns\r\n", (unsigned long long)cycles_to_ns(end - start));
-}
-
-void do_buffer_swap_bench_all_fired() {
-  platform_load_config();
-
-  bench_set_all_events_fired();
-  uint64_t start = cycle_count();
-  scheduler_buffer_swap();
-  uint64_t end = cycle_count();
-
-  printf("worst case 'fired' buffer_swap: %llu ns\r\n",
-         (unsigned long long)cycles_to_ns(end - start));
-}
-
-void do_buffer_swap_bench_all_ready() {
-  platform_load_config();
-
-  bench_set_all_events_ready_to_schedule();
-  uint64_t start = cycle_count();
-  scheduler_buffer_swap();
-  uint64_t end = cycle_count();
-
-  printf("worst case 'ready' buffer_swap: %llu ns\r\n",
+  printf("process_sensor(single-therm): %llu ns\r\n",
          (unsigned long long)cycles_to_ns(end - start));
 }
 
 int main() {
-  platform_benchmark_init();
   initialize_scheduler();
 
   /* Preparations for all benchmarks */
@@ -149,9 +117,6 @@ int main() {
     do_schedule_ignition_event_bench();
     do_sensor_adc_calcs();
     do_sensor_single_therm();
-    do_buffer_swap_bench_best_case();
-    do_buffer_swap_bench_all_fired();
-    do_buffer_swap_bench_all_ready();
   } while (1);
   return 0;
 }

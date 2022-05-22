@@ -8,9 +8,11 @@
 static void handle_fuel_pump() {
   static timeval_t last_valid = 0;
 
-  /* If engine is turning, keep pump on */
-  if ((config.decoder.state == DECODER_RPM) ||
-      (config.decoder.state == DECODER_SYNC)) {
+  /* If engine is turning (as defined by seeing a trigger in the last second),
+   * keep pump on */
+  timeval_t last_trigger = config.decoder.last_trigger_time;
+  if (time_in_range(
+        current_time(), last_trigger, last_trigger + time_from_us(1000000))) {
     last_valid = current_time();
     set_gpio(config.fueling.fuel_pump_pin, 1);
     return;
@@ -28,14 +30,18 @@ static void handle_fuel_pump() {
 
 static void handle_boost_control() {
   float duty;
-  if ((config.sensors[SENSOR_MAP].processed_value <
-       config.boost_control.threshhold_kpa)) {
-    if (config.sensors[SENSOR_TPS].processed_value > 90.0f) {
-      duty = 100.0f;
-    } else {
-      duty = 0.0f;
-    }
+  float map = config.sensors[SENSOR_MAP].processed_value;
+  float tps = config.sensors[SENSOR_TPS].processed_value;
+  if (map < config.boost_control.enable_threshold_kpa) {
+    /* Below the "enable" threshold, keep the valve off */
+    duty = 0.0f;
+  } else if (map < config.boost_control.control_threshold_kpa &&
+             tps > config.boost_control.control_threshold_tps) {
+    /* Above "enable", but below "control", and WOT, so keep wastegate at
+     * atmostpheric pressure to improve spool time */
+    duty = 100.0f;
   } else {
+    /* We are controlling the wastegate with PWM */
     duty = interpolate_table_oneaxis(config.boost_control.pwm_duty_vs_rpm,
                                      config.decoder.rpm);
   }
@@ -160,7 +166,7 @@ START_TEST(check_tasks_handle_fuel_pump) {
   ck_assert_int_eq(get_gpio(1), 1);
 
   /* Wait 4 seconds, should turn off */
-  set_current_time(time_from_us(4000000));
+  set_current_time(time_from_us(4001000));
   handle_fuel_pump();
   ck_assert_int_eq(get_gpio(1), 0);
 
@@ -169,29 +175,19 @@ START_TEST(check_tasks_handle_fuel_pump) {
   handle_fuel_pump();
   ck_assert_int_eq(get_gpio(1), 0);
 
-  /* Get RPM sync */
+  /* Have a recent trigger */
   config.decoder.state = DECODER_RPM;
-  handle_fuel_pump();
-  ck_assert_int_eq(get_gpio(1), 1);
-
-  /* Wait 10 more seconds, should still be on */
-  set_current_time(time_from_us(18000000));
-  handle_fuel_pump();
-  ck_assert_int_eq(get_gpio(1), 1);
-
-  /* Lose RPM sync */
-  config.decoder.state = DECODER_NOSYNC;
-  set_current_time(time_from_us(19000000));
+  config.decoder.last_trigger_time = current_time() - 500000;
   handle_fuel_pump();
   ck_assert_int_eq(get_gpio(1), 1);
 
   /* Keep waiting, should shut off */
-  set_current_time(time_from_us(25000000));
+  set_current_time(time_from_us(15000000));
   handle_fuel_pump();
   ck_assert_int_eq(get_gpio(1), 0);
 
   /* Keep waiting, should stay shut off */
-  set_current_time(time_from_us(40000000));
+  set_current_time(time_from_us(200000000));
   handle_fuel_pump();
   ck_assert_int_eq(get_gpio(1), 0);
 }

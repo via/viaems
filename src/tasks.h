@@ -5,7 +5,9 @@
 
 struct boost_control_config {
   struct table *pwm_duty_vs_rpm;
-  float threshhold_kpa;
+  float enable_threshold_kpa;
+  float control_threshold_kpa;
+  float control_threshold_tps;
   uint32_t pin;
   float overboost;
 };
@@ -17,12 +19,12 @@ struct cel_config {
   float lean_boost_ego;
 };
 
-void handle_emergency_shutdown();
-void run_tasks();
+void handle_emergency_shutdown(void);
+void run_tasks(void);
 
 #ifdef UNITTEST
 #include <check.h>
-TCase *setup_tasks_tests();
+TCase *setup_tasks_tests(void);
 #endif
 
 #endif

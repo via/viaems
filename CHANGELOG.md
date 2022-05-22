@@ -1,9 +1,14 @@
 ### master (unreleased)
+
+ - Implement simpler and easier-to-understand scheduler
+
+### 1.4.0 (2022 Feb 16)
 This introduces a breaking change with interface software.
 
 - New console and logging interface, as defined in INTERFACE.md. 
 - Revert trigger inputs to old non-dma interrupts
 - Fix linear window sensor glitch caused by race in current_angle()
+- Implement missing tooth decoder
 
 ### 1.3.0 (2020 Nov 20)
 - Switch build system to a GNU makefile at the toplevel

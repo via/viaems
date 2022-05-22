@@ -31,10 +31,16 @@ const struct console_feed_node console_feed_nodes[] = {
   { .id = "temp_enrich_percent", .float_ptr = &calculated_values.ete },
   { .id = "injector_dead_time", .float_ptr = &calculated_values.idt },
   { .id = "accel_enrich_percent", .float_ptr = &calculated_values.tipin },
+  { .id = "airmass_per_cycle",
+    .float_ptr = &calculated_values.airmass_per_cycle },
 
   /* Ignition */
   { .id = "advance", .float_ptr = &calculated_values.timing_advance },
   { .id = "dwell", .uint32_ptr = &calculated_values.dwell_us },
+  { .id = "rpm_cut", .uint32_ptr = &calculated_values.rpm_limit_cut },
+  { .id = "boost_cut", .uint32_ptr = &calculated_values.boost_cut },
+  { .id = "fuel_overduty_cut",
+    .uint32_ptr = &calculated_values.fuel_overduty_cut },
 
   { .id = "sensor.map",
     .float_ptr = &config.sensors[SENSOR_MAP].processed_value },
@@ -59,6 +65,7 @@ const struct console_feed_node console_feed_nodes[] = {
 
   /* Decoder */
   { .id = "rpm", .uint32_ptr = &config.decoder.rpm },
+  { .id = "tooth_rpm", .uint32_ptr = &config.decoder.tooth_rpm },
   { .id = "sync", .uint32_ptr = &config.decoder.valid },
   { .id = "loss", .uint32_fptr = render_loss_reason },
   { .id = "rpm_variance", .float_ptr = &config.decoder.trigger_cur_rpm_change },
@@ -79,7 +86,7 @@ static struct {
   struct logged_event events[32];
   volatile uint32_t read;
   volatile uint32_t write;
-} event_log;
+} event_log = { 0 };
 
 static struct logged_event get_logged_event() {
   if (!event_log.enabled || (event_log.read == event_log.write)) {
@@ -766,7 +773,7 @@ static void render_table_axis_values(struct console_request_context *ctx,
     }
     axis->num = len;
   }
-  for (int i = 0; i < axis->num; i++) {
+  for (int i = 0; (i < axis->num) && (i < MAX_AXIS_SIZE); i++) {
     struct console_request_context deeper;
     if (descend_array_field(ctx, &deeper, i)) {
       render_float_object(&deeper, "axis value", &axis->values[i]);
@@ -903,14 +910,37 @@ static void render_decoder(struct console_request_context *ctx, void *ptr) {
     ctx, "rpm-limit-start", "rpm limit lower hysteresis", &config.rpm_start);
 
   int type = config.decoder.type;
-  render_enum_map_field(
-    ctx,
-    "type",
-    "decoder wheel type",
-    (struct console_enum_mapping[]){
-      { FORD_TFI, "tfi" }, { TOYOTA_24_1_CAS, "cam24+1" }, { 0, NULL } },
-    &type);
+  render_enum_map_field(ctx,
+                        "trigger-type",
+                        "Primary trigger decoder method",
+                        (struct console_enum_mapping[]){
+                          { TRIGGER_EVEN_NOSYNC, "even" },
+                          { TRIGGER_EVEN_CAMSYNC, "even+camsync" },
+                          { TRIGGER_MISSING_NOSYNC, "missing" },
+                          { TRIGGER_MISSING_CAMSYNC, "missing+camsync" },
+                          { 0, NULL } },
+                        &type);
   config.decoder.type = type;
+
+  render_uint32_map_field(ctx,
+                          "num-triggers",
+                          "number of teeth on primary wheel",
+                          &config.decoder.num_triggers);
+  render_float_map_field(ctx,
+                         "degrees-per-trigger",
+                         "angle a single tooth represents",
+                         &config.decoder.degrees_per_trigger);
+
+  render_uint32_map_field(
+    ctx,
+    "min-triggers-rpm",
+    "minimum teeth required to generate rpm for even tooth wheel",
+    &config.decoder.required_triggers_rpm);
+
+  render_uint32_map_field(ctx,
+                          "rpm-window-size",
+                          "rpm average window for even tooth wheel",
+                          &config.decoder.rpm_window_size);
 }
 
 static void output_console_renderer(struct console_request_context *ctx,
@@ -1123,9 +1153,18 @@ static void render_boost_control(struct console_request_context *ctx,
   render_uint32_map_field(
     ctx, "pin", "GPIO pin for boost control output", &config.boost_control.pin);
   render_float_map_field(ctx,
-                         "threshold",
-                         "Boost low threshold to enable boost control",
-                         &config.boost_control.threshhold_kpa);
+                         "enable-threshold",
+                         "MAP low threshold to enable boost control",
+                         &config.boost_control.enable_threshold_kpa);
+  render_float_map_field(
+    ctx,
+    "control-threshold",
+    "MAP low threshold to keep valve open if TPS setting is met",
+    &config.boost_control.control_threshold_kpa);
+  render_float_map_field(ctx,
+                         "control-threshold-tps",
+                         "TPS threshold for valve-wide-open mode",
+                         &config.boost_control.control_threshold_tps);
   render_float_map_field(ctx,
                          "overboost",
                          "High threshold for boost cut (kpa)",
