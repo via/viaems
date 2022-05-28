@@ -68,22 +68,24 @@ size_t console_read(void *ptr, size_t max) {
 size_t console_write(const void *ptr, size_t max) {
   (void)ptr;
   (void)max;
+#if 0
   const char *c = ptr;
   for (int i = 0; i < max; i++) {
     while (((USART1->ISR) & USART_ISR_TXFE) != USART_ISR_TXFE);
     USART1->TDR = c[i];
   }
+#endif
   return max;
 }
 
 int __attribute__((externally_visible))
 _write(int fd, const char *buf, size_t count) {
   (void)fd;
-  size_t pos = 0;
-  while (pos < count) {
-    pos += console_write(buf + pos, count - pos);
+  const char *c = buf;
+  for (int i = 0; i < count; i++) {
+    while (((USART1->ISR) & USART_ISR_TXFE) != USART_ISR_TXFE);
+    USART1->TDR = c[i];
   }
-  return count;
 }
 
 /* Setup power, HSE, clock tree, and flash wait states */
@@ -306,10 +308,11 @@ void platform_init() {
   setup_caches();
   setup_dwt();
   configure_usart1();
-  platform_init_scheduler();
+//  platform_init_scheduler();
   setup_systick();
-  setup_watchdog();
+//  setup_watchdog();
   platform_configure_sensors();
+  platform_configure_usb();
 }
 
 void platform_benchmark_init() {
