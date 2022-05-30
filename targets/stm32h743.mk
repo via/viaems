@@ -11,7 +11,8 @@ OBJS+= stm32h743_init.o \
 
 OBJS+= libssp.a libssp_nonshared.a
 
-CFLAGS+= -I src/platforms/stm32h743/cmsis/
+CFLAGS+= -I src/platforms/stm32h743/cmsis_core/Include 
+CFLAGS+= -I src/platforms/stm32h743/cmsis_device_h7/Include
 CFLAGS+= -D TICKRATE=4000000 -DNDEBUG -ffunction-sections -fdata-sections
 CFLAGS+= -O0 -ggdb 
 CFLAGS+= -mfloat-abi=hard -mfpu=fpv5-d16 -mthumb -mcpu=cortex-m7
