@@ -1,4 +1,4 @@
-#include "device.h"
+#include "stm32h743xx.h"
 #include "sensors.h"
 #include "config.h"
 
@@ -17,40 +17,40 @@
 
 /* Configure TIM15 as a trigger source for DMA to/from the SPI */
 static void setup_tim15(void) {
-  TIM15->CR1 = TIM15_CR1_URS_VAL(1); /* overflow generates DMA */
+  TIM15->CR1 = TIM_CR1_URS; /* overflow generates DMA */
 
   TIM15->ARR = 833; /* APB2 timer clock is 200 MHz, divide to get approx 240 kHz */
 
-  TIM15->DIER = TIM15_DIER_UDE; /* DMA on update */
-  TIM15->CR1 |= TIM15_CR1_CEN; /* Enable clock */
+  TIM15->DIER = TIM_DIER_UDE; /* DMA on update */
+  TIM15->CR1 |= TIM_CR1_CEN; /* Enable clock */
 }
 
 static void setup_spi1(void) {
   /* A4, A5, A6, A7 set to AF5 */
-  GPIOA->MODER &= ~(GPIOA_MODER_MODE4 | 
-                    GPIOA_MODER_MODE5 | 
-                    GPIOA_MODER_MODE6 | 
-                    GPIOA_MODER_MODE7);
-  GPIOA->MODER |= GPIOA_MODER_MODE4_VAL(2) | 
-                  GPIOA_MODER_MODE5_VAL(2) | 
-                  GPIOA_MODER_MODE6_VAL(2) | 
-                  GPIOA_MODER_MODE7_VAL(2);
-  GPIOA->AFRL |= GPIOA_AFRL_AFSEL4_VAL(5) |
-                 GPIOA_AFRL_AFSEL5_VAL(5) | 
-                 GPIOA_AFRL_AFSEL6_VAL(5) | 
-                 GPIOA_AFRL_AFSEL7_VAL(5);
+  GPIOA->MODER &= ~(GPIO_MODER_MODE4 | 
+                    GPIO_MODER_MODE5 | 
+                    GPIO_MODER_MODE6 | 
+                    GPIO_MODER_MODE7);
+  GPIOA->MODER |= GPIO_MODER_MODE4_1 | 
+                  GPIO_MODER_MODE5_1 | 
+                  GPIO_MODER_MODE6_1 | 
+                  GPIO_MODER_MODE7_1;
+  GPIOA->AFR[0] |= _VAL2FLD(GPIO_AFRL_AFSEL4, 5) |
+                   _VAL2FLD(GPIO_AFRL_AFSEL5, 5) | 
+                   _VAL2FLD(GPIO_AFRL_AFSEL6, 5) | 
+                   _VAL2FLD(GPIO_AFRL_AFSEL7, 5);
 
-  SPI1->CFG1 = SPI1_CFG1_MBR_VAL(0) | /* Clk / 2 = 4 MHz*/
-               SPI1_CFG1_DSIZE_VAL(15) | /* 16 bit transfers */
-               SPI1_CFG1_RXDMAEN; /* RX DMA */
-  SPI1->CFG2 = SPI1_CFG2_CPHA_VAL(0) | /* First clock transition is first capture edge */
-               SPI1_CFG2_MASTER |
-               SPI1_CFG2_SSOE |
-               SPI1_CFG2_SSOM;
+  SPI1->CFG1 = /* Clk / 2 = 4 MHz*/
+               _VAL2FLD(SPI_CFG1_DSIZE, 15) | /* 16 bit transfers */
+               SPI_CFG1_RXDMAEN; /* RX DMA */
+  SPI1->CFG2 = /* First clock transition is first capture edge */
+               SPI_CFG2_MASTER |
+               SPI_CFG2_SSOE |
+               SPI_CFG2_SSOM;
 
-  SPI1->CR1 = SPI1_CR1_SSI;
-  SPI1->CR1 |= SPI1_CR1_SPE;
-  SPI1->CR1 |= SPI1_CR1_CSTART;
+  SPI1->CR1 = SPI_CR1_SSI;
+  SPI1->CR1 |= SPI_CR1_SPE;
+  SPI1->CR1 |= SPI_CR1_CSTART;
 }
 
 #define NUM_SPI_TX 24
@@ -70,23 +70,23 @@ static const uint16_t max11632_transmit_sequence[NUM_SPI_TX] = {
 
 static void setup_spi1_tx_dma(void) {
   /* TX DMA uses DMA1 stream 1 */
-  DMA1->S1CR = 0;
-  DMA1->S1PAR = (uint32_t)&SPI1->TXDR; /* Peripheral address is SPI Tx Data */
-  DMA1->S1M0AR = (uint32_t)&max11632_transmit_sequence;
-  DMA1->S1NDTR = NUM_SPI_TX;
+  DMA1_Stream1->CR = 0;
+  DMA1_Stream1->PAR = (uint32_t)&SPI1->TXDR; /* Peripheral address is SPI Tx Data */
+  DMA1_Stream1->M0AR = (uint32_t)&max11632_transmit_sequence;
+  DMA1_Stream1->NDTR = NUM_SPI_TX;
 
-  DMA1->S1CR = DMA1_S1CR_CIRC | /* Circular Transmit */
-               DMA1_S1CR_PL_VAL(2) | /* Medium Priority */
-               DMA1_S1CR_MSIZE_VAL(1) | /* 16 bit memory size */
-               DMA1_S1CR_PSIZE_VAL(1) | /* 16 bit peripheral size */
-               DMA1_S1CR_MINC | /* Memory increment after each transfer */
-               DMA1_S1CR_DIR_VAL(1); /* Direction is memory to peripheral */
+  DMA1_Stream1->CR = DMA_SxCR_CIRC | /* Circular Transmit */
+               DMA_SxCR_PL_1 | /* Medium Priority */
+               DMA_SxCR_MSIZE_0 | /* 16 bit memory size */
+               DMA_SxCR_PSIZE_0 | /* 16 bit peripheral size */
+               DMA_SxCR_MINC | /* Memory increment after each transfer */
+               DMA_SxCR_DIR_0; /* Direction is memory to peripheral */
 
   /* Configure DMAMUX */
-  DMAMUX1->C1CR &= ~(DMAMUX1_C1CR_DMAREQ_ID);
-  DMAMUX1->C1CR |= DMAMUX1_C1CR_DMAREQ_ID_VAL(106); /* TIM15 Update */
+  DMAMUX1_Channel1->CCR &= ~(DMAMUX_CxCR_DMAREQ_ID);
+  DMAMUX1_Channel1->CCR |= _VAL2FLD(DMAMUX_CxCR_DMAREQ_ID, 106); /* TIM15 Update */
 
-  DMA1->S1CR |= DMA1_S1CR_EN; /* Enable */
+  DMA1_Stream1->CR |= DMA_SxCR_EN; /* Enable */
 }
 
 static uint16_t __attribute__((aligned(4)))
@@ -134,10 +134,10 @@ static uint16_t read_adc_pin(const uint16_t *values, int pin) {
   }
 }
 
-void dma_str2_isr(void) {
-  if ((DMA1->LISR & DMA1_LISR_TCIF2) == DMA1_LISR_TCIF2) {
-    DMA1->LIFCR = DMA1_LIFCR_CTCIF2;
-    const uint16_t *sequence = ((DMA1->S2CR & DMA1_S2CR_CT) == 0) ?
+void DMA1_Stream2_IRQHandler(void) {
+  if ((DMA1->LISR & DMA_LISR_TCIF2) == DMA_LISR_TCIF2) {
+    DMA1->LIFCR = DMA_LIFCR_CTCIF2;
+    const uint16_t *sequence = (_FLD2VAL(DMA_SxCR_CT, DMA1_Stream2->CR) == 0) ?
         spi_rx_buffer[1] : /* If current target is 0, read from 1 */
         spi_rx_buffer[0];
 
@@ -152,28 +152,27 @@ void dma_str2_isr(void) {
 
 static void setup_spi1_rx_dma(void) {
   /* TX DMA uses DMA1 stream 2 */
-  DMA1->S2CR = 0;
-  DMA1->S2PAR = (uint32_t)&SPI1->RXDR; /* Peripheral address is SPI Tx Data */
-  DMA1->S2M0AR = (uint32_t)&spi_rx_buffer[0][0];
-  DMA1->S2M1AR = (uint32_t)&spi_rx_buffer[1][0];
-  DMA1->S2NDTR = NUM_SPI_TX;
+  DMA1_Stream2->CR = 0;
+  DMA1_Stream2->PAR = (uint32_t)&SPI1->RXDR; /* Peripheral address is SPI Tx Data */
+  DMA1_Stream2->M0AR = (uint32_t)&spi_rx_buffer[0][0];
+  DMA1_Stream2->M1AR = (uint32_t)&spi_rx_buffer[1][0];
+  DMA1_Stream2->NDTR = NUM_SPI_TX;
 
-  DMA1->S2CR = DMA1_S2CR_DBM | /* Circular Transmit */
-               DMA1_S2CR_PL_VAL(2) | /* Medium Priority */
-               DMA1_S2CR_MSIZE_VAL(1) | /* 16 bit memory size */
-               DMA1_S2CR_PSIZE_VAL(1) | /* 16 bit peripheral size */
-               DMA1_S2CR_MINC | /* Memory increment after each transfer */
-               DMA1_S2CR_DIR_VAL(0) | /* Direction is periph(SPI) to memory */
-               DMA1_S2CR_TCIE | /* Interrupt when each transfer complete */
-               DMA1_S2CR_DMEIE; /* Interrupt on DMA error */
+  DMA1_Stream2->CR = DMA_SxCR_DBM | /* Circular Transmit */
+               DMA_SxCR_PL_1 | /* Medium Priority */
+               DMA_SxCR_MSIZE_0 | /* 16 bit memory size */
+               DMA_SxCR_PSIZE_0 | /* 16 bit peripheral size */
+               DMA_SxCR_MINC | /* Memory increment after each transfer */
+               DMA_SxCR_TCIE | /* Interrupt when each transfer complete */
+               DMA_SxCR_DMEIE; /* Interrupt on DMA error */
 
   /* Configure DMAMUX */
-  DMAMUX1->C2CR &= ~(DMAMUX1_C2CR_DMAREQ_ID);
-  DMAMUX1->C2CR |= DMAMUX1_C2CR_DMAREQ_ID_VAL(37); /* SPI1 Rx Update */
+  DMAMUX1_Channel2->CCR &= ~(DMAMUX_CxCR_DMAREQ_ID);
+  DMAMUX1_Channel2->CCR |= _VAL2FLD(DMAMUX_CxCR_DMAREQ_ID, 37); /* SPI1 Rx Update */
 
-  nvic_enable_irq(DMA_STR2_IRQ);
-  nvic_set_priority(DMA_STR2_IRQ, 4); 
-  DMA1->S2CR |= DMA1_S2CR_EN; /* Enable */
+  NVIC_EnableIRQ(DMA1_Stream2_IRQn);
+  NVIC_SetPriority(DMA1_Stream2_IRQn, 64); 
+  DMA1_Stream2->CR |= DMA_SxCR_EN; /* Enable */
 }
 
 void platform_configure_sensors(void) {

@@ -11,12 +11,11 @@ MEMORY
   itcmram (rwx)     : ORIGIN = 0x00000000, LENGTH = 64K
 }
 
-EXTERN (vector_table)
-ENTRY(reset_handler)
+ENTRY(Reset_Handler)
 
 SECTIONS {
 	.vectors : {
-		*(.vectors)
+		KEEP(*(.isr_vector))
 	} > vectors
 
 	.text : {
@@ -66,12 +65,12 @@ SECTIONS {
 	_etext = .;
 
 	.data : {
-		_data = .;
+		_sdata = .;
 		*(.data*)	/* Read-write initialized data */
 		. = ALIGN(4);
 		_edata = .;
 	} >dtcmram AT >rom
-	_data_loadaddr = LOADADDR(.data);
+	_sidata = LOADADDR(.data);
 
 	.configdata : {
 		_sconfigdata = .;
@@ -87,21 +86,17 @@ SECTIONS {
   } >axiram
 
 	.bss : {
+    _sbss = .;
 		*(.bss*)	/* Read-write zero initialized data */
 		*(COMMON)
 		. = ALIGN(4);
 		_ebss = .;
 	} >dtcmram
 
-	/*
-	 * The .eh_frame section appears to be used for C++ exception handling.
-	 * You may need to fix this if you're using C++.
-	 */
-	/DISCARD/ : { *(.eh_frame) }
 
 	. = ALIGN(4);
 	end = .;
 }
 
-PROVIDE(_stack = ORIGIN(dtcmram) + LENGTH(dtcmram));
+PROVIDE(_estack = ORIGIN(dtcmram) + LENGTH(dtcmram));
 

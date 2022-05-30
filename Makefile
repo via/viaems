@@ -40,6 +40,9 @@ $(OBJDIR):
 $(OBJDIR)/%.o: %.c
 	${CC} ${CFLAGS} -MMD -c -o $@ $<
 
+$(OBJDIR)/%.o: %.s
+	${AS} -c -o $@ $<
+
 $(OBJDIR)/viaems: ${OBJDIR} ${DESTOBJS} ${OBJDIR}/${TINYCBOR_LIB} ${OBJDIR}/viaems.o
 	${CC} -o $@ ${CFLAGS} ${DESTOBJS} ${OBJDIR}/viaems.o ${LDFLAGS}
 
@@ -61,6 +64,5 @@ benchmark: $(OBJDIR)/benchmark
 
 clean:
 	-rm ${OBJDIR}/*
-
 
 .PHONY: clean lint format integration benchmark

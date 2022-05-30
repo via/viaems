@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdint.h>
 #include <stdbool.h>
 
 #include "platform.h"
@@ -6,46 +7,44 @@
 #include "config.h"
 #include "sensors.h"
 #include "util.h"
-#include "device.h"
+#include "stm32h743xx.h"
 
 static void setup_tim8(void) {
-  TIM8->CR1 = TIM8_CR1_DIR_VAL(0) | /* Upcounting */
-              TIM8_CR1_URS_VAL(1); /* overflow generates DMA */
-              /* Leave clock disabled until done */
+  TIM8->CR1 = TIM_CR1_URS; /* overflow generates DMA */
 
-  TIM8->CR2 = TIM8_CR2_MMS_VAL(2); /* TRGO on update */
+  TIM8->CR2 = TIM_CR2_MMS_1; /* TRGO on update */
 
   TIM8->ARR = 49; /* APB2 timer clock is 200 MHz, divide by (49+1) to get 4 MHz */
 
-  TIM8->DIER = TIM8_DIER_UDE; /* Interrupt and DMA on update */
-  TIM8->CR1 |= TIM8_CR1_CEN; /* Enable clock */
+  TIM8->DIER = TIM_DIER_UDE; /* Interrupt and DMA on update */
+  TIM8->CR1 |= TIM_CR1_CEN; /* Enable clock */
 }
 
 timeval_t current_time() {
   return TIM2->CNT;
 }
 
-void tim2_isr(void) {
+void TIM2_IRQHandler(void) {
   bool cc1_fired = false;
   bool cc2_fired = false;
   timeval_t cc1;
   timeval_t cc2;
 
-  if ((TIM2->SR & TIM2_SR_CC1IF) == TIM2_SR_CC1IF) {
+  if ((TIM2->SR & TIM_SR_CC1IF) == TIM_SR_CC1IF) {
     /* TI1 capture */
     cc1_fired = true;
     cc1 = TIM2->CCR1;
   }
 
-  if ((TIM2->SR & TIM2_SR_CC2IF) == TIM2_SR_CC2IF) {
+  if ((TIM2->SR & TIM_SR_CC2IF) == TIM_SR_CC2IF) {
     /* TI1 capture */
     cc2_fired = true;
     cc2 = TIM2->CCR2;
   }
 
-  if (((TIM2->SR & TIM2_SR_CC1OF) == TIM2_SR_CC1OF) ||
-      ((TIM2->SR & TIM2_SR_CC2OF) == TIM2_SR_CC2OF)) {
-    TIM2->SR &= ~(TIM2_SR_CC1OF | TIM2_SR_CC2OF);
+  if (((TIM2->SR & TIM_SR_CC1OF) == TIM_SR_CC1OF) ||
+      ((TIM2->SR & TIM_SR_CC2OF) == TIM_SR_CC2OF)) {
+    TIM2->SR &= ~(TIM_SR_CC1OF | TIM_SR_CC2OF);
     decoder_desync(DECODER_OVERFLOW);
     return;
   }
@@ -62,9 +61,9 @@ void tim2_isr(void) {
     }
   }
 
-  if ((TIM2->SR & TIM2_SR_CC4IF) == TIM2_SR_CC4IF) {
+  if ((TIM2->SR & TIM_SR_CC4IF) == TIM_SR_CC4IF) {
     /* TI1 capture */
-    TIM2->SR &= ~TIM2_SR_CC4IF;
+    TIM2->SR &= ~TIM_SR_CC4IF;
     scheduler_callback_timer_execute();
   }
 
@@ -72,7 +71,7 @@ void tim2_isr(void) {
 
 void set_event_timer(timeval_t t) {
   TIM2->CCR4 = t;
-   TIM2->DIER |= TIM2_DIER_CC4IE;
+   TIM2->DIER |= TIM_DIER_CC4IE;
 }
 
 timeval_t get_event_timer() {
@@ -80,27 +79,27 @@ timeval_t get_event_timer() {
 }
 
 void clear_event_timer() {
-  TIM2->SR &= ~TIM2_SR_CC4IF;
+  TIM2->SR &= ~TIM_SR_CC4IF;
 }
 
 void disable_event_timer() {
-  TIM2->DIER &= ~TIM2_DIER_CC4IE;
+  TIM2->DIER &= ~TIM_DIER_CC4IE;
   clear_event_timer();
 }
 
 static void setup_tim2(void) {
-  TIM2->CR1 = TIM2_CR1_UDIS; /* Upcounting, no update event */
-  TIM2->SMCR = TIM2_SMCR_TS_VAL(1) | /* Trigger ITR1 is TIM8's TRGO */
-               TIM2_SMCR_SMS_VAL(7); /* External Clock Mode 1 */
+  TIM2->CR1 = TIM_CR1_UDIS; /* Upcounting, no update event */
+  TIM2->SMCR = TIM_SMCR_TS_0 | /* Trigger ITR1 is TIM8's TRGO */
+               _VAL2FLD(TIM_SMCR_SMS, 7); /* External Clock Mode 1 */
   TIM2->ARR = 0xFFFFFFFF; /* Count through whole 32bits */
 
   /* Set up input triggers */
-  TIM2->CCMR1_Input = TIM2_CCMR1_Input_IC1F_VAL(1) | /* CK_INT, N=2 filter */
-                      TIM2_CCMR1_Input_CC1S_VAL(1) | /* IC1 */
-                      TIM2_CCMR1_Input_IC2F_VAL(1) | /* CK_INT, N=2 filter */
-                      TIM2_CCMR1_Input_CC2S_VAL(1);  /* IC2 */
-  TIM2->CCMR2_Output = TIM2_CCMR2_Output_CC4S_VAL(0) | /* CC4 Output */
-                       TIM2_CCMR2_Output_OC4M_VAL(0);
+  TIM2->CCMR1 = TIM_CCMR1_IC1F_0 | /* CK_INT, N=2 filter */
+                TIM_CCMR1_CC1S_0 | /* IC1 */
+                TIM_CCMR1_IC2F_0 | /* CK_INT, N=2 filter */
+                TIM_CCMR1_CC2S_0;  /* IC2 */
+  TIM2->CCMR2 = TIM_CCMR2_CC4S_0 | /* CC4 Output */
+                TIM_CCMR2_OC4M_0;
 
   trigger_edge cc1_edge = config.freq_inputs[0].edge;
   trigger_edge cc2_edge = config.freq_inputs[1].edge;
@@ -110,25 +109,25 @@ static void setup_tim2(void) {
   int cc2p = (cc2_edge == FALLING_EDGE) || (cc2_edge == BOTH_EDGES);
   int cc2np = (cc2_edge == BOTH_EDGES);
 
-  TIM2->CCER = TIM2_CCER_CC1P_VAL(cc1p) | TIM2_CCER_CC1NP_VAL(cc1np) |
-               TIM2_CCER_CC2P_VAL(cc2p) | TIM2_CCER_CC2NP_VAL(cc2np) | /* Edge selection */
-               TIM2_CCER_CC1E | TIM2_CCER_CC2E | /* Enable CC1/CC2 */
-               TIM2_CCER_CC4E; /* Enable CC4 (Output) */
+  TIM2->CCER = _VAL2FLD(TIM_CCER_CC1P, cc1p) | _VAL2FLD(TIM_CCER_CC1NP, cc1np) |
+               _VAL2FLD(TIM_CCER_CC2P, cc2p) | _VAL2FLD(TIM_CCER_CC2NP, cc2np) | /* Edge selection */
+               TIM_CCER_CC1E | TIM_CCER_CC2E | /* Enable CC1/CC2 */
+               TIM_CCER_CC4E; /* Enable CC4 (Output) */
 
 
   /*Enable interrupts for CC1/CC2 if input is TRIGGER */
-  TIM2->DIER = (config.freq_inputs[0].type == TRIGGER ? TIM2_DIER_CC1IE : 0) |
-               (config.freq_inputs[1].type == TRIGGER ? TIM2_DIER_CC2IE : 0);
+  TIM2->DIER = (config.freq_inputs[0].type == TRIGGER ? TIM_DIER_CC1IE : 0) |
+               (config.freq_inputs[1].type == TRIGGER ? TIM_DIER_CC2IE : 0);
 
-  nvic_set_priority(TIM2_IRQ, 1); 
-  nvic_enable_irq(TIM2_IRQ); 
+  NVIC_SetPriority(TIM2_IRQn, 16); 
+  NVIC_EnableIRQ(TIM2_IRQn); 
 
   /* A0 and A1 as trigger inputs */
-  GPIOA->MODER &= ~(GPIOA_MODER_MODE0 | GPIOA_MODER_MODE1);
-  GPIOA->MODER |= GPIOA_MODER_MODE0_VAL(2) | GPIOA_MODER_MODE1_VAL(2); /* A0/A1 in AF mode */
-  GPIOA->AFRL |= GPIOA_AFRL_AFSEL0_VAL(1) | GPIOA_AFRL_AFSEL1_VAL(1); /* AF1 (TIM2)*/
+  GPIOA->MODER &= ~(GPIO_MODER_MODE0 | GPIO_MODER_MODE1);
+  GPIOA->MODER |= GPIO_MODER_MODE0_1 | GPIO_MODER_MODE1_1; /* A0/A1 in AF mode */
+  GPIOA->AFR[0] |= _VAL2FLD(GPIO_AFRL_AFSEL0, 1) | _VAL2FLD(GPIO_AFRL_AFSEL1, 1); /* AF1 (TIM2)*/
   
-  TIM2->CR1 |= TIM2_CR1_CEN; /* Enable clock */
+  TIM2->CR1 |= TIM_CR1_CEN; /* Enable clock */
 }
 
 #define NUM_SLOTS 128
@@ -144,7 +143,7 @@ struct output_buffer {
 };
 
 static __attribute__((section(".dmadata"))) struct output_buffer output_buffers[2] = { 0 };
-static int current_buffer = 0;
+static uint32_t current_buffer = 0;
 
 static void platform_output_slot_unset(struct output_slot *slots,
                                        uint32_t index,
@@ -241,20 +240,20 @@ static void platform_buffer_swap() {
   populate_output_buffer(buf);
 }
 
-void dma_str0_isr(void) {
-  if ((DMA1->LISR & DMA1_LISR_TCIF0) == DMA1_LISR_TCIF0) {
-    DMA1->LIFCR = DMA1_LIFCR_CTCIF0;
+void DMA1_Stream0_IRQHandler(void) {
+  if ((DMA1->LISR & DMA_LISR_TCIF0) == DMA_LISR_TCIF0) {
+    DMA1->LIFCR = DMA_LIFCR_CTCIF0;
     platform_buffer_swap();
 
-    if ((DMA1->S0CR & DMA1_S0CR_CT) != DMA1_S0CR_CT_VAL(current_buffer)) { 
+    if (_FLD2VAL(DMA_SxCR_CT, DMA1_Stream0->CR) != current_buffer) {
       /* We have overflowed or gone out of sync, abort immediately */
       abort();
     }
   }
-  if ((DMA1->LISR & DMA1_LISR_DMEIF0) == DMA1_LISR_DMEIF0) {
+  if ((DMA1->LISR & DMA_LISR_DMEIF0) == DMA_LISR_DMEIF0) {
     while (1);
   }
-  if ((DMA1->LISR & DMA1_LISR_DMEIF0) == DMA1_LISR_DMEIF0) {
+  if ((DMA1->LISR & DMA_LISR_DMEIF0) == DMA_LISR_DMEIF0) {
     while (1);
   }
 }
@@ -271,27 +270,27 @@ static void setup_scheduled_outputs(void) {
   GPIOD->OSPEEDR = 0xFFFFFFFF; /* All outputs High Speed */
 
   /* Configure DMA1 Stream 0 */
-  DMA1->S0CR = 0; /* Reset */
-  DMA1->S0PAR = (uint32_t)&GPIOD->BSRR; /* Peripheral address is GPIOD BSRR */
-  DMA1->S0M0AR = (uint32_t)&output_buffers[0].slots; /* Memory address 0 and 1 */
-  DMA1->S0M1AR = (uint32_t)&output_buffers[1].slots; 
-  DMA1->S0NDTR = NUM_SLOTS;
+  DMA1_Stream0->CR = 0; /* Reset */
+  DMA1_Stream0->PAR = (uint32_t)&GPIOD->BSRR; /* Peripheral address is GPIOD BSRR */
+  DMA1_Stream0->M0AR = (uint32_t)&output_buffers[0].slots; /* Memory address 0 and 1 */
+  DMA1_Stream0->M1AR = (uint32_t)&output_buffers[1].slots; 
+  DMA1_Stream0->NDTR = NUM_SLOTS;
 
-  DMA1->S0CR = DMA1_S0CR_DBM | /* Double Buffer */
-               DMA1_S0CR_PL_VAL(3) | /* High Priority */
-               DMA1_S0CR_MSIZE_VAL(2) | /* 32 bit memory size */
-               DMA1_S0CR_PSIZE_VAL(2) | /* 32 bit peripheral size */
-               DMA1_S0CR_MINC | /* Memory increment after each transfer */
-               DMA1_S0CR_DIR_VAL(1) | /* Direction is memory to peripheral */
-               DMA1_S0CR_TCIE | /* Interrupt when each transfer complete */
-               DMA1_S0CR_DMEIE; /* Interrupt on DMA error */
+  DMA1_Stream0->CR = DMA_SxCR_DBM | /* Double Buffer */
+               _VAL2FLD(DMA_SxCR_PL, 3) | /* High Priority */
+               _VAL2FLD(DMA_SxCR_MSIZE, 2) | /* 32 bit memory size */
+               _VAL2FLD(DMA_SxCR_PSIZE, 2) | /* 32 bit peripheral size */
+               DMA_SxCR_MINC | /* Memory increment after each transfer */
+               DMA_SxCR_DIR_0 | /* Direction is memory to peripheral */
+               DMA_SxCR_TCIE | /* Interrupt when each transfer complete */
+               DMA_SxCR_DMEIE; /* Interrupt on DMA error */
 
   /* Configure DMAMUX */
-  DMAMUX1->C0CR &= ~(DMAMUX1_C0CR_DMAREQ_ID);
-  DMAMUX1->C0CR |= DMAMUX1_C0CR_DMAREQ_ID_VAL(51); /* TIM8 Update */
+  DMAMUX1_Channel0->CCR &= ~DMAMUX_CxCR_DMAREQ_ID;
+  DMAMUX1_Channel0->CCR |= _VAL2FLD(DMAMUX_CxCR_DMAREQ_ID, 51); /* TIM8 Update */
 
-  nvic_enable_irq(DMA_STR0_IRQ);
-  DMA1->S0CR |= DMA1_S0CR_EN; /* Enable */
+  NVIC_EnableIRQ(DMA1_Stream0_IRQn);
+  DMA1_Stream0->CR |= DMA_SxCR_EN; /* Enable */
 }
 
 void platform_init_scheduler() {
