@@ -7,6 +7,3 @@
 [submodule "src/platforms/stm32h743/cmsis_device_h7"]
 	path = src/platforms/stm32h743/cmsis_device_h7
 	url = https://github.com/STMicroelectronics/cmsis_device_h7
-[submodule "src/platforms/stm32h743/cmsis_core"]
-	path = src/platforms/stm32h743/cmsis_core
-	url = https://github.com/STMicroelectronics/cmsis_core
