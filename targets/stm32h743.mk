@@ -7,7 +7,7 @@ OBJCOPY=arm-none-eabi-objcopy
 OBJS+= stm32h743_init.o \
        stm32h743_sched.o \
        stm32h743_sensors.o \
-       startup_stm32h743xx.o
+       stm32h743_vectors.o
 
 OBJS+= libssp.a libssp_nonshared.a
 
