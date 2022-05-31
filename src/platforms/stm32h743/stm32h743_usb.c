@@ -122,19 +122,19 @@ void render_device_descriptor(uint8_t *out, const struct device_descriptor *d) {
   *out++ = d->bNumConfigurations;
 }
 
-static USB_OTG_GlobalTypeDef *const OTG  = (void*)(USB_OTG_FS_PERIPH_BASE + USB_OTG_GLOBAL_BASE);
-static USB_OTG_DeviceTypeDef *const OTGD = (void*)(USB_OTG_FS_PERIPH_BASE + USB_OTG_DEVICE_BASE);
+static USB_OTG_GlobalTypeDef *const OTG  = (void*)(USB2_OTG_FS_PERIPH_BASE + USB_OTG_GLOBAL_BASE);
+static USB_OTG_DeviceTypeDef *const OTGD = (void*)(USB2_OTG_FS_PERIPH_BASE + USB_OTG_DEVICE_BASE);
 
 static inline uint32_t *EPFIFO(uint32_t ep) {
-    return (uint32_t*)(USB_OTG_FS_PERIPH_BASE + USB_OTG_FIFO_BASE + (ep << 12));
+    return (uint32_t*)(USB2_OTG_FS_PERIPH_BASE + USB_OTG_FIFO_BASE + (ep << 12));
 }
 
 static inline USB_OTG_INEndpointTypeDef *EPIN(uint32_t ep) {
-    return (void*)(USB_OTG_FS_PERIPH_BASE + USB_OTG_IN_ENDPOINT_BASE + (ep << 5));
+    return (void*)(USB2_OTG_FS_PERIPH_BASE + USB_OTG_IN_ENDPOINT_BASE + (ep << 5));
 }
 
 static inline USB_OTG_OUTEndpointTypeDef *EPOUT(uint32_t ep) {
-    return (void*)(USB_OTG_FS_PERIPH_BASE + USB_OTG_OUT_ENDPOINT_BASE + (ep << 5));
+    return (void*)(USB2_OTG_FS_PERIPH_BASE + USB_OTG_OUT_ENDPOINT_BASE + (ep << 5));
 }
 
 
@@ -258,7 +258,7 @@ static void handle_otgint() {
   OTG->GOTGINT = OTG->GOTGINT;
 }
 
-void otg_fs_isr(void) {
+void OTG_FS_IRQHandler(void) {
   uint32_t usb_status = OTG->GINTSTS;
   uint32_t otg_status = OTG->GOTGINT;
 
