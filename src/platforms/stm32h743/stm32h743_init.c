@@ -164,6 +164,7 @@ static void setup_clocks() {
   RCC->APB2ENR |= RCC_APB2ENR_TIM8EN;
   RCC->APB1LENR |= RCC_APB1LENR_TIM2EN;
   RCC->AHB1ENR |= RCC_AHB1ENR_DMA1EN;
+  RCC->AHB1ENR |= RCC_AHB1ENR_USB2OTGFSEN;
 }
 
 static void configure_usart1() {
@@ -216,8 +217,7 @@ static void setup_systick() {
   *((uint32_t *)0xE000E014) = 500000;
   *((uint32_t *)0xE000E010) = 0x3; /* Enable interrupt and systick */
 
-  /* Systick (15) set to priority 16 */
-  NVIC_SetPriority(SysTick_IRQn, 255);
+  NVIC_SetPriority(SysTick_IRQn, 64);
 
 }
 
