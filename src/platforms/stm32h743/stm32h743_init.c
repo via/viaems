@@ -167,10 +167,7 @@ static void configure_usart1() {
 }
 
 static void setup_caches() {
-  *((uint32_t *)0xE000EF50) = 0; /* Invalidate I-cache */
-  SCB->CCR |= SCB_CCR_IC_Msk;    /* Enable I-Cache */
-  __asm__("dsb");
-  __asm__("isb");
+  SCB_EnableICache();
 }
 
 static void setup_dwt() {
@@ -196,11 +193,10 @@ void SysTick_Handler(void) {
 
 static void setup_systick() {
   /* Reload value 500000 for 50 MHz Systick and 10 ms period */
-  *((uint32_t *)0xE000E014) = 500000;
-  *((uint32_t *)0xE000E010) = 0x3; /* Enable interrupt and systick */
+  SysTick->LOAD = 500000;
+  SysTick->CTRL = SysTick_CTRL_ENABLE_Msk | SysTick_CTRL_TICKINT_Msk; /* Enable interrupt and systick */
 
-  /* Systick (15) set to priority 16 */
-  NVIC_SetPriority(SysTick_IRQn, 255);
+  NVIC_SetPriority(SysTick_IRQn, 64);
 }
 
 /* Common symbols exported by the linker script(s): */
