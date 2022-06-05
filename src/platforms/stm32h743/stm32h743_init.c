@@ -59,22 +59,6 @@ void platform_save_config() {}
 
 void platform_load_config() {}
 
-size_t console_read(void *ptr, size_t max) {
-  (void)ptr;
-  (void)max;
-  return 0;
-}
-
-size_t console_write(const void *ptr, size_t max) {
-  (void)ptr;
-  (void)max;
-  const char *c = ptr;
-  for (int i = 0; i < max; i++) {
-    while (((USART1->ISR) & USART_ISR_TXFE) != USART_ISR_TXFE);
-    USART1->TDR = c[i];
-  }
-  return max;
-}
 
 int __attribute__((externally_visible))
 _write(int fd, const char *buf, size_t count) {
@@ -89,7 +73,7 @@ _write(int fd, const char *buf, size_t count) {
 /* Setup power, HSE, clock tree, and flash wait states */
 static void setup_clocks() {
   /* Go to VOS1 */
-  PWR->CR3 |= PWR_CR3_SCUEN | PWR_CR3_LDOEN;
+  PWR->CR3 |= PWR_CR3_SCUEN | PWR_CR3_LDOEN | PWR_CR3_USB33DEN;
   PWR->D3CR |= PWR_D3CR_VOS;
   while (((PWR->D3CR) & PWR_D3CR_VOSRDY) != PWR_D3CR_VOSRDY);
 
@@ -306,6 +290,7 @@ void platform_init() {
   setup_caches();
   setup_dwt();
   configure_usart1();
+  platform_usb_init();
   platform_init_scheduler();
   setup_systick();
   setup_watchdog();
