@@ -1,23 +1,24 @@
-#include <stdlib.h>
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
 
-#include "platform.h"
-#include "decoder.h"
 #include "config.h"
+#include "decoder.h"
+#include "platform.h"
 #include "sensors.h"
-#include "util.h"
 #include "stm32h743xx.h"
+#include "util.h"
 
 static void setup_tim8(void) {
   TIM8->CR1 = TIM_CR1_URS; /* overflow generates DMA */
 
   TIM8->CR2 = TIM_CR2_MMS_1; /* TRGO on update */
 
-  TIM8->ARR = 49; /* APB2 timer clock is 200 MHz, divide by (49+1) to get 4 MHz */
+  TIM8->ARR =
+    49; /* APB2 timer clock is 200 MHz, divide by (49+1) to get 4 MHz */
 
   TIM8->DIER = TIM_DIER_UDE; /* Interrupt and DMA on update */
-  TIM8->CR1 |= TIM_CR1_CEN; /* Enable clock */
+  TIM8->CR1 |= TIM_CR1_CEN;  /* Enable clock */
 }
 
 timeval_t current_time() {
@@ -66,12 +67,11 @@ void TIM2_IRQHandler(void) {
     TIM2->SR &= ~TIM_SR_CC4IF;
     scheduler_callback_timer_execute();
   }
-
 }
 
 void set_event_timer(timeval_t t) {
   TIM2->CCR4 = t;
-   TIM2->DIER |= TIM_DIER_CC4IE;
+  TIM2->DIER |= TIM_DIER_CC4IE;
 }
 
 timeval_t get_event_timer() {
@@ -88,10 +88,10 @@ void disable_event_timer() {
 }
 
 static void setup_tim2(void) {
-  TIM2->CR1 = TIM_CR1_UDIS; /* Upcounting, no update event */
-  TIM2->SMCR = TIM_SMCR_TS_0 | /* Trigger ITR1 is TIM8's TRGO */
+  TIM2->CR1 = TIM_CR1_UDIS;               /* Upcounting, no update event */
+  TIM2->SMCR = TIM_SMCR_TS_0 |            /* Trigger ITR1 is TIM8's TRGO */
                _VAL2FLD(TIM_SMCR_SMS, 7); /* External Clock Mode 1 */
-  TIM2->ARR = 0xFFFFFFFF; /* Count through whole 32bits */
+  TIM2->ARR = 0xFFFFFFFF;                 /* Count through whole 32bits */
 
   /* Set up input triggers */
   TIM2->CCMR1 = TIM_CCMR1_IC1F_0 | /* CK_INT, N=2 filter */
@@ -110,23 +110,25 @@ static void setup_tim2(void) {
   int cc2np = (cc2_edge == BOTH_EDGES);
 
   TIM2->CCER = _VAL2FLD(TIM_CCER_CC1P, cc1p) | _VAL2FLD(TIM_CCER_CC1NP, cc1np) |
-               _VAL2FLD(TIM_CCER_CC2P, cc2p) | _VAL2FLD(TIM_CCER_CC2NP, cc2np) | /* Edge selection */
-               TIM_CCER_CC1E | TIM_CCER_CC2E | /* Enable CC1/CC2 */
-               TIM_CCER_CC4E; /* Enable CC4 (Output) */
-
+               _VAL2FLD(TIM_CCER_CC2P, cc2p) |
+               _VAL2FLD(TIM_CCER_CC2NP, cc2np) | /* Edge selection */
+               TIM_CCER_CC1E | TIM_CCER_CC2E |   /* Enable CC1/CC2 */
+               TIM_CCER_CC4E;                    /* Enable CC4 (Output) */
 
   /*Enable interrupts for CC1/CC2 if input is TRIGGER */
   TIM2->DIER = (config.freq_inputs[0].type == TRIGGER ? TIM_DIER_CC1IE : 0) |
                (config.freq_inputs[1].type == TRIGGER ? TIM_DIER_CC2IE : 0);
 
-  NVIC_SetPriority(TIM2_IRQn, 16); 
-  NVIC_EnableIRQ(TIM2_IRQn); 
+  NVIC_SetPriority(TIM2_IRQn, 16);
+  NVIC_EnableIRQ(TIM2_IRQn);
 
   /* A0 and A1 as trigger inputs */
   GPIOA->MODER &= ~(GPIO_MODER_MODE0 | GPIO_MODER_MODE1);
-  GPIOA->MODER |= GPIO_MODER_MODE0_1 | GPIO_MODER_MODE1_1; /* A0/A1 in AF mode */
-  GPIOA->AFR[0] |= _VAL2FLD(GPIO_AFRL_AFSEL0, 1) | _VAL2FLD(GPIO_AFRL_AFSEL1, 1); /* AF1 (TIM2)*/
-  
+  GPIOA->MODER |=
+    GPIO_MODER_MODE0_1 | GPIO_MODER_MODE1_1; /* A0/A1 in AF mode */
+  GPIOA->AFR[0] |= _VAL2FLD(GPIO_AFRL_AFSEL0, 1) |
+                   _VAL2FLD(GPIO_AFRL_AFSEL1, 1); /* AF1 (TIM2)*/
+
   TIM2->CR1 |= TIM_CR1_CEN; /* Enable clock */
 }
 
@@ -142,7 +144,8 @@ struct output_buffer {
   struct output_slot slots[NUM_SLOTS];
 };
 
-static __attribute__((section(".dmadata"))) struct output_buffer output_buffers[2] = { 0 };
+static __attribute__((
+  section(".dmadata"))) struct output_buffer output_buffers[2] = { 0 };
 static uint32_t current_buffer = 0;
 
 static void platform_output_slot_unset(struct output_slot *slots,
@@ -251,10 +254,12 @@ void DMA1_Stream0_IRQHandler(void) {
     }
   }
   if ((DMA1->LISR & DMA_LISR_DMEIF0) == DMA_LISR_DMEIF0) {
-    while (1);
+    while (1)
+      ;
   }
   if ((DMA1->LISR & DMA_LISR_DMEIF0) == DMA_LISR_DMEIF0) {
-    while (1);
+    while (1)
+      ;
   }
 }
 
@@ -266,28 +271,31 @@ static void setup_scheduled_outputs(void) {
     }
   }
 
-  GPIOD->MODER = 0x55555555; /* All outputs MODER = 0x01 */
+  GPIOD->MODER = 0x55555555;   /* All outputs MODER = 0x01 */
   GPIOD->OSPEEDR = 0xFFFFFFFF; /* All outputs High Speed */
 
   /* Configure DMA1 Stream 0 */
   DMA1_Stream0->CR = 0; /* Reset */
-  DMA1_Stream0->PAR = (uint32_t)&GPIOD->BSRR; /* Peripheral address is GPIOD BSRR */
-  DMA1_Stream0->M0AR = (uint32_t)&output_buffers[0].slots; /* Memory address 0 and 1 */
-  DMA1_Stream0->M1AR = (uint32_t)&output_buffers[1].slots; 
+  DMA1_Stream0->PAR =
+    (uint32_t)&GPIOD->BSRR; /* Peripheral address is GPIOD BSRR */
+  DMA1_Stream0->M0AR =
+    (uint32_t)&output_buffers[0].slots; /* Memory address 0 and 1 */
+  DMA1_Stream0->M1AR = (uint32_t)&output_buffers[1].slots;
   DMA1_Stream0->NDTR = NUM_SLOTS;
 
-  DMA1_Stream0->CR = DMA_SxCR_DBM | /* Double Buffer */
-               _VAL2FLD(DMA_SxCR_PL, 3) | /* High Priority */
-               _VAL2FLD(DMA_SxCR_MSIZE, 2) | /* 32 bit memory size */
-               _VAL2FLD(DMA_SxCR_PSIZE, 2) | /* 32 bit peripheral size */
-               DMA_SxCR_MINC | /* Memory increment after each transfer */
-               DMA_SxCR_DIR_0 | /* Direction is memory to peripheral */
-               DMA_SxCR_TCIE | /* Interrupt when each transfer complete */
-               DMA_SxCR_DMEIE; /* Interrupt on DMA error */
+  DMA1_Stream0->CR = DMA_SxCR_DBM |                /* Double Buffer */
+                     _VAL2FLD(DMA_SxCR_PL, 3) |    /* High Priority */
+                     _VAL2FLD(DMA_SxCR_MSIZE, 2) | /* 32 bit memory size */
+                     _VAL2FLD(DMA_SxCR_PSIZE, 2) | /* 32 bit peripheral size */
+                     DMA_SxCR_MINC |  /* Memory increment after each transfer */
+                     DMA_SxCR_DIR_0 | /* Direction is memory to peripheral */
+                     DMA_SxCR_TCIE | /* Interrupt when each transfer complete */
+                     DMA_SxCR_DMEIE; /* Interrupt on DMA error */
 
   /* Configure DMAMUX */
   DMAMUX1_Channel0->CCR &= ~DMAMUX_CxCR_DMAREQ_ID;
-  DMAMUX1_Channel0->CCR |= _VAL2FLD(DMAMUX_CxCR_DMAREQ_ID, 51); /* TIM8 Update */
+  DMAMUX1_Channel0->CCR |=
+    _VAL2FLD(DMAMUX_CxCR_DMAREQ_ID, 51); /* TIM8 Update */
 
   NVIC_EnableIRQ(DMA1_Stream0_IRQn);
   DMA1_Stream0->CR |= DMA_SxCR_EN; /* Enable */

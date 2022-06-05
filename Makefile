@@ -1,7 +1,7 @@
 PLATFORM?=stm32f4
 OBJDIR=obj/${PLATFORM}
 
-TINYCBOR_DIR=$(PWD)/tinycbor
+TINYCBOR_DIR=$(PWD)/contrib/tinycbor
 TINYCBOR_LIB=libtinycbor.a
 
 
@@ -29,7 +29,7 @@ CFLAGS+=-I src/ -Wall -Wextra -g -std=c99 -DGIT_DESCRIBE=\"${GITDESC}\"
 CFLAGS+=-I ${TINYCBOR_DIR}/src
 LDFLAGS+= -lm -L${OBJDIR} -l:${TINYCBOR_LIB}
 
-OPENCM3_DIR=$(PWD)/libopencm3
+OPENCM3_DIR=$(PWD)/contrib/libopencm3
 
 VPATH=src src/platforms src/platforms/${PLATFORM}
 DESTOBJS = $(addprefix ${OBJDIR}/, ${OBJS})
@@ -55,7 +55,7 @@ ${OBJDIR}/${TINYCBOR_LIB}:
 	cp ${TINYCBOR_DIR}/lib/${TINYCBOR_LIB} ${OBJDIR}
 
 format:
-	clang-format -i src/*.c src/*.h src/platforms/*.c
+	clang-format -i src/*.c src/*.h src/platforms/*.c src/platforms/*/*.c
 
 lint:
 	clang-tidy src/*.c -- ${CFLAGS}
