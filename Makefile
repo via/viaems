@@ -55,7 +55,7 @@ ${OBJDIR}/${TINYCBOR_LIB}:
 	cp ${TINYCBOR_DIR}/lib/${TINYCBOR_LIB} ${OBJDIR}
 
 format:
-	clang-format -i src/*.c src/*.h src/platforms/*.c
+	clang-format -i src/*.c src/*.h src/platforms/*.c src/platforms/*/*.c
 
 lint:
 	clang-tidy src/*.c -- ${CFLAGS}
