@@ -35,13 +35,12 @@ void enable_interrupts(void);
 int interrupts_enabled(void);
 
 void set_output(int output, char value);
-int get_output(int output);
 void set_gpio(int output, char value);
 int get_gpio(int output);
 void set_pwm(int output, float percent);
 
 size_t console_read(void *buf, size_t max);
-size_t console_write(void *buf, size_t count);
+size_t console_write(const void *buf, size_t count);
 
 void platform_load_config(void);
 void platform_save_config(void);

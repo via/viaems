@@ -34,14 +34,21 @@ int interrupts_enabled() {
   return 0;
 }
 
-void set_output(int output, char value) {}
+void set_output(int output, char value) {
+  if (value) {
+    GPIOD->ODR |= (1 << output);
+  } else {
+    GPIOD->ODR &= ~(1 << output);
+  }
+}
 
-int get_output(int output) {}
 
-void set_gpio(int output, char value) {}
-
-void adc_gather(void *_adc) {
-  (void)_adc;
+void set_gpio(int output, char value) {
+  if (value) {
+    GPIOE->ODR |= (1 << output);
+  } else {
+    GPIOE->ODR &= ~(1 << output);
+  }
 }
 
 void set_test_trigger_rpm(uint32_t rpm) {
@@ -142,6 +149,7 @@ static void setup_clocks() {
   RCC->AHB4ENR |= RCC_AHB4ENR_GPIOAEN;
   RCC->AHB4ENR |= RCC_AHB4ENR_GPIOBEN;
   RCC->AHB4ENR |= RCC_AHB4ENR_GPIODEN;
+  RCC->AHB4ENR |= RCC_AHB4ENR_GPIOEEN;
   RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
   RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
   RCC->APB2ENR |= RCC_APB2ENR_TIM15EN;
@@ -276,17 +284,24 @@ void Reset_Handler(void) {
   (void)main();
 }
 
+static void configure_gpios(void) {
+  GPIOE->MODER = 0x55555555;   /* All outputs MODER = 0x01 */
+  GPIOE->OSPEEDR = 0xFFFFFFFF; /* All outputs High Speed */
+}
+
 void platform_init() {
   setup_clocks();
+  configure_usart1();
 
   setup_caches();
   setup_dwt();
-  configure_usart1();
+
   platform_usb_init();
   platform_init_scheduler();
+  platform_configure_sensors();
+
   setup_systick();
   setup_watchdog();
-  platform_configure_sensors();
 }
 
 void platform_benchmark_init() {

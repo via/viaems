@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include "platform.h"
 #include "stm32h743xx.h"
 #include "usb.h"
@@ -139,8 +141,8 @@ static const struct cdc_config config_desc = {
     },
 };
 
-#define MANU_STR "https://github.com/via/viaems/"
-#define PROD_STR "ViaEMS console"
+const char *manu_str = "https://github.com/via/viaems/";
+const char *prod_str = "ViaEMS console";
 
 usbd_device udev;
 uint32_t ubuf[0x20];
@@ -148,12 +150,6 @@ uint32_t ubuf[0x20];
 #define USB_RX_BUF_LEN 1024
 static char usb_rx_buf[USB_RX_BUF_LEN];
 static _Atomic size_t usb_rx_len = 0;
-
-#define USB_TX_BUF_LEN 1024
-static _Atomic bool tx_available;
-static char usb_tx_buf[USB_TX_BUF_LEN];
-static _Atomic size_t usb_tx_len = 0;
-static size_t usb_tx_pos = 0;
 
 static struct usb_cdc_line_coding cdc_line = {
   .dwDTERate = 115200,
@@ -168,6 +164,16 @@ struct stringdesc {
   uint16_t data[128];
 } __attribute__((packed));
 static struct stringdesc stringdesc;
+
+static void populate_string_descriptor(struct stringdesc *dest, const char *str) {
+  size_t len = strlen(str);
+  dest->length = len * 2 + 2;
+  dest->type = 0x03;
+
+  for (size_t pos = 0; pos < len; pos++) {
+    stringdesc.data[pos] = str[pos];
+  }
+}
 
 static usbd_respond cdc_getdesc(usbd_ctlreq *req,
                                 void **address,
@@ -191,22 +197,10 @@ static usbd_respond cdc_getdesc(usbd_ctlreq *req,
         (struct stringdesc){ .length = 4, .type = 0x03, .data = { 0x0409 } };
       break;
     case 1:
-      stringdesc = (struct stringdesc){
-        .length = sizeof(MANU_STR),
-        .type = 0x03,
-      };
-      for (int pos = 0; pos < sizeof(MANU_STR); pos++) {
-        stringdesc.data[pos] = MANU_STR[pos];
-      }
+      populate_string_descriptor(&stringdesc, manu_str);
       break;
     case 2:
-      stringdesc = (struct stringdesc){
-        .length = sizeof(PROD_STR),
-        .type = 0x03,
-      };
-      for (int pos = 0; pos < sizeof(PROD_STR); pos++) {
-        stringdesc.data[pos] = PROD_STR[pos];
-      }
+      populate_string_descriptor(&stringdesc, prod_str);
       break;
     default:
       return usbd_fail;
@@ -227,6 +221,7 @@ static usbd_respond cdc_getdesc(usbd_ctlreq *req,
 static usbd_respond cdc_control(usbd_device *dev,
                                 usbd_ctlreq *req,
                                 usbd_rqc_callback *callback) {
+  (void)callback;
   if (((USB_REQ_RECIPIENT | USB_REQ_TYPE) & req->bmRequestType) ==
         (USB_REQ_INTERFACE | USB_REQ_CLASS) &&
       req->wIndex == 0) {
@@ -248,6 +243,7 @@ static usbd_respond cdc_control(usbd_device *dev,
 }
 
 static void cdc_rx(usbd_device *dev, uint8_t event, uint8_t ep) {
+  (void)event;
   if (ep != CDC_RXD_EP) {
     return;
   }
@@ -257,7 +253,7 @@ static void cdc_rx(usbd_device *dev, uint8_t event, uint8_t ep) {
     return;
   }
 
-  if (USB_RX_BUF_LEN - usb_rx_len < ret) {
+  if (USB_RX_BUF_LEN - usb_rx_len < (unsigned)ret) {
     /* No space, just drop the packet */
   } else {
     memcpy(usb_rx_buf + usb_rx_len, buf, ret);
@@ -310,13 +306,14 @@ size_t console_read(void *ptr, size_t max) {
   return amt;
 }
 
-size_t console_write(void *ptr, size_t max) {
+size_t console_write(const void *ptr, size_t max) {
   int amt = max;
   if (amt > CDC_DATA_SZ) {
     amt = CDC_DATA_SZ;
   }
-  int written = usbd_ep_write(&udev, CDC_TXD_EP, ptr, amt);
-  if (max == written) {
+
+  int written = usbd_ep_write(&udev, CDC_TXD_EP, (void *)ptr, amt);
+  if ((int)max == written) {
     /* End of write needs a ZLP if it was not less than 64 bytes */
     usbd_ep_write(&udev, CDC_TXD_EP, 0, 0);
   }
