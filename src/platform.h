@@ -2,6 +2,7 @@
 #define _PLATFORM_H
 #include <stddef.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #ifndef NULL
 #define NULL 0
@@ -32,7 +33,7 @@ void platform_benchmark_init(void);
 
 void disable_interrupts(void);
 void enable_interrupts(void);
-int interrupts_enabled(void);
+bool interrupts_enabled(void);
 
 void set_output(int output, char value);
 void set_gpio(int output, char value);

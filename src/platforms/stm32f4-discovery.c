@@ -1175,7 +1175,7 @@ void disable_interrupts() {
   interrupt_disables += 1;
 }
 
-int interrupts_enabled() {
+bool interrupts_enabled() {
   return !cm_is_masked_interrupts();
 }
 

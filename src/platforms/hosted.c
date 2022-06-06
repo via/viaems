@@ -91,7 +91,7 @@ void enable_interrupts() {
   }
 }
 
-int interrupts_enabled() {
+bool interrupts_enabled() {
   return (interrupt_disables == 0);
 }
 

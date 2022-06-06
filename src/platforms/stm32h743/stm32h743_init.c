@@ -15,11 +15,11 @@ void set_pwm(int pin, float val) {
 }
 
 void disable_interrupts() {
-  __asm__("cpsid i");
+  __disable_irq();
 }
 
 void enable_interrupts() {
-  __asm__("cpsie i");
+  __enable_irq();
 }
 
 uint64_t cycles_to_ns(uint64_t cycles) {
@@ -27,11 +27,11 @@ uint64_t cycles_to_ns(uint64_t cycles) {
 }
 
 uint64_t cycle_count() {
-  return *((uint32_t *)0xE0001004);
+  return DWT->CYCCNT;
 }
 
-int interrupts_enabled() {
-  return 0;
+bool interrupts_enabled() {
+  return __get_PRIMASK() == 0;
 }
 
 void set_output(int output, char value) {
@@ -179,8 +179,8 @@ static void setup_caches() {
 }
 
 static void setup_dwt() {
-  *((uint32_t *)0xE0001000) |= 1; /* Enable DWT Cycle Counter */
-  *((uint32_t *)0xE0001004) = 0;  /* Reset cycle counter */
+  DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+  DWT->CYCCNT = 0;
 }
 
 static void reset_watchdog() {

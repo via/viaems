@@ -89,7 +89,7 @@ void disable_event_timer() {
   cureventtime = 0;
 }
 
-int interrupts_enabled() {
+bool interrupts_enabled() {
   return int_disables == 0;
 }
 
