@@ -2,6 +2,7 @@
 #include <stdint.h>
 
 #include "platform.h"
+#include "tasks.h"
 
 void platform_enable_event_logging() {}
 
@@ -284,10 +285,9 @@ void Reset_Handler(void) {
   (void)main();
 }
 
-static void configure_gpios(void) {
-  GPIOE->MODER = 0x55555555;   /* All outputs MODER = 0x01 */
-  GPIOE->OSPEEDR = 0xFFFFFFFF; /* All outputs High Speed */
-}
+void platform_configure_usb(void);
+void platform_configure_sensors(void);
+void platform_configure_scheduler(void);
 
 void platform_init() {
   setup_clocks();
@@ -296,8 +296,8 @@ void platform_init() {
   setup_caches();
   setup_dwt();
 
-  platform_usb_init();
-  platform_init_scheduler();
+  platform_configure_usb();
+  platform_configure_scheduler();
   platform_configure_sensors();
 
   setup_systick();

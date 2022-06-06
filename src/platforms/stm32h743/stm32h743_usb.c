@@ -323,7 +323,7 @@ size_t console_write(const void *ptr, size_t max) {
   return written;
 }
 
-void platform_usb_init(void) {
+void platform_configure_usb(void) {
   GPIOA->MODER &= ~(GPIO_MODER_MODE11 | GPIO_MODER_MODE12);
   GPIOA->MODER |= _VAL2FLD(GPIO_MODER_MODE11, 2) |
                   _VAL2FLD(GPIO_MODER_MODE12, 2); /* A11/A12 in AF mode */

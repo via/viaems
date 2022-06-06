@@ -9,6 +9,29 @@
 #include "stm32h743xx.h"
 #include "util.h"
 
+/* The primary outputs are driven by the DMA copying from a circular
+ * double-buffer to the GPIO's BSRR register.  TIM8 is configured to generate an
+ * update even at 4 MHz, and that update event triggers the DMA.  The same
+ * update event also triggers TIM2, which keeps track of the current time.
+ *
+ * Each DMA buffer represents 32 uS of time (128 time points at 4 MHz), and each
+ * 32 bit word in the DMA buffer is directly written to BSRR.  The high 16 bits
+ * of this word cause the GPIO for that bit to go high, the low 16 bits cause it
+ * to go low.
+ *
+ * The DMA buffers are updated and modified only in the DMA ISR, which is
+ * triggered once the DMA has finished the buffer and is currently executing on
+ * the other buffer. At this time, we iterate through all events that would have
+ * been in the time range of the completed buffer and set them to FIRED.  We
+ * then enumerate all events that are scheduled for the next time range and set
+ * the bits appropriately.
+ *
+ * Since TIM2 is the main time base and also has input captures, we use the
+ * first two capture units as the trigger inputs.  These inputs trigger a
+ * capture interrupt, the captured time is used to directly call the decoder,
+ * which optionally may do fuel/ignition calculations and reschedule events.
+ */
+
 static void setup_tim8(void) {
   TIM8->CR1 = TIM_CR1_URS; /* overflow generates DMA */
 
@@ -301,7 +324,7 @@ static void setup_scheduled_outputs(void) {
   DMA1_Stream0->CR |= DMA_SxCR_EN; /* Enable */
 }
 
-void platform_init_scheduler() {
+void platform_configure_scheduler() {
 
   /* Set debug unit to stop the timer on halt */
   *((volatile uint32_t *)0xE0042008) |= 29; /*TIM2, TIM5, and TIM7 and */
