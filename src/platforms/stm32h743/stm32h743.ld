@@ -1,24 +1,21 @@
 MEMORY
 {
-  vectors (rx)      : ORIGIN = 0x8000000, LENGTH = 128K
-  configrom (rx)    : ORIGIN = 0x8020000, LENGTH = 128K
-  rom (rx)          : ORIGIN = 0x8040000, LENGTH = 768K
-  dtcmram (rwx)     : ORIGIN = 0x20000000, LENGTH = 128K
-  axiram (rwx)         : ORIGIN = 0x24000000, LENGTH = 512K
-  ram_d1 (rwx)      : ORIGIN = 0x30000000, LENGTH = 128K
-  ram_d2 (rwx)      : ORIGIN = 0x30020000, LENGTH = 128K
-  ram_d3 (rwx)      : ORIGIN = 0x30040000, LENGTH = 128K
-  itcmram (rwx)     : ORIGIN = 0x00000000, LENGTH = 64K
+  rom (rx)        : ORIGIN = 0x8000000, LENGTH = 1024K
+  configrom (r)   : ORIGIN = 0x8100000, LENGTH = 128K
+  rom2(r)         : ORIGIN = 0x8120000, LENGTH = 896K
+  dtcmram (rwx)   : ORIGIN = 0x20000000, LENGTH = 128K
+  axiram (rwx)    : ORIGIN = 0x24000000, LENGTH = 512K
+  ram_d1 (rwx)    : ORIGIN = 0x30000000, LENGTH = 128K
+  ram_d2 (rwx)    : ORIGIN = 0x30020000, LENGTH = 128K
+  ram_d3 (rwx)    : ORIGIN = 0x30040000, LENGTH = 128K
+  itcmram (rwx)   : ORIGIN = 0x00000000, LENGTH = 64K
 }
 
 ENTRY(Reset_Handler)
 
 SECTIONS {
-	.vectors : {
-		KEEP(*(.isr_vector))
-	} > vectors
-
 	.text : {
+		KEEP(*(.isr_vector))
 		*(.text*)	/* Program code */
 		. = ALIGN(4);
 		*(.rodata*)	/* Read-only data */
@@ -92,7 +89,6 @@ SECTIONS {
 		. = ALIGN(4);
 		_ebss = .;
 	} >dtcmram
-
 
 	. = ALIGN(4);
 	end = .;

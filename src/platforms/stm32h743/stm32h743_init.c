@@ -10,11 +10,6 @@ void platform_disable_event_logging() {}
 
 void platform_reset_into_bootloader() {}
 
-void set_pwm(int pin, float val) {
-  (void)pin;
-  (void)val;
-}
-
 void disable_interrupts() {
   __disable_irq();
 }
@@ -59,10 +54,6 @@ void set_test_trigger_rpm(uint32_t rpm) {
 uint32_t get_test_trigger_rpm() {
   return 0;
 }
-
-void platform_save_config() {}
-
-void platform_load_config() {}
 
 int __attribute__((externally_visible))
 _write(int fd, const char *buf, size_t count) {
@@ -210,7 +201,6 @@ static void setup_systick() {
 
 /* Common symbols exported by the linker script(s): */
 extern uint32_t _sidata, _sdata, _edata, _ebss;
-extern uint32_t _configdata_loadaddr, _sconfigdata, _econfigdata;
 
 void Default_Handler(void) {}
 
@@ -223,11 +213,6 @@ void Reset_Handler(void) {
 
   while (dest < &_ebss) {
     *dest++ = 0;
-  }
-
-  for (src = &_configdata_loadaddr, dest = &_sconfigdata; dest < &_econfigdata;
-       src++, dest++) {
-    *dest = *src;
   }
 
   /* Set HSION bit */

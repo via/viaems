@@ -16,6 +16,8 @@ OBJS+= stm32h743_init.o \
        stm32h743_sensors.o \
        stm32h743_vectors.o \
        stm32h743_usb.o \
+       stm32h743_flash.o \
+       stm32h743_pwm.o \
        ${LIBUSB_LIB}
 
 
