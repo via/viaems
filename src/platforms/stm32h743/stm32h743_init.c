@@ -4,7 +4,6 @@
 #include "platform.h"
 #include "tasks.h"
 
-
 void platform_enable_event_logging() {}
 
 void platform_disable_event_logging() {}
@@ -43,7 +42,6 @@ void set_output(int output, char value) {
     GPIOD->ODR &= ~(1 << output);
   }
 }
-
 
 void set_gpio(int output, char value) {
   if (value) {
@@ -200,7 +198,8 @@ void SysTick_Handler(void) {
 static void setup_systick() {
   /* Reload value 500000 for 50 MHz Systick and 10 ms period */
   SysTick->LOAD = 500000;
-  SysTick->CTRL = SysTick_CTRL_ENABLE_Msk | SysTick_CTRL_TICKINT_Msk; /* Enable interrupt and systick */
+  SysTick->CTRL = SysTick_CTRL_ENABLE_Msk |
+                  SysTick_CTRL_TICKINT_Msk; /* Enable interrupt and systick */
 
   NVIC_SetPriority(SysTick_IRQn, 64);
 }
@@ -214,7 +213,7 @@ void Reset_Handler(void) {
   if (bootloader_flag == BOOTLOADER_FLAG) {
     bootloader_flag = 0;
     /* We've set this flag and reset the cpu, jump to system bootloader */
-    
+
     uint32_t *bootloader_msp = (uint32_t *)0x1ff09800; /* Per AN2606 */
     uint32_t *bootloader_addr = bootloader_msp + 1;
 

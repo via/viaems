@@ -7,8 +7,7 @@
 
 extern uint32_t _configdata_loadaddr, _sconfigdata, _econfigdata;
 
-void platform_save_config() 
-{
+void platform_save_config() {
   /* Unlock FLASH_CR2 */
   FLASH->KEYR2 = 0x45670123;
   FLASH->KEYR2 = 0xCDEF89AB;
@@ -20,18 +19,18 @@ void platform_save_config()
 
   /* Erase sector 0 of bank 2 */
   FLASH->CR2 &= ~(FLASH_CR_SER | FLASH_CR_SNB | FLASH_CR_START);
-  FLASH->CR2 |= FLASH_CR_SER | 
-         _VAL2FLD(FLASH_CR_SNB, 0) | 
-         FLASH_CR_START;
+  FLASH->CR2 |= FLASH_CR_SER | _VAL2FLD(FLASH_CR_SNB, 0) | FLASH_CR_START;
 
-  while (FLASH->SR2 & FLASH_SR_QW); /* Wait until erase is complete */
+  while (FLASH->SR2 & FLASH_SR_QW)
+    ; /* Wait until erase is complete */
 
   uint32_t *src;
   uint32_t *dest;
   for (src = &_sconfigdata, dest = &_configdata_loadaddr; src < &_econfigdata;
        src++, dest++) {
     *dest = *src;
-    while (FLASH->SR2 & FLASH_SR_QW); /* Wait until erase is complete */
+    while (FLASH->SR2 & FLASH_SR_QW)
+      ; /* Wait until erase is complete */
   }
 
   FLASH->CR2 |= FLASH_CR_LOCK;
@@ -45,4 +44,3 @@ void platform_load_config() {
     *dest = *src;
   }
 }
-

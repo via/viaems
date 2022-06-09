@@ -1,8 +1,8 @@
 #ifndef _PLATFORM_H
 #define _PLATFORM_H
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdbool.h>
 
 #ifndef NULL
 #define NULL 0

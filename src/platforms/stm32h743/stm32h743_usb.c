@@ -165,7 +165,8 @@ struct stringdesc {
 } __attribute__((packed));
 static struct stringdesc stringdesc;
 
-static void populate_string_descriptor(struct stringdesc *dest, const char *str) {
+static void populate_string_descriptor(struct stringdesc *dest,
+                                       const char *str) {
   size_t len = strlen(str);
   dest->length = len * 2 + 2;
   dest->type = 0x03;
