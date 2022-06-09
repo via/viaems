@@ -16,6 +16,8 @@ void platform_save_config()
   /* Enable write with PG2 in FLASH_CR2*/
   FLASH->CR2 |= FLASH_CR_PG;
 
+  FLASH->CR2 |= FLASH_CR_PSIZE; /* 32 bit writes */
+
   /* Erase sector 0 of bank 2 */
   FLASH->CR2 &= ~(FLASH_CR_SER | FLASH_CR_SNB | FLASH_CR_START);
   FLASH->CR2 |= FLASH_CR_SER | 
@@ -23,8 +25,6 @@ void platform_save_config()
          FLASH_CR_START;
 
   while (FLASH->SR2 & FLASH_SR_QW); /* Wait until erase is complete */
-
-  FLASH->CR2 |= FLASH_CR_PSIZE; /* 32 bit writes */
 
   uint32_t *src;
   uint32_t *dest;

@@ -80,7 +80,7 @@ SECTIONS {
   .dmadata : {
     *(.dmadata)
     . = ALIGN(4);
-  } >axiram
+  } >axiram AT >rom
 
 	.bss : {
     _sbss = .;

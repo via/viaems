@@ -4,11 +4,17 @@
 #include "platform.h"
 #include "tasks.h"
 
+
 void platform_enable_event_logging() {}
 
 void platform_disable_event_logging() {}
 
-void platform_reset_into_bootloader() {}
+#define BOOTLOADER_FLAG 0x56780123
+static uint32_t bootloader_flag = 0;
+void platform_reset_into_bootloader() {
+  bootloader_flag = BOOTLOADER_FLAG;
+  NVIC_SystemReset();
+}
 
 void disable_interrupts() {
   __disable_irq();
@@ -205,8 +211,18 @@ extern uint32_t _sidata, _sdata, _edata, _ebss;
 void Default_Handler(void) {}
 
 void Reset_Handler(void) {
-  volatile uint32_t *src, *dest;
+  if (bootloader_flag == BOOTLOADER_FLAG) {
+    bootloader_flag = 0;
+    /* We've set this flag and reset the cpu, jump to system bootloader */
+    
+    uint32_t *bootloader_msp = (uint32_t *)0x1ff09800; /* Per AN2606 */
+    uint32_t *bootloader_addr = bootloader_msp + 1;
 
+    __set_MSP(*bootloader_msp);
+    void (*bootloader)() = (void (*)(void))(*bootloader_addr);
+    bootloader();
+  }
+  volatile uint32_t *src, *dest;
   for (src = &_sidata, dest = &_sdata; dest < &_edata; src++, dest++) {
     *dest = *src;
   }
