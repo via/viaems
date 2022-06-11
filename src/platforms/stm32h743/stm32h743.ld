@@ -70,10 +70,11 @@ SECTIONS {
 	_sidata = LOADADDR(.data);
 
 	.configdata : {
+		. = ALIGN(4);
 		_sconfigdata = .;
 		*(.configdata*)
-		. = ALIGN(4);
 		_econfigdata = .;
+		. = ALIGN(32);
 	} >dtcmram AT >configrom
 	_configdata_loadaddr = LOADADDR(.configdata);
 

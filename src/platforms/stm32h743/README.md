@@ -16,6 +16,8 @@ GPIO | `PE0`-`PE15`
 System | Use
 --- | ---
 SPI1 | MAX11632 ADC
+TIM13 | PWM1
+TIM14 | PWM2
 TIM15 | SPI(ADC) sample timer
 TIM8 | TIM2 4 MHz tick driver, triggers TIM2 on update
 TIM2 | Main CPU Clock, event timer, and capture units for trigger inputs

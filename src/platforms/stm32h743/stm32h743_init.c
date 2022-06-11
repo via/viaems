@@ -149,6 +149,8 @@ static void setup_clocks() {
   RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
   RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
   RCC->APB2ENR |= RCC_APB2ENR_TIM15EN;
+  RCC->APB2ENR |= RCC_APB2ENR_TIM16EN;
+  RCC->APB2ENR |= RCC_APB2ENR_TIM17EN;
   RCC->APB2ENR |= RCC_APB2ENR_TIM8EN;
   RCC->APB1LENR |= RCC_APB1LENR_TIM2EN;
   RCC->AHB1ENR |= RCC_AHB1ENR_DMA1EN;
@@ -288,6 +290,7 @@ void Reset_Handler(void) {
 void platform_configure_usb(void);
 void platform_configure_sensors(void);
 void platform_configure_scheduler(void);
+void platform_configure_pwm(void);
 
 void platform_init() {
   setup_clocks();
@@ -299,6 +302,7 @@ void platform_init() {
   platform_configure_usb();
   platform_configure_scheduler();
   platform_configure_sensors();
+  platform_configure_pwm();
 
   setup_systick();
   setup_watchdog();
