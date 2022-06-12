@@ -23,7 +23,7 @@ OBJS+= stm32h743_init.o \
 
 OBJS+= libssp.a libssp_nonshared.a
 
-ALL_CFLAGS= -DNDEBUG -ffunction-sections -fdata-sections -O0 -ggdb \
+ALL_CFLAGS= -DNDEBUG -ffunction-sections -fdata-sections -O3 -ggdb \
             -mfloat-abi=hard -mfpu=fpv5-d16 -mthumb -mcpu=cortex-m7
 CFLAGS+= -I${CMSIS}/CMSIS/Core/Include
 CFLAGS+= -I${CMSISDEV}/ST/STM32H7xx/Include
@@ -52,8 +52,11 @@ ${OBJDIR}/libssp.a:
 ${OBJDIR}/libssp_nonshared.a:
 	${AR} rcs ${OBJDIR}/libssp_nonshared.a
 
+
 ${OBJDIR}/viaems.dfu: ${OBJDIR}/viaems
-	${OBJCOPY} -O binary ${OBJDIR}/viaems ${OBJDIR}/viaems.dfu
+	${OBJCOPY} -O ihex --remove-section=.configdata ${OBJDIR}/viaems ${OBJDIR}/viaems.hex
+	${OBJCOPY} -O ihex --only-section=.configdata ${OBJDIR}/viaems ${OBJDIR}/viaems-config.hex
+	dfuse-pack.py -i ${OBJDIR}/viaems.hex -i ${OBJDIR}/viaems-config.hex ${OBJDIR}/viaems.dfu
 
 program: ${OBJDIR}/viaems.dfu
-	dfu-util -D ${OBJDIR}/viaems.dfu -a 0 -s 0x8000000:leave
+	dfu-util -D ${OBJDIR}/viaems.dfu -s :leave
