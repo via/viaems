@@ -56,7 +56,7 @@ ${OBJDIR}/libssp_nonshared.a:
 ${OBJDIR}/viaems.dfu: ${OBJDIR}/viaems
 	${OBJCOPY} -O ihex --remove-section=.configdata ${OBJDIR}/viaems ${OBJDIR}/viaems.hex
 	${OBJCOPY} -O ihex --only-section=.configdata ${OBJDIR}/viaems ${OBJDIR}/viaems-config.hex
-	dfuse-pack.py -i ${OBJDIR}/viaems.hex -i ${OBJDIR}/viaems-config.hex ${OBJDIR}/viaems.dfu
+	scripts/dfuse-pack.py -i ${OBJDIR}/viaems.hex -i ${OBJDIR}/viaems-config.hex ${OBJDIR}/viaems.dfu
 
 program: ${OBJDIR}/viaems.dfu
 	dfu-util -D ${OBJDIR}/viaems.dfu -s :leave
