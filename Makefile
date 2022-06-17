@@ -15,7 +15,8 @@ OBJS += calculations.o \
 				sensors.o \
 				table.o \
 				tasks.o \
-				util.o
+				util.o \
+				viaems.o
 
 include targets/${PLATFORM}.mk
 
@@ -25,7 +26,7 @@ DEPS = $(wildcard ${OBJDIR}/*.d)
 
 GITDESC=$(shell git describe --tags --dirty)
 CFLAGS+=-I src/ -Wall -Wextra -Werror -g -std=c99 -DGIT_DESCRIBE=\"${GITDESC}\"
-CFLAGS+=-I ${TINYCBOR_DIR}/src
+CFLAGS+=-I ${TINYCBOR_DIR}/src -I${OBJDIR}
 LDFLAGS+= -lm -L${OBJDIR} -l:${TINYCBOR_LIB}
 
 OPENCM3_DIR=$(PWD)/libopencm3
@@ -36,19 +37,25 @@ DESTOBJS = $(addprefix ${OBJDIR}/, ${OBJS})
 $(OBJDIR):
 	mkdir -p ${OBJDIR}
 
-$(OBJDIR)/%.o: %.c
+$(OBJDIR)/%.o: %.c ${OBJDIR}/configuration.h
 	${CC} ${CFLAGS} -MMD -c -o $@ $<
 
-$(OBJDIR)/viaems: ${OBJDIR} ${DESTOBJS} ${OBJDIR}/${TINYCBOR_LIB} ${OBJDIR}/viaems.o
-	${CC} -o $@ ${CFLAGS} ${DESTOBJS} ${OBJDIR}/viaems.o ${LDFLAGS}
+$(OBJDIR)/viaems: ${OBJDIR} ${DESTOBJS} ${OBJDIR}/${TINYCBOR_LIB}
+	${CC} -o $@ ${CFLAGS} ${DESTOBJS} ${LDFLAGS}
 
-$(OBJDIR)/benchmark: ${OBJDIR} ${DESTOBJS} ${OBJDIR}/${TINYCBOR_LIB} ${OBJDIR}/benchmark.o
-	${CC} -o $@ ${CFLAGS} ${DESTOBJS} ${OBJDIR}/benchmark.o ${LDFLAGS}
+$(OBJDIR)/benchmark: ${OBJDIR} ${DESTOBJS} ${OBJDIR}/${TINYCBOR_LIB}
+	${CC} -o $@ ${CFLAGS} ${DESTOBJS} ${LDFLAGS}
 
 ${OBJDIR}/${TINYCBOR_LIB}:
 	$(MAKE) -C ${TINYCBOR_DIR} ${MAKEFLAGS} clean
 	$(MAKE) -C ${TINYCBOR_DIR} ${MAKEFLAGS} CC="${CC}" CFLAGS="${CFLAGS}" freestanding-pass=1 BUILD_SHARED=0
 	cp ${TINYCBOR_DIR}/lib/${TINYCBOR_LIB} ${OBJDIR}
+
+$(OBJDIR)/configuration.cbor: configuration.json
+	cat configuration.json | python scripts/json-to-cbor.py > ${OBJDIR}/configuration.cbor
+
+$(OBJDIR)/configuration.h: ${OBJDIR}/configuration.cbor
+	xxd -i ${OBJDIR}/configuration.cbor ${OBJDIR}/configuration.h
 
 format:
 	clang-format -i src/*.c src/*.h src/platforms/*.c

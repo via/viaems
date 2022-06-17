@@ -1537,7 +1537,7 @@ bool restore_config_from_binary(const uint8_t *buf, size_t len) {
    * aren't going to use it anyway */
   static uint8_t scratch[0];
   CborEncoder encoder;
-  cbor_encoder_init(&encoder, temp, sizeof(temp), 0);
+  cbor_encoder_init(&encoder, scratch, sizeof(scratch), 0);
 
   struct console_request_context ctx = {
     .type = CONSOLE_SET,

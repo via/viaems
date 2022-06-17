@@ -9,10 +9,11 @@
 #include "util.h"
 #include <assert.h>
 #include <stdio.h>
-#include "config_builtin.h"
+#include "configuration.h"
 
 int main() {
-  restore_config_from_binary(cbor_configuration, sizeof(cbor_configuration));
+  //restore_config_from_binary(obj_stm32f4_configuration_cbor, sizeof(obj_stm32f4_configuration_cbor));
+  restore_config_from_binary(obj_hosted_configuration_cbor, sizeof(obj_hosted_configuration_cbor));
 
   decoder_init(&config.decoder);
   platform_init(0, NULL);
