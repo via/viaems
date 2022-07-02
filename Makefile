@@ -1,11 +1,13 @@
-PLATFORM?=stm32f4
+PLATFORM?=hosted
 OBJDIR=obj/${PLATFORM}
+
+CONFIGS_JSON = $(wildcard configs/*.json)
+CONFIGS_CBOR = $(CONFIGS_JSON:.json=.cbor)
 
 TINYCBOR_DIR=$(PWD)/tinycbor
 TINYCBOR_LIB=libtinycbor.a
 
-
-all: $(OBJDIR)/viaems $(OBJDIR)/benchmark
+all: $(OBJDIR)/viaems $(OBJDIR)/benchmark ${CONFIGS_CBOR}
 
 OBJS += calculations.o \
 				config.o \
@@ -23,7 +25,6 @@ include targets/${PLATFORM}.mk
 DEPS = $(wildcard ${OBJDIR}/*.d)
 -include $(DEPS)
 
-
 GITDESC=$(shell git describe --tags --dirty)
 CFLAGS+=-I src/ -Wall -Wextra -Werror -g -std=c99 -DGIT_DESCRIBE=\"${GITDESC}\"
 CFLAGS+=-I ${TINYCBOR_DIR}/src -I${OBJDIR}
@@ -37,8 +38,11 @@ DESTOBJS = $(addprefix ${OBJDIR}/, ${OBJS})
 $(OBJDIR):
 	mkdir -p ${OBJDIR}
 
-$(OBJDIR)/%.o: %.c ${OBJDIR}/configuration.h
+$(OBJDIR)/%.o: %.c
 	${CC} ${CFLAGS} -MMD -c -o $@ $<
+
+%.cbor: %.json
+	python3 scripts/json-to-cbor.py <$< >$@
 
 $(OBJDIR)/viaems: ${OBJDIR} ${DESTOBJS} ${OBJDIR}/${TINYCBOR_LIB}
 	${CC} -o $@ ${CFLAGS} ${DESTOBJS} ${LDFLAGS}
@@ -50,12 +54,6 @@ ${OBJDIR}/${TINYCBOR_LIB}:
 	$(MAKE) -C ${TINYCBOR_DIR} ${MAKEFLAGS} clean
 	$(MAKE) -C ${TINYCBOR_DIR} ${MAKEFLAGS} CC="${CC}" CFLAGS="${CFLAGS}" freestanding-pass=1 BUILD_SHARED=0
 	cp ${TINYCBOR_DIR}/lib/${TINYCBOR_LIB} ${OBJDIR}
-
-$(OBJDIR)/configuration.cbor: configuration.json
-	cat configuration.json | python scripts/json-to-cbor.py > ${OBJDIR}/configuration.cbor
-
-$(OBJDIR)/configuration.h: ${OBJDIR}/configuration.cbor
-	xxd -i ${OBJDIR}/configuration.cbor ${OBJDIR}/configuration.h
 
 format:
 	clang-format -i src/*.c src/*.h src/platforms/*.c
