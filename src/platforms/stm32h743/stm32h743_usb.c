@@ -334,6 +334,8 @@ void platform_configure_usb(void) {
                    _VAL2FLD(GPIO_AFRH_AFSEL12, 10); /* AF10 (USB FS)*/
 
   cdc_init_usbd();
+  NVIC_SetPriority(OTG_FS_IRQn, 
+    NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 3, 0));
   NVIC_EnableIRQ(OTG_FS_IRQn);
   usbd_enable(&udev, true);
   usbd_connect(&udev, true);

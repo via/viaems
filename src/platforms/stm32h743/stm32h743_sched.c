@@ -142,7 +142,8 @@ static void setup_tim2(void) {
   TIM2->DIER = (config.freq_inputs[0].type == TRIGGER ? TIM_DIER_CC1IE : 0) |
                (config.freq_inputs[1].type == TRIGGER ? TIM_DIER_CC2IE : 0);
 
-  NVIC_SetPriority(TIM2_IRQn, 16);
+  NVIC_SetPriority(TIM2_IRQn, 
+    NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 1, 0));
   NVIC_EnableIRQ(TIM2_IRQn);
 
   /* A0 and A1 as trigger inputs */
@@ -280,10 +281,6 @@ void DMA1_Stream0_IRQHandler(void) {
     while (1)
       ;
   }
-  if ((DMA1->LISR & DMA_LISR_DMEIF0) == DMA_LISR_DMEIF0) {
-    while (1)
-      ;
-  }
 }
 
 static void setup_scheduled_outputs(void) {
@@ -321,15 +318,12 @@ static void setup_scheduled_outputs(void) {
     _VAL2FLD(DMAMUX_CxCR_DMAREQ_ID, 51); /* TIM8 Update */
 
   NVIC_EnableIRQ(DMA1_Stream0_IRQn);
+  NVIC_SetPriority(DMA1_Stream0_IRQn, 
+    NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 0, 0));
   DMA1_Stream0->CR |= DMA_SxCR_EN; /* Enable */
 }
 
 void platform_configure_scheduler() {
-
-  /* Set debug unit to stop the timer on halt */
-  *((volatile uint32_t *)0xE0042008) |= 29; /*TIM2, TIM5, and TIM7 and */
-  *((volatile uint32_t *)0xE004200C) |= 2;  /* TIM8 stop */
-
   setup_tim2();
   setup_tim8();
   setup_scheduled_outputs();

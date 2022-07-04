@@ -203,7 +203,8 @@ static void setup_systick() {
   SysTick->CTRL = SysTick_CTRL_ENABLE_Msk |
                   SysTick_CTRL_TICKINT_Msk; /* Enable interrupt and systick */
 
-  NVIC_SetPriority(SysTick_IRQn, 64);
+  NVIC_SetPriority(SysTick_IRQn, 
+    NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 3, 0));
 }
 
 /* Common symbols exported by the linker script(s): */
@@ -298,6 +299,14 @@ void platform_init() {
 
   setup_caches();
   setup_dwt();
+
+  NVIC_SetPriorityGrouping(3); /* 16 priority preemption levels */
+
+  /* Set debug unit to stop the timer on halt */
+  DBGMCU->APB1LFZ1 = DBGMCU_APB1LFZ1_DBG_TIM2 |
+                     DBGMCU_APB1LFZ1_DBG_TIM5;
+  DBGMCU->APB2FZ1 = DBGMCU_APB2FZ1_DBG_TIM8 |
+                    DBGMCU_APB2FZ1_DBG_TIM15;
 
   platform_configure_usb();
   platform_configure_scheduler();

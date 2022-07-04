@@ -171,7 +171,8 @@ static void setup_spi1_rx_dma(void) {
     _VAL2FLD(DMAMUX_CxCR_DMAREQ_ID, 37); /* SPI1 Rx Update */
 
   NVIC_EnableIRQ(DMA1_Stream2_IRQn);
-  NVIC_SetPriority(DMA1_Stream2_IRQn, 64);
+  NVIC_SetPriority(DMA1_Stream2_IRQn, 
+    NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 3, 0));
   DMA1_Stream2->CR |= DMA_SxCR_EN; /* Enable */
 }
 
