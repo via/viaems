@@ -314,10 +314,6 @@ size_t console_write(const void *ptr, size_t max) {
   }
 
   int written = usbd_ep_write(&udev, CDC_TXD_EP, (void *)ptr, amt);
-  if ((int)max == written) {
-    /* End of write needs a ZLP if it was not less than 64 bytes */
-    usbd_ep_write(&udev, CDC_TXD_EP, 0, 0);
-  }
   if (written < 0) {
     return 0;
   }
