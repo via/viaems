@@ -10,6 +10,9 @@
 #include <time.h>
 #include <unistd.h>
 
+#include <netinet/ip.h>
+#include <sys/socket.h>
+
 #include "config.h"
 #include "console.h"
 #include "platform.h"
@@ -21,7 +24,7 @@ static _Atomic timeval_t curtime;
 static _Atomic timeval_t eventtimer_time;
 static _Atomic uint32_t eventtimer_enable = 0;
 static int event_logging_enabled = 1;
-static uint32_t test_trigger_rpm = 100;
+static uint32_t test_trigger_rpm = 1000;
 static uint16_t cur_outputs = 0;
 
 void platform_enable_event_logging() {
@@ -129,14 +132,21 @@ void set_pwm(int output, float value) {
 
 void adc_gather() {}
 
+static int console_socket_bind_fd = -1;
+static int console_socket_fd = -1;
+
 timeval_t last_tx = 0;
 size_t console_write(const void *buf, size_t len) {
+  if (console_socket_fd < 0) {
+    return len;
+    /* Write to nowhere */
+  }
   struct timespec wait = {
     .tv_nsec = 100000,
   };
   nanosleep(&wait, NULL);
   ssize_t written = -1;
-  while ((written = write(STDOUT_FILENO, buf, len)) < 0)
+  while ((written = write(console_socket_fd, buf, len)) < 0)
     ;
   if (written > 0) {
     last_tx = curtime;
@@ -146,8 +156,20 @@ size_t console_write(const void *buf, size_t len) {
 }
 
 size_t console_read(void *buf, size_t len) {
+  
+  /* If we don't currently have an active socket, try to accept */
+  if (console_socket_fd < 0) {
+    console_socket_fd = accept(console_socket_bind_fd, NULL, NULL);
+    if (console_socket_fd < 0) {
+      return 0;
+    }
+    /* Set nonblock */
+    fcntl(console_socket_fd, F_SETFL, fcntl(console_socket_fd, F_GETFL, 0) | O_NONBLOCK);
+
+  }
+
   int s = len > 64 ? 64 : len;
-  ssize_t res = read(STDIN_FILENO, buf, s);
+  ssize_t res = read(console_socket_fd, buf, s);
   if (res < 0) {
     return 0;
   }
@@ -210,7 +232,7 @@ static void do_test_trigger(int interrupt_fd) {
     return;
   }
 
-  timeval_t time_between_teeth = time_from_rpm_diff(test_trigger_rpm, 30);
+  timeval_t time_between_teeth = time_from_rpm_diff(test_trigger_rpm, 10);
   timeval_t curtime = current_time();
   if (time_diff(curtime, last_trigger_time) < time_between_teeth) {
     return;
@@ -223,7 +245,7 @@ static void do_test_trigger(int interrupt_fd) {
     camsync = !camsync;
     cycle += 1;
   } else {
-    if (trigger == 30 && camsync && cycle < 8) {
+    if (trigger == 30 && camsync) {
       struct event ev = { .type = TRIGGER1, .time = curtime };
       if (write(interrupt_fd, &ev, sizeof(ev)) < 0) {
         perror("write");
@@ -304,7 +326,7 @@ static int output_event_compare(const void *_a, const void *_b) {
   return time_before(a->time, b->time) ? -1 : 1;
 }
 
-static void platform_buffer_swap() {
+static void platform_buffer_swap(timeval_t new_start, timeval_t new_stop) {
 
   disable_interrupts();
   clear_output_events();
@@ -318,13 +340,13 @@ static void platform_buffer_swap() {
     }
     if (sched_entry_get_state(&oev->start) == SCHED_SCHEDULED &&
         time_in_range(
-          oev->start.time, current_time(), current_time() + MAX_SLOTS - 1)) {
+          oev->start.time, new_start, new_stop)) {
       add_output_event(&oev->start);
       sched_entry_set_state(&oev->start, SCHED_SUBMITTED);
     }
     if (sched_entry_get_state(&oev->stop) == SCHED_SCHEDULED &&
         time_in_range(
-          oev->stop.time, current_time(), current_time() + MAX_SLOTS - 1)) {
+          oev->stop.time, new_start, new_stop)) {
       add_output_event(&oev->stop);
       sched_entry_set_state(&oev->stop, SCHED_SUBMITTED);
     }
@@ -342,45 +364,50 @@ timeval_t platform_output_earliest_schedulable_time() {
   return current_time() / MAX_SLOTS * MAX_SLOTS + MAX_SLOTS;
 }
 
-static void do_output_slots() {
-  /* Only take action on first slot time */
-  if (curtime % MAX_SLOTS == 0) {
-    platform_buffer_swap();
-  }
-
-  uint16_t old_outputs = cur_outputs;
-
-  while ((next_output_event < num_output_events) &&
-         (output_events[next_output_event].time == current_time())) {
-    struct sched_entry s = output_events[next_output_event];
-    next_output_event++;
-    if (s.val) {
-      cur_outputs |= (1 << s.pin);
-    } else {
-      cur_outputs &= ~(1 << s.pin);
-    }
-  }
-  if (old_outputs != cur_outputs) {
-    char output[64];
-    sprintf(output, "# OUTPUTS %lu %2x\n", (long unsigned)curtime, cur_outputs);
-    write(STDERR_FILENO, output, strlen(output));
-    console_record_event((struct logged_event){
-      .time = curtime,
-      .value = cur_outputs,
+static void report_output_event(int fd, timeval_t time, uint16_t outputs) {
+  char output[64];
+  sprintf(output, "# OUTPUTS %lu %2x\n", (long unsigned)time, outputs);
+  write(fd, output, strlen(output));
+  console_record_event((struct logged_event){
+      .time = time,
+      .value = outputs,
       .type = EVENT_OUTPUT,
-    });
+      });
+}
+
+static void do_output_slots(timeval_t from, timeval_t to) {
+  /* Only take action on first slot time */
+  platform_buffer_swap(from, to);
+
+  for (unsigned int i = 0; i < num_output_events; i++) {
+    struct sched_entry *s = &output_events[i];
+    /* Update outputs */
+    if (s->val) {
+      cur_outputs |= (1 << s->pin);
+    } else {
+      cur_outputs &= ~(1 << s->pin);
+    }
+
+    if ((i != num_output_events - 1) &&
+        (s->time == (s + 1)->time)) {
+      /* This isn't the last event, and the next event is the same time,
+       * skip in reporting */
+       continue;
+    }
+
+    report_output_event(STDERR_FILENO, s->time, cur_outputs);
   }
 }
 
 /* Thread that busywaits to increment the primary timebase.  This loop is also
  * responsible for triggering event timer, buffer swap, and trigger events
  */
-
 void *platform_timebase_thread(void *_interrupt_fd) {
   int *interrupt_fd = (int *)_interrupt_fd;
+  timeval_t last_tasks_run = 0;
   struct timespec current_time;
   struct timespec tick_increment = {
-    .tv_nsec = 250,
+    .tv_nsec = 32000,
   };
 
   if (clock_gettime(CLOCK_MONOTONIC, &current_time)) {
@@ -389,18 +416,23 @@ void *platform_timebase_thread(void *_interrupt_fd) {
 
   do {
     struct timespec next_tick = add_times(current_time, tick_increment);
-    clock_nanosleep_busywait(next_tick);
+    clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &next_tick, NULL);
     current_time = next_tick;
 
-    curtime += 1;
-    do_output_slots();
+    /* Process anything that needed to happen between curtime and curtime+128 */
+    timeval_t before = curtime;
+    timeval_t after = curtime + 128; /* 32 uS */
+    curtime = after;
 
-    if ((curtime % 10000) == 0) {
+    do_output_slots(after, after + MAX_SLOTS - 1);
+
+    if (curtime - last_tasks_run > time_from_us(10000)) {
       run_tasks();
+      last_tasks_run = curtime;
     }
     do_test_trigger(*interrupt_fd);
 
-    if (eventtimer_enable && (eventtimer_time == curtime)) {
+    if (eventtimer_enable && time_in_range(eventtimer_time, before, after)) {
       struct event event = { .type = SCHEDULED_EVENT };
       if (write(*interrupt_fd, &event, sizeof(event)) < 0) {
         perror("write");
@@ -415,6 +447,73 @@ static int interrupt_pipes[2];
 
 void platform_benchmark_init() {}
 
+static void start_interrupt_thread(int *interrupt_fd) {
+  pthread_t interrupts;
+  pthread_attr_t interrupts_attr;
+  pthread_attr_init(&interrupts_attr);
+  pthread_attr_setinheritsched(&interrupts_attr, PTHREAD_EXPLICIT_SCHED);
+  pthread_attr_setschedpolicy(&interrupts_attr, SCHED_RR);
+  struct sched_param interrupts_param = {
+    .sched_priority = 2,
+  };
+  pthread_attr_setschedparam(&interrupts_attr, &interrupts_param);
+  if (pthread_create(&interrupts,
+                     &interrupts_attr,
+                     platform_interrupt_thread,
+                     interrupt_fd)) {
+    perror("pthread_create");
+    /* Try without realtime sched */
+    if (pthread_create(
+          &interrupts, NULL, platform_interrupt_thread, interrupt_fd)) {
+      perror("pthread_create");
+      exit(EXIT_FAILURE);
+    }
+  }
+}
+
+static void start_timebase_thread(int *interrupt_fd) {
+  pthread_t timebase;
+  pthread_attr_t timebase_attr;
+  pthread_attr_init(&timebase_attr);
+  pthread_attr_setinheritsched(&timebase_attr, PTHREAD_EXPLICIT_SCHED);
+  pthread_attr_setschedpolicy(&timebase_attr, SCHED_RR);
+  struct sched_param timebase_param = {
+    .sched_priority = 1,
+  };
+  pthread_attr_setschedparam(&timebase_attr, &timebase_param);
+  if (pthread_create(&timebase,
+                     &timebase_attr,
+                     platform_timebase_thread,
+                     interrupt_fd)) {
+    perror("pthread_create");
+    /* Try without realtime sched */
+    if (pthread_create(
+          &timebase, NULL, platform_timebase_thread, interrupt_fd)) {
+      perror("pthread_create");
+      exit(EXIT_FAILURE);
+    }
+  }
+}
+
+static int start_console_listener(int port, bool wait) {
+  (void) wait;
+  int sock = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, IPPROTO_TCP);
+
+  struct sockaddr_in bindaddr = {
+    .sin_family = AF_INET,
+    .sin_port = htons(port),
+    .sin_addr = {
+      .s_addr = htonl(INADDR_ANY),
+    },
+  };
+
+  bind(sock, &bindaddr, sizeof(bindaddr));
+  listen(sock, 10);
+
+  return sock;
+}
+
+
 void platform_init() {
 
   /* Initalize mutexes */
@@ -428,54 +527,11 @@ void platform_init() {
   pthread_mutexattr_settype(&imc_attr, PTHREAD_MUTEX_ERRORCHECK);
   pthread_mutex_init(&interrupt_count_mutex, &imc_attr);
 
-  /* Set stdin nonblock */
-  fcntl(STDIN_FILENO, F_SETFL, fcntl(STDIN_FILENO, F_GETFL, 0) | O_NONBLOCK);
+  console_socket_bind_fd = start_console_listener(1234, false);
 
   pipe(interrupt_pipes);
-
-  pthread_t timebase;
-  pthread_attr_t timebase_attr;
-  pthread_attr_init(&timebase_attr);
-  pthread_attr_setinheritsched(&timebase_attr, PTHREAD_EXPLICIT_SCHED);
-  pthread_attr_setschedpolicy(&timebase_attr, SCHED_RR);
-  struct sched_param timebase_param = {
-    .sched_priority = 1,
-  };
-  pthread_attr_setschedparam(&timebase_attr, &timebase_param);
-  if (pthread_create(&timebase,
-                     &timebase_attr,
-                     platform_timebase_thread,
-                     &interrupt_pipes[1])) {
-    perror("pthread_create");
-    /* Try without realtime sched */
-    if (pthread_create(
-          &timebase, NULL, platform_timebase_thread, &interrupt_pipes[1])) {
-      perror("pthread_create");
-      exit(EXIT_FAILURE);
-    }
-  }
-
-  pthread_t interrupts;
-  pthread_attr_t interrupts_attr;
-  pthread_attr_init(&interrupts_attr);
-  pthread_attr_setinheritsched(&interrupts_attr, PTHREAD_EXPLICIT_SCHED);
-  pthread_attr_setschedpolicy(&interrupts_attr, SCHED_RR);
-  struct sched_param interrupts_param = {
-    .sched_priority = 2,
-  };
-  pthread_attr_setschedparam(&interrupts_attr, &interrupts_param);
-  if (pthread_create(&interrupts,
-                     &interrupts_attr,
-                     platform_interrupt_thread,
-                     &interrupt_pipes[0])) {
-    perror("pthread_create");
-    /* Try without realtime sched */
-    if (pthread_create(
-          &interrupts, NULL, platform_interrupt_thread, &interrupt_pipes[0])) {
-      perror("pthread_create");
-      exit(EXIT_FAILURE);
-    }
-  }
+  start_timebase_thread(&interrupt_pipes[1]);
+  start_interrupt_thread(&interrupt_pipes[0]);
 
   sensors_process(SENSOR_ADC);
   sensors_process(SENSOR_FREQ);

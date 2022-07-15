@@ -1,6 +1,6 @@
 OBJS+= hosted.o
 
-CFLAGS+= -Og -ggdb -DSUPPORTS_POSIX_TIMERS -Wno-error=unused-result
+CFLAGS+= -O3 -ggdb -DSUPPORTS_POSIX_TIMERS -Wno-error=unused-result
 CFLAGS+= -D TICKRATE=4000000 -D_POSIX_C_SOURCE=199309L -D_GNU_SOURCE
 CFLAGS+= -fsanitize=undefined -fsanitize=address -pthread
 
