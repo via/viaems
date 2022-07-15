@@ -6,8 +6,7 @@ import json
 while True:
     try:
         data = cbor.load(sys.stdin.buffer)
-      #  print(json.dumps(data))
-        print(data["values"][-6])
+        print(json.dumps(data))
     except KeyboardInterrupt:
         break
     except EOFError:
