@@ -15,7 +15,6 @@
 #include "decoder.h"
 #include "platform.h"
 #include "sensors.h"
-#include "stats.h"
 
 static uint32_t render_loss_reason() {
   return (uint32_t)config.decoder.loss;
@@ -1487,7 +1486,6 @@ void console_process() {
     size_t write_size = console_feed_line(txbuffer, sizeof(txbuffer));
     console_write_full(txbuffer, write_size);
   }
-  stats_finish_timing(STATS_CONSOLE_TIME);
 }
 
 #ifdef UNITTEST

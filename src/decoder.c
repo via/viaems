@@ -3,7 +3,6 @@
 #include "console.h"
 #include "platform.h"
 #include "scheduler.h"
-#include "stats.h"
 #include "util.h"
 
 #include <assert.h>
@@ -180,7 +179,6 @@ static void decode_even_no_sync(struct decoder *d, struct decoder_event *ev) {
       invalidate_decoder();
     }
   }
-  stats_finish_timing(STATS_DECODE_TIME);
 }
 
 static uint32_t missing_tooth_rpm(struct decoder *d) {
@@ -412,7 +410,6 @@ static void decode(struct decoder *d, struct decoder_event *ev) {
 /* When decoder has new information, reschedule everything */
 void decoder_update_scheduling(struct decoder_event *events,
                                unsigned int count) {
-  stats_start_timing(STATS_SCHEDULE_LATENCY);
 
   for (struct decoder_event *ev = events; count > 0; count--, ev++) {
     console_record_event((struct logged_event){
@@ -432,13 +429,10 @@ void decoder_update_scheduling(struct decoder_event *events,
   if (config.decoder.valid) {
     calculate_ignition();
     calculate_fueling();
-    stats_start_timing(STATS_SCHED_TOTAL_TIME);
     for (unsigned int e = 0; e < MAX_EVENTS; ++e) {
       schedule_event(&config.events[e]);
     }
-    stats_finish_timing(STATS_SCHED_TOTAL_TIME);
   }
-  stats_finish_timing(STATS_SCHEDULE_LATENCY);
 }
 
 degrees_t current_angle() {

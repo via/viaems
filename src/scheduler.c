@@ -2,7 +2,6 @@
 #include "config.h"
 #include "decoder.h"
 #include "platform.h"
-#include "stats.h"
 #include "util.h"
 
 #include <assert.h>

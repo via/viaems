@@ -13,7 +13,6 @@ OBJS += calculations.o \
 				decoder.o \
 				scheduler.o \
 				sensors.o \
-				stats.o \
 				table.o \
 				tasks.o \
 				util.o
