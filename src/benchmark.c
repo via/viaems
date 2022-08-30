@@ -9,7 +9,6 @@
 #include "platform.h"
 #include "scheduler.h"
 #include "sensors.h"
-#include "stats.h"
 #include "table.h"
 #include "tasks.h"
 #include "util.h"

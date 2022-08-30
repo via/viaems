@@ -22,7 +22,6 @@
 #include "platform.h"
 #include "scheduler.h"
 #include "sensors.h"
-#include "stats.h"
 #include "tasks.h"
 #include "util.h"
 
@@ -710,13 +709,7 @@ static const char *const usb_strings[] = {
 };
 
 void otg_fs_isr() {
-  stats_increment_counter(STATS_INT_RATE);
-  stats_increment_counter(STATS_USB_INTERRUPT_RATE);
-  stats_start_timing(STATS_USB_INTERRUPT_TIME);
-  stats_start_timing(STATS_INT_TOTAL_TIME);
   usbd_poll(usbd_dev);
-  stats_finish_timing(STATS_USB_INTERRUPT_TIME);
-  stats_finish_timing(STATS_INT_TOTAL_TIME);
 }
 
 void platform_init_usb() {
@@ -818,7 +811,6 @@ void platform_init() {
     }
   }
   dwt_enable_cycle_counter();
-  stats_init(168000000);
 
   setup_task_handler();
 }
@@ -1013,8 +1005,6 @@ static void handle_test_trigger_edge() {
 }
 
 void tim6_dac_isr() {
-  stats_increment_counter(STATS_INT_RATE);
-  stats_start_timing(STATS_INT_TESTTRIGGER_TIME);
 
   if (timer_get_flag(TIM6, TIM_SR_UIF)) {
     timer_clear_flag(TIM6, TIM_SR_UIF);
@@ -1022,7 +1012,6 @@ void tim6_dac_isr() {
 
   handle_test_trigger_edge();
 
-  stats_finish_timing(STATS_INT_TESTTRIGGER_TIME);
 }
 
 /* This is now the lowest priority interrupt, with buffer swapping and sensor
@@ -1032,9 +1021,6 @@ void tim6_dac_isr() {
  * now done in the ISR for trigger updates.
  */
 void tim2_isr() {
-  stats_increment_counter(STATS_INT_RATE);
-  stats_increment_counter(STATS_INT_EVENTTIMER_RATE);
-  stats_start_timing(STATS_INT_TOTAL_TIME);
 
   bool cc1_fired = false;
   bool cc2_fired = false;
@@ -1059,7 +1045,6 @@ void tim2_isr() {
     timer_clear_flag(TIM2, TIM_SR_CC1OF);
     timer_clear_flag(TIM2, TIM_SR_CC2OF);
     decoder_desync(DECODER_OVERFLOW);
-    stats_finish_timing(STATS_INT_TOTAL_TIME);
     return;
   }
 
@@ -1080,7 +1065,6 @@ void tim2_isr() {
     scheduler_callback_timer_execute();
   }
 
-  stats_finish_timing(STATS_INT_TOTAL_TIME);
 }
 
 /* Retire all stop/stop events that are in the time range of our "completed"
@@ -1162,7 +1146,6 @@ void dma2_stream1_isr(void) {
 
 volatile int interrupt_disables = 0;
 void enable_interrupts() {
-  stats_finish_timing(STATS_INT_DISABLE_TIME);
   interrupt_disables -= 1;
   assert(interrupt_disables >= 0);
   cm_enable_interrupts();
@@ -1171,7 +1154,6 @@ void enable_interrupts() {
 /* Returns current enabled status prior to call */
 void disable_interrupts() {
   cm_disable_interrupts();
-  stats_start_timing(STATS_INT_DISABLE_TIME);
   interrupt_disables += 1;
 }
 
@@ -1264,12 +1246,10 @@ void platform_save_config() {
 
 size_t console_read(void *buf, size_t max) {
   disable_interrupts();
-  stats_start_timing(STATS_CONSOLE_READ_TIME);
   size_t amt = usb_rx_len > max ? max : usb_rx_len;
   memcpy(buf, usb_rx_buf, amt);
   memmove(usb_rx_buf, usb_rx_buf + amt, usb_rx_len - amt);
   usb_rx_len -= amt;
-  stats_finish_timing(STATS_CONSOLE_READ_TIME);
   enable_interrupts();
   return amt;
 }

@@ -2,7 +2,6 @@
 #include "config.h"
 #include "decoder.h"
 #include "platform.h"
-#include "stats.h"
 #include "util.h"
 
 static void handle_fuel_pump() {
@@ -144,12 +143,10 @@ void handle_emergency_shutdown() {
 }
 
 void run_tasks() {
-  stats_start_timing(STATS_TASK_TIME);
   handle_fuel_pump();
   handle_boost_control();
   handle_idle_control();
   handle_check_engine_light();
-  stats_finish_timing(STATS_TASK_TIME);
 }
 
 #ifdef UNITTEST

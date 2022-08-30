@@ -3,7 +3,6 @@
 
 #include "calculations.h"
 #include "config.h"
-#include "stats.h"
 struct calculated_values calculated_values;
 
 static bool fuel_overduty() {
@@ -132,7 +131,6 @@ static float calculate_tipin_enrichment(float tps, float tpsrate, int rpm) {
 }
 
 void calculate_fueling() {
-  stats_start_timing(STATS_FUELCALC_TIME);
 
   float ve;
   float lambda;
@@ -202,7 +200,6 @@ void calculate_fueling() {
   calculated_values.lambda = lambda;
   calculated_values.fueling_us = (raw_pw_us * ete) + (idt * 1000);
 
-  stats_finish_timing(STATS_FUELCALC_TIME);
 }
 
 #ifdef UNITTEST
