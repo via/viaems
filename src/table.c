@@ -1,29 +1,45 @@
 #include "table.h"
+#include <stdbool.h>
+
+static int find_axis_index(struct table_axis *axis, float value) {
+  int max = axis->num - 2;
+
+  int bottom = 0;
+  int top = max;
+
+  do {
+    int index = bottom + ((top - bottom) / 2);
+    float x1 = axis->values[index];
+    float x2 = axis->values[index + 1];
+
+
+    if (value < x1) {
+      top = index - 1;
+    } else if (value > x2) {
+      bottom = index + 1;
+    } else {
+      return index;
+    }
+
+    if (top < 0) {
+      return 0;
+    }
+    if (bottom > max) {
+      return max;
+    }
+  } while (true);
+  return 0;
+}
 
 float interpolate_table_oneaxis(struct table *t, float val) {
-  if (t->num_axis != 1) {
-    while (1)
-      ;
-  }
-  /* Clamp to bottom */
-  if (val < t->axis[0].values[0]) {
-    val = t->axis[0].values[0];
-  }
-  /* Clamp to top */
-  if (val > t->axis[0].values[t->axis[0].num - 1]) {
-    val = t->axis[0].values[t->axis[0].num - 1];
-  }
-  for (int x = 0; x < t->axis[0].num - 1; ++x) {
-    float first_axis = t->axis[0].values[x];
-    float second_axis = t->axis[0].values[x + 1];
-    if ((val >= first_axis) && (val <= second_axis)) {
-      float partial = (val - first_axis) / (second_axis - first_axis);
-      float first_val = t->data.one[x];
-      float second_val = t->data.one[x + 1];
-      return ((second_val - first_val) * partial) + first_val;
-    }
-  }
-  return 0;
+  int index = find_axis_index(&t->axis[0], val);
+
+  float first_axis = t->axis[0].values[index];
+  float second_axis = t->axis[0].values[index + 1];
+  float partial = (val - first_axis) / (second_axis - first_axis);
+  float first_val = t->data.one[index];
+  float second_val = t->data.one[index + 1];
+  return ((second_val - first_val) * partial) + first_val;
 }
 
 float interpolate_table_twoaxis(struct table *t, float x, float y) {

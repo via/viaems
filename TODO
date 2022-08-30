@@ -6,3 +6,10 @@
 + Basic tasks
     + Fan control
     + Idle Control
+
+Perf:
+- Provide metrics on decode/schedule time
+- Table lookups
+- memmove() somewhere?
+- ccm
+- bitband for buffer sets/unsets

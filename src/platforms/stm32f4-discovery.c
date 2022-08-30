@@ -1,7 +1,10 @@
 #include <libopencm3/cm3/cortex.h>
 #include <libopencm3/cm3/dwt.h>
+#include <libopencm3/cm3/itm.h>
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/cm3/scb.h>
+#include <libopencm3/cm3/tpiu.h>
+#include <libopencm3/cm3/scs.h>
 #include <libopencm3/cm3/systick.h>
 #include <libopencm3/stm32/adc.h>
 #include <libopencm3/stm32/dma.h>
@@ -13,6 +16,7 @@
 #include <libopencm3/stm32/spi.h>
 #include <libopencm3/stm32/syscfg.h>
 #include <libopencm3/stm32/timer.h>
+#include <libopencm3/stm32/dbgmcu.h>
 #include <libopencm3/usb/cdc.h>
 #include <libopencm3/usb/usbd.h>
 
@@ -763,6 +767,29 @@ static void setup_task_handler() {
   iwdg_start();
 }
 
+static void platform_trace() {
+#if 0
+  const uint32_t trace_clk = 16000000;
+  gpio_mode_setup(GPIOB, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO3);
+  gpio_set_output_options(GPIOB, GPIO_OTYPE_PP, GPIO_OSPEED_100MHZ, GPIO3);
+  gpio_set_af(GPIOB, GPIO_AF0, GPIO3);
+
+  DBGMCU_CR |= DBGMCU_CR_TRACE_IOEN; 
+  ITM_LAR = CORESIGHT_LAR_KEY;
+
+  SCS_DEMCR |= SCS_DEMCR_TRCENA;
+
+  TPIU_SPPR = TPIU_SPPR_ASYNC_MANCHESTER;
+  TPIU_ACPR = (((168000000-trace_clk-1)/trace_clk)-1);
+  TPIU_FFCR = 0x100; /* ??? */
+
+  DWT_CTRL |= DWT_CTRL_EXCTRCENA; /* Enable exception tracing */
+
+  DWT_CYCCNT = 0;
+  DWT_CTRL |= DWT_CTRL_CYCCNTENA;
+#endif
+}
+
 void platform_benchmark_init() {
   rcc_clock_setup_pll(&rcc_hse_8mhz_3v3[RCC_CLOCK_3V3_168MHZ]);
   rcc_wait_for_osc_ready(RCC_HSE);
@@ -818,6 +845,7 @@ void platform_init() {
     }
   }
   dwt_enable_cycle_counter();
+  platform_trace();
   stats_init(168000000);
 
   setup_task_handler();
@@ -1031,7 +1059,11 @@ void tim6_dac_isr() {
  * (rescheduling individual events).  All fueling calculations and scheduling is
  * now done in the ISR for trigger updates.
  */
+uint32_t max_time;
+timeval_t last_attempt;
+
 void tim2_isr() {
+  uint32_t before = current_time();
   stats_increment_counter(STATS_INT_RATE);
   stats_increment_counter(STATS_INT_EVENTTIMER_RATE);
   stats_start_timing(STATS_INT_TOTAL_TIME);
@@ -1092,6 +1124,16 @@ void tim2_isr() {
   }
 
   stats_finish_timing(STATS_INT_TOTAL_TIME);
+  uint32_t after = current_time();
+
+  if (current_time() - last_attempt > 4000000) {
+    last_attempt = current_time();
+    max_time = 0;
+  }
+  uint32_t duration = after - before;
+  if (duration > max_time) {
+    max_time = duration;
+  }
 }
 
 /* Retire all stop/stop events that are in the time range of our "completed"
