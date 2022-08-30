@@ -1,74 +1,87 @@
+#include <assert.h>
+
 #include "table.h"
 
-float interpolate_table_oneaxis(struct table *t, float val) {
-  if (t->num_axis != 1) {
-    while (1)
-      ;
-  }
-  /* Clamp to bottom */
-  if (val < t->axis[0].values[0]) {
-    val = t->axis[0].values[0];
-  }
-  /* Clamp to top */
-  if (val > t->axis[0].values[t->axis[0].num - 1]) {
-    val = t->axis[0].values[t->axis[0].num - 1];
-  }
-  for (int x = 0; x < t->axis[0].num - 1; ++x) {
-    float first_axis = t->axis[0].values[x];
-    float second_axis = t->axis[0].values[x + 1];
-    if ((val >= first_axis) && (val <= second_axis)) {
-      float partial = (val - first_axis) / (second_axis - first_axis);
-      float first_val = t->data.one[x];
-      float second_val = t->data.one[x + 1];
-      return ((second_val - first_val) * partial) + first_val;
+static int axis_find_cell_lower(const struct table_axis *axis, float value) {
+  assert(axis->num > 0);
+  assert(value >= axis->values[0]);
+  assert(value <= axis->values[axis->num - 1]);
+
+  int x1 = 0;
+  int len = axis->num;
+  int middle = x1 + (len / 2);
+
+  while (len > 1) {
+    if (value >= axis->values[middle]) {
+      x1 = middle;
     }
+    len = (len + 1) / 2;
+    middle = x1 + (len / 2);
   }
-  return 0;
+  return x1;
+}
+
+float interpolate_table_oneaxis(struct table *t, float val) {
+  assert(t->num_axis == 1);
+
+  const struct table_axis *axis = &t->axis[0];
+
+  /* Clamp to bottom */
+  if (val < axis->values[0]) {
+    val = axis->values[0];
+  }
+
+  /* Clamp to top */
+  if (val > axis->values[axis->num - 1]) {
+    val = axis->values[axis->num - 1];
+  }
+
+  const int index = axis_find_cell_lower(axis, val);
+  const float x1 = axis->values[index];
+  const float x2 = axis->values[index + 1];
+
+  const float partial = (val - x1) / (x2 - x1);
+  const float first_val = t->data.one[index];
+  const float second_val = t->data.one[index + 1];
+  return ((second_val - first_val) * partial) + first_val;
 }
 
 float interpolate_table_twoaxis(struct table *t, float x, float y) {
-  float x1 = 0, x2 = 0, y1 = 0, y2 = 0;
-  int x1_ind = 0, y1_ind = 0;
-  float xy1, xy2, xy;
-  if (t->num_axis != 2) {
-    while (1)
-      ;
-  }
+  assert(t->num_axis == 2);
+
+  const struct table_axis *xaxis = &t->axis[0];
+  const struct table_axis *yaxis = &t->axis[1];
+
   /* Clamp X to bottom */
-  if (x < t->axis[0].values[0]) {
-    x = t->axis[0].values[0];
+  if (x < xaxis->values[0]) {
+    x = xaxis->values[0];
   }
   /* Clamp X to top */
-  if (x > t->axis[0].values[t->axis[0].num - 1]) {
-    x = t->axis[0].values[t->axis[0].num - 1];
+  if (x > xaxis->values[xaxis->num - 1]) {
+    x = xaxis->values[xaxis->num - 1];
   }
   /* Clamp Y to bottom */
-  if (y < t->axis[1].values[0]) {
-    y = t->axis[1].values[0];
+  if (y < yaxis->values[0]) {
+    y = yaxis->values[0];
   }
   /* Clamp Y to top */
-  if (y > t->axis[1].values[t->axis[1].num - 1]) {
-    y = t->axis[1].values[t->axis[1].num - 1];
+  if (y > yaxis->values[yaxis->num - 1]) {
+    y = yaxis->values[yaxis->num - 1];
   }
-  for (x1_ind = 0; x1_ind < t->axis[0].num - 1; ++x1_ind) {
-    x1 = t->axis[0].values[x1_ind];
-    x2 = t->axis[0].values[x1_ind + 1];
-    if ((x >= x1) && (x <= x2)) {
-      break;
-    }
-  }
-  for (y1_ind = 0; y1_ind < t->axis[1].num - 1; ++y1_ind) {
-    y1 = t->axis[1].values[y1_ind];
-    y2 = t->axis[1].values[y1_ind + 1];
-    if ((y >= y1) && (y <= y2)) {
-      break;
-    }
-  }
-  xy1 = (x2 - x) / (x2 - x1) * t->data.two[y1_ind][x1_ind] +
-        (x - x1) / (x2 - x1) * t->data.two[y1_ind][x1_ind + 1];
-  xy2 = (x2 - x) / (x2 - x1) * t->data.two[y1_ind + 1][x1_ind] +
-        (x - x1) / (x2 - x1) * t->data.two[y1_ind + 1][x1_ind + 1];
-  xy = (y2 - y) / (y2 - y1) * xy1 + (y - y1) / (y2 - y1) * xy2;
+
+  const int x1_ind = axis_find_cell_lower(xaxis, x);
+  const int y1_ind = axis_find_cell_lower(yaxis, y);
+
+  const float x1 = xaxis->values[x1_ind];
+  const float x2 = xaxis->values[x1_ind + 1];
+  const float y1 = yaxis->values[y1_ind];
+  const float y2 = yaxis->values[y1_ind + 1];
+
+  const float xy1 = (x2 - x) / (x2 - x1) * t->data.two[y1_ind][x1_ind] +
+                    (x - x1) / (x2 - x1) * t->data.two[y1_ind][x1_ind + 1];
+  const float xy2 = (x2 - x) / (x2 - x1) * t->data.two[y1_ind + 1][x1_ind] +
+                    (x - x1) / (x2 - x1) * t->data.two[y1_ind + 1][x1_ind + 1];
+  const float xy = (y2 - y) / (y2 - y1) * xy1 + (y - y1) / (y2 - y1) * xy2;
   return xy;
 }
 
@@ -107,10 +120,10 @@ int table_valid(struct table *t) {
 static struct table t1 = {
   .num_axis = 1,
   .axis = { {
-    .num = 4,
-    .values = { 5, 10, 15, 20 },
+    .num = 5,
+    .values = { 5, 10, 12, 15, 20 },
   } },
-  .data = { .one = { 50, 100, 150, 200 } },
+  .data = { .one = { 50, 100, 120, 150, 200 } },
 };
 
 static struct table t2 = {
@@ -129,6 +142,37 @@ static struct table t2 = {
               {80, 130, 280, 230} },
    },
 };
+
+START_TEST(check_axis_find_cell) {
+  const struct table_axis oddaxis = {
+    .num = 3,
+    .values = { 10, 20, 30 },
+  };
+
+  ck_assert_int_eq(axis_find_cell_lower(&oddaxis, 10), 0);
+  ck_assert_int_eq(axis_find_cell_lower(&oddaxis, 15), 0);
+  ck_assert_int_eq(axis_find_cell_lower(&oddaxis, 20), 1);
+  ck_assert_int_eq(axis_find_cell_lower(&oddaxis, 25), 1);
+  ck_assert_int_eq(axis_find_cell_lower(&oddaxis, 30), 2);
+
+  const struct table_axis evenaxis = {
+    .num = 6,
+    .values = { 10, 20, 30, 40, 50, 60 },
+  };
+
+  ck_assert_int_eq(axis_find_cell_lower(&evenaxis, 10), 0);
+  ck_assert_int_eq(axis_find_cell_lower(&evenaxis, 15), 0);
+  ck_assert_int_eq(axis_find_cell_lower(&evenaxis, 20), 1);
+  ck_assert_int_eq(axis_find_cell_lower(&evenaxis, 25), 1);
+  ck_assert_int_eq(axis_find_cell_lower(&evenaxis, 30), 2);
+  ck_assert_int_eq(axis_find_cell_lower(&evenaxis, 35), 2);
+  ck_assert_int_eq(axis_find_cell_lower(&evenaxis, 40), 3);
+  ck_assert_int_eq(axis_find_cell_lower(&evenaxis, 45), 3);
+  ck_assert_int_eq(axis_find_cell_lower(&evenaxis, 50), 4);
+  ck_assert_int_eq(axis_find_cell_lower(&evenaxis, 55), 4);
+  ck_assert_int_eq(axis_find_cell_lower(&evenaxis, 60), 5);
+}
+END_TEST
 
 START_TEST(check_table_oneaxis_interpolate) {
   ck_assert(interpolate_table_oneaxis(&t1, 7.5) == 75);
@@ -163,6 +207,7 @@ END_TEST
 
 TCase *setup_table_tests() {
   TCase *table_tests = tcase_create("tables");
+  tcase_add_test(table_tests, check_axis_find_cell);
   tcase_add_test(table_tests, check_table_oneaxis_interpolate);
   tcase_add_test(table_tests, check_table_oneaxis_clamp);
   tcase_add_test(table_tests, check_table_twoaxis_interpolate);
