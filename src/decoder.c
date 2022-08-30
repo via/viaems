@@ -34,7 +34,8 @@ void decoder_desync(decoder_loss_reason reason) {
 }
 
 static void push_time(struct decoder *d, timeval_t t) {
-  for (int i = MAX_TRIGGERS - 1; i > 0; --i) {
+  size_t len = sizeof(d->times) / sizeof(d->times[0]);
+  for (int i = len - 1; i > 0; --i) {
     d->times[i] = d->times[i - 1];
   }
   d->times[0] = t;
@@ -64,8 +65,8 @@ static void even_tooth_trigger_update_rpm(struct decoder *d) {
 
   if (rpm_window_size > 1) {
     /* We have at least two data points to draw an rpm from */
-    d->rpm = rpm_from_time_diff(d->times[0] - d->times[rpm_window_size - 1],
-                                d->degrees_per_trigger * (rpm_window_size - 1));
+    d->rpm = rpm_from_time_diff(d->times[0] - d->times[rpm_window_size],
+                                d->degrees_per_trigger * rpm_window_size);
 
     if (d->rpm) {
       unsigned int delta =
@@ -101,7 +102,7 @@ static void even_tooth_trigger_update(struct decoder *d, timeval_t t) {
   d->triggers_since_last_sync++;
 
   /* Count triggers up until a full wheel */
-  if (d->current_triggers_rpm < MAX_TRIGGERS) {
+  if (d->current_triggers_rpm < MAX_TRIGGERS + 1) {
     d->current_triggers_rpm++;
   }
 
@@ -285,6 +286,18 @@ static void missing_tooth_trigger_update(struct decoder *d, timeval_t t) {
   }
 }
 
+static uint32_t missing_tooth_average_rpm(const struct decoder *d) {
+  if (d->current_triggers_rpm >= d->num_triggers) {
+    if (d->triggers_since_last_sync == 0) {
+      return rpm_from_time_diff(d->times[0] - d->times[d->num_triggers - 1],
+                                  d->num_triggers * d->degrees_per_trigger);
+    } else {
+      return d->rpm;
+    }
+  }
+  return d->tooth_rpm;
+}
+
 static void decode_missing_no_sync(struct decoder *d,
                                    struct decoder_event *ev) {
   decoder_state oldstate = d->state;
@@ -297,14 +310,7 @@ static void decode_missing_no_sync(struct decoder *d,
     d->tooth_rpm = missing_tooth_rpm(d);
   }
 
-  if (d->current_triggers_rpm >= d->num_triggers) {
-    if (d->triggers_since_last_sync == 0) {
-      d->rpm = rpm_from_time_diff(d->times[0] - d->times[d->num_triggers - 2],
-                                  d->num_triggers * d->degrees_per_trigger);
-    }
-  } else {
-    d->rpm = d->tooth_rpm;
-  }
+  d->rpm = missing_tooth_average_rpm(d);
 
   if (d->state == DECODER_SYNC) {
     d->valid = 1;
@@ -347,14 +353,8 @@ static void decode_missing_with_camsync(struct decoder *d,
   if (d->state != DECODER_NOSYNC) {
     d->tooth_rpm = missing_tooth_rpm(d);
   }
-  if (d->current_triggers_rpm >= d->num_triggers) {
-    if (d->triggers_since_last_sync == 0) {
-      d->rpm = rpm_from_time_diff(d->times[0] - d->times[d->num_triggers - 2],
-                                  d->num_triggers * d->degrees_per_trigger);
-    }
-  } else {
-    d->rpm = d->tooth_rpm;
-  }
+
+  d->rpm = missing_tooth_average_rpm(d);
 
   bool has_seen_camsync =
     camsync_seen_this_rotation || camsync_seen_last_rotation;
@@ -1238,6 +1238,22 @@ START_TEST(check_update_rpm_window_smaller) {
 }
 END_TEST
 
+START_TEST(check_missing_tooth_average_rpm) {
+  struct decoder d = {
+    /* Missing tooth should result in full revolution being 9500 - 2000 */
+    .times = { 9500, 8400, 7300, 6200, 5100, 4000, 3000, 2000, 1000 },
+    .degrees_per_trigger = 45,
+    .current_triggers_rpm = 8,
+    .num_triggers = 8,
+    .trigger_max_rpm_change = 0.5,
+    .triggers_since_last_sync = 0,
+  };
+
+  uint32_t rpm = missing_tooth_average_rpm(&d);
+  ck_assert_int_eq(rpm, 32000);
+}
+END_TEST
+
 TCase *setup_decoder_tests() {
   TCase *decoder_tests = tcase_create("decoder");
   /* Even teeth with no sync */
@@ -1281,6 +1297,7 @@ TCase *setup_decoder_tests() {
   tcase_add_test(decoder_tests, check_update_rpm_sufficient_points);
   tcase_add_test(decoder_tests, check_update_rpm_window_larger);
   tcase_add_test(decoder_tests, check_update_rpm_window_smaller);
+  tcase_add_test(decoder_tests, check_missing_tooth_average_rpm);
   return decoder_tests;
 }
 #endif

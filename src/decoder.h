@@ -72,7 +72,7 @@ struct decoder {
   decoder_state state;
   uint32_t current_triggers_rpm;
   uint32_t triggers_since_last_sync;
-  timeval_t times[MAX_TRIGGERS];
+  timeval_t times[MAX_TRIGGERS + 1];
 };
 
 struct decoder_event {
