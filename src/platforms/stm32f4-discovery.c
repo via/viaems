@@ -1185,6 +1185,10 @@ void clear_event_timer() {
   timer_clear_flag(TIM2, TIM_SR_CC4IF);
 }
 
+void pend_event_timer() {
+  timer_generate_event(TIM2, TIM_EGR_CC4G);
+}
+
 void disable_event_timer() {
   timer_disable_irq(TIM2, TIM_DIER_CC4IE);
   timer_clear_flag(TIM2, TIM_SR_CC4IF);

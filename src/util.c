@@ -31,6 +31,11 @@ bool time_before(timeval_t n, timeval_t x) {
   return (res < 0);
 }
 
+bool time_before_or_equal(timeval_t n, timeval_t x) {
+  signed int res = n - x;
+  return (res <= 0);
+}
+
 bool time_in_range(timeval_t val, timeval_t t1, timeval_t t2) {
   return (val - t1) <= (t2 - t1);
 }
