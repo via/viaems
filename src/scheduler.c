@@ -9,7 +9,7 @@
 #include <strings.h>
 
 #define MAX_CALLBACKS 32
-struct timed_callback *callbacks[MAX_CALLBACKS] = { 0 };
+struct timer_callback *callbacks[MAX_CALLBACKS] = { 0 };
 static int n_callbacks = 0;
 
 /* Returns true if both the start and stop entry have been confirmed to fire */
@@ -263,7 +263,7 @@ void schedule_event(struct output_event *ev) {
   }
 }
 
-static void callback_remove(struct timed_callback *tcb) {
+static void callback_remove(struct timer_callback *tcb) {
   int i;
   int tcb_pos;
   for (i = 0; i < n_callbacks; ++i) {
@@ -283,7 +283,7 @@ static void callback_remove(struct timed_callback *tcb) {
   tcb->scheduled = 0;
 }
 
-static void callback_insert(struct timed_callback *tcb) {
+static void callback_insert(struct timer_callback *tcb) {
 
   int i;
   int tcb_pos;
@@ -303,7 +303,7 @@ static void callback_insert(struct timed_callback *tcb) {
   tcb->scheduled = 1;
 }
 
-int schedule_callback(struct timed_callback *tcb, timeval_t time) {
+int schedule_callback(struct timer_callback *tcb, timeval_t time) {
 
   disable_interrupts();
   if (tcb->scheduled) {
@@ -313,37 +313,25 @@ int schedule_callback(struct timed_callback *tcb, timeval_t time) {
   tcb->time = time;
   callback_insert(tcb);
 
-  if (callbacks[0]->time != get_event_timer()) {
-    set_event_timer(callbacks[0]->time);
-
-    if (time_before(callbacks[0]->time, current_time())) {
-      /* Handle now */
-      scheduler_callback_timer_execute();
-    }
-  }
+  schedule_event_timer(callbacks[0]->time);
   enable_interrupts();
 
   return 0;
 }
 
 void scheduler_callback_timer_execute() {
-  while (n_callbacks && time_before(callbacks[0]->time, current_time())) {
-    clear_event_timer();
-    struct timed_callback *cb = callbacks[0];
-    callback_remove(cb);
-    if (cb->callback) {
-      cb->callback(cb->data);
-    }
-    if (!n_callbacks) {
-      disable_event_timer();
-    } else {
-      set_event_timer(callbacks[0]->time);
-    }
-  }
-}
+  assert(n_callbacks > 0); 
+  assert(time_before_or_equal(callbacks[0]->time, current_time()));
 
-void initialize_scheduler() {
-  n_callbacks = 0;
+  struct timer_callback *cb = callbacks[0];
+  callback_remove(cb);
+  if (cb->callback) {
+    cb->callback(cb->data);
+  }
+
+  if (n_callbacks > 0) {
+    schedule_event_timer(callbacks[0]->time);
+  }
 }
 
 #ifdef UNITTEST
@@ -570,9 +558,9 @@ END_TEST
 
 START_TEST(check_callback_insert) {
 
-  struct timed_callback tc1 = { .time = 50 };
-  struct timed_callback tc2 = { .time = 100 };
-  struct timed_callback tc3 = { .time = 150 };
+  struct timer_callback tc1 = { .time = 50 };
+  struct timer_callback tc2 = { .time = 100 };
+  struct timer_callback tc3 = { .time = 150 };
 
   callback_insert(&tc2);
   ck_assert_int_eq(tc2.scheduled, 1);
@@ -594,9 +582,9 @@ END_TEST
 
 START_TEST(check_callback_remove) {
 
-  struct timed_callback tc1 = { .time = 50 };
-  struct timed_callback tc2 = { .time = 100 };
-  struct timed_callback tc3 = { .time = 150 };
+  struct timer_callback tc1 = { .time = 50 };
+  struct timer_callback tc2 = { .time = 100 };
+  struct timer_callback tc3 = { .time = 150 };
 
   callback_insert(&tc1);
   callback_insert(&tc2);
@@ -623,21 +611,22 @@ static void _increase_count(void *_c) {
   (*c)++;
 }
 
+extern bool event_timer_pending;
 START_TEST(check_callback_execute) {
 
   int count = 0;
 
-  struct timed_callback tc1 = {
+  struct timer_callback tc1 = {
     .time = 95,
     .callback = _increase_count,
     .data = &count,
   };
-  struct timed_callback tc2 = {
+  struct timer_callback tc2 = {
     .time = 100,
     .callback = _increase_count,
     .data = &count,
   };
-  struct timed_callback tc3 = {
+  struct timer_callback tc3 = {
     .time = 150,
     .callback = _increase_count,
     .data = &count,
@@ -650,15 +639,25 @@ START_TEST(check_callback_execute) {
   set_current_time(101);
   scheduler_callback_timer_execute();
 
+  /* Only one gets processed, but interrupt immediately marked pending */
+  ck_assert_int_eq(count, 1);
+  ck_assert_int_eq(n_callbacks, 2);
+  ck_assert(callbacks[0] == &tc2);
+  ck_assert(event_timer_pending == true);
+
+  scheduler_callback_timer_execute();
+
   ck_assert_int_eq(count, 2);
   ck_assert_int_eq(n_callbacks, 1);
   ck_assert(callbacks[0] == &tc3);
+  ck_assert(event_timer_pending == false);
 
   set_current_time(151);
 
   scheduler_callback_timer_execute();
   ck_assert_int_eq(count, 3);
   ck_assert_int_eq(n_callbacks, 0);
+  ck_assert(event_timer_pending == false);
 }
 END_TEST
 

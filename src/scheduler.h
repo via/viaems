@@ -36,7 +36,7 @@ static inline void sched_entry_set_state(struct sched_entry *s,
   atomic_store_explicit(&s->state, state, memory_order_relaxed);
 }
 
-struct timed_callback {
+struct timer_callback {
   void (*callback)(void *);
   void *data;
   timeval_t time;
@@ -51,16 +51,15 @@ struct output_event {
 
   struct sched_entry start;
   struct sched_entry stop;
-  struct timed_callback callback;
+  struct timer_callback callback;
 };
 
 void schedule_event(struct output_event *ev);
 void deschedule_event(struct output_event *);
 
-int schedule_callback(struct timed_callback *tcb, timeval_t time);
+int schedule_callback(struct timer_callback *tcb, timeval_t time);
 
 void scheduler_callback_timer_execute(void);
-void initialize_scheduler(void);
 void invalidate_scheduled_events(struct output_event *, int);
 
 #ifdef UNITTEST

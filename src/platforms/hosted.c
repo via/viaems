@@ -17,8 +17,10 @@
 
 static _Atomic timeval_t curtime;
 
-static _Atomic timeval_t eventtimer_time;
-static _Atomic uint32_t eventtimer_enable = 0;
+static _Atomic timeval_t event_timer_time = 0;
+static _Atomic bool event_timer_enabled = false;
+static _Atomic bool event_timer_pending = false;
+
 static int event_logging_enabled = 1;
 static uint32_t test_trigger_rpm = 100;
 static uint16_t cur_outputs = 0;
@@ -47,21 +49,13 @@ uint64_t cycles_to_ns(uint64_t cycles) {
   return cycles;
 }
 
-void set_event_timer(timeval_t t) {
-  eventtimer_time = t;
-  eventtimer_enable = 1;
-}
-
-timeval_t get_event_timer() {
-  return eventtimer_time;
-}
-
-void clear_event_timer() {
-  eventtimer_enable = 0;
-}
-
-void disable_event_timer() {
-  eventtimer_enable = 0;
+void schedule_event_timer(timeval_t t) {
+  event_timer_pending = false;
+  event_timer_time = t;
+  event_timer_enabled = true;
+  if (time_before_or_equal(t, current_time())) {
+    event_timer_pending = true;
+  }
 }
 
 /* Used to lock the interrupt thread */
@@ -267,7 +261,8 @@ void *platform_interrupt_thread(void *_interrupt_fd) {
         &(struct decoder_event){ .trigger = 1, .time = msg.time }, 1);
       break;
     case SCHEDULED_EVENT:
-      if (eventtimer_enable) {
+      if (event_timer_pending) {
+        event_timer_pending = false;
         scheduler_callback_timer_execute();
       }
       break;
@@ -399,7 +394,10 @@ void *platform_timebase_thread(void *_interrupt_fd) {
     }
     do_test_trigger(*interrupt_fd);
 
-    if (eventtimer_enable && (eventtimer_time == curtime)) {
+    if (event_timer_enabled && (event_timer_time == curtime)) {
+      event_timer_pending = true;
+    }
+    if (event_timer_pending) {
       struct event event = { .type = SCHEDULED_EVENT };
       if (write(*interrupt_fd, &event, sizeof(event)) < 0) {
         perror("write");

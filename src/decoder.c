@@ -8,7 +8,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
-static struct timed_callback expire_event;
+static struct timer_callback expire_event;
 
 static void invalidate_decoder() {
   config.decoder.valid = 0;

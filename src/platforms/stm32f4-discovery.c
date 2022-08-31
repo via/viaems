@@ -1172,22 +1172,21 @@ int interrupts_enabled() {
   return !cm_is_masked_interrupts();
 }
 
-void set_event_timer(timeval_t t) {
-  timer_set_oc_value(TIM2, TIM_OC4, t);
-  timer_enable_irq(TIM2, TIM_DIER_CC4IE);
-}
-
-timeval_t get_event_timer() {
-  return TIM2_CCR4;
-}
-
-void clear_event_timer() {
-  timer_clear_flag(TIM2, TIM_SR_CC4IF);
-}
-
-void disable_event_timer() {
+void schedule_event_timer(timeval_t time) {
+  assert(!interrupts_enabled());
+  /* Clear out any pending interrupt */
   timer_disable_irq(TIM2, TIM_DIER_CC4IE);
   timer_clear_flag(TIM2, TIM_SR_CC4IF);
+
+  /* Set timer and enable interrupt */
+  timer_set_oc_value(TIM2, TIM_OC4, time);
+  timer_enable_irq(TIM2, TIM_DIER_CC4IE);
+
+  /* If time is prior to now, we may have missed it, set the interrupt pending
+   * just in case */
+  if (time_before_or_equal(time, current_time())) {
+    timer_generate_event(TIM2, TIM_EGR_CC4G);
+  }
 }
 
 timeval_t current_time() {
