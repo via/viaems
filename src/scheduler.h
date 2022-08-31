@@ -47,7 +47,7 @@ struct output_event {
   event_type_t type;
   degrees_t angle;
   uint32_t pin;
-  uint32_t inverted;
+  bool inverted;
 
   struct sched_entry start;
   struct sched_entry stop;
