@@ -81,7 +81,7 @@ static const char *git_describe = GIT_DESCRIBE;
 #endif
 
 static struct {
-  uint32_t enabled;
+  bool enabled;
   struct logged_event events[32];
   volatile uint32_t read;
   volatile uint32_t write;
@@ -453,6 +453,42 @@ void render_float_object(struct console_request_context *ctx,
     CborEncoder desc;
     cbor_encoder_create_map(ctx->response, &desc, 2);
     render_type_field(&desc, "float");
+    render_description_field(&desc, description);
+    cbor_encoder_close_container(ctx->response, &desc);
+    break;
+  }
+  default:
+    break;
+  }
+}
+
+void render_bool_map_field(struct console_request_context *ctx,
+                             const char *id,
+                             const char *description,
+                             bool *ptr) {
+  struct console_request_context deeper;
+  if (descend_map_field(ctx, &deeper, id)) {
+    render_bool_object(&deeper, description, ptr);
+  }
+}
+
+void render_bool_object(struct console_request_context *ctx,
+                          const char *description,
+                          bool *ptr) {
+  switch (ctx->type) {
+  case CONSOLE_SET:
+    if (cbor_value_is_boolean(&ctx->value)) {
+      cbor_value_get_boolean(&ctx->value, ptr);
+    }
+    /* Fall through */
+  case CONSOLE_GET:
+    cbor_encode_boolean(ctx->response, *ptr);
+    break;
+  case CONSOLE_DESCRIBE:
+  case CONSOLE_STRUCTURE: {
+    CborEncoder desc;
+    cbor_encoder_create_map(ctx->response, &desc, 2);
+    render_type_field(&desc, "bool");
     render_description_field(&desc, description);
     cbor_encoder_close_container(ctx->response, &desc);
     break;
@@ -951,7 +987,7 @@ static void output_console_renderer(struct console_request_context *ctx,
 
   struct output_event *ev = ptr;
   render_uint32_map_field(ctx, "pin", "pin", &ev->pin);
-  render_uint32_map_field(ctx, "inverted", "inverted", &ev->inverted);
+  render_bool_map_field(ctx, "inverted", "inverted", &ev->inverted);
   render_float_map_field(
     ctx, "angle", "angle past TDC to trigger event", &ev->angle);
 
@@ -1222,7 +1258,7 @@ static void render_freq_list(struct console_request_context *ctx, void *ptr) {
 
 static void render_test(struct console_request_context *ctx, void *ptr) {
   (void)ptr;
-  render_uint32_map_field(
+  render_bool_map_field(
     ctx, "event-logging", "Enable event logging", &event_log.enabled);
 
   /* Workaround to support the getter/setters */

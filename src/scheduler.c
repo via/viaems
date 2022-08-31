@@ -365,7 +365,7 @@ static void check_scheduler_setup() {
     .type = IGNITION_EVENT,
     .angle = 360,
     .pin = 0,
-    .inverted = 0,
+    .inverted = false,
   };
 }
 
