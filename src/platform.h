@@ -56,9 +56,6 @@ void platform_enable_event_logging(void);
 void platform_disable_event_logging(void);
 void platform_reset_into_bootloader(void);
 
-void set_test_trigger_rpm(uint32_t rpm);
-uint32_t get_test_trigger_rpm(void);
-
 /* Returns the earliest time that may still be scheduled.  This can only change
  * when buffers are swapped, so it is safe to use this value to schedule events
  * if interrupts are disabled */

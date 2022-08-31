@@ -199,7 +199,6 @@ void calculate_fueling() {
   calculated_values.ve = ve;
   calculated_values.lambda = lambda;
   calculated_values.fueling_us = (raw_pw_us * ete) + (idt * 1000);
-
 }
 
 #ifdef UNITTEST

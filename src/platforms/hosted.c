@@ -22,7 +22,6 @@ static _Atomic bool event_timer_enabled = false;
 static _Atomic bool event_timer_pending = false;
 
 static int event_logging_enabled = 1;
-static uint32_t test_trigger_rpm = 100;
 static uint16_t cur_outputs = 0;
 
 void platform_enable_event_logging() {
@@ -151,14 +150,6 @@ void platform_load_config() {}
 
 void platform_save_config() {}
 
-void set_test_trigger_rpm(uint32_t rpm) {
-  test_trigger_rpm = rpm;
-}
-
-uint32_t get_test_trigger_rpm() {
-  return test_trigger_rpm;
-}
-
 static struct timespec add_times(struct timespec a, struct timespec b) {
   struct timespec ret = a;
   ret.tv_nsec += b.tv_nsec;
@@ -192,44 +183,6 @@ struct event {
   timeval_t time;
   uint16_t values;
 };
-
-static void do_test_trigger(int interrupt_fd) {
-  static bool camsync = true;
-  static timeval_t last_trigger_time = 0;
-  static int trigger = 0;
-  static int cycle = 0;
-
-  if (!test_trigger_rpm) {
-    return;
-  }
-
-  timeval_t time_between_teeth = time_from_rpm_diff(test_trigger_rpm, 30);
-  timeval_t curtime = current_time();
-  if (time_diff(curtime, last_trigger_time) < time_between_teeth) {
-    return;
-  }
-  last_trigger_time = curtime;
-
-  trigger++;
-  if (trigger == 36) {
-    trigger = 0;
-    camsync = !camsync;
-    cycle += 1;
-  } else {
-    if (trigger == 30 && camsync && cycle < 8) {
-      struct event ev = { .type = TRIGGER1, .time = curtime };
-      if (write(interrupt_fd, &ev, sizeof(ev)) < 0) {
-        perror("write");
-        exit(3);
-      }
-    }
-    struct event ev = { .type = TRIGGER0, .time = curtime };
-    if (write(interrupt_fd, &ev, sizeof(ev)) < 0) {
-      perror("write");
-      exit(3);
-    }
-  }
-}
 
 void *platform_interrupt_thread(void *_interrupt_fd) {
   int *interrupt_fd = (int *)_interrupt_fd;
@@ -392,7 +345,6 @@ void *platform_timebase_thread(void *_interrupt_fd) {
     if ((curtime % 10000) == 0) {
       run_tasks();
     }
-    do_test_trigger(*interrupt_fd);
 
     if (event_timer_enabled && (event_timer_time == curtime)) {
       event_timer_pending = true;
