@@ -121,8 +121,7 @@ static void setup_tim2(void) {
                 TIM_CCMR1_CC1S_0 | /* IC1 */
                 TIM_CCMR1_IC2F_0 | /* CK_INT, N=2 filter */
                 TIM_CCMR1_CC2S_0;  /* IC2 */
-  TIM2->CCMR2 = TIM_CCMR2_CC4S_0 | /* CC4 Output */
-                TIM_CCMR2_OC4M_0;
+  TIM2->CCMR2 = TIM_CCMR2_OC4M_0 /* CC4 Output */;
 
   trigger_edge cc1_edge = config.freq_inputs[0].edge;
   trigger_edge cc2_edge = config.freq_inputs[1].edge;
