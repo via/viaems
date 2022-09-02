@@ -23,9 +23,13 @@ uint64_t cycles_to_ns(uint64_t cycles);
 
 void set_event_timer(timeval_t);
 timeval_t get_event_timer(void);
+void disable_event_timer(void);
+
 /* Clear any pending interrupt */
 void clear_event_timer(void);
-void disable_event_timer(void);
+
+/* Cause event timer handler to trigger in interrupt context */
+void pend_event_timer(void);
 
 void platform_init();
 /* Benchmark init is minimum necessary to use platform for benchmark */
@@ -49,9 +53,6 @@ void platform_save_config(void);
 void platform_enable_event_logging(void);
 void platform_disable_event_logging(void);
 void platform_reset_into_bootloader(void);
-
-void set_test_trigger_rpm(uint32_t rpm);
-uint32_t get_test_trigger_rpm(void);
 
 /* Returns the earliest time that may still be scheduled.  This can only change
  * when buffers are swapped, so it is safe to use this value to schedule events

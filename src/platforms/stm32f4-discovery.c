@@ -730,19 +730,6 @@ void platform_init_usb() {
   nvic_set_priority(NVIC_OTG_FS_IRQ, 128);
 }
 
-void platform_init_test_trigger() {
-
-  /* Set up TIM6 to trigger interrupts at a later-determined interval */
-  timer_set_mode(TIM6, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
-  timer_set_period(TIM6, 1000);  /* 1 mS */
-  timer_set_prescaler(TIM6, 83); /* 1uS per tick */
-  timer_enable_preload(TIM6);
-  timer_continuous_mode(TIM6);
-  timer_enable_counter(TIM6);
-
-  timer_enable_irq(TIM6, TIM_DIER_UIE);
-}
-
 static void setup_task_handler() {
   /* Set up systick for 100 hz */
   systick_set_reload(1680000);
@@ -797,7 +784,6 @@ void platform_init() {
   scb_set_priority_grouping(SCB_AIRCR_PRIGROUP_GROUP16_NOSUB);
   platform_init_scheduled_outputs();
   platform_init_eventtimer();
-  platform_init_test_trigger();
   platform_init_spi_adc();
   platform_init_pwm();
   platform_init_usb();
@@ -933,87 +919,6 @@ void dma1_stream3_isr(void) {
   start_adc_sampling();
 }
 
-static struct {
-  uint32_t current_tooth;
-  uint32_t missing_tooth;
-
-  timeval_t last_trigger;
-  uint32_t rpm;
-  bool last_edge_active; /* Indicates upcoming edge should be falling */
-  bool cam_cycle;
-} test_trigger_config = {};
-
-uint32_t get_test_trigger_rpm() {
-  return test_trigger_config.rpm;
-}
-
-void set_test_trigger_rpm(uint32_t rpm) {
-  test_trigger_config.rpm = rpm;
-
-  if (rpm) {
-    gpio_mode_setup(GPIOB, GPIO_MODE_OUTPUT, GPIO_PUPD_PULLDOWN, GPIO10);
-    gpio_mode_setup(GPIOB, GPIO_MODE_OUTPUT, GPIO_PUPD_PULLDOWN, GPIO11);
-
-    timeval_t period_us =
-      time_from_rpm_diff(test_trigger_config.rpm,
-                         config.decoder.degrees_per_trigger) /
-      time_from_us(1);
-
-    timer_set_period(TIM6, period_us / 2);
-
-    if ((config.decoder.type == TRIGGER_MISSING_NOSYNC) ||
-        (config.decoder.type == TRIGGER_MISSING_CAMSYNC)) {
-      test_trigger_config.missing_tooth = 3;
-    }
-
-    nvic_enable_irq(NVIC_TIM6_DAC_IRQ);
-    nvic_set_priority(NVIC_TIM6_DAC_IRQ,
-                      0); /* Always a fast interrupt, highest priority */
-  } else {
-    nvic_disable_irq(NVIC_TIM6_DAC_IRQ);
-    test_trigger_config.current_tooth = 0;
-  }
-}
-
-static void handle_test_trigger_edge() {
-  test_trigger_config.last_edge_active = !test_trigger_config.last_edge_active;
-
-  if (test_trigger_config.current_tooth != test_trigger_config.missing_tooth) {
-    gpio_toggle(GPIOB, GPIO10);
-  }
-
-  if (test_trigger_config.last_edge_active) {
-    test_trigger_config.current_tooth =
-      (test_trigger_config.current_tooth + 1) % config.decoder.num_triggers;
-
-    /* Toggle the sync line right before *and* right after */
-    if ((test_trigger_config.current_tooth ==
-         config.decoder.num_triggers - 1) ||
-        (test_trigger_config.current_tooth == 0)) {
-      if (config.decoder.type == TRIGGER_EVEN_CAMSYNC) {
-        gpio_toggle(GPIOB, GPIO11);
-      } else if ((config.decoder.type == TRIGGER_MISSING_CAMSYNC) &&
-                 test_trigger_config.cam_cycle) {
-        gpio_toggle(GPIOB, GPIO11);
-      }
-    }
-
-    if (test_trigger_config.current_tooth == 0) {
-      test_trigger_config.cam_cycle = !test_trigger_config.cam_cycle;
-    }
-  }
-}
-
-void tim6_dac_isr() {
-
-  if (timer_get_flag(TIM6, TIM_SR_UIF)) {
-    timer_clear_flag(TIM6, TIM_SR_UIF);
-  }
-
-  handle_test_trigger_edge();
-
-}
-
 /* This is now the lowest priority interrupt, with buffer swapping and sensor
  * reading interrupts being higher priority.  Keep scheduled callbacks quick to
  * keep scheduling delay low.  Currently nothing takes more than 15 uS
@@ -1064,7 +969,6 @@ void tim2_isr() {
     timer_clear_flag(TIM2, TIM_SR_CC4IF);
     scheduler_callback_timer_execute();
   }
-
 }
 
 /* Retire all stop/stop events that are in the time range of our "completed"
@@ -1172,6 +1076,10 @@ timeval_t get_event_timer() {
 
 void clear_event_timer() {
   timer_clear_flag(TIM2, TIM_SR_CC4IF);
+}
+
+void pend_event_timer() {
+  timer_generate_event(TIM2, TIM_EGR_CC4G);
 }
 
 void disable_event_timer() {

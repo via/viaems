@@ -311,13 +311,10 @@ int schedule_callback(struct timed_callback *tcb, timeval_t time) {
   tcb->time = time;
   callback_insert(tcb);
 
-  if (callbacks[0]->time != get_event_timer()) {
-    set_event_timer(callbacks[0]->time);
-
-    if (time_before(callbacks[0]->time, current_time())) {
-      /* Handle now */
-      scheduler_callback_timer_execute();
-    }
+  set_event_timer(callbacks[0]->time);
+  if (time_before_or_equal(callbacks[0]->time, current_time())) {
+    /* If scheduled time has already passed (or is now) */
+    pend_event_timer();
   }
   enable_interrupts();
 
@@ -325,7 +322,7 @@ int schedule_callback(struct timed_callback *tcb, timeval_t time) {
 }
 
 void scheduler_callback_timer_execute() {
-  while (n_callbacks && time_before(callbacks[0]->time, current_time())) {
+  while (n_callbacks && time_before_or_equal(callbacks[0]->time, current_time())) {
     clear_event_timer();
     struct timed_callback *cb = callbacks[0];
     callback_remove(cb);

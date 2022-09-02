@@ -89,6 +89,8 @@ void disable_event_timer() {
   cureventtime = 0;
 }
 
+void pend_event_timer() {}
+
 bool interrupts_enabled() {
   return int_disables == 0;
 }
@@ -111,14 +113,6 @@ int get_gpio(int output) {
 
 void adc_gather(void *_adc) {
   (void)_adc;
-}
-
-void set_test_trigger_rpm(uint32_t rpm) {
-  (void)rpm;
-}
-
-uint32_t get_test_trigger_rpm() {
-  return 0;
 }
 
 void platform_save_config() {}

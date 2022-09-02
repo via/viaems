@@ -51,14 +51,6 @@ void set_gpio(int output, char value) {
   }
 }
 
-void set_test_trigger_rpm(uint32_t rpm) {
-  (void)rpm;
-}
-
-uint32_t get_test_trigger_rpm() {
-  return 0;
-}
-
 int __attribute__((externally_visible))
 _write(int fd, const char *buf, size_t count) {
   (void)fd;
@@ -97,6 +89,7 @@ static void setup_clocks() {
 
   RCC->PLLCFGR =
     RCC_PLLCFGR_DIVP1EN |              /* Enable PLL1 P */
+    RCC_PLLCFGR_DIVR1EN |              /* Enable PLL1 R */
     RCC_PLLCFGR_DIVP3EN |              /* Enable PLL3 P */
     RCC_PLLCFGR_DIVQ3EN |              /* Enable PLL3 Q */
     _VAL2FLD(RCC_PLLCFGR_PLL1RGE, 2) | /* PLL1 Clock range 4-8 MHz */
@@ -107,7 +100,8 @@ static void setup_clocks() {
     RCC_PLLCFGR_PLL3VCOSEL;            /* PLL3 Medium Range VCU */
 
   RCC->PLL1DIVR = _VAL2FLD(RCC_PLL1DIVR_N1, 49) | /* PLL1 N = 50, 400 MHz */
-                  _VAL2FLD(RCC_PLL1DIVR_P1, 0);   /* PLL1 P = 1 */
+                  _VAL2FLD(RCC_PLL1DIVR_P1, 0) |  /* PLL1 P = 1 */
+                  _VAL2FLD(RCC_PLL1DIVR_R1, 0);   /* PLL1 R = 1 */
 
   /* Enable PLL1 and wait for it to be ready */
   RCC->CR |= RCC_CR_PLL1ON;
@@ -288,6 +282,34 @@ void Reset_Handler(void) {
   (void)main();
 }
 
+void SWO_Init(void)
+{
+  
+  /* Setup SWO and SWO funnel (Note: SWO_BASE and SWTF_BASE not defined in stm32h743xx.h) */
+  // DBGMCU_CR : Enable D3DBGCKEN D1DBGCKEN TRACECLKEN Clock Domains
+  DBGMCU->CR =  DBGMCU_CR_DBG_CKD3EN | DBGMCU_CR_DBG_CKD1EN | DBGMCU_CR_DBG_TRACECKEN; // DBGMCU_CR
+  // SWO_LAR & SWTF_LAR : Unlock SWO and SWO Funnel
+  *((uint32_t *)(0x5c003fb0)) = 0xC5ACCE55; // SWO_LAR
+  *((uint32_t *)(0x5c004fb0)) = 0xC5ACCE55; // SWTF_LAR
+  // SWO_CODR  : 400000000Hz -> 2000000Hz
+  // Note: SWOPrescaler = ((sysclock_Hz / SWOSpeed_Hz) - 1) --> 0x0000c7 = 199 = (400000000 / 2000000) - 1)
+  *((uint32_t *)(0x5c003010)) = ((400000000 /  42000000) - 1); // SWO_CODR
+  // SWO_SPPR : (2:  SWO NRZ, 1:  SWO Manchester encoding)
+  *((uint32_t *)(0x5c0030f0)) = 0x00000001; // SWO_SPPR
+  // SWTF_CTRL : enable SWO
+  *((uint32_t *)(0x5c004000)) |= 0x1; // SWTF_CTRL
+
+  /* SWO GPIO Pin Setup */
+  //RCC_AHB4ENR enable GPIOB clock
+  *(__IO uint32_t*)(0x580244E0) |= 0x00000002;
+  // Configure GPIOB pin 3 as AF
+  *(__IO uint32_t*)(0x58020400) = (*(__IO uint32_t*)(0x58020400) & 0xffffff3f) | 0x00000080;
+  // Configure GPIOB pin 3 Speed
+  *(__IO uint32_t*)(0x58020408) |= 0x00000080;
+  // Force AF0 for GPIOB pin 3
+  *(__IO uint32_t*)(0x58020420) &= 0xFFFF0FFF;
+}
+
 void platform_configure_usb(void);
 void platform_configure_sensors(void);
 void platform_configure_scheduler(void);
@@ -299,6 +321,7 @@ void platform_init() {
 
   setup_caches();
   setup_dwt();
+  SWO_Init();
 
   NVIC_SetPriorityGrouping(3); /* 16 priority preemption levels */
 

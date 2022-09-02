@@ -105,6 +105,10 @@ void clear_event_timer() {
   TIM2->SR &= ~TIM_SR_CC4IF;
 }
 
+void pend_event_timer() {
+  TIM2->EGR = TIM_EGR_CC4G;
+}
+
 void disable_event_timer() {
   TIM2->DIER &= ~TIM_DIER_CC4IE;
   clear_event_timer();
