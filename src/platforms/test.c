@@ -136,7 +136,10 @@ size_t console_write(const void *ptr, size_t max) {
 }
 void platform_benchmark_init() {}
 
-void platform_init() {
+void platform_init(int argc, char *argv[]) {
+  (void)argc;
+  (void)argv;
+
   Suite *viaems_suite = suite_create("ViaEMS");
 
   suite_add_tcase(viaems_suite, setup_util_tests());

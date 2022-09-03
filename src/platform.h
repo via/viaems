@@ -33,7 +33,7 @@ void schedule_event_timer(timeval_t);
 /* Clear any pending timer */
 void clear_event_timer(void);
 
-void platform_init();
+void platform_init(int argc, char *argv[]);
 /* Benchmark init is minimum necessary to use platform for benchmark */
 void platform_benchmark_init(void);
 

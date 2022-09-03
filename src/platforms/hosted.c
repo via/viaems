@@ -370,7 +370,9 @@ static int interrupt_pipes[2];
 
 void platform_benchmark_init() {}
 
-void platform_init() {
+void platform_init(int argc, char *argv[]) {
+  (void)argc;
+  (void)argv;
 
   /* Initalize mutexes */
   pthread_mutexattr_t im_attr;
