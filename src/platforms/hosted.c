@@ -21,16 +21,7 @@ static _Atomic timeval_t event_timer_time = 0;
 static _Atomic bool event_timer_enabled = false;
 static _Atomic bool event_timer_pending = false;
 
-static int event_logging_enabled = 1;
 static uint16_t cur_outputs = 0;
-
-void platform_enable_event_logging() {
-  event_logging_enabled = 1;
-}
-
-void platform_disable_event_logging() {
-  event_logging_enabled = 0;
-}
 
 void platform_reset_into_bootloader() {}
 
@@ -207,16 +198,11 @@ void *platform_interrupt_thread(void *_interrupt_fd) {
       exit(1);
     }
 
-    char output[64];
     switch (msg.type) {
     case TRIGGER0:
-      sprintf(output, "# TRIGGER0 %lu\n", (unsigned long)msg.time);
-      write(STDERR_FILENO, output, strlen(output));
       decoder_update_scheduling(0, msg.time);
       break;
     case TRIGGER1:
-      sprintf(output, "# TRIGGER1 %lu\n", (unsigned long)msg.time);
-      write(STDERR_FILENO, output, strlen(output));
       decoder_update_scheduling(1, msg.time);
       break;
     case SCHEDULED_EVENT:
@@ -314,9 +300,6 @@ static void do_output_slots() {
     }
   }
   if (old_outputs != cur_outputs) {
-    char output[64];
-    sprintf(output, "# OUTPUTS %lu %2x\n", (long unsigned)curtime, cur_outputs);
-    write(STDERR_FILENO, output, strlen(output));
     console_record_event((struct logged_event){
       .time = curtime,
       .value = cur_outputs,
@@ -348,7 +331,7 @@ void *platform_timebase_thread(void *_interrupt_fd) {
     curtime += 1;
     do_output_slots();
 
-    if ((curtime % 10000) == 0) {
+    if ((curtime % 40000) == 0) {
       run_tasks();
     }
 
@@ -370,9 +353,85 @@ static int interrupt_pipes[2];
 
 void platform_benchmark_init() {}
 
+struct hosted_args {
+  const char *read_config_file;
+  const char *write_config_file;
+  bool use_realtime;
+  const char *read_replay_file;
+};
+
+static void parse_args(struct hosted_args *args, int argc, char *argv[]) {
+  *args = (struct hosted_args){ 0 };
+  int opt;
+  while ((opt = getopt(argc, argv, "c:o:ri:")) != -1) {
+    switch (opt) {
+      case 'r':
+        args->use_realtime = true;
+        break;
+      case 'c':
+        args->read_config_file = strdup(optarg);
+        break;
+      case 'o':
+        args->write_config_file = strdup(optarg);
+        break;
+      case 'i':
+        args->read_replay_file = strdup(optarg);
+        break;
+      default:
+        fprintf(stderr, "usage: viaems [-c config] [-o outconfig] [-r] [-i replayfile]\n");
+        exit(EXIT_FAILURE);
+    }
+
+  }
+
+}
+
+static FILE *replay_file;
+static struct timer_callback replay_timer;
+
+static void replay_callback(void *ptr) {
+  (void)ptr;
+  static char *linebuf = NULL;
+  static size_t linebuf_size = 0;
+
+  if (getline(&linebuf, &linebuf_size, replay_file) < 0) {
+    if (linebuf != NULL) {
+      free(linebuf);
+    }
+    return;
+  }
+
+  int delay;
+  int trigger;
+  sscanf(linebuf, "%d %d", &delay, &trigger);
+
+  struct decoder_event ev = {
+    .time = replay_timer.time,
+    .trigger = trigger
+  };
+  /* Handle current */
+  decoder_update_scheduling(&ev, 1);
+
+  /* Schedule next */
+  timeval_t next = replay_timer.time + delay;
+
+  schedule_callback(&replay_timer, next);
+}
+
+static void configure_replay(const char *path) {
+  replay_file = fopen(path, "r");
+  replay_timer.callback = replay_callback;
+
+  replay_callback(NULL);
+}
+
 void platform_init(int argc, char *argv[]) {
-  (void)argc;
-  (void)argv;
+  struct hosted_args args;
+  parse_args(&args, argc, argv);
+
+  if (args.read_replay_file) {
+    configure_replay(args.read_replay_file);
+  }
 
   /* Initalize mutexes */
   pthread_mutexattr_t im_attr;
@@ -393,44 +452,39 @@ void platform_init(int argc, char *argv[]) {
   pthread_t timebase;
   pthread_attr_t timebase_attr;
   pthread_attr_init(&timebase_attr);
+
   pthread_attr_setinheritsched(&timebase_attr, PTHREAD_EXPLICIT_SCHED);
   pthread_attr_setschedpolicy(&timebase_attr, SCHED_RR);
   struct sched_param timebase_param = {
     .sched_priority = 1,
   };
   pthread_attr_setschedparam(&timebase_attr, &timebase_param);
+
   if (pthread_create(&timebase,
-                     &timebase_attr,
+                     args.use_realtime ? &timebase_attr : NULL,
                      platform_timebase_thread,
                      &interrupt_pipes[1])) {
     perror("pthread_create");
-    /* Try without realtime sched */
-    if (pthread_create(
-          &timebase, NULL, platform_timebase_thread, &interrupt_pipes[1])) {
-      perror("pthread_create");
-      exit(EXIT_FAILURE);
-    }
+    exit(EXIT_FAILURE);
   }
 
   pthread_t interrupts;
   pthread_attr_t interrupts_attr;
   pthread_attr_init(&interrupts_attr);
+
   pthread_attr_setinheritsched(&interrupts_attr, PTHREAD_EXPLICIT_SCHED);
   pthread_attr_setschedpolicy(&interrupts_attr, SCHED_RR);
   struct sched_param interrupts_param = {
     .sched_priority = 2,
   };
   pthread_attr_setschedparam(&interrupts_attr, &interrupts_param);
+
   if (pthread_create(&interrupts,
-                     &interrupts_attr,
+                     args.use_realtime ? &interrupts_attr : NULL,
                      platform_interrupt_thread,
                      &interrupt_pipes[0])) {
     perror("pthread_create");
     /* Try without realtime sched */
-    if (pthread_create(
-          &interrupts, NULL, platform_interrupt_thread, &interrupt_pipes[0])) {
-      perror("pthread_create");
-      exit(EXIT_FAILURE);
-    }
+    exit(EXIT_FAILURE);
   }
 }

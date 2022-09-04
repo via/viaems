@@ -82,7 +82,7 @@ static struct {
   struct logged_event events[32];
   volatile uint32_t read;
   volatile uint32_t write;
-} event_log = { 0 };
+} event_log = { .enabled = true };
 
 static struct logged_event get_logged_event() {
   if (!event_log.enabled || (event_log.read == event_log.write)) {
@@ -1520,7 +1520,8 @@ static void console_process_request_raw(int len) {
 }
 
 void console_process() {
-  static timeval_t last_desc_time = 0;
+  static timeval_t last_desc_time = -4000000; /* Ensure we send a description
+                                                 immediately on start */
   uint8_t txbuffer[16384];
 
   size_t read_size;

@@ -20,10 +20,6 @@ static int int_disables = 0;
 static int output_states[16] = { 0 };
 static int gpio_states[16] = { 0 };
 
-void platform_enable_event_logging() {}
-
-void platform_disable_event_logging() {}
-
 void platform_reset_into_bootloader() {}
 
 void set_pwm(int pin, float val) {

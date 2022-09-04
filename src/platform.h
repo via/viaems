@@ -53,8 +53,6 @@ size_t console_write(const void *buf, size_t count);
 void platform_load_config(void);
 void platform_save_config(void);
 
-void platform_enable_event_logging(void);
-void platform_disable_event_logging(void);
 void platform_reset_into_bootloader(void);
 
 uint32_t platform_adc_samplerate(void);
