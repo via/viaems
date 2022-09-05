@@ -1,8 +1,4 @@
-/* For strtok_r */
-#ifndef _POSIX_C_SOURCE
-#define _POSIX_C_SOURCE 1
-#endif
-
+#include <stdatomic.h>
 #include <assert.h>
 #include <math.h>
 #include <stdlib.h>
@@ -72,25 +68,38 @@ const struct console_feed_node console_feed_nodes[] = {
   { 0 },
 };
 
-#ifndef GIT_DESCRIBE
-#define GIT_DESCRIBE "unknown"
-static const char *git_describe = GIT_DESCRIBE;
-#endif
+#define EVENT_LOG_SIZE 32
+static_assert(EVENT_LOG_SIZE > 0, "event log size must be greater than 0");
+static_assert((EVENT_LOG_SIZE & (EVENT_LOG_SIZE - 1)) == 0,
+    "event log size must be power of 2");
 
 static struct {
   bool enabled;
-  struct logged_event events[32];
-  volatile uint32_t read;
-  volatile uint32_t write;
+  _Atomic bool overflow;
+  _Atomic uint32_t read;
+  _Atomic uint32_t write;
+  struct logged_event events[EVENT_LOG_SIZE];
 } event_log = { .enabled = true };
 
 static struct logged_event get_logged_event() {
-  if (!event_log.enabled || (event_log.read == event_log.write)) {
+  uint32_t read_pos = event_log.read;
+  uint32_t write_pos = event_log.write;
+
+  if (!event_log.enabled) {
     return (struct logged_event){ .type = EVENT_NONE };
   }
-  struct logged_event ret = event_log.events[event_log.read];
-  event_log.read = (event_log.read + 1) %
-                   (sizeof(event_log.events) / sizeof(event_log.events[0]));
+
+  if (event_log.overflow) {
+    event_log.overflow = false;
+    return (struct logged_event){ .type = EVENT_OVERFLOW };
+  }
+
+  if (read_pos == write_pos) {
+    return (struct logged_event){ .type = EVENT_NONE };
+  }
+
+  struct logged_event ret = event_log.events[read_pos];
+  event_log.read = (read_pos + 1) % EVENT_LOG_SIZE;
   return ret;
 }
 
@@ -99,13 +108,19 @@ void console_record_event(struct logged_event ev) {
     return;
   }
 
-  int size = (sizeof(event_log.events) / sizeof(event_log.events[0]));
-  if ((event_log.write + 1) % size == event_log.read) {
+  uint32_t read_pos = event_log.read;
+  uint32_t write_pos = event_log.write;
+
+  if ((write_pos + 1) % EVENT_LOG_SIZE == read_pos) {
+    event_log.overflow = true;
     return;
   }
 
-  event_log.events[event_log.write] = ev;
-  event_log.write = (event_log.write + 1) % size;
+  disable_interrupts(); /* Necessary due to writes from multiple interrupt
+                           contexts that may preempt each other */
+  event_log.write = (write_pos + 1) % EVENT_LOG_SIZE;
+  event_log.events[write_pos] = ev;
+  enable_interrupts();
 }
 
 static size_t console_event_message(uint8_t *dest,
@@ -152,6 +167,11 @@ static size_t console_event_message(uint8_t *dest,
     cbor_encode_int(&event_encoder, ev->value);
     cbor_encoder_close_container(&top_encoder, &event_encoder);
     break;
+  case EVENT_OVERFLOW:
+    cbor_encoder_create_map(&top_encoder, &event_encoder, 1);
+    cbor_encode_text_stringz(&event_encoder, "type");
+    cbor_encode_text_stringz(&event_encoder, "overflow");
+    cbor_encoder_close_container(&top_encoder, &event_encoder);
   default:
     break;
   }

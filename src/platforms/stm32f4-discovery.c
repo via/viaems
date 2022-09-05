@@ -289,65 +289,6 @@ static void platform_init_scheduled_outputs() {
   nvic_set_priority(NVIC_DMA2_STREAM1_IRQ, 16);
 }
 
-void platform_enable_event_logging() {
-
-  nvic_enable_irq(NVIC_EXTI0_IRQ);
-  nvic_enable_irq(NVIC_EXTI1_IRQ);
-  nvic_enable_irq(NVIC_EXTI2_IRQ);
-  nvic_enable_irq(NVIC_EXTI3_IRQ);
-  nvic_enable_irq(NVIC_EXTI4_IRQ);
-  nvic_enable_irq(NVIC_EXTI9_5_IRQ);
-  nvic_enable_irq(NVIC_EXTI15_10_IRQ);
-
-  exti_select_source(0xFF, GPIOD);
-  exti_set_trigger(0xFF, EXTI_TRIGGER_BOTH);
-  exti_enable_request(0xFF);
-}
-
-void platform_disable_event_logging() {
-  nvic_disable_irq(NVIC_EXTI0_IRQ);
-  nvic_disable_irq(NVIC_EXTI1_IRQ);
-  nvic_disable_irq(NVIC_EXTI2_IRQ);
-  nvic_disable_irq(NVIC_EXTI3_IRQ);
-  nvic_disable_irq(NVIC_EXTI4_IRQ);
-  nvic_disable_irq(NVIC_EXTI9_5_IRQ);
-  nvic_disable_irq(NVIC_EXTI15_10_IRQ);
-}
-
-static void show_scheduled_outputs() {
-  uint32_t flag_changes = exti_get_flag_status(0xFF);
-  console_record_event((struct logged_event){
-    .type = EVENT_OUTPUT,
-    .time = current_time(),
-    .value = gpio_port_read(GPIOD),
-  });
-  exti_reset_request(flag_changes);
-  __asm__("dsb");
-  __asm__("isb");
-}
-
-void exti0_isr() {
-  show_scheduled_outputs();
-}
-void exti1_isr() {
-  show_scheduled_outputs();
-}
-void exti2_isr() {
-  show_scheduled_outputs();
-}
-void exti3_isr() {
-  show_scheduled_outputs();
-}
-void exti4_isr() {
-  show_scheduled_outputs();
-}
-void exti9_5_isr() {
-  show_scheduled_outputs();
-}
-void exti15_10_isr() {
-  show_scheduled_outputs();
-}
-
 /* We use TIM7 to control the sample rate.  It is set up to trigger a DMA event
  * on counter update to TX on SPI2.  When the full 16 bits is transmitted and
  * the SPI RX buffer is filled, the RX DMA event will fill, and populate

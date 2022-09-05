@@ -13,6 +13,7 @@ struct logged_event {
     EVENT_OUTPUT,
     EVENT_GPIO,
     EVENT_TRIGGER,
+    EVENT_OVERFLOW,
   } type;
   uint32_t value;
 };
