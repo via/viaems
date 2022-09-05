@@ -8,6 +8,7 @@
 
 struct logged_event {
   timeval_t time;
+  uint32_t seq;
   enum {
     EVENT_NONE,
     EVENT_OUTPUT,

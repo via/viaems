@@ -1,10 +1,6 @@
-/* For strtok_r */
-#ifndef _POSIX_C_SOURCE
-#define _POSIX_C_SOURCE 1
-#endif
-
 #include <assert.h>
 #include <math.h>
+#include <stdatomic.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
@@ -72,25 +68,39 @@ const struct console_feed_node console_feed_nodes[] = {
   { 0 },
 };
 
-#ifndef GIT_DESCRIBE
-#define GIT_DESCRIBE "unknown"
-static const char *git_describe = GIT_DESCRIBE;
-#endif
+#define EVENT_LOG_SIZE 32
 
 static struct {
   bool enabled;
-  struct logged_event events[32];
-  volatile uint32_t read;
-  volatile uint32_t write;
-} event_log = { 0 };
+  _Atomic uint32_t read;
+  _Atomic uint32_t write;
+  _Atomic uint32_t seq;
+  struct logged_event events[EVENT_LOG_SIZE];
+} event_log = { .enabled = false };
+
+static uint32_t event_log_next_idx(uint32_t idx) {
+  idx += 1;
+  if (idx >= EVENT_LOG_SIZE) {
+    return 0;
+  } else {
+    return idx;
+  }
+}
 
 static struct logged_event get_logged_event() {
-  if (!event_log.enabled || (event_log.read == event_log.write)) {
+  uint32_t read_pos = event_log.read;
+  uint32_t write_pos = event_log.write;
+
+  if (!event_log.enabled) {
     return (struct logged_event){ .type = EVENT_NONE };
   }
-  struct logged_event ret = event_log.events[event_log.read];
-  event_log.read = (event_log.read + 1) %
-                   (sizeof(event_log.events) / sizeof(event_log.events[0]));
+
+  if (read_pos == write_pos) {
+    return (struct logged_event){ .type = EVENT_NONE };
+  }
+
+  struct logged_event ret = event_log.events[read_pos];
+  event_log.read = event_log_next_idx(read_pos);
   return ret;
 }
 
@@ -99,13 +109,21 @@ void console_record_event(struct logged_event ev) {
     return;
   }
 
-  int size = (sizeof(event_log.events) / sizeof(event_log.events[0]));
-  if ((event_log.write + 1) % size == event_log.read) {
-    return;
+  disable_interrupts(); /* Necessary due to writes from multiple interrupt
+                           contexts that may preempt each other */
+
+  uint32_t seq = atomic_fetch_add(&event_log.seq, 1);
+  uint32_t read_pos = event_log.read;
+  uint32_t write_pos = event_log.write;
+  uint32_t next_write_pos = event_log_next_idx(write_pos);
+
+  if (next_write_pos != read_pos) {
+    event_log.events[write_pos] = ev;
+    event_log.events[write_pos].seq = seq;
+    event_log.write = next_write_pos;
   }
 
-  event_log.events[event_log.write] = ev;
-  event_log.write = (event_log.write + 1) % size;
+  enable_interrupts();
 }
 
 static size_t console_event_message(uint8_t *dest,
@@ -116,12 +134,15 @@ static size_t console_event_message(uint8_t *dest,
   cbor_encoder_init(&encoder, dest, bsize, 0);
 
   CborEncoder top_encoder;
-  cbor_encoder_create_map(&encoder, &top_encoder, 3);
+  cbor_encoder_create_map(&encoder, &top_encoder, 4);
   cbor_encode_text_stringz(&top_encoder, "type");
   cbor_encode_text_stringz(&top_encoder, "event");
 
   cbor_encode_text_stringz(&top_encoder, "time");
   cbor_encode_int(&top_encoder, ev->time);
+
+  cbor_encode_text_stringz(&top_encoder, "seq");
+  cbor_encode_int(&top_encoder, ev->seq);
 
   cbor_encode_text_stringz(&top_encoder, "event");
 
@@ -1778,6 +1799,76 @@ START_TEST(test_smoke_console_request_get_full) {
 }
 END_TEST
 
+START_TEST(test_console_event_log) {
+  event_log.enabled = true;
+
+  ck_assert(event_log.read == 0);
+  ck_assert(event_log.write == 0);
+
+  /* Empty queue should return none */
+  ck_assert(get_logged_event().type == EVENT_NONE);
+  ck_assert(get_logged_event().type == EVENT_NONE);
+
+  uint32_t seq = 0;
+  /* Push and pop single event, confirm empty after */
+  console_record_event((struct logged_event){
+    .type = EVENT_TRIGGER,
+    .time = 1,
+  });
+  struct logged_event ret = get_logged_event();
+  ck_assert(ret.type == EVENT_TRIGGER);
+  ck_assert(ret.time == 1);
+  ck_assert(ret.seq == seq);
+  ck_assert(get_logged_event().type == EVENT_NONE);
+  seq += 1;
+
+  /* Push 16 and pop 16 */
+  for (int i = 0; i < 16; i++) {
+    console_record_event((struct logged_event){
+      .type = EVENT_TRIGGER,
+      .time = i,
+    });
+  }
+  for (int i = 0; i < 16; i++) {
+    ret = get_logged_event();
+    ck_assert(ret.type == EVENT_TRIGGER);
+    ck_assert(ret.time == (uint32_t)i);
+    ck_assert(ret.seq == (uint32_t)i + seq);
+  }
+  seq += 16;
+
+  ck_assert(get_logged_event().type == EVENT_NONE);
+
+  /* Push 64 to trigger overflow behavior */
+  for (int i = 0; i < 64; i++) {
+    console_record_event((struct logged_event){
+      .type = EVENT_TRIGGER,
+      .time = i,
+    });
+  }
+  for (int i = 0; i < EVENT_LOG_SIZE - 1; i++) {
+    ret = get_logged_event();
+    ck_assert(ret.type == EVENT_TRIGGER);
+    ck_assert(ret.time == (uint32_t)i);
+    ck_assert(ret.seq == (uint32_t)i + seq);
+  }
+  ck_assert(get_logged_event().type == EVENT_NONE);
+  seq += 64;
+
+  console_record_event((struct logged_event){
+    .type = EVENT_TRIGGER,
+    .time = 99,
+  });
+
+  ret = get_logged_event();
+  ck_assert(ret.type == EVENT_TRIGGER);
+  ck_assert(ret.time == 99);
+  ck_assert(ret.seq == seq);
+  ck_assert(get_logged_event().type == EVENT_NONE);
+  seq += 1;
+}
+END_TEST
+
 TCase *setup_console_tests() {
   TCase *console_tests = tcase_create("console");
   tcase_add_checked_fixture(
@@ -1792,6 +1883,8 @@ TCase *setup_console_tests() {
   /* Real access / integration tests */
   tcase_add_test(console_tests, test_smoke_console_request_structure);
   tcase_add_test(console_tests, test_smoke_console_request_get_full);
+
+  tcase_add_test(console_tests, test_console_event_log);
   return console_tests;
 }
 
