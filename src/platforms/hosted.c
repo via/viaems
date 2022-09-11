@@ -196,7 +196,7 @@ void *platform_interrupt_thread(void *_interrupt_fd) {
       decoder_update_scheduling(1, msg.time);
       break;
     case SCHEDULED_EVENT:
-      if (event_timer_pending) {
+      while (event_timer_pending) {
         event_timer_pending = false;
         scheduler_callback_timer_execute();
       }
