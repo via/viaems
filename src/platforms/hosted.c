@@ -388,9 +388,16 @@ static void parse_args(struct hosted_args *args, int argc, char *argv[]) {
 
 static FILE *replay_file;
 static struct timer_callback replay_timer;
+static struct decoder_event replay_event;
 
 static void replay_callback(void *ptr) {
-  (void)ptr;
+  
+  struct decoder_event *ev = (struct decoder_event *)ptr;
+  if (ev != NULL) {
+    /* Handle current */
+    decoder_update_scheduling(ev, 1);
+  }
+
   static char *linebuf = NULL;
   static size_t linebuf_size = 0;
 
@@ -398,6 +405,7 @@ static void replay_callback(void *ptr) {
     if (linebuf != NULL) {
       free(linebuf);
     }
+    exit(EXIT_SUCCESS);
     return;
   }
 
@@ -405,22 +413,20 @@ static void replay_callback(void *ptr) {
   int trigger;
   sscanf(linebuf, "%d %d", &delay, &trigger);
 
-  struct decoder_event ev = {
-    .time = replay_timer.time,
-    .trigger = trigger
-  };
-  /* Handle current */
-  decoder_update_scheduling(&ev, 1);
-
   /* Schedule next */
   timeval_t next = replay_timer.time + delay;
 
+  replay_event.time = next;
+  replay_event.trigger = trigger;
+
+  replay_timer.data = &replay_event;
   schedule_callback(&replay_timer, next);
 }
 
 static void configure_replay(const char *path) {
   replay_file = fopen(path, "r");
   replay_timer.callback = replay_callback;
+  replay_timer.data = NULL;
 
   replay_callback(NULL);
 }
