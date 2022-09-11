@@ -169,16 +169,6 @@ static struct timespec add_times(struct timespec a, struct timespec b) {
   return ret;
 }
 
-void clock_nanosleep_busywait(struct timespec until) {
-  struct timespec current;
-
-  do {
-    clock_gettime(CLOCK_MONOTONIC, &current);
-  } while (
-    (current.tv_sec < until.tv_sec) ||
-    ((current.tv_sec == until.tv_sec) && (current.tv_nsec < until.tv_nsec)));
-}
-
 typedef enum event_type {
   TRIGGER0,
   TRIGGER1,
@@ -220,7 +210,7 @@ void *platform_interrupt_thread(void *_interrupt_fd) {
       decoder_update_scheduling(1, msg.time);
       break;
     case SCHEDULED_EVENT:
-      if (event_timer_pending) {
+      while (event_timer_pending) {
         event_timer_pending = false;
         scheduler_callback_timer_execute();
       }
@@ -257,7 +247,7 @@ static int output_event_compare(const void *_a, const void *_b) {
   return time_before(a->time, b->time) ? -1 : 1;
 }
 
-static void platform_buffer_swap() {
+static void platform_buffer_swap(timeval_t new_start, timeval_t new_stop) {
 
   disable_interrupts();
   clear_output_events();
@@ -270,14 +260,12 @@ static void platform_buffer_swap() {
       sched_entry_set_state(&oev->stop, SCHED_FIRED);
     }
     if (sched_entry_get_state(&oev->start) == SCHED_SCHEDULED &&
-        time_in_range(
-          oev->start.time, current_time(), current_time() + MAX_SLOTS - 1)) {
+        time_in_range(oev->start.time, new_start, new_stop)) {
       add_output_event(&oev->start);
       sched_entry_set_state(&oev->start, SCHED_SUBMITTED);
     }
     if (sched_entry_get_state(&oev->stop) == SCHED_SCHEDULED &&
-        time_in_range(
-          oev->stop.time, current_time(), current_time() + MAX_SLOTS - 1)) {
+        time_in_range(oev->stop.time, new_start, new_stop)) {
       add_output_event(&oev->stop);
       sched_entry_set_state(&oev->stop, SCHED_SUBMITTED);
     }
@@ -295,33 +283,34 @@ timeval_t platform_output_earliest_schedulable_time() {
   return current_time() / MAX_SLOTS * MAX_SLOTS + MAX_SLOTS;
 }
 
-static void do_output_slots() {
+static void report_output_event(timeval_t time, uint16_t outputs) {
+  console_record_event((struct logged_event){
+    .time = time,
+    .value = outputs,
+    .type = EVENT_OUTPUT,
+  });
+}
+
+static void do_output_slots(timeval_t from, timeval_t to) {
   /* Only take action on first slot time */
-  if (curtime % MAX_SLOTS == 0) {
-    platform_buffer_swap();
-  }
+  platform_buffer_swap(from, to);
 
-  uint16_t old_outputs = cur_outputs;
-
-  while ((next_output_event < num_output_events) &&
-         (output_events[next_output_event].time == current_time())) {
-    struct sched_entry s = output_events[next_output_event];
-    next_output_event++;
-    if (s.val) {
-      cur_outputs |= (1 << s.pin);
+  for (unsigned int i = 0; i < num_output_events; i++) {
+    struct sched_entry *s = &output_events[i];
+    /* Update outputs */
+    if (s->val) {
+      cur_outputs |= (1 << s->pin);
     } else {
-      cur_outputs &= ~(1 << s.pin);
+      cur_outputs &= ~(1 << s->pin);
     }
-  }
-  if (old_outputs != cur_outputs) {
-    char output[64];
-    sprintf(output, "# OUTPUTS %lu %2x\n", (long unsigned)curtime, cur_outputs);
-    write(STDERR_FILENO, output, strlen(output));
-    console_record_event((struct logged_event){
-      .time = curtime,
-      .value = cur_outputs,
-      .type = EVENT_OUTPUT,
-    });
+
+    if ((i != num_output_events - 1) && (s->time == (s + 1)->time)) {
+      /* This isn't the last event, and the next event is the same time,
+       * skip in reporting */
+      continue;
+    }
+
+    report_output_event(s->time, cur_outputs);
   }
 }
 
@@ -331,9 +320,10 @@ static void do_output_slots() {
 
 void *platform_timebase_thread(void *_interrupt_fd) {
   int *interrupt_fd = (int *)_interrupt_fd;
+  timeval_t last_tasks_run = 0;
   struct timespec current_time;
   struct timespec tick_increment = {
-    .tv_nsec = 250,
+    .tv_nsec = 32000,
   };
 
   if (clock_gettime(CLOCK_MONOTONIC, &current_time)) {
@@ -342,17 +332,23 @@ void *platform_timebase_thread(void *_interrupt_fd) {
 
   do {
     struct timespec next_tick = add_times(current_time, tick_increment);
-    clock_nanosleep_busywait(next_tick);
+    clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &next_tick, NULL);
     current_time = next_tick;
 
-    curtime += 1;
-    do_output_slots();
+    /* Process anything that needed to happen between curtime and curtime+128 */
+    timeval_t before = curtime;
+    timeval_t after = curtime + 128; /* 32 uS */
+    curtime = after;
 
-    if ((curtime % 10000) == 0) {
+    do_output_slots(after, after + MAX_SLOTS - 1);
+
+    /* Ensure tasks are run once per 10 ms */
+    if (curtime - last_tasks_run > time_from_us(10000)) {
       run_tasks();
+      last_tasks_run = curtime;
     }
 
-    if (event_timer_enabled && (event_timer_time == curtime)) {
+    if (event_timer_enabled && time_in_range(event_timer_time, before, after)) {
       event_timer_pending = true;
     }
     if (event_timer_pending) {
