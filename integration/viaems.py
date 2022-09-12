@@ -16,7 +16,6 @@ def ticks_for_rpm_degrees(rpm, degrees):
 def ms_ticks(ms):
   return 4000 * ms
 
-
 class ViaemsWrapper:
     def __init__(self, binary):
         self.binary = binary
@@ -109,10 +108,8 @@ class ViaemsWrapper:
         except EOFError:
           break
 
-      results = [x for x in results if x["type"] == "event"]
       results.sort(key=lambda x: x["time"])
-
-      with open(f"scenario_{scenario.name}.outputs", "w") as output:
+      with open(f"scenario_{scenario.name}.log", "w") as output:
         json.dump(results, output)
       with open(f"scenario_{scenario.name}.vcd", "w") as vcdfile:
         dump_log_to_vcd(results, vcdfile)
