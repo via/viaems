@@ -5,7 +5,7 @@ import tempfile
 import random
 import os
 
-from vcd import dump_log_to_vcd
+from log import dump_log_to_vcd
 
 TICKRATE = 4000000.0
 
@@ -111,8 +111,7 @@ class ViaemsWrapper:
       results.sort(key=lambda x: x["time"])
       with open(f"scenario_{scenario.name}.log", "w") as output:
         json.dump(results, output)
-      with open(f"scenario_{scenario.name}.vcd", "w") as vcdfile:
-        dump_log_to_vcd(results, vcdfile)
+      dump_log_to_vcd(results, f"scenario_{scenario.name}.vcd")
       return results
 
 
