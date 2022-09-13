@@ -68,16 +68,13 @@ class Scenario:
     self.rpm = 0
 
     self._last_event = None
-    self._last_event_time = None
+    self._last_event_time = 0
 
   def _advance(self):
     delay = self.decoder.time_to_next_trigger(self.rpm)
     tooth, angle = self.decoder.next(self.rpm)
 
-    previousdelay = 0
-    # make sure to account for any delta due to waits
-    if self._last_event_time:
-      previousdelay = self.time - self._last_event_time
+    previousdelay = self.time - self._last_event_time
     ev = ToothEvent(delay=delay + previousdelay, trigger=tooth, angle=angle)
 
     self.events.append(ev)
