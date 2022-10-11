@@ -181,7 +181,7 @@ response (trimmed for display):
                 "description": "GPIO pin for boost control output"
             },
             "pwm": {
-                "_type": "table"
+                "_type": "table1d"
             },
             "threshold": {
                 "_type": "float",

@@ -440,6 +440,10 @@ void render_float_object(struct console_request_context *ctx,
       double val;
       cbor_value_get_double(&ctx->value, &val);
       *ptr = val;
+    } else if (cbor_value_is_integer(&ctx->value)) {
+      int val;
+      cbor_value_get_int(&ctx->value, &val);
+      *ptr = val;
     }
     /* Fall through */
   case CONSOLE_GET:
@@ -738,16 +742,17 @@ void render_enum_object(struct console_request_context *ctx,
 
 static void render_table_title(struct console_request_context *ctx, void *_t) {
 
-  struct table *t = _t;
+  char *t = _t;
   switch (ctx->type) {
   case CONSOLE_SET:
     if (cbor_value_is_text_string(&ctx->value)) {
-      size_t len = sizeof(t->title);
-      cbor_value_copy_text_string(&ctx->value, t->title, &len, NULL);
+      size_t len = MAX_TABLE_TITLE_SIZE;
+      cbor_value_copy_text_string(&ctx->value, t, &len, NULL);
+      t[MAX_TABLE_TITLE_SIZE] = '\0';
     }
     /* Fall through */
   case CONSOLE_GET:
-    cbor_encode_text_stringz(ctx->response, t->title);
+    cbor_encode_text_stringz(ctx->response, t);
     break;
   case CONSOLE_STRUCTURE:
   case CONSOLE_DESCRIBE: {
@@ -770,8 +775,9 @@ static void render_table_axis_name(struct console_request_context *ctx,
   switch (ctx->type) {
   case CONSOLE_SET:
     if (cbor_value_is_text_string(&ctx->value)) {
-      size_t len = sizeof(axis->name);
+      size_t len = MAX_TABLE_TITLE_SIZE;
       cbor_value_copy_text_string(&ctx->value, axis->name, &len, NULL);
+      axis->name[MAX_TABLE_TITLE_SIZE] = '\0';
     }
     /* Fall through */
   case CONSOLE_GET:
@@ -836,24 +842,25 @@ static void render_table_axis(struct console_request_context *ctx, void *_t) {
 }
 
 struct nested_table_context {
-  struct table *t;
+  struct table_2d *t;
   int row;
 };
 
 static void render_table_second_axis_data(struct console_request_context *ctx,
                                           void *_ntc) {
   struct nested_table_context *ntc = _ntc;
-  struct table *t = ntc->t;
-  for (int j = 0; j < t->axis[0].num; j++) {
+  struct table_2d *t = ntc->t;
+  for (int c = 0; c < t->cols.num; c++) {
     struct console_request_context deeper;
-    if (descend_array_field(ctx, &deeper, j)) {
-      render_float_object(&deeper, "axis value", &t->data.two[ntc->row][j]);
+    if (descend_array_field(ctx, &deeper, c)) {
+      render_float_object(&deeper, "axis value", &t->data[ntc->row][c]);
     }
   }
 }
 
-static void render_table_data_description(struct console_request_context *ctx,
-                                          void *ptr) {
+static void render_table_2d_data_description(
+  struct console_request_context *ctx,
+  void *ptr) {
   (void)ptr;
   CborEncoder desc;
   cbor_encoder_create_map(ctx->response, &desc, 3);
@@ -864,66 +871,100 @@ static void render_table_data_description(struct console_request_context *ctx,
   cbor_encoder_close_container(ctx->response, &desc);
 }
 
-static void render_table_data(struct console_request_context *ctx, void *_t) {
-  struct table *t = _t;
-  if (t->num_axis == 1) {
-    for (int i = 0; i < t->axis[0].num; i++) {
-      struct console_request_context deeper;
-      if (descend_array_field(ctx, &deeper, i)) {
-        render_float_object(&deeper, "axis value", &t->data.one[i]);
-      }
-    }
-  } else if (t->num_axis == 2) {
-    for (int i = 0; i < t->axis[1].num; i++) {
-      struct console_request_context deeper;
-      if (descend_array_field(ctx, &deeper, i)) {
-        struct nested_table_context ntc = { .t = t, .row = i };
-        render_array_object(&deeper, render_table_second_axis_data, &ntc);
-      }
+static void render_table_1d_data_description(
+  struct console_request_context *ctx,
+  void *ptr) {
+  (void)ptr;
+  CborEncoder desc;
+  cbor_encoder_create_map(ctx->response, &desc, 3);
+  render_type_field(&desc, "[float]");
+  render_description_field(&desc, "list of table values");
+  cbor_encode_text_stringz(&desc, "len");
+  cbor_encode_int(&desc, MAX_AXIS_SIZE);
+  cbor_encoder_close_container(ctx->response, &desc);
+}
+
+static void render_table_1d_data(struct console_request_context *ctx,
+                                 void *_t) {
+  struct table_1d *t = _t;
+  for (int i = 0; i < t->cols.num; i++) {
+    struct console_request_context deeper;
+    if (descend_array_field(ctx, &deeper, i)) {
+      render_float_object(&deeper, "axis value", &t->data[i]);
     }
   }
 }
 
-static void render_table_object(struct console_request_context *ctx, void *_t) {
-  struct table *t = _t;
+static void render_table_2d_data(struct console_request_context *ctx,
+                                 void *_t) {
+  struct table_2d *t = _t;
+  for (int r = 0; r < t->rows.num; r++) {
+    struct console_request_context deeper;
+    if (descend_array_field(ctx, &deeper, r)) {
+      struct nested_table_context ntc = { .t = t, .row = r };
+      render_array_object(&deeper, render_table_second_axis_data, &ntc);
+    }
+  }
+}
+
+static void render_table_2d_object(struct console_request_context *ctx,
+                                   void *_t) {
+  struct table_2d *t = _t;
   if (ctx->type == CONSOLE_STRUCTURE) {
-    render_type_field(ctx->response, "table");
+    render_type_field(ctx->response, "table2d");
     return;
   }
-  render_custom_map_field(ctx, "title", render_table_title, t);
-  render_uint32_map_field(
-    ctx, "num-axis", "number of axis (1 or 2)", &t->num_axis);
-  render_map_map_field(ctx, "horizontal-axis", render_table_axis, &t->axis[0]);
-  render_map_map_field(ctx, "vertical-axis", render_table_axis, &t->axis[1]);
+  render_custom_map_field(ctx, "title", render_table_title, t->title);
+  render_map_map_field(ctx, "horizontal-axis", render_table_axis, &t->cols);
+  render_map_map_field(ctx, "vertical-axis", render_table_axis, &t->rows);
 
   if ((ctx->type != CONSOLE_DESCRIBE)) {
-    render_array_map_field(ctx, "data", render_table_data, t);
+    render_array_map_field(ctx, "data", render_table_2d_data, t);
   } else {
-    render_custom_map_field(ctx, "data", render_table_data_description, NULL);
+    render_custom_map_field(
+      ctx, "data", render_table_2d_data_description, NULL);
+  }
+}
+
+static void render_table_1d_object(struct console_request_context *ctx,
+                                   void *_t) {
+  struct table_1d *t = _t;
+  if (ctx->type == CONSOLE_STRUCTURE) {
+    render_type_field(ctx->response, "table1d");
+    return;
+  }
+  render_custom_map_field(ctx, "title", render_table_title, t->title);
+  render_map_map_field(ctx, "horizontal-axis", render_table_axis, &t->cols);
+
+  if ((ctx->type != CONSOLE_DESCRIBE)) {
+    render_array_map_field(ctx, "data", render_table_1d_data, t);
+  } else {
+    render_custom_map_field(
+      ctx, "data", render_table_1d_data_description, NULL);
   }
 }
 
 static void render_tables(struct console_request_context *ctx, void *ptr) {
   (void)ptr;
-  render_map_map_field(ctx, "ve", render_table_object, config.ve);
+  render_map_map_field(ctx, "ve", render_table_2d_object, config.ve);
   render_map_map_field(
-    ctx, "lambda", render_table_object, config.commanded_lambda);
-  render_map_map_field(ctx, "dwell", render_table_object, config.dwell);
-  render_map_map_field(ctx, "timing", render_table_object, config.timing);
+    ctx, "lambda", render_table_2d_object, config.commanded_lambda);
+  render_map_map_field(ctx, "dwell", render_table_1d_object, config.dwell);
+  render_map_map_field(ctx, "timing", render_table_2d_object, config.timing);
   render_map_map_field(ctx,
                        "injector_dead_time",
-                       render_table_object,
+                       render_table_1d_object,
                        config.injector_deadtime_offset);
   render_map_map_field(ctx,
                        "injector_pw_correction",
-                       render_table_object,
+                       render_table_1d_object,
                        config.injector_pw_correction);
   render_map_map_field(
-    ctx, "temp-enrich", render_table_object, config.engine_temp_enrich);
+    ctx, "temp-enrich", render_table_2d_object, config.engine_temp_enrich);
   render_map_map_field(
-    ctx, "tipin-amount", render_table_object, config.tipin_enrich_amount);
+    ctx, "tipin-amount", render_table_2d_object, config.tipin_enrich_amount);
   render_map_map_field(
-    ctx, "tipin-time", render_table_object, config.tipin_enrich_duration);
+    ctx, "tipin-time", render_table_1d_object, config.tipin_enrich_duration);
 }
 
 static void render_decoder(struct console_request_context *ctx, void *ptr) {
@@ -1232,7 +1273,7 @@ static void render_boost_control(struct console_request_context *ctx,
                          "High threshold for boost cut (kpa)",
                          &config.boost_control.overboost);
   render_map_map_field(
-    ctx, "pwm", render_table_object, config.boost_control.pwm_duty_vs_rpm);
+    ctx, "pwm", render_table_1d_object, config.boost_control.pwm_duty_vs_rpm);
 }
 
 static void render_cel(struct console_request_context *ctx, void *ptr) {
@@ -1351,7 +1392,8 @@ static void console_toplevel_types(struct console_request_context *ctx,
   render_map_map_field(ctx, "sensor", render_sensor_object, &config.sensors[0]);
   render_map_map_field(
     ctx, "output", output_console_renderer, &config.events[1]);
-  render_map_map_field(ctx, "table", render_table_object, config.ve);
+  render_map_map_field(ctx, "table1d", render_table_1d_object, config.ve);
+  render_map_map_field(ctx, "table2d", render_table_2d_object, config.ve);
 }
 
 static void console_request_structure(CborEncoder *enc) {

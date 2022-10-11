@@ -1,84 +1,77 @@
 #include "config.h"
 #include "sensors.h"
 
-struct table enrich_vs_temp_and_map __attribute__((section(".configdata"))) = {
-  .title = "temp_enrich", .num_axis = 2,
-  .axis = { { 
-      .name = "TEMP", .num = 6,
-      .values = {-20, 0, 20, 40, 102, 120},
-    },
-    { .name = "MAP", .num = 4,
-      .values = {20, 60, 80, 100},
-    },
+struct table_2d enrich_vs_temp_and_map __attribute__((section(".configdata"))) = {
+  .title = "temp_enrich",
+  .cols = { 
+    .name = "TEMP", .num = 6,
+    .values = {-20, 0, 20, 40, 102, 120 },
+  },
+  .rows = { 
+    .name = "MAP", .num = 4,
+    .values = {20, 60, 80, 100},
   },
   .data = {
-    .two = {
-      {2.5, 1.8, 1.5, 1.0, 1.0, 1.2},
-      {2.0, 1.8, 1.3, 1.0, 1.0, 1.2},
-      {1.5, 1.5, 1.2, 1.0, 1.0, 1.2},
-      {1.2, 1.3, 1.1, 1.0, 1.0, 1.2},
-    },
+    {2.5, 1.8, 1.5, 1.0, 1.0, 1.2},
+    {2.0, 1.8, 1.3, 1.0, 1.0, 1.2},
+    {1.5, 1.5, 1.2, 1.0, 1.0, 1.2},
+    {1.2, 1.3, 1.1, 1.0, 1.0, 1.2},
   },
 };
 
 /* Thousandths of a cm^3 */
-struct table tipin_vs_tpsrate_and_tps __attribute__((section(".configdata"))) = {
-  .title = "tipin_enrich_amount", .num_axis = 2,
-  .axis = { { 
-      .name = "TPSRATE", .num = 5,
-      .values = {-1000, 0, 100, 500, 1000},
-    },
-    { .name = "TPS", .num = 5,
-      .values = {0, 10, 20, 50, 80},
-    },
+struct table_2d tipin_vs_tpsrate_and_tps __attribute__((section(".configdata"))) = {
+  .title = "tipin_enrich_amount",
+  .cols = { 
+    .name = "TPSRATE", .num = 5,
+    .values = {-1000, 0, 100, 500, 1000},
+  },
+  .rows = {
+    .name = "TPS", .num = 5,
+    .values = {0, 10, 20, 50, 80},
   },
   .data = {
-    .two = {
-      {0, 0, 0, 0, 0},
-      {0, 0, 0, 0, 0},
-      {0, 0, 0, 20, 30},
-      {0, 0, 0, 15, 20},
-      {0, 0, 0, 10, 10},
-    },
+    {0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0},
+    {0, 0, 0, 20, 30},
+    {0, 0, 0, 15, 20},
+    {0, 0, 0, 10, 10},
   },
 };
 
-struct table tipin_duration_vs_rpm __attribute__((section(".configdata"))) = {
-  .title = "tipin_enrich_duration", .num_axis = 1,
-  .axis = { { 
-      .name = "RPM", .num = 4,
-      .values = {0, 1000, 2000, 4000},
-    },
+struct table_1d tipin_duration_vs_rpm __attribute__((section(".configdata"))) = {
+  .title = "tipin_enrich_duration",
+  .cols = { 
+    .name = "RPM", .num = 4,
+    .values = {0, 1000, 2000, 4000},
   },
   .data = {
-    .one = {300.0, 150.0, 80.0, 40.0}
+    300.0, 150.0, 80.0, 40.0
   },
 };
 
-struct table dwell_ms_vs_brv __attribute__((section(".configdata"))) = {
-  .title = "dwell", .num_axis = 1,
-  .axis = { { 
-      .name = "BRV", .num = 4,
-      .values = {5, 10, 14, 18},
-    },
+struct table_1d dwell_ms_vs_brv __attribute__((section(".configdata"))) = {
+  .title = "dwell",
+  .cols = { 
+    .name = "BRV", .num = 4,
+    .values = {5, 10, 14, 18},
   },
   .data = {
-    .one = {6.0, 4.0, 2.5, 1.8}
+    6.0, 4.0, 2.5, 1.8
   },
 };
 
-struct table ve_vs_rpm_and_map __attribute__((section(".configdata"))) = {
-  .title = "ve", .num_axis = 2,
-  .axis = { { 
-      .name = "RPM", .num = 16,
-      .values = {250, 500, 900, 1200, 1600, 2000, 2400, 3000, 3600, 4000, 4400, 5200, 5800, 6400, 6800, 7200},
-    },
-    { .name = "MAP", .num = 16,
-      .values = {20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 140, 160, 180, 200, 220, 240},
-    },
+struct table_2d ve_vs_rpm_and_map __attribute__((section(".configdata"))) = {
+  .title = "ve",
+  .cols = { 
+    .name = "RPM", .num = 16,
+    .values = {250, 500, 900, 1200, 1600, 2000, 2400, 3000, 3600, 4000, 4400, 5200, 5800, 6400, 6800, 7200},
+  },
+  .rows = {
+    .name = "MAP", .num = 16,
+    .values = {20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 140, 160, 180, 200, 220, 240},
   },
   .data = {
-    .two = {
    /*  250,   500,   900,  1200,  1600,   2000,  2400,  3000, 3600,  4000,   4400,  5200,  5800,  6400,  6800,  7200}, */
       {65.0,  30.0,  2.0,   2.0,   10.0,  10.0,  8.0,   8.0,   8.0,   8.0,   12.0,  12.0,  12.0,  12.0,  16.0,  16.0}, /* 20 */
       {65.0,  45.0,  15.0,  12.0,   8.0,   9.0,  8.0,   8.0,  23.0,   9.0,   11.0,  12.0,  12.0,  12.0,  26.0,  26.0}, /* 30 */
@@ -96,22 +89,20 @@ struct table ve_vs_rpm_and_map __attribute__((section(".configdata"))) = {
       {65.0,  45.0,  72.0,  72.0,  83.0,  83.0,  90.0,  90.0,  90.0,  90.0,  90.0,  90.0,  90.0,  90.0,  90.0,  90.0}, /* 200 */
       {65.0,  45.0,  72.0,  72.0,  83.0,  83.0,  90.0,  90.0,  90.0,  90.0,  90.0,  90.0,  90.0,  90.0,  90.0,  90.0}, /* 220 */
       {65.0,  45.0,  72.0,  72.0,  83.0,  83.0,  90.0,  90.0,  90.0,  90.0,  90.0,  90.0,  90.0,  90.0,  90.0,  90.0}, /* 240 */
-    },
   },
 };
 
-struct table lambda_vs_rpm_and_map __attribute__((section(".configdata"))) = {
-  .title = "lambda", .num_axis = 2,
-  .axis = { { 
-      .name = "RPM", .num = 16,
-      .values = {250, 500, 900, 1200, 1600, 2000, 2400, 3000, 3600, 4000, 4400, 5200, 5800, 6400, 6800, 7200},
-    },
-    { .name = "MAP", .num = 16,
-      .values = {20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 140, 160, 180, 200, 220, 240},
-    },
+struct table_2d lambda_vs_rpm_and_map __attribute__((section(".configdata"))) = {
+  .title = "lambda",
+  .cols = { 
+    .name = "RPM", .num = 16,
+    .values = {250, 500, 900, 1200, 1600, 2000, 2400, 3000, 3600, 4000, 4400, 5200, 5800, 6400, 6800, 7200},
+  },
+  .rows = { 
+    .name = "MAP", .num = 16,
+    .values = {20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 140, 160, 180, 200, 220, 240},
   },
   .data = {
-    .two = {
       {1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00},
       {1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00},
       {1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00},
@@ -128,23 +119,20 @@ struct table lambda_vs_rpm_and_map __attribute__((section(".configdata"))) = {
       {0.73, 0.73, 0.73, 0.81, 0.81, 0.73, 0.73, 0.73, 0.73, 0.73, 0.73, 0.73, 0.73, 0.73, 0.73, 0.73},
       {0.75, 0.75, 0.75, 0.73, 0.73, 0.73, 0.73, 0.73, 0.73, 0.73, 0.73, 0.73, 0.73, 0.73, 0.73, 0.73},
       {0.75, 0.75, 0.75, 0.73, 0.73, 0.73, 0.73, 0.73, 0.73, 0.73, 0.73, 0.73, 0.73, 0.73, 0.73, 0.73},
-    },
   },
 };
 
-struct table timing_vs_rpm_and_map __attribute__((section(".configdata"))) = {
-  .title = "Timing", .num_axis = 2,
-  .axis = {
-    { .name = "RPM", .num = 16,
-      .values = {250, 500, 900, 1200, 1600, 2000, 2400, 3000, 3600, 4000, 4400, 5200, 5800, 6400, 6800, 7200},
-    },
-    {
-      .name = "MAP", .num = 16,
-      .values = {20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 140, 160, 180, 200, 220, 240},
-    },
+struct table_2d timing_vs_rpm_and_map __attribute__((section(".configdata"))) = {
+  .title = "Timing",
+  .cols = {
+    .name = "RPM", .num = 16,
+    .values = {250, 500, 900, 1200, 1600, 2000, 2400, 3000, 3600, 4000, 4400, 5200, 5800, 6400, 6800, 7200},
+  },
+  .rows = {
+    .name = "MAP", .num = 16,
+    .values = {20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 140, 160, 180, 200, 220, 240},
   },
   .data = {
-    .two = {
       {12.0, 15.0, 18.0, 28.0, 32.0, 35.0, 42.0, 42.0, 42.0, 42.0, 42.0, 42.0, 42.0, 42.0, 42.0, 42.0},
       {12.0, 15.0, 18.0, 24.0, 28.0, 32.0, 36.0, 36.0, 38.0, 38.0, 40.0, 40.0, 40.0, 40.0, 40.0, 40.0},
       {12.0, 15.0, 18.0, 24.0, 25.0, 30.0, 32.0, 35.0, 36.0, 36.0, 38.0, 40.0, 40.0, 40.0, 40.0, 40.0},
@@ -163,40 +151,34 @@ struct table timing_vs_rpm_and_map __attribute__((section(".configdata"))) = {
       {8.0, 10.0, 10.0, 12.0, 12.0, 13.0, 13.0, 13.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0},
       {8.0, 10.0, 10.0, 10.0, 10.0, 11.0, 13.0, 13.0, 13.0, 13.0, 13.0, 13.0, 13.0, 13.0, 13.0, 13.0},
       {8.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0,  8.0,  8.0,  8.0},
-    },
   },
 };
 
-struct table injector_dead_time __attribute__((section(".configdata"))) = {
-  .title = "dead_time", .num_axis = 1,
-  .axis = { { .name = "BRV", .num = 16,
+struct table_1d injector_dead_time __attribute__((section(".configdata"))) = {
+  .title = "dead_time",
+  .cols = { .name = "BRV", .num = 16,
     .values = {8.5, 9, 9.5, 10, 10.5, 11, 11.5, 12, 12.5, 13, 13.5, 14, 14.5, 15, 15.5, 16},
-    },
   },
   .data = {
-    .one = {2.97, 2.66, 2.39, 2.155, 1.96, 1.82, 1.70, 1.59, 1.48, 1.4, 1.32, 1.25, 1.19, 1.11, 1.05, 1},
+    2.97, 2.66, 2.39, 2.155, 1.96, 1.82, 1.70, 1.59, 1.48, 1.4, 1.32, 1.25, 1.19, 1.11, 1.05, 1,
   },
 };
 
-struct table injector_pw_correction __attribute__((section(".configdata"))) = {
-  .title = "pulse_width_correction", .num_axis = 1,
-  .axis = { { .name = "PW(ms)", .num = 6,
+struct table_1d injector_pw_correction __attribute__((section(".configdata"))) = {
+  .title = "pulse_width_correction",
+  .cols = { .name = "PW(ms)", .num = 6,
     .values = {0, 0.333, 0.521, 0.816, 1.278, 2.0},
-    },
   },
-  .data = {
-    .one = {0, 0.090, 0.086, 0.038, 0.023, 0},
-  },
+  .data = {0, 0.090, 0.086, 0.038, 0.023, 0},
 };
 
-struct table boost_control_pwm __attribute__((section(".configdata"))) = {
-  .title = "boost_control", .num_axis = 1,
-  .axis = { { .name = "RPM", .num = 6,
-      .values = {1000.0, 2000.0, 3000.0, 4000.0, 5000.0, 6000.0},
-    },
+struct table_1d boost_control_pwm __attribute__((section(".configdata"))) = {
+  .title = "boost_control",
+  .cols = { .name = "RPM", .num = 6,
+    .values = {1000.0, 2000.0, 3000.0, 4000.0, 5000.0, 6000.0},
   },
   .data = {
-    .one = {50, 50, 50, 50, 50, 50},
+    50, 50, 50, 50, 50, 50,
   },
 };
 
@@ -320,29 +302,36 @@ struct config config __attribute__((section(".configdata"))) = {
 };
 
 int config_valid() {
-  if (config.ve && !table_valid(config.ve)) {
+  if (config.ve && !table_valid_twoaxis(config.ve)) {
     return 0;
   }
 
-  if (config.timing && !table_valid(config.timing)) {
+  if (config.timing && !table_valid_twoaxis(config.timing)) {
+    return 0;
+  }
+
+  if (config.injector_deadtime_offset &&
+      !table_valid_oneaxis(config.injector_deadtime_offset)) {
     return 0;
   }
 
   if (config.injector_pw_correction &&
-      !table_valid(config.injector_pw_correction)) {
+      !table_valid_oneaxis(config.injector_pw_correction)) {
     return 0;
   }
 
-  if (config.commanded_lambda && !table_valid(config.commanded_lambda)) {
+  if (config.commanded_lambda &&
+      !table_valid_twoaxis(config.commanded_lambda)) {
     return 0;
   }
 
-  if (config.tipin_enrich_amount && !table_valid(config.tipin_enrich_amount)) {
+  if (config.tipin_enrich_amount &&
+      !table_valid_twoaxis(config.tipin_enrich_amount)) {
     return 0;
   }
 
   if (config.tipin_enrich_duration &&
-      !table_valid(config.tipin_enrich_duration)) {
+      !table_valid_oneaxis(config.tipin_enrich_duration)) {
     return 0;
   }
 

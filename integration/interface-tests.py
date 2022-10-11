@@ -153,6 +153,53 @@ class ViaemsInterfaceTests(unittest.TestCase):
         assert(self.conn.get(path=["sensors", "iat", "source"])['response'] == "const")
         assert(self.conn.get(path=["sensors", "iat", "pin"])['response'] == 5)
 
+    def test_set_table_1d(self):
+        result = self.conn.set(path=["tables", "injector_pw_correction"], value={
+            "horizontal-axis": {
+                "name": "bleh",
+                "values": [0, 10, 20],
+            },
+            "data": [100, 200, 300],
+            })
+        assert(result['success'])
+        assert(self.conn.get(path=["tables", "injector_pw_correction",
+                                   "horizontal-axis", "name"])["response"] == "bleh")
+        assert(self.conn.get(path=["tables", "injector_pw_correction",
+                                   "horizontal-axis", "values"])["response"] == [0, 10, 20])
+        assert(self.conn.get(path=["tables", "injector_pw_correction",
+                                   "data"])["response"] == [100, 200, 300])
+
+    def test_set_table_2d(self):
+        result = self.conn.set(path=["tables", "ve"], value={
+            "horizontal-axis": {
+                "name": "bleh",
+                "values": [0, 10, 20],
+            },
+            "vertical-axis": {
+                "name": "bleh2",
+                "values": [100, 200, 300.0],
+            },
+            "data": [
+                [100, 200, 300],
+                [400, 500, 600],
+                [700, 800, 900],
+                ]})
+        assert(result['success'])
+        assert(self.conn.get(path=["tables", "ve",
+                                   "horizontal-axis", "name"])["response"] == "bleh")
+        assert(self.conn.get(path=["tables", "ve",
+                                   "horizontal-axis", "values"])["response"] == [0, 10, 20])
+        assert(self.conn.get(path=["tables", "ve",
+                                   "vertical-axis", "name"])["response"] == "bleh2")
+        assert(self.conn.get(path=["tables", "ve",
+                                   "vertical-axis", "values"])["response"] == [100, 200, 300])
+        assert(self.conn.get(path=["tables", "ve",
+                                   "data"])["response"] == [
+                                       [100, 200, 300],
+                                       [400, 500, 600],
+                                       [700, 800, 900],
+                                       ])
+
 
 
 if __name__ == "__main__":

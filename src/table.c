@@ -21,10 +21,8 @@ static int axis_find_cell_lower(const struct table_axis *axis, float value) {
   return x1;
 }
 
-float interpolate_table_oneaxis(struct table *t, float val) {
-  assert(t->num_axis == 1);
-
-  const struct table_axis *axis = &t->axis[0];
+float interpolate_table_oneaxis(struct table_1d *t, float val) {
+  const struct table_axis *axis = &t->cols;
 
   /* Clamp to bottom */
   if (val < axis->values[0]) {
@@ -41,16 +39,14 @@ float interpolate_table_oneaxis(struct table *t, float val) {
   const float x2 = axis->values[index + 1];
 
   const float partial = (val - x1) / (x2 - x1);
-  const float first_val = t->data.one[index];
-  const float second_val = t->data.one[index + 1];
+  const float first_val = t->data[index];
+  const float second_val = t->data[index + 1];
   return ((second_val - first_val) * partial) + first_val;
 }
 
-float interpolate_table_twoaxis(struct table *t, float x, float y) {
-  assert(t->num_axis == 2);
-
-  const struct table_axis *xaxis = &t->axis[0];
-  const struct table_axis *yaxis = &t->axis[1];
+float interpolate_table_twoaxis(struct table_2d *t, float x, float y) {
+  const struct table_axis *xaxis = &t->cols;
+  const struct table_axis *yaxis = &t->rows;
 
   /* Clamp X to bottom */
   if (x < xaxis->values[0]) {
@@ -77,10 +73,10 @@ float interpolate_table_twoaxis(struct table *t, float x, float y) {
   const float y1 = yaxis->values[y1_ind];
   const float y2 = yaxis->values[y1_ind + 1];
 
-  const float xy1 = (x2 - x) / (x2 - x1) * t->data.two[y1_ind][x1_ind] +
-                    (x - x1) / (x2 - x1) * t->data.two[y1_ind][x1_ind + 1];
-  const float xy2 = (x2 - x) / (x2 - x1) * t->data.two[y1_ind + 1][x1_ind] +
-                    (x - x1) / (x2 - x1) * t->data.two[y1_ind + 1][x1_ind + 1];
+  const float xy1 = (x2 - x) / (x2 - x1) * t->data[y1_ind][x1_ind] +
+                    (x - x1) / (x2 - x1) * t->data[y1_ind][x1_ind + 1];
+  const float xy2 = (x2 - x) / (x2 - x1) * t->data[y1_ind + 1][x1_ind] +
+                    (x - x1) / (x2 - x1) * t->data[y1_ind + 1][x1_ind + 1];
   const float xy = (y2 - y) / (y2 - y1) * xy1 + (y - y1) / (y2 - y1) * xy2;
   return xy;
 }
@@ -97,50 +93,51 @@ static int table_valid_axis(struct table_axis *a) {
   return 1;
 }
 
-int table_valid(struct table *t) {
+int table_valid_oneaxis(struct table_1d *t) {
 
-  if ((t->num_axis != 1) && (t->num_axis != 2)) {
+  if (!table_valid_axis(&t->cols)) {
     return 0;
   }
+  return 1;
+}
 
-  if (!table_valid_axis(&t->axis[0])) {
+int table_valid_twoaxis(struct table_2d *t) {
+
+  if (!table_valid_axis(&t->cols)) {
     return 0;
   }
-
-  if ((t->num_axis == 2) && !table_valid_axis(&t->axis[1])) {
+  if (!table_valid_axis(&t->rows)) {
     return 0;
   }
-
   return 1;
 }
 
 #ifdef UNITTEST
 #include <check.h>
 
-static struct table t1 = {
-  .num_axis = 1,
-  .axis = { {
+static struct table_1d t1 = {
+  .cols = {
     .num = 5,
     .values = { 5, 10, 12, 15, 20 },
-  } },
-  .data = { .one = { 50, 100, 120, 150, 200 } },
+  },
+  .data = { 50, 100, 120, 150, 200 },
 };
 
-static struct table t2 = {
-  .num_axis = 2,
-  .axis = { { 
+static struct table_2d t2 = {
+  .cols = {
     .num = 4,
     .values = {5, 10, 15, 20},
-   }, {
+  },
+  .rows = {
     .num = 4,
     .values = {-50, -40, -30, -20}
-    } },
-   .data = {
-     .two = { {50, 100, 250, 200},
-              {60, 110, 260, 210},
-              {70, 120, 270, 220},
-              {80, 130, 280, 230} },
-   },
+  },
+  .data = {
+    {50, 100, 250, 200},
+    {60, 110, 260, 210},
+    {70, 120, 270, 220},
+    {80, 130, 280, 230},
+  },
 };
 
 START_TEST(check_axis_find_cell) {

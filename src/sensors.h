@@ -56,7 +56,7 @@ struct sensor_input {
   } range;
   float raw_min;
   float raw_max;
-  struct table *table;
+  struct table_1d *table;
   struct thermistor_config therm;
 
   float lag;

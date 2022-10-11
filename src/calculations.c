@@ -289,11 +289,10 @@ START_TEST(check_calculate_ignition_cut) {
 END_TEST
 
 START_TEST(check_calculate_ignition_fixedduty) {
-  struct table t = {
-    .num_axis = 2,
-    .axis = { { .num = 2, .values = { 5, 10 } },
-              { .num = 2, .values = { 5, 10 } } },
-    .data = { .two = { { 10, 10 }, { 10, 10 } } },
+  struct table_2d t = {
+    .cols = { .num = 2, .values = { 5, 10 }, },
+    .rows = { .num = 2, .values = { 5, 10 },  },
+    .data = { { 10, 10 }, { 10, 10 } },
   };
   config.timing = &t;
   config.ignition.dwell = DWELL_FIXED_DUTY;
@@ -308,17 +307,15 @@ START_TEST(check_calculate_ignition_fixedduty) {
 }
 END_TEST
 
-static struct table tipin_amount = {
-  .num_axis = 2,
-  .axis = { { .num = 2, .values = { 0, 100 } },
-            { .num = 2, .values = { 0, 100 } } },
-  .data = { .two = { { 0, 0 }, { 0, 2000 } } },
+static struct table_2d tipin_amount = {
+  .cols = { .num = 2, .values = { 0, 100 }, },
+  .rows = { .num = 2, .values = { 0, 100 },  },
+  .data = { { 0, 0 }, { 0, 2000 } },
 };
 
-static struct table tipin_duration = {
-  .num_axis = 1,
-  .axis = { { .num = 2, .values = { 100, 6000 } } },
-  .data = { .one = { 1.0, 5.0 } },
+static struct table_1d tipin_duration = {
+  .cols = { .num = 2, .values = { 100, 6000 } },
+  .data = { 1.0, 5.0 },
 };
 
 START_TEST(check_calculate_tipin_newevent) {
