@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 struct boost_control_config {
-  struct table *pwm_duty_vs_rpm;
+  struct table_1d *pwm_duty_vs_rpm;
   float enable_threshold_kpa;
   float control_threshold_kpa;
   float control_threshold_tps;

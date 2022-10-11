@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #define MAX_AXIS_SIZE 24
+#define MAX_TABLE_TITLE_SIZE 24
 
 struct table_axis {
   char name[32];
@@ -11,20 +12,24 @@ struct table_axis {
   float values[MAX_AXIS_SIZE];
 };
 
-struct table {
+struct table_1d {
   char title[32];
-  uint32_t num_axis;
-  struct table_axis axis[2];
-  union {
-    float one[MAX_AXIS_SIZE];
-    float two[MAX_AXIS_SIZE][MAX_AXIS_SIZE];
-  } data;
+  struct table_axis cols;
+  float data[MAX_AXIS_SIZE];
 };
 
-float interpolate_table_oneaxis(struct table *, float column);
-float interpolate_table_twoaxis(struct table *, float row, float column);
+struct table_2d {
+  char title[32];
+  struct table_axis rows;
+  struct table_axis cols;
+  float data[MAX_AXIS_SIZE][MAX_AXIS_SIZE];
+};
 
-int table_valid(struct table *);
+float interpolate_table_oneaxis(struct table_1d *, float column);
+float interpolate_table_twoaxis(struct table_2d *, float row, float column);
+
+int table_valid_oneaxis(struct table_1d *);
+int table_valid_twoaxis(struct table_2d *);
 
 #ifdef UNITTEST
 #include <check.h>

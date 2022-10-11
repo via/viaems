@@ -52,7 +52,7 @@ struct sensor_input {
     float min;
     float max;
   } range;
-  struct table *table;
+  struct table_1d *table;
   float fixed_value;
   struct thermistor_config therm;
 
