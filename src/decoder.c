@@ -465,13 +465,14 @@ static struct test_wheel_event test_wheel_Nminus1_next(void) {
 
   struct test_wheel_event ev;
   if (tooth == 1) { /* Gap, but use the opportunity to make a cam sync pulse */
-    ev = (struct test_wheel_event){ .degrees = deg_per_tooth, .trigger = 1};
+    ev = (struct test_wheel_event){ .degrees = deg_per_tooth, .trigger = 1 };
   } else if (tooth == 36) {
     /* Or if its tooth 1 of the second rotation, make a gap, ... */
-    ev = (struct test_wheel_event){ .degrees = 2 * deg_per_tooth, .trigger = 0};
+    ev =
+      (struct test_wheel_event){ .degrees = 2 * deg_per_tooth, .trigger = 0 };
     /* And skip a tooth */
   } else {
-    ev = (struct test_wheel_event){ .degrees = deg_per_tooth, .trigger = 0};
+    ev = (struct test_wheel_event){ .degrees = deg_per_tooth, .trigger = 0 };
   }
 
   tooth += 1;
@@ -501,8 +502,7 @@ static void execute_test_trigger(void *_w) {
   decoder_update_scheduling(&ev, 1);
 
   /* Schedule next */
-  timeval_t delay =
-    time_from_rpm_diff(test_trigger_rpm, wheel_ev.degrees);
+  timeval_t delay = time_from_rpm_diff(test_trigger_rpm, wheel_ev.degrees);
   timeval_t next = ev_time + delay;
 
   schedule_callback(&test_trigger_callback, next);

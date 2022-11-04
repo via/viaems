@@ -25,7 +25,7 @@ uint64_t cycles_to_ns(uint64_t cycles);
  * called. This is done by:
  * 1) Disable any pending timer event
  * 2) Set the event timer and enable it
- * 3) Check if the event is now in the past, and if so set it pending 
+ * 3) Check if the event is now in the past, and if so set it pending
  */
 void schedule_event_timer(timeval_t);
 

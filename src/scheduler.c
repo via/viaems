@@ -318,7 +318,7 @@ int schedule_callback(struct timer_callback *tcb, timeval_t time) {
 }
 
 void scheduler_callback_timer_execute() {
-  assert(n_callbacks > 0); 
+  assert(n_callbacks > 0);
   assert(time_before_or_equal(callbacks[0]->time, current_time()));
 
   struct timer_callback *cb = callbacks[0];
