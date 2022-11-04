@@ -1,7 +1,7 @@
-#include "platform.h"
-#include "decoder.h"
-#include "config.h"
 #include "sim.h"
+#include "config.h"
+#include "decoder.h"
+#include "platform.h"
 
 static struct timer_callback test_trigger_callback;
 
@@ -71,4 +71,3 @@ void set_test_trigger_rpm(uint32_t rpm) {
 uint32_t get_test_trigger_rpm() {
   return test_trigger_rpm;
 }
-
