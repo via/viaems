@@ -91,9 +91,6 @@ void decoder_update_scheduling(struct decoder_event *, unsigned int count);
 void decoder_desync(decoder_loss_reason);
 degrees_t current_angle(void);
 
-void set_test_trigger_rpm(uint32_t rpm);
-uint32_t get_test_trigger_rpm(void);
-
 #ifdef UNITTEST
 #include <check.h>
 TCase *setup_decoder_tests(void);

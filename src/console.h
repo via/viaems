@@ -4,6 +4,7 @@
 #include <cbor.h>
 
 #include "platform.h"
+#include "sim.h"
 
 struct logged_event {
   timeval_t time;
