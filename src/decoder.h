@@ -87,7 +87,7 @@ struct decoder_event {
 };
 
 void decoder_init(struct decoder *);
-void decoder_update_scheduling(struct decoder_event *, unsigned int count);
+void decoder_update_scheduling(int input, timeval_t time);
 void decoder_desync(decoder_loss_reason);
 degrees_t current_angle(void);
 

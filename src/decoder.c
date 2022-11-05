@@ -408,23 +408,21 @@ static void decode(struct decoder *d, struct decoder_event *ev) {
 }
 
 /* When decoder has new information, reschedule everything */
-void decoder_update_scheduling(struct decoder_event *events,
-                               unsigned int count) {
+void decoder_update_scheduling(int trigger, uint32_t time) {
+  struct decoder_event ev = { .trigger = trigger, .time = time };
 
-  for (struct decoder_event *ev = events; count > 0; count--, ev++) {
-    console_record_event((struct logged_event){
-      .type = EVENT_TRIGGER,
-      .value = ev->trigger,
-      .time = ev->time,
-    });
-    if (ev->trigger == 0) {
-      config.decoder.t0_count++;
-    } else if (ev->trigger == 1) {
-      config.decoder.t1_count++;
-    }
-
-    decode(&config.decoder, ev);
+  console_record_event((struct logged_event){
+    .type = EVENT_TRIGGER,
+    .value = trigger,
+    .time = time,
+  });
+  if (trigger == 0) {
+    config.decoder.t0_count++;
+  } else if (trigger == 1) {
+    config.decoder.t1_count++;
   }
+
+  decode(&config.decoder, &ev);
 
   if (config.decoder.valid) {
     calculate_ignition();
@@ -526,7 +524,7 @@ static void add_trigger_event_transition(struct decoder_event **entries,
 static void validate_decoder_sequence(struct decoder_event *ev) {
   for (; ev; ev = ev->next) {
     set_current_time(ev->time);
-    decoder_update_scheduling(ev, 1);
+    decoder_update_scheduling(ev->trigger, ev->time);
     ck_assert_msg(
       (config.decoder.state == ev->state) &&
         (config.decoder.valid == ev->valid),
@@ -749,20 +747,14 @@ START_TEST(check_bulk_decoder_updates) {
   cam_nplusone_normal_startup_to_sync(&entries);
 
   /* Turn entries linked list into array usable by interface */
-  struct decoder_event *entry_list = malloc(sizeof(struct decoder_event));
-  struct decoder_event *ev;
-  int len;
-  for (len = 0, ev = entries; ev != NULL; ++len, ev = ev->next) {
-    entry_list[len] = *ev;
-    entry_list = realloc(entry_list, sizeof(struct decoder) * (len + 1));
+  for (struct decoder_event *ev = entries; ev != NULL; ev = ev->next) {
+    decoder_update_scheduling(ev->trigger, ev->time);
   }
-  decoder_update_scheduling(entry_list, len);
 
   ck_assert(config.decoder.valid);
   ck_assert_int_eq(config.decoder.last_trigger_angle,
                    1 * config.decoder.degrees_per_trigger);
   free_trigger_list(entries);
-  free(entry_list);
 }
 END_TEST
 
