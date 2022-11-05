@@ -16,6 +16,7 @@ int main() {
   platform_init(0, NULL);
 
   assert(config_valid());
+  set_test_trigger_rpm(1000);
 
   sensors_process(SENSOR_CONST);
   while (1) {

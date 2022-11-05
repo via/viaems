@@ -102,6 +102,8 @@ static void do_sensor_single_therm() {
 }
 
 int main() {
+  platform_benchmark_init();
+
   /* Preparations for all benchmarks */
   config.sensors[SENSOR_IAT].processed_value = 15.0f;
   config.sensors[SENSOR_BRV].processed_value = 14.8f;

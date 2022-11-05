@@ -1,7 +1,7 @@
 PLATFORM?=stm32f4
 OBJDIR=obj/${PLATFORM}
 
-TINYCBOR_DIR=$(PWD)/tinycbor
+TINYCBOR_DIR=$(PWD)/contrib/tinycbor
 TINYCBOR_LIB=libtinycbor.a
 
 
@@ -25,13 +25,13 @@ DEPS = $(wildcard ${OBJDIR}/*.d)
 
 
 GITDESC=$(shell git describe --tags --dirty)
-CFLAGS+=-I src/ -Wall -Wextra -Werror -g -std=c11 -DGIT_DESCRIBE=\"${GITDESC}\"
+CFLAGS+=-I src/ -Wall -Wextra -g -std=c11 -DGIT_DESCRIBE=\"${GITDESC}\"
 CFLAGS+=-I ${TINYCBOR_DIR}/src
 LDFLAGS+= -lm -L${OBJDIR} -l:${TINYCBOR_LIB}
 
-OPENCM3_DIR=$(PWD)/libopencm3
+OPENCM3_DIR=$(PWD)/contrib/libopencm3
 
-VPATH=src src/platforms
+VPATH=src src/platforms src/platforms/${PLATFORM}
 DESTOBJS = $(addprefix ${OBJDIR}/, ${OBJS})
 
 $(OBJDIR):
@@ -39,6 +39,9 @@ $(OBJDIR):
 
 $(OBJDIR)/%.o: %.c
 	${CC} ${CFLAGS} -MMD -c -o $@ $<
+
+$(OBJDIR)/%.o: %.s
+	${AS} -c -o $@ $<
 
 $(OBJDIR)/viaems: ${OBJDIR} ${DESTOBJS} ${OBJDIR}/${TINYCBOR_LIB} ${OBJDIR}/viaems.o
 	${CC} -o $@ ${CFLAGS} ${DESTOBJS} ${OBJDIR}/viaems.o ${LDFLAGS}
@@ -52,7 +55,7 @@ ${OBJDIR}/${TINYCBOR_LIB}:
 	cp ${TINYCBOR_DIR}/lib/${TINYCBOR_LIB} ${OBJDIR}
 
 format:
-	clang-format -i src/*.c src/*.h src/platforms/*.c
+	clang-format -i src/*.c src/*.h src/platforms/*.c src/platforms/*/*.c
 
 lint:
 	clang-tidy src/*.c -- ${CFLAGS}
@@ -61,6 +64,5 @@ benchmark: $(OBJDIR)/benchmark
 
 clean:
 	-rm ${OBJDIR}/*
-
 
 .PHONY: clean lint format integration benchmark

@@ -42,7 +42,6 @@ void enable_interrupts(void);
 bool interrupts_enabled(void);
 
 void set_output(int output, char value);
-int get_output(int output);
 void set_gpio(int output, char value);
 int get_gpio(int output);
 void set_pwm(int output, float percent);
