@@ -25,7 +25,7 @@ uint64_t cycles_to_ns(uint64_t cycles);
  * called. This is done by:
  * 1) Disable any pending timer event
  * 2) Set the event timer and enable it
- * 3) Check if the event is now in the past, and if so set it pending 
+ * 3) Check if the event is now in the past, and if so set it pending
  */
 void schedule_event_timer(timeval_t);
 
@@ -55,9 +55,6 @@ void platform_save_config(void);
 void platform_enable_event_logging(void);
 void platform_disable_event_logging(void);
 void platform_reset_into_bootloader(void);
-
-void set_test_trigger_rpm(uint32_t rpm);
-uint32_t get_test_trigger_rpm(void);
 
 /* Returns the earliest time that may still be scheduled.  This can only change
  * when buffers are swapped, so it is safe to use this value to schedule events

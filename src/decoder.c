@@ -288,7 +288,7 @@ static uint32_t missing_tooth_average_rpm(const struct decoder *d) {
   if (d->current_triggers_rpm >= d->num_triggers) {
     if (d->triggers_since_last_sync == 0) {
       return rpm_from_time_diff(d->times[0] - d->times[d->num_triggers - 1],
-                                  d->num_triggers * d->degrees_per_trigger);
+                                d->num_triggers * d->degrees_per_trigger);
     } else {
       return d->rpm;
     }

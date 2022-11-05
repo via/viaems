@@ -107,14 +107,6 @@ void adc_gather(void *_adc) {
   (void)_adc;
 }
 
-void set_test_trigger_rpm(uint32_t rpm) {
-  (void)rpm;
-}
-
-uint32_t get_test_trigger_rpm() {
-  return 0;
-}
-
 void platform_save_config() {}
 
 void platform_load_config() {}

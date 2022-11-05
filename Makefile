@@ -15,6 +15,7 @@ OBJS += calculations.o \
 				sensors.o \
 				table.o \
 				tasks.o \
+				sim.o \
 				util.o
 
 include targets/${PLATFORM}.mk
