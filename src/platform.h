@@ -1,5 +1,6 @@
 #ifndef _PLATFORM_H
 #define _PLATFORM_H
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -38,7 +39,7 @@ void platform_benchmark_init(void);
 
 void disable_interrupts(void);
 void enable_interrupts(void);
-int interrupts_enabled(void);
+bool interrupts_enabled(void);
 
 void set_output(int output, char value);
 int get_output(int output);
