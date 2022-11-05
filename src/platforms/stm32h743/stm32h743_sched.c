@@ -110,6 +110,23 @@ void disable_event_timer() {
   clear_event_timer();
 }
 
+void schedule_event_timer(timeval_t time) {
+  assert(!interrupts_enabled());
+  /* Clear out any pending interrupt */
+  TIM2->DIER &= ~TIM_DIER_CC4IE;
+  TIM2->SR &= ~TIM_SR_CC4IF;
+
+  /* Set timer and enable interrupt */
+  TIM2->CCR4 = time;
+  TIM2->DIER |= TIM_DIER_CC4IE;
+
+  /* If time is prior to now, we may have missed it, set the interrupt pending
+   * just in case */
+  if (time_before_or_equal(time, current_time())) {
+    TIM2->EGR = TIM_EGR_CC4G;
+  }
+}
+
 static void setup_tim2(void) {
   TIM2->CR1 = TIM_CR1_UDIS;               /* Upcounting, no update event */
   TIM2->SMCR = TIM_SMCR_TS_0 |            /* Trigger ITR1 is TIM8's TRGO */

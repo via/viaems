@@ -463,9 +463,9 @@ void render_float_object(struct console_request_context *ctx,
 }
 
 void render_bool_map_field(struct console_request_context *ctx,
-                             const char *id,
-                             const char *description,
-                             bool *ptr) {
+                           const char *id,
+                           const char *description,
+                           bool *ptr) {
   struct console_request_context deeper;
   if (descend_map_field(ctx, &deeper, id)) {
     render_bool_object(&deeper, description, ptr);
@@ -473,8 +473,8 @@ void render_bool_map_field(struct console_request_context *ctx,
 }
 
 void render_bool_object(struct console_request_context *ctx,
-                          const char *description,
-                          bool *ptr) {
+                        const char *description,
+                        bool *ptr) {
   switch (ctx->type) {
   case CONSOLE_SET:
     if (cbor_value_is_boolean(&ctx->value)) {

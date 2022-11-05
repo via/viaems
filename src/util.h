@@ -6,6 +6,7 @@
 
 timeval_t time_diff(timeval_t t1, timeval_t t2);
 bool time_before(timeval_t n, timeval_t x);
+bool time_before_or_equal(timeval_t n, timeval_t x);
 timeval_t time_from_us(unsigned int us);
 unsigned int rpm_from_time_diff(timeval_t t1, degrees_t degrees);
 timeval_t time_from_rpm_diff(unsigned int rpm, degrees_t degrees);

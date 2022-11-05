@@ -103,7 +103,6 @@ static void do_sensor_single_therm() {
 
 int main() {
   platform_benchmark_init();
-  initialize_scheduler();
 
   /* Preparations for all benchmarks */
   config.sensors[SENSOR_IAT].processed_value = 15.0f;

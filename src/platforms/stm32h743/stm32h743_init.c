@@ -51,14 +51,6 @@ void set_gpio(int output, char value) {
   }
 }
 
-void set_test_trigger_rpm(uint32_t rpm) {
-  (void)rpm;
-}
-
-uint32_t get_test_trigger_rpm() {
-  return 0;
-}
-
 int __attribute__((externally_visible))
 _write(int fd, const char *buf, size_t count) {
   (void)fd;

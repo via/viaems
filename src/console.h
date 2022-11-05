@@ -4,6 +4,7 @@
 #include <cbor.h>
 
 #include "platform.h"
+#include "sim.h"
 
 struct logged_event {
   timeval_t time;
@@ -48,9 +49,9 @@ void render_uint32_map_field(struct console_request_context *ctx,
                              uint32_t *ptr);
 
 void render_bool_map_field(struct console_request_context *ctx,
-                             const char *id,
-                             const char *description,
-                             bool *ptr);
+                           const char *id,
+                           const char *description,
+                           bool *ptr);
 
 void render_float_map_field(struct console_request_context *ctx,
                             const char *id,
@@ -91,8 +92,8 @@ void render_float_object(struct console_request_context *ctx,
                          const char *description,
                          float *ptr);
 void render_bool_object(struct console_request_context *ctx,
-                          const char *description,
-                          bool *ptr);
+                        const char *description,
+                        bool *ptr);
 
 void render_map_object(struct console_request_context *ctx,
                        console_renderer map_renderer,

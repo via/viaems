@@ -13,7 +13,9 @@
 #include "util.h"
 
 static timeval_t curtime = 0;
-static timeval_t cureventtime = 0;
+static timeval_t event_timer_time = 0;
+static bool event_timer_enabled = false;
+bool event_timer_pending = false;
 static int int_disables = 0;
 static int output_states[16] = { 0 };
 static int gpio_states[16] = { 0 };
@@ -29,10 +31,18 @@ void set_pwm(int pin, float val) {
   (void)val;
 }
 
+void schedule_event_timer(timeval_t t) {
+  event_timer_pending = false;
+  event_timer_time = t;
+  event_timer_enabled = true;
+  if (time_before_or_equal(t, current_time())) {
+    event_timer_pending = true;
+  }
+}
+
 void check_platform_reset() {
   curtime = 0;
   memset(config.events, 0, sizeof(config.events));
-  initialize_scheduler();
 }
 
 void disable_interrupts() {
@@ -73,22 +83,6 @@ void set_current_time(timeval_t t) {
   curtime = t;
 }
 
-void set_event_timer(timeval_t t) {
-  cureventtime = t;
-}
-
-timeval_t get_event_timer() {
-  return cureventtime;
-}
-
-void clear_event_timer() {
-  cureventtime = 0;
-}
-
-void disable_event_timer() {
-  cureventtime = 0;
-}
-
 bool interrupts_enabled() {
   return int_disables == 0;
 }
@@ -111,14 +105,6 @@ int get_gpio(int output) {
 
 void adc_gather(void *_adc) {
   (void)_adc;
-}
-
-void set_test_trigger_rpm(uint32_t rpm) {
-  (void)rpm;
-}
-
-uint32_t get_test_trigger_rpm() {
-  return 0;
 }
 
 void platform_save_config() {}

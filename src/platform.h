@@ -21,11 +21,17 @@ timeval_t current_time(void);
 uint64_t cycle_count(void);
 uint64_t cycles_to_ns(uint64_t cycles);
 
-void set_event_timer(timeval_t);
-timeval_t get_event_timer(void);
-/* Clear any pending interrupt */
+/* Set event timer to fire at given time. Timer will immediately be scheduled to
+ * fire if the time has already passed -- the callback is gauranteed to be
+ * called. This is done by:
+ * 1) Disable any pending timer event
+ * 2) Set the event timer and enable it
+ * 3) Check if the event is now in the past, and if so set it pending
+ */
+void schedule_event_timer(timeval_t);
+
+/* Clear any pending timer */
 void clear_event_timer(void);
-void disable_event_timer(void);
 
 void platform_init();
 /* Benchmark init is minimum necessary to use platform for benchmark */
@@ -49,9 +55,6 @@ void platform_save_config(void);
 void platform_enable_event_logging(void);
 void platform_disable_event_logging(void);
 void platform_reset_into_bootloader(void);
-
-void set_test_trigger_rpm(uint32_t rpm);
-uint32_t get_test_trigger_rpm(void);
 
 /* Returns the earliest time that may still be scheduled.  This can only change
  * when buffers are swapped, so it is safe to use this value to schedule events
