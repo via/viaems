@@ -83,7 +83,7 @@ void set_current_time(timeval_t t) {
   curtime = t;
 }
 
-int interrupts_enabled() {
+bool interrupts_enabled() {
   return int_disables == 0;
 }
 
