@@ -46,13 +46,9 @@ static void execute_test_trigger(void *_w) {
 
   timeval_t ev_time = test_trigger_callback.time;
   struct test_wheel_event wheel_ev = test_wheel_Nminus1_next();
-  struct decoder_event ev = {
-    .trigger = wheel_ev.trigger,
-    .time = ev_time,
-  };
 
   /* Handle current */
-  decoder_update_scheduling(&ev, 1);
+  decoder_update_scheduling(wheel_ev.trigger, ev_time);
 
   /* Schedule next */
   timeval_t delay = time_from_rpm_diff(test_trigger_rpm, wheel_ev.degrees);
