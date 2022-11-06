@@ -226,7 +226,8 @@ static int schedule_fuel_event(struct output_event *ev,
    * time for the event, lets also schedule a callback to reschedule it when it
    * fires immediately.  This allows fuel events to use close to 100% duty cycle
    * without having to wait until the next trigger for rescheduling */
-  if (ev->stop.state == SCHED_SCHEDULED) {
+  if (ev->stop.state == SCHED_SCHEDULED &&
+      !time_before(ev->stop.time, current_time())) {
     ev->callback.callback = (void (*)(void *))schedule_event;
     ev->callback.data = ev;
     schedule_callback(&ev->callback, ev->stop.time);
