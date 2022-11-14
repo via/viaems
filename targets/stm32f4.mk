@@ -6,7 +6,7 @@ OBJCOPY=arm-none-eabi-objcopy
 CM3_LIB=libopencm3_stm32f4.a
 
 OBJS+= ${CM3_LIB}
-OBJS+= stm32f4-discovery.o
+OBJS+= stm32f4-discovery.o stm32_sched_buffers.o
 OBJS+= libssp.a libssp_nonshared.a
 
 CFLAGS+= -D TICKRATE=4000000 -DNDEBUG -ffunction-sections -fdata-sections

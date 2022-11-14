@@ -25,13 +25,13 @@ DEPS = $(wildcard ${OBJDIR}/*.d)
 
 
 GITDESC=$(shell git describe --tags --dirty)
-CFLAGS+=-I src/ -Wall -Wextra -Werror -g -std=c11 -DGIT_DESCRIBE=\"${GITDESC}\"
-CFLAGS+=-I ${TINYCBOR_DIR}/src
+CFLAGS+=-Isrc/ -Isrc/platforms/common -Wall -Wextra -g -std=c11 -DGIT_DESCRIBE=\"${GITDESC}\"
+CFLAGS+=-I${TINYCBOR_DIR}/src
 LDFLAGS+= -lm -L${OBJDIR} -l:${TINYCBOR_LIB}
 
 OPENCM3_DIR=$(PWD)/contrib/libopencm3
 
-VPATH=src src/platforms
+VPATH+=src src/platforms src/platforms/common
 DESTOBJS = $(addprefix ${OBJDIR}/, ${OBJS})
 
 $(OBJDIR):

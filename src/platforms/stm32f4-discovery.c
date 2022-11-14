@@ -1,3 +1,10 @@
+#include <stdatomic.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+#include <assert.h>
+
 #include <libopencm3/cm3/cortex.h>
 #include <libopencm3/cm3/dwt.h>
 #include <libopencm3/cm3/nvic.h>
@@ -25,12 +32,8 @@
 #include "tasks.h"
 #include "util.h"
 
-#include <stdatomic.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
+#include "stm32_sched_buffers.h"
 
-#include <assert.h>
 /* Hardware setup:
  *  Discovery board LEDs:
  *  LD3 - Orange - PD13
@@ -244,51 +247,6 @@ void set_pwm(int output, float percent) {
   case 4:
     return timer_set_oc_value(TIM3, TIM_OC4, ival);
   }
-}
-
-#define NUM_SLOTS 128
-/* GPIO BSRR is 16 bits of "on" mask and 16 bits of "off" mask */
-struct output_slot {
-  uint16_t on;
-  uint16_t off;
-} __attribute__((packed)) __attribute((aligned(4)));
-
-struct output_buffer {
-  timeval_t first_time; /* First time represented by the range */
-  struct output_slot slots[NUM_SLOTS];
-};
-
-static struct output_buffer output_buffers[2] = { 0 };
-static int current_buffer = 0;
-
-static void platform_output_slot_unset(struct output_slot *slots,
-                                       uint32_t index,
-                                       uint32_t pin,
-                                       bool value) {
-  if (value) {
-    slots[index].on &= ~(1 << pin);
-  } else {
-    slots[index].off &= ~(1 << pin);
-  }
-}
-
-static void platform_output_slot_set(struct output_slot *slots,
-                                     uint32_t index,
-                                     uint32_t pin,
-                                     bool value) {
-  if (value) {
-    slots[index].on |= (1 << pin);
-  } else {
-    slots[index].off |= (1 << pin);
-  }
-}
-
-/* Return the first time that is gauranteed to be changable.  We use a circular
- * pair of buffers: We can't change the current buffer, and its likely the next
- * buffer's time range is already submitted, so use the time after that.
- */
-timeval_t platform_output_earliest_schedulable_time() {
-  return output_buffers[current_buffer].first_time + NUM_SLOTS * 2;
 }
 
 static void platform_init_scheduled_outputs() {
@@ -970,78 +928,12 @@ void tim2_isr() {
     scheduler_callback_timer_execute();
   }
 }
-
-/* Retire all stop/stop events that are in the time range of our "completed"
- * buffer and were previously submitted by setting them to "fired" and clearing
- * out the dma bits */
-static void retire_output_buffer(struct output_buffer *buf) {
-  timeval_t offset_from_start;
-  for (int i = 0; i < MAX_EVENTS; i++) {
-    struct output_event *oev = &config.events[i];
-
-    offset_from_start = oev->start.time - buf->first_time;
-    if (sched_entry_get_state(&oev->start) == SCHED_SUBMITTED &&
-        offset_from_start < NUM_SLOTS) {
-      platform_output_slot_unset(
-        buf->slots, offset_from_start, oev->start.pin, oev->start.val);
-      sched_entry_set_state(&oev->start, SCHED_FIRED);
-    }
-
-    offset_from_start = oev->stop.time - buf->first_time;
-    if (sched_entry_get_state(&oev->stop) == SCHED_SUBMITTED &&
-        offset_from_start < NUM_SLOTS) {
-      platform_output_slot_unset(
-        buf->slots, offset_from_start, oev->stop.pin, oev->stop.val);
-      sched_entry_set_state(&oev->stop, SCHED_FIRED);
-    }
-  }
-}
-
-/* Any scheduled start/stop event in the time range for the new buffer can be
- * "submitted" and the dma bits set */
-static void populate_output_buffer(struct output_buffer *buf) {
-  timeval_t offset_from_start;
-  for (int i = 0; i < MAX_EVENTS; i++) {
-    struct output_event *oev = &config.events[i];
-    offset_from_start = oev->start.time - buf->first_time;
-    if (sched_entry_get_state(&oev->start) == SCHED_SCHEDULED &&
-        offset_from_start < NUM_SLOTS) {
-      platform_output_slot_set(
-        buf->slots, offset_from_start, oev->start.pin, oev->start.val);
-      sched_entry_set_state(&oev->start, SCHED_SUBMITTED);
-    }
-    offset_from_start = oev->stop.time - buf->first_time;
-    if (sched_entry_get_state(&oev->stop) == SCHED_SCHEDULED &&
-        offset_from_start < NUM_SLOTS) {
-      platform_output_slot_set(
-        buf->slots, offset_from_start, oev->stop.pin, oev->stop.val);
-      sched_entry_set_state(&oev->stop, SCHED_SUBMITTED);
-    }
-  }
-}
-
-static timeval_t round_time_to_buffer_start(timeval_t time) {
-  timeval_t time_since_buffer_start = time % NUM_SLOTS;
-  return time - time_since_buffer_start;
-}
-
-static void platform_buffer_swap() {
-  struct output_buffer *buf = &output_buffers[current_buffer];
-  current_buffer = (current_buffer + 1) % 2;
-
-  retire_output_buffer(buf);
-
-  buf->first_time = round_time_to_buffer_start(current_time()) + NUM_SLOTS;
-
-  populate_output_buffer(buf);
-}
-
 void dma2_stream1_isr(void) {
   if (dma_get_interrupt_flag(DMA2, DMA_STREAM1, DMA_TCIF)) {
     dma_clear_interrupt_flags(DMA2, DMA_STREAM1, DMA_TCIF);
-    platform_buffer_swap();
+    stm32_buffer_swap();
 
-    if (current_buffer != dma_get_target(DMA2, DMA_STREAM1)) {
+    if (stm32_current_buffer() != dma_get_target(DMA2, DMA_STREAM1)) {
       /* We have overflowed or gone out of sync, abort immediately */
       abort();
     }

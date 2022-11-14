@@ -87,6 +87,7 @@ SECTIONS {
 	.data : {
 		_data = .;
 		*(.data*)	/* Read-write initialized data */
+		*(.dmadata*)	/* DMA regions, no different from normal data on stm32f4 */
 		. = ALIGN(4);
 		_edata = .;
 	} >ram AT >rom
