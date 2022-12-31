@@ -34,6 +34,7 @@ Features:
 6. [Simulation](#simulation)
 7. [Hardware](#hardware)
     1. [STM32F4](#stm32f4)
+    2. [GD32F470](src/platforms/gd32f470/README.md).
 
 ## Decoding
 Currently the only two decoders styles implemented are even-tooth and
@@ -251,7 +252,7 @@ otherwise constrain it to a single cpu.
 # Hardware
 The current primary hardware platform is an ST Micro STM32F407VGT
 microcontroller.  There are a few non-production-ready hardware designs
-available under https://github.com/via/tfi-board, though I would recommend
+available under https://github.com/via/viaems-boards, though I would recommend
 anyone attempting to use those designs contact me.  The STM32F4-DISCOVERY board
 *can* be used with this firmware, with appropriate extra hardware for vehicle
 interfacing.
@@ -274,4 +275,3 @@ ADC | `PB12`, `PB13`, `PB14`, and `PB15`
 OUT | `PD0`-`PD15`
 GPIO | `PE0`-`PE15`
 PWM | `PC6`, `PC7`, `PC8`, and `PC9` (currently all fixed at same frequenty)
-
