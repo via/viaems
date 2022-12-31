@@ -62,6 +62,10 @@ uint64_t cycle_count() {
   return 0;
 }
 
+uint64_t cycles_to_ns(uint64_t cycles) {
+  return cycles;
+}
+
 timeval_t platform_output_earliest_schedulable_time() {
   /* Round/floor to nearest 128-time buffer start, then use next one */
   return curtime + 1;
