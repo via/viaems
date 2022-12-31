@@ -61,7 +61,7 @@ void set_test_trigger_rpm(uint32_t rpm) {
   test_trigger_rpm = rpm;
   test_trigger_callback.callback = execute_test_trigger;
   test_trigger_callback.data = NULL;
-  schedule_callback(&test_trigger_callback, current_time());
+  schedule_callback(&test_trigger_callback, current_time() + 10000);
 }
 
 uint32_t get_test_trigger_rpm() {
