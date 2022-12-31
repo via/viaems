@@ -19,8 +19,7 @@ static void do_fuel_calculation_bench() {
   uint64_t start = cycle_count();
   calculate_fueling();
   uint64_t end = cycle_count();
-  printf("calculate_fueling: %llu ns\r\n",
-         (unsigned long long)cycles_to_ns(end - start));
+  printf("calculate_fueling: %d ns\r\n", (int)cycles_to_ns(end - start));
 }
 
 static void do_schedule_ignition_event_bench() {
@@ -39,24 +38,22 @@ static void do_schedule_ignition_event_bench() {
   uint64_t end = cycle_count();
   assert(config.events[0].start.state == SCHED_SCHEDULED);
 
-  printf("fresh ignition schedule_event: %llu ns\r\n",
-         (unsigned long long)cycles_to_ns(end - start));
+  printf("fresh ignition schedule_event: %d ns\r\n",
+         (int)cycles_to_ns(end - start));
 
   calculated_values.timing_advance = 25.0f;
   start = cycle_count();
   schedule_event(&config.events[0]);
   end = cycle_count();
 
-  printf("backward schedule_event: %llu ns\r\n",
-         (unsigned long long)cycles_to_ns(end - start));
+  printf("backward schedule_event: %d ns\r\n", (int)cycles_to_ns(end - start));
 
   calculated_values.timing_advance = 15.0f;
   start = cycle_count();
   schedule_event(&config.events[0]);
   end = cycle_count();
 
-  printf("forward schedule_event: %llu ns\r\n",
-         (unsigned long long)cycles_to_ns(end - start));
+  printf("forward schedule_event: %d ns\r\n", (int)cycles_to_ns(end - start));
 }
 
 static void do_sensor_adc_calcs() {
@@ -68,8 +65,7 @@ static void do_sensor_adc_calcs() {
   sensors_process(SENSOR_ADC);
   uint64_t end = cycle_count();
 
-  printf("process_sensor(adc): %llu ns\r\n",
-         (unsigned long long)cycles_to_ns(end - start));
+  printf("process_sensor(adc): %d ns\r\n", (int)cycles_to_ns(end - start));
 }
 
 static void do_sensor_single_therm() {
@@ -97,8 +93,8 @@ static void do_sensor_single_therm() {
   sensors_process(SENSOR_ADC);
   uint64_t end = cycle_count();
 
-  printf("process_sensor(single-therm): %llu ns\r\n",
-         (unsigned long long)cycles_to_ns(end - start));
+  printf("process_sensor(single-therm): %d ns\r\n",
+         (int)cycles_to_ns(end - start));
 }
 
 int main() {
