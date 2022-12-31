@@ -1,6 +1,6 @@
 [submodule "libopencm3"]
-	path = libopencm3
+	path = contrib/libopencm3
 	url = https://github.com/libopencm3/libopencm3
 [submodule "tinycbor"]
-	path = tinycbor
+	path = contrib/tinycbor
 	url = https://github.com/intel/tinycbor
