@@ -1,7 +1,7 @@
 PLATFORM?=stm32f4
 OBJDIR=obj/${PLATFORM}
 
-TINYCBOR_DIR=$(PWD)/tinycbor
+TINYCBOR_DIR=$(PWD)/contrib/tinycbor
 TINYCBOR_LIB=libtinycbor.a
 
 
@@ -29,7 +29,7 @@ CFLAGS+=-I src/ -Wall -Wextra -Werror -g -std=c11 -DGIT_DESCRIBE=\"${GITDESC}\"
 CFLAGS+=-I ${TINYCBOR_DIR}/src
 LDFLAGS+= -lm -L${OBJDIR} -l:${TINYCBOR_LIB}
 
-OPENCM3_DIR=$(PWD)/libopencm3
+OPENCM3_DIR=$(PWD)/contrib/libopencm3
 
 VPATH=src src/platforms
 DESTOBJS = $(addprefix ${OBJDIR}/, ${OBJS})
