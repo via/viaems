@@ -337,11 +337,11 @@ static size_t console_try_read() {
   }
   /* If we have the start of a valid object (as per the cbor_value_is_map check
    * above, but not enough to decode the whole object, return but do not reset
-   * unless 1s has passed. This is a balance between allowing time for messages
+   * unless 5s has passed. This is a balance between allowing time for messages
    * to arrive but not locking up communications due to some garbage */
   case CborErrorAdvancePastEOF:
   case CborErrorUnexpectedEOF:
-    if (current_time() - rx_start_time > time_from_us(1000000)) {
+    if (current_time() - rx_start_time > time_from_us(5000000)) {
       rx_buffer_size = 0;
     }
     /* Alternatively, if we've filled up, waiting longer will not work, reset */
