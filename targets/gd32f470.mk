@@ -3,6 +3,7 @@ CC=arm-none-eabi-gcc
 AR=arm-none-eabi-ar
 LD=arm-none-eabi-ld
 OBJCOPY=arm-none-eabi-objcopy
+SPI_ADC?=TLV2553
 
 CMSIS=contrib/CMSIS_5
 GDLIB=contrib/GD32F4xx_Firmware_Library
@@ -76,6 +77,7 @@ CFLAGS+= -I${GDLIB}/GD32F4xx_usb_library/device/class/cdc/Include
 CFLAGS+= -I${GDLIB}/GD32F4xx_usb_library/ustd/common
 CFLAGS+= -I${GDLIB}/GD32F4xx_usb_library/ustd/class/cdc
 CFLAGS+= -DGD32F470 -D TICKRATE=4000000
+CFLAGS+= -DSPI_${SPI_ADC}
 
 LDFLAGS+= -lc -lnosys -nostartfiles -L ${OBJDIR} -Wl,--gc-sections
 LDFLAGS+= -T src/platforms/gd32f470/gd32f470.ld

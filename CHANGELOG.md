@@ -3,6 +3,7 @@
  - Implement simpler and easier-to-understand scheduler
  - Relicense to GPLv3
  - Add new platform: gd32f470
+ - Add support for TLV2553 ADC, and remove support for the TLC2543
 
 ### 1.4.0 (2022 Feb 16)
 This introduces a breaking change with interface software.

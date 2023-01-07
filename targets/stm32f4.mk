@@ -2,6 +2,7 @@ CC=arm-none-eabi-gcc
 AR=arm-none-eabi-ar
 LD=arm-none-eabi-ld
 OBJCOPY=arm-none-eabi-objcopy
+SPI_ADC?=AD7888
 
 CM3_LIB=libopencm3_stm32f4.a
 
@@ -12,6 +13,7 @@ OBJS+= libssp.a libssp_nonshared.a
 CFLAGS+= -D TICKRATE=4000000 -DNDEBUG -ffunction-sections -fdata-sections
 CFLAGS+= -I${OPENCM3_DIR}/include -DSTM32F4 -O3
 CFLAGS+= -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mthumb -mcpu=cortex-m4
+CFLAGS+= -DSPI_${SPI_ADC}
 
 LDFLAGS+= -lc -lnosys -L ${OBJDIR} -l:${CM3_LIB} -Wl,--gc-sections
 LDFLAGS+= -T src/platforms/stm32f4-discovery.ld -nostartfiles

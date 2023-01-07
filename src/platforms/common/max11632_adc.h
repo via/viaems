@@ -12,7 +12,7 @@
  * sets the setup register. The order allows the last command to be a NOP, and
  * thus sample results don't cross buffer boundaries
  * */
-static const uint16_t max11632_transmit_sequence[NUM_SPI_TX] = {
+static const uint16_t adc_transmit_sequence[NUM_SPI_TX] = {
   SPI_SETUP,     SPI_INPUT(2), SPI_INPUT(3),  SPI_INPUT(0),  SPI_INPUT(1),
   SPI_INPUT(4),  SPI_INPUT(5), SPI_INPUT(6),  SPI_INPUT(7),  SPI_INPUT(0),
   SPI_INPUT(1),  SPI_INPUT(8), SPI_INPUT(9),  SPI_INPUT(10), SPI_INPUT(11),
@@ -61,5 +61,12 @@ static inline uint16_t read_adc_pin(const uint16_t *values, int pin) {
     return 0;
   }
 }
+
+/* MAX11632 has no self check inputs */
+bool adc_response_is_valid(const uint16_t *values) {
+  (void)values;
+  return true;
+}
+
 
 #endif

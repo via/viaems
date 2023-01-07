@@ -352,67 +352,21 @@ void exti15_10_isr() {
  * on counter update to TX on SPI2.  When the full 16 bits is transmitted and
  * the SPI RX buffer is filled, the RX DMA event will fill, and populate
  * spi_rx_raw_adc.
- *
- * When configured for the TLC2543, currently using 10 inputs, spi_tx_list
- * contains the 16bit data words to trigger reads on AIN0-AIN10 and vref/2 on
- * the TLC2543.  The AD7888 has no self checkable channels, and is configured
- * for 8 inputs. DMA is set up such that each channel is sampled in order.  DMA
- * RX is set up accordingly, but note that because the ADC returns the previous
- * sample result each time, command 1 in spi_tx_list corresponds to response 2
- * in spi_rx_raw_adc, and so forth.
- *
- * Currently sample rate is about 70 khz, with a SPI bus frequency of 1.3ish MHz
- *
- * Each call to start_adc_sampling reconfigures TX DMA, resets and starts TIM7,
- * and lowers CS Once all 13 receives are complete, RX dma completes, notifies
- * completion, and raises CS.
  */
-#ifdef SPI_TLC2543
-#define SPI_WRITE_COUNT 13
-#else
-#define SPI_WRITE_COUNT 9
-#endif
-static volatile uint16_t spi_rx_raw_adc[SPI_WRITE_COUNT] = { 0 };
 
-void start_adc_sampling() {
-#ifdef SPI_TLC2543
-  static const uint16_t spi_tx_list[] = {
-    0x0C00, 0x1C00, 0x2C00, 0x3C00, 0x4C00, 0x5C00, 0x6C00,
-    0x7C00, 0x8C00, 0x9C00, 0xAC00, 0xBC00, /* Check value (Vref+ + Vref-) / 2
-                                             */
-    0xBC00, /* Duplicated to actually get previous read */
-  };
+#ifdef SPI_AD7888
+#include "ad7888_adc.h"
+#define SPI_FREQ_DIVIDER SPI_CR1_BAUDRATE_FPCLK_DIV_32 /* 1.3125 MHz */
+#define SPI_SAMPLE_RATE 70000
+#elif SPI_TLV2553
+#include "tlv2553_adc.h"
+#define SPI_FREQ_DIVIDER SPI_CR1_BAUDRATE_FPCLK_DIV_4 /* 10.5 MHz */
+#define SPI_SAMPLE_RATE 150000
 #else
-  static const uint16_t spi_tx_list[] = {
-    0x0400, 0x0C00, 0x1400, 0x1C00, 0x2400, 0x2C00, 0x3400, 0x3C00, 0x3C00,
-  };
+#error No ADC specified!
 #endif
 
-  timer_set_counter(TIM7, 0);
-  /* CS low */
-  gpio_clear(GPIOB, GPIO12);
-
-  /* Set up DMA for SPI TX */
-  dma_stream_reset(DMA1, DMA_STREAM2);
-  dma_set_priority(DMA1, DMA_STREAM2, DMA_SxCR_PL_LOW);
-  dma_set_memory_size(DMA1, DMA_STREAM2, DMA_SxCR_MSIZE_16BIT);
-  dma_set_peripheral_size(DMA1, DMA_STREAM2, DMA_SxCR_PSIZE_16BIT);
-  dma_enable_memory_increment_mode(DMA1, DMA_STREAM2);
-  dma_set_transfer_mode(DMA1, DMA_STREAM2, DMA_SxCR_DIR_MEM_TO_PERIPHERAL);
-  dma_set_peripheral_address(DMA1, DMA_STREAM2, (uint32_t)&SPI2_DR);
-  dma_set_memory_address(DMA1, DMA_STREAM2, (uint32_t)spi_tx_list);
-  dma_set_number_of_data(
-    DMA1, DMA_STREAM2, sizeof(spi_tx_list) / sizeof(spi_tx_list[0]));
-  dma_channel_select(DMA1, DMA_STREAM2, DMA_SxCR_CHSEL_1);
-  dma_enable_direct_mode(DMA1, DMA_STREAM2);
-  dma_enable_stream(DMA1, DMA_STREAM2);
-
-  timer_enable_counter(TIM7);
-  timer_enable_update_event(TIM7);
-  timer_update_on_overflow(TIM7);
-  timer_set_dma_on_update_event(TIM7);
-  TIM7_DIER |= TIM_DIER_UDE; /* Enable update dma */
-}
+static volatile uint16_t spi_rx_raw_adc[2][NUM_SPI_TX] = { 0 };
 
 static void platform_init_spi_adc() {
   /* Configure SPI output */
@@ -421,13 +375,13 @@ static void platform_init_spi_adc() {
   gpio_set_af(GPIOB, GPIO_AF5, GPIO13 | GPIO14 | GPIO15);
   gpio_mode_setup(GPIOB, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO12);
   gpio_set_output_options(GPIOB, GPIO_OTYPE_PP, GPIO_OSPEED_100MHZ, GPIO12);
-  gpio_set(GPIOB, GPIO12);
+  gpio_clear(GPIOB, GPIO12);
   spi_disable(SPI2);
   spi_reset(SPI2);
   spi_enable_software_slave_management(SPI2);
   spi_set_nss_high(SPI2);
   spi_init_master(SPI2,
-                  SPI_CR1_BAUDRATE_FPCLK_DIV_32,
+                  SPI_FREQ_DIVIDER,
                   SPI_CR1_CPOL_CLK_TO_0_WHEN_IDLE,
                   SPI_CR1_CPHA_CLK_TRANSITION_1,
                   SPI_CR1_DFF_16BIT,
@@ -445,9 +399,10 @@ static void platform_init_spi_adc() {
   dma_enable_memory_increment_mode(DMA1, DMA_STREAM3);
   dma_set_transfer_mode(DMA1, DMA_STREAM3, DMA_SxCR_DIR_PERIPHERAL_TO_MEM);
   dma_set_peripheral_address(DMA1, DMA_STREAM3, (uint32_t)&SPI2_DR);
-  dma_enable_circular_mode(DMA1, DMA_STREAM3);
-  dma_set_memory_address(DMA1, DMA_STREAM3, (uint32_t)spi_rx_raw_adc);
-  dma_set_number_of_data(DMA1, DMA_STREAM3, SPI_WRITE_COUNT);
+  dma_enable_double_buffer_mode(DMA1, DMA_STREAM3);
+  dma_set_memory_address(DMA1, DMA_STREAM3, (uint32_t)spi_rx_raw_adc[0]);
+  dma_set_memory_address_1(DMA1, DMA_STREAM3, (uint32_t)spi_rx_raw_adc[1]);
+  dma_set_number_of_data(DMA1, DMA_STREAM3, NUM_SPI_TX);
   dma_channel_select(DMA1, DMA_STREAM3, DMA_SxCR_CHSEL_0);
   dma_enable_direct_mode(DMA1, DMA_STREAM3);
   dma_enable_transfer_complete_interrupt(DMA1, DMA_STREAM3);
@@ -458,7 +413,8 @@ static void platform_init_spi_adc() {
 
   /* Configure TIM7 to drive DMA for SPI */
   timer_set_mode(TIM7, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
-  timer_set_period(TIM7, 1200); /* Approx 75 khz sampling rate */
+  const uint32_t period = (84000000 / SPI_SAMPLE_RATE) - 1;
+  timer_set_period(TIM7, period);
   timer_disable_preload(TIM7);
   timer_continuous_mode(TIM7);
   /* Setup output compare registers */
@@ -469,7 +425,49 @@ static void platform_init_spi_adc() {
 
   timer_set_prescaler(TIM7, 0);
 
-  start_adc_sampling();
+  /* Set up DMA for SPI TX */
+  dma_stream_reset(DMA1, DMA_STREAM2);
+  dma_set_priority(DMA1, DMA_STREAM2, DMA_SxCR_PL_LOW);
+  dma_set_memory_size(DMA1, DMA_STREAM2, DMA_SxCR_MSIZE_16BIT);
+  dma_set_peripheral_size(DMA1, DMA_STREAM2, DMA_SxCR_PSIZE_16BIT);
+  dma_enable_circular_mode(DMA1, DMA_STREAM2);
+  dma_enable_memory_increment_mode(DMA1, DMA_STREAM2);
+  dma_set_transfer_mode(DMA1, DMA_STREAM2, DMA_SxCR_DIR_MEM_TO_PERIPHERAL);
+  dma_set_peripheral_address(DMA1, DMA_STREAM2, (uint32_t)&SPI2_DR);
+  dma_set_memory_address(DMA1, DMA_STREAM2, (uint32_t)adc_transmit_sequence);
+  dma_set_number_of_data(DMA1, DMA_STREAM2, NUM_SPI_TX);
+  dma_channel_select(DMA1, DMA_STREAM2, DMA_SxCR_CHSEL_1);
+  dma_enable_direct_mode(DMA1, DMA_STREAM2);
+  dma_enable_stream(DMA1, DMA_STREAM2);
+
+  timer_enable_counter(TIM7);
+  timer_enable_update_event(TIM7);
+  timer_update_on_overflow(TIM7);
+  timer_set_dma_on_update_event(TIM7);
+  TIM7_DIER |= TIM_DIER_UDE; /* Enable update dma */
+}
+
+/* Sensor sampling complete */
+void dma1_stream3_isr(void) {
+  if (!dma_get_interrupt_flag(DMA1, DMA_STREAM3, DMA_TCIF)) {
+    return;
+  }
+  dma_clear_interrupt_flags(DMA1, DMA_STREAM3, DMA_TCIF);
+
+  const uint16_t *sequence = (dma_get_target(DMA1, DMA_STREAM3) == 0)
+    ? (const uint16_t *)spi_rx_raw_adc[1]
+    : (const uint16_t *)spi_rx_raw_adc[0];
+
+  bool fault = !adc_response_is_valid(sequence);
+
+  for (int i = 0; i < NUM_SENSORS; ++i) {
+    if (config.sensors[i].source == SENSOR_ADC) {
+      config.sensors[i].fault = fault ? FAULT_CONN : FAULT_NONE;
+      config.sensors[i].raw_value = read_adc_pin(sequence, config.sensors[i].pin);
+    }
+  }
+
+  sensors_process(SENSOR_ADC);
 }
 
 static uint8_t usbd_control_buffer[128];
@@ -840,42 +838,6 @@ uint64_t cycles_to_ns(uint64_t cycles) {
   return cycles * 1000 / 168;
 }
 
-/* Sensor sampling complete
- * Also process frequency inputs */
-void dma1_stream3_isr(void) {
-  if (!dma_get_interrupt_flag(DMA1, DMA_STREAM3, DMA_TCIF)) {
-    return;
-  }
-  dma_clear_interrupt_flags(DMA1, DMA_STREAM3, DMA_TCIF);
-
-  /* CS high */
-  gpio_set(GPIOB, GPIO12);
-  timer_disable_counter(TIM7);
-
-  int fault = 0;
-#ifdef SPI_TLC2543
-  if (((spi_rx_raw_adc[12] >> 4) > (2048 + 10)) ||
-      ((spi_rx_raw_adc[12] >> 4) < (2048 - 10))) {
-    fault = 1; /* Check value is vref/2 */
-  }
-#endif
-
-  for (int i = 0; i < NUM_SENSORS; ++i) {
-    if (config.sensors[i].source == SENSOR_ADC) {
-      int pin = (config.sensors[i].pin + 1) % SPI_WRITE_COUNT;
-      config.sensors[i].fault = fault ? FAULT_CONN : FAULT_NONE;
-      uint16_t adc_value = spi_rx_raw_adc[pin];
-#ifdef SPI_TLC2543
-      adc_value >>= 4; /* 12 bit value is left justified */
-#endif
-      config.sensors[i].raw_value = adc_value;
-    }
-  }
-
-  sensors_process(SENSOR_ADC);
-
-  start_adc_sampling();
-}
 
 /* This is now the lowest priority interrupt, with buffer swapping and sensor
  * reading interrupts being higher priority.  Keep scheduled callbacks quick to
