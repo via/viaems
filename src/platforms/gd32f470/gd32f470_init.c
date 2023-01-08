@@ -207,11 +207,8 @@ void platform_save_config() {
   FWDGT_PSC = FWDGT_PSC_DIV256;
 
   fmc_unlock();
-  /* Erase sectors 12-15, first 64K of second bank */
-  fmc_sector_erase(CTL_SECTOR_NUMBER_12);
-  fmc_sector_erase(CTL_SECTOR_NUMBER_13);
-  fmc_sector_erase(CTL_SECTOR_NUMBER_14);
-  fmc_sector_erase(CTL_SECTOR_NUMBER_15);
+  /* Erase sectors 8 (512 KB into main flash) */
+  fmc_sector_erase(CTL_SECTOR_NUMBER_8);
 
   uint32_t *src, *dest;
   for (dest = &_configdata_loadaddr, src = &_sconfigdata; src < &_econfigdata;
