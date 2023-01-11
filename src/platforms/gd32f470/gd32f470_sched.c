@@ -103,15 +103,13 @@ void TIMER1_IRQHandler(void) {
   timeval_t cc1;
 
   if (TIMER_INTF(TIMER1) & TIMER_INTF_CH0IF) {
-    TIMER_INTF(TIMER1) &= ~TIMER_INTF_CH0IF;
-    cc0_fired = true;
     cc0 = TIMER_CH0CV(TIMER1);
+    cc0_fired = true;
   }
 
   if (TIMER_INTF(TIMER1) & TIMER_INTF_CH1IF) {
-    TIMER_INTF(TIMER1) &= ~TIMER_INTF_CH1IF;
-    cc1_fired = true;
     cc1 = TIMER_CH1CV(TIMER1);
+    cc1_fired = true;
   }
 
   if (cc0_fired && cc1_fired && time_before(cc1, cc0)) {
@@ -127,7 +125,7 @@ void TIMER1_IRQHandler(void) {
   }
 
   if (TIMER_INTF(TIMER1) & TIMER_INTF_CH3IF) {
-    TIMER_INTF(TIMER1) &= ~TIMER_INTF_CH3IF;
+    TIMER_INTF(TIMER1) = ~TIMER_INTF_CH3IF;
     scheduler_callback_timer_execute();
   }
 }
@@ -135,7 +133,7 @@ void TIMER1_IRQHandler(void) {
 void schedule_event_timer(timeval_t time) {
 
   TIMER_DMAINTEN(TIMER1) &= ~TIMER_DMAINTEN_CH3IE;
-  TIMER_INTF(TIMER1) &= ~TIMER_INTF_CH3IF;
+  TIMER_INTF(TIMER1) = ~TIMER_INTF_CH3IF;
 
   TIMER_CH3CV(TIMER1) = time;
   TIMER_DMAINTEN(TIMER1) |= TIMER_DMAINTEN_CH3IE;
