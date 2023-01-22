@@ -1,0 +1,31 @@
+name: checks
+on:
+  - push
+  - workflow_dispatch
+  - pull_request
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: install apt deps
+        run: sudo apt update && sudo apt install -y check gcc-arm-none-eabi clang-tidy
+      - name: checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: install pip deps
+        run: pip install -r integration/requirements.txt
+
+      - name: run unit tests
+        run: make PLATFORM=test check
+      - name: build hosted platform
+        run: make PLATFORM=hosted
+      - name: run hosted integration checks
+        run: make PLATFORM=hosted integration
+      - name: run lint
+        run: make PLATFORM=hosted lint
+      - name: build stm32f4 platform
+        run: make PLATFORM=stm32f4
+      - name: build gd32f470 platform
+        run: make PLATFORM=gd32f470
+
