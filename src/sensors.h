@@ -99,8 +99,30 @@ struct freq_input {
   freq_type type;
 };
 
+struct knock_input_state {
+  uint32_t width;
+  uint32_t freq;
+  float w;
+  float cr;
+
+  uint32_t n_samples;
+  float sprev;
+  float sprev2;
+};
+
+struct knock_input {
+  float frequency;
+  float threshold;
+
+  struct knock_input_state state;
+  float value;
+};
+
 void sensors_process(sensor_source source);
 uint32_t sensor_fault_status();
+
+void knock_add_sample(struct knock_input *, float sample);
+void knock_configure(struct knock_input *);
 
 #ifdef UNITTEST
 #include <check.h>

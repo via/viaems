@@ -59,6 +59,10 @@ const struct console_feed_node console_feed_nodes[] = {
     .float_ptr = &config.sensors[SENSOR_EGO].processed_value },
   { .id = "sensor.frp",
     .float_ptr = &config.sensors[SENSOR_FRP].processed_value },
+  { .id = "knock1.value",
+    .float_ptr = &config.knock_inputs[0].value },
+  { .id = "knock2.value",
+    .float_ptr = &config.knock_inputs[1].value },
 
   { .id = "sensor_faults", .uint32_fptr = sensor_fault_status },
 
@@ -1117,12 +1121,31 @@ static void render_sensor_object(struct console_request_context *ctx,
                           &input->window.offset);
 }
 
+static void render_knock_object(struct console_request_context *ctx,
+                                 void *ptr) {
+
+  struct knock_input *input = ptr;
+
+  render_float_map_field(ctx, "frequency", "knock filter center frequency (Hz)", &input->frequency);
+  render_float_map_field(
+    ctx, "threshold", "input level indicating knock", &input->threshold);
+
+  if (ctx->type == CONSOLE_SET) {
+    /* Reconfigure knock */
+    knock_configure(&config.knock_inputs[0]);
+    knock_configure(&config.knock_inputs[1]);
+  }
+
+}
+
 static void render_sensors(struct console_request_context *ctx, void *ptr) {
   (void)ptr;
   for (sensor_input_type i = 0; i < NUM_SENSORS; i++) {
     render_map_map_field(
       ctx, sensor_name_from_type(i), render_sensor_object, &config.sensors[i]);
   }
+  render_map_map_field(ctx, "knock1", render_knock_object, &config.knock_inputs[0]);
+  render_map_map_field(ctx, "knock2", render_knock_object, &config.knock_inputs[1]);
 }
 
 static void render_crank_enrich(struct console_request_context *ctx,

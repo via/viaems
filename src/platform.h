@@ -57,6 +57,9 @@ void platform_enable_event_logging(void);
 void platform_disable_event_logging(void);
 void platform_reset_into_bootloader(void);
 
+uint32_t platform_adc_samplerate(void);
+uint32_t platform_knock_samplerate(void);
+
 /* Returns the earliest time that may still be scheduled.  This can only change
  * when buffers are swapped, so it is safe to use this value to schedule events
  * if interrupts are disabled */
