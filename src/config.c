@@ -211,6 +211,10 @@ struct config config __attribute__((section(".configdata"))) = {
     .trigger_min_rpm = 80,
     .trigger_max_rpm_change = 0.35f,
   },
+  .knock_inputs = {
+    [0] = { .frequency = 7000 },
+    [1] = { .frequency = 7000 },
+  },
   .freq_inputs = {
     [0] = {.edge = RISING_EDGE, .type = TRIGGER},
     [1] = {.edge = RISING_EDGE, .type = TRIGGER},

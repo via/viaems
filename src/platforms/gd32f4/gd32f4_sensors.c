@@ -7,6 +7,8 @@
 #include "tlv2553_adc.h"
 #define SPI_FREQ_DIVIDER SPI_PSC_8 /* 12 MHz */
 #define SPI_SAMPLE_RATE 150000
+#define ADC_SAMPLE_RATE 5000
+#define KNOCK_SAMPLE_RATE 50000
 #else
 #error No ADC specified!
 #endif
@@ -102,12 +104,25 @@ void DMA1_Channel0_IRQHandler(void) {
       }
     }
     sensors_process(SENSOR_ADC);
+    process_knock_inputs(sequence);
   }
 }
+
+uint32_t platform_adc_samplerate(void) {
+  return ADC_SAMPLE_RATE;
+}
+
+uint32_t platform_knock_samplerate(void) {
+  return KNOCK_SAMPLE_RATE;
+}
+
 
 void gd32f4xx_configure_adc(void) {
   setup_spi0();
   setup_spi0_tx_dma();
   setup_spi0_rx_dma();
   setup_timer0();
+
+  knock_configure(&config.knock_inputs[0]);
+  knock_configure(&config.knock_inputs[1]);
 }

@@ -150,6 +150,14 @@ void platform_load_config() {}
 
 void platform_save_config() {}
 
+uint32_t platform_adc_samplerate(void) {
+  return 1000;
+}
+
+uint32_t platform_knock_samplerate(void) {
+  return 1000;
+}
+
 static struct timespec add_times(struct timespec a, struct timespec b) {
   struct timespec ret = a;
   ret.tv_nsec += b.tv_nsec;

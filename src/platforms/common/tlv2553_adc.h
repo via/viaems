@@ -82,4 +82,16 @@ static inline bool adc_response_is_valid(const uint16_t *values) {
   return true;
 }
 
+static void process_knock_inputs(const uint16_t *values) {
+  for (int i = 0; i < 10; i++) {
+    float in1 = (float)read_raw_from_position(values, (i * 3) + 1) / 4095.0f;
+    knock_add_sample(&config.knock_inputs[0], in1);
+
+    float in2 = (float)read_raw_from_position(values, (i * 3) + 2) / 4095.0f;
+    knock_add_sample(&config.knock_inputs[1], in2);
+  }
+}
+
+
+
 #endif

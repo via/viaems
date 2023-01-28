@@ -348,6 +348,7 @@ void exti15_10_isr() {
   show_scheduled_outputs();
 }
 
+
 /* We use TIM7 to control the sample rate.  It is set up to trigger a DMA event
  * on counter update to TX on SPI2.  When the full 16 bits is transmitted and
  * the SPI RX buffer is filled, the RX DMA event will fill, and populate
@@ -358,10 +359,13 @@ void exti15_10_isr() {
 #include "ad7888_adc.h"
 #define SPI_FREQ_DIVIDER SPI_CR1_BAUDRATE_FPCLK_DIV_32 /* 1.3125 MHz */
 #define SPI_SAMPLE_RATE 70000
+#define ADC_SAMPLE_RATE 5000
 #elif SPI_TLV2553
 #include "tlv2553_adc.h"
 #define SPI_FREQ_DIVIDER SPI_CR1_BAUDRATE_FPCLK_DIV_4 /* 10.5 MHz */
 #define SPI_SAMPLE_RATE 150000
+#define ADC_SAMPLE_RATE 5000
+#define KNOCK_SAMPLE_RATE 50000
 #else
 #error No ADC specified!
 #endif
@@ -1062,4 +1066,19 @@ void platform_freeze_timers() {
 
 void platform_unfreeze_timers() {
   timer_enable_counter(TIM8);
+}
+
+uint32_t platform_adc_samplerate(void) {
+#ifdef ADC_SAMPLE_RATE
+  return ADC_SAMPLE_RATE;
+#else
+  return 0;
+#endif
+}
+uint32_t platform_knock_samplerate(void) {
+#ifdef KNOCK_SAMPLE_RATE
+  return KNOCK_SAMPLE_RATE;
+#else
+  return 1000;
+#endif
 }

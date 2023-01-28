@@ -1,5 +1,6 @@
 ### master (unreleased)
  - Make gd32f4 default platform
+ - implement knock inputs
 
 ### 1.5.0 (2023 April 20)
 

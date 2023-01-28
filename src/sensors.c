@@ -155,6 +155,39 @@ uint32_t sensor_fault_status() {
   return faults;
 }
 
+void knock_configure(struct knock_input *knock) {
+  uint32_t samplerate = platform_knock_samplerate();
+  float bucketsize = samplerate / 64.0f;
+  uint32_t bucket = knock->frequency + bucketsize / bucketsize;
+
+  knock->state.width = 64,
+  knock->state.freq = bucket,
+  knock->state.w = 2.0f * 3.14159f * (float)knock->state.freq / (float)knock->state.width,
+  knock->state.cr = cosf(knock->state.w); 
+
+  knock->state.n_samples = 0;
+  knock->state.sprev = 0.0f;
+  knock->state.sprev2 = 0.0f;
+};
+
+void knock_add_sample(struct knock_input *knock, float sample) {
+
+  knock->state.n_samples += 1;
+  float s = sample + knock->state.cr * 2 * knock->state.sprev - knock->state.sprev2;
+  knock->state.sprev2 = knock->state.sprev;
+  knock->state.sprev = s;
+
+  if (knock->state.n_samples == 64) {
+    knock->value = knock->state.sprev * knock->state.sprev + 
+                      knock->state.sprev2 * knock->state.sprev2 -
+                      knock->state.sprev * knock->state.sprev2 * knock->state.cr * 2;
+
+    knock->state.n_samples = 0;
+    knock->state.sprev = 0;
+    knock->state.sprev2 = 0;
+  }
+}
+
 #ifdef UNITTEST
 #include <check.h>
 
