@@ -5,7 +5,7 @@
 #include "scheduler.h"
 #include "sensors.h"
 #include "table.h"
-#include "tasks.h"
+#include "controllers.h"
 #include "util.h"
 #include <assert.h>
 #include <stdio.h>
@@ -17,9 +17,7 @@ int main() {
 
   assert(config_valid());
 
-  while (1) {
-    console_process();
-  }
+  start_controllers();
 
   return 0;
 }

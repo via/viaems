@@ -14,7 +14,7 @@ OBJS += calculations.o \
 				scheduler.o \
 				sensors.o \
 				table.o \
-				tasks.o \
+				controllers.o \
 				sim.o \
 				util.o
 

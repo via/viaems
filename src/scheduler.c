@@ -224,17 +224,6 @@ static int schedule_fuel_event(struct output_event *ev,
 
   schedule_output_event_safely(ev, start_time, stop_time);
 
-  /* If the stop event is scheduled, we know we just successfully set a new stop
-   * time for the event, lets also schedule a callback to reschedule it when it
-   * fires immediately.  This allows fuel events to use close to 100% duty cycle
-   * without having to wait until the next trigger for rescheduling */
-  if (sched_entry_get_state(&ev->stop) == SCHED_SCHEDULED &&
-      !time_before(ev->stop.time, current_time())) {
-    ev->callback.callback = (void (*)(void *))schedule_event;
-    ev->callback.data = ev;
-    schedule_callback(&ev->callback, ev->stop.time);
-  }
-
   return 1;
 }
 
@@ -326,9 +315,7 @@ void scheduler_callback_timer_execute() {
 
   struct timer_callback *cb = callbacks[0];
   callback_remove(cb);
-  if (cb->callback) {
-    cb->callback(cb->data);
-  }
+  xTaskNotifyFromISR(cb->task, 0, eNoAction, NULL);
 
   if (n_callbacks > 0) {
     schedule_event_timer(callbacks[0]->time);

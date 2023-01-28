@@ -44,9 +44,11 @@ timeval_t platform_output_earliest_schedulable_time() {
 
 /* Retire all stop/stop events that are in the time range of our "completed"
  * buffer and were previously submitted by setting them to "fired" and clearing
- * out the dma bits */
-static void retire_output_buffer(struct output_buffer *buf) {
+ * out the dma bits.
+ * Returns true if any sched_entrys were retired */
+static bool retire_output_buffer(struct output_buffer *buf) {
   timeval_t offset_from_start;
+  bool retired = false;
   for (int i = 0; i < MAX_EVENTS; i++) {
     struct output_event *oev = &config.events[i];
 
@@ -56,6 +58,7 @@ static void retire_output_buffer(struct output_buffer *buf) {
       platform_output_slot_unset(
         buf->slots, offset_from_start, oev->start.pin, oev->start.val);
       sched_entry_set_state(&oev->start, SCHED_FIRED);
+      retired = true;
     }
 
     offset_from_start = oev->stop.time - buf->first_time;
@@ -64,8 +67,10 @@ static void retire_output_buffer(struct output_buffer *buf) {
       platform_output_slot_unset(
         buf->slots, offset_from_start, oev->stop.pin, oev->stop.val);
       sched_entry_set_state(&oev->stop, SCHED_FIRED);
+      retired = true;
     }
   }
+  return retired;
 }
 
 /* Any scheduled start/stop event in the time range for the new buffer can be
@@ -96,13 +101,14 @@ static timeval_t round_time_to_buffer_start(timeval_t time) {
   return time - time_since_buffer_start;
 }
 
-void stm32_buffer_swap(void) {
+bool stm32_buffer_swap(void) {
   struct output_buffer *buf = &output_buffers[current_buffer];
   current_buffer = (current_buffer + 1) % 2;
 
-  retire_output_buffer(buf);
+  bool retired = retire_output_buffer(buf);
 
   buf->first_time = round_time_to_buffer_start(current_time()) + NUM_SLOTS;
 
   populate_output_buffer(buf);
+  return retired;
 }

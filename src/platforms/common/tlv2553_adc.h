@@ -104,6 +104,7 @@ static void process_knock_inputs(const uint16_t *values) {
   }
   sensor_update_knock(&knk1);
   sensor_update_knock(&knk2);
+  /* TODO make this use queues or soemthing */
 }
 
 #endif

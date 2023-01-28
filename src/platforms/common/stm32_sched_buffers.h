@@ -27,7 +27,7 @@ extern struct output_buffer output_buffers[2];
  * Then find all the sched_entryS that are to be scheduled and set up the next
  * DMA buffer for them.
  */
-void stm32_buffer_swap(void);
+bool stm32_buffer_swap(void);
 
 /* Returns the current buffer being used for outputs */
 uint32_t stm32_current_buffer(void);

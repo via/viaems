@@ -8,8 +8,13 @@
 #include "platform.h"
 #include "sensors.h"
 #include "util.h"
+#include "controllers.h"
 
 #include "stm32_sched_buffers.h"
+
+#include "FreeRTOS.h"
+#include "task.h"
+#include "message_buffer.h"
 
 /* The primary outputs are driven by the DMA copying from a circular
  * double-buffer to the GPIO's BSRR register.  TIMER7 is configured to generate
@@ -104,7 +109,7 @@ static void setup_timer1(void) {
 
   configure_trigger_inputs();
 
-  nvic_irq_enable(TIMER1_IRQn, 1, 0);
+  nvic_irq_enable(TIMER1_IRQn, 9, 0);
   TIMER_DMAINTEN(TIMER1) =
     TIMER_DMAINTEN_CH0IE | TIMER_DMAINTEN_CH1IE | TIMER_DMAINTEN_CH2IE;
 
@@ -127,6 +132,20 @@ static struct gd32f4_timebase_freq_pin tim1_ch2_freq = {
   .last_time = 0,
 };
 
+static void decoder_update_scheduling(int trigger, timeval_t time) {
+  if (decode_queue_handle == NULL) {
+    return;
+  }
+
+  struct trigger_event ev = {
+    .trigger = trigger,
+    .time = time,
+  };
+  if (xQueueSendFromISR(decode_queue_handle, &ev, NULL)) {
+    /* TODO: This should report some type of error, right? */
+  }
+}
+
 void TIMER1_IRQHandler(void) {
   bool cc0_fired = false;
   bool cc1_fired = false;
@@ -143,15 +162,19 @@ void TIMER1_IRQHandler(void) {
     cc1_fired = true;
   }
 
-  if (cc0_fired && cc1_fired && time_before(cc1, cc0)) {
-    decoder_update_scheduling(1, cc1);
-    decoder_update_scheduling(0, cc0);
-  } else {
-    if (cc0_fired) {
-      decoder_update_scheduling(0, cc0);
-    }
-    if (cc1_fired) {
+  
+  if (decode_queue_handle) {
+    if (cc0_fired && cc1_fired && time_before(cc1, cc0)) {
+
       decoder_update_scheduling(1, cc1);
+      decoder_update_scheduling(0, cc0);
+    } else {
+      if (cc0_fired) {
+        decoder_update_scheduling(0, cc0);
+      }
+      if (cc1_fired) {
+        decoder_update_scheduling(1, cc1);
+      }
     }
   }
 
@@ -169,12 +192,15 @@ void TIMER1_IRQHandler(void) {
       .pulsewidth = 0,
     };
     sensor_update_freq(&update);
+    /* TODO: make this a queue thing ^^ */
   }
 
   if (TIMER_INTF(TIMER1) & TIMER_INTF_CH3IF) {
     TIMER_INTF(TIMER1) = ~TIMER_INTF_CH3IF;
     scheduler_callback_timer_execute();
   }
+
+  portYIELD_FROM_ISR(pdTRUE);
 }
 
 void schedule_event_timer(timeval_t time) {
@@ -193,9 +219,11 @@ void schedule_event_timer(timeval_t time) {
 }
 
 void DMA1_Channel1_IRQHandler(void) {
+  uint32_t before = cycle_count();
+  bool retired = false;
   if (dma_interrupt_flag_get(DMA1, DMA_CH1, DMA_INT_FLAG_FTF) == SET) {
     dma_interrupt_flag_clear(DMA1, DMA_CH1, DMA_INT_FLAG_FTF);
-    stm32_buffer_swap();
+    retired = stm32_buffer_swap();
   }
 
   /* If we overran, abort */
@@ -206,6 +234,12 @@ void DMA1_Channel1_IRQHandler(void) {
   /* In the event of a transfer error, abort */
   if (dma_interrupt_flag_get(DMA1, DMA_CH1, DMA_INT_FLAG_TAE)) {
     abort();
+  }
+
+  if (reschedule_task_handle && retired) {
+    BaseType_t yield = pdFALSE;
+    xTaskNotifyFromISR(reschedule_task_handle, 0, eNoAction, &yield);
+    portYIELD_FROM_ISR(yield);
   }
 }
 
@@ -222,7 +256,7 @@ static void setup_scheduled_outputs(void) {
   GPIO_OSPD(GPIOD) = 0xffffffff; /* All GPIOD set to High speed*/
 
   /* Enable Interrupt on buffer swap at highest priority */
-  nvic_irq_enable(DMA1_Channel1_IRQn, 0, 0);
+  nvic_irq_enable(DMA1_Channel1_IRQn, 8, 0);
 
   /* Use DMA1's Channel 1 to write to GPIOD's OCTL whenever TIMER7 updates */
   DMA_CH1PADDR(DMA1) = (uint32_t)&GPIO_BOP(GPIOD);

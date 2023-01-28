@@ -4,9 +4,13 @@
 #include "gd32f4xx_fwdgt.h"
 #include "gd32f4xx_rcu.h"
 #include "platform.h"
-#include "tasks.h"
+#include "controllers.h"
 
 #include "gd32f4xx.h"
+
+#include <FreeRTOS.h>
+#include "task.h"
+#include "queue.h"
 
 void platform_enable_event_logging() {}
 
@@ -18,12 +22,6 @@ uint64_t cycles_to_ns(uint64_t cycles) {
 
 uint64_t cycle_count() {
   return DWT->CYCCNT;
-}
-
-static void setup_dwt() {
-  CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
-  DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
-  DWT->CYCCNT = 0;
 }
 
 void disable_interrupts() {
@@ -47,6 +45,7 @@ void set_output(int output, char value) {
 }
 
 void set_gpio(int output, char value) {
+return;
   if (value) {
     GPIO_OCTL(GPIOE) |= (1 << output);
   } else {
@@ -77,10 +76,12 @@ static void setup_watchdog() {
   reset_watchdog();
 }
 
+#if 0
 void systick_handler(void) {
   run_tasks();
   reset_watchdog();
 }
+
 
 static void setup_systick() {
   DBG_CTL1 |= DBG_CTL1_FWDGT_HOLD;
@@ -92,8 +93,9 @@ static void setup_systick() {
                   SysTick_CTRL_TICKINT_Msk; /* Enable interrupt and systick */
 
   NVIC_SetPriority(SysTick_IRQn,
-                   NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 4, 0));
+                   NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 13, 0));
 }
+#endif
 
 static void setup_gpios(void) {
   GPIO_CTL(GPIOE) = 0x55555555;  /* All of GPIOD is output */
@@ -111,6 +113,7 @@ static void platform_disable_periphs(void) {
   rcu_periph_clock_disable(RCU_TIMER8);
 
   rcu_periph_clock_disable(RCU_GPIOA);
+  rcu_periph_clock_disable(RCU_GPIOB);
   rcu_periph_clock_disable(RCU_GPIOC);
   rcu_periph_clock_disable(RCU_GPIOD);
   rcu_periph_clock_disable(RCU_GPIOE);
@@ -132,6 +135,7 @@ static void platform_enable_periphs(void) {
   rcu_periph_clock_enable(RCU_TIMER8);
 
   rcu_periph_clock_enable(RCU_GPIOA);
+  rcu_periph_clock_enable(RCU_GPIOB);
   rcu_periph_clock_enable(RCU_GPIOC);
   rcu_periph_clock_enable(RCU_GPIOD);
   rcu_periph_clock_enable(RCU_GPIOE);
@@ -162,7 +166,7 @@ static void system_init(void) {
   /* Configure the main PLL: Divide by crystal to get 1 MHz, multiple
    * by 384 to get a frequency that works on any f450 or 470 */
 
-  /* example: PSC = 8, PLL_N = 384, PLL_P = 2, PLL_Q = 10 */
+  /* example: PSC = 8, PLL_N = 384, PLL_P = 2, PLL_Q = 8 */
   rcu_pll_config(RCU_PLLSRC_HXTAL, CRYSTAL_FREQ, 384, 2, 8);
 
   rcu_osci_on(RCU_PLL_CK);
@@ -250,8 +254,60 @@ extern void gd32f4xx_console_init(void);
 extern void gd32f4xx_configure_adc(void);
 extern void gd32f4xx_configure_pwm(void);
 
+void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer,
+                                    StackType_t **ppxIdleTaskStackBuffer,
+                                    uint32_t *pulIdleTaskStackSize ) {
+  static StaticTask_t xIdleTaskTCB;
+  static StackType_t uxIdleTaskStack[configMINIMAL_STACK_SIZE];
+
+  *ppxIdleTaskTCBBuffer = &xIdleTaskTCB;
+  *ppxIdleTaskStackBuffer = uxIdleTaskStack;
+  *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
+}
+
+static void configure_swo(void) {
+
+  /* Configure PB3 as an TRACESWO */
+  gpio_mode_set(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO_PIN_3);
+  gpio_af_set(GPIOB, GPIO_AF_0, GPIO_PIN_3);
+  gpio_output_options_set(GPIOB, GPIO_OTYPE_PP, GPIO_OSPEED_MAX, GPIO_PIN_3);
+  dbg_trace_pin_enable(); 
+
+  /* Set TPI configuration */
+  TPI->ACPR = 1; /* 192 MHz / (1 + 1) = 96 MHz */
+  TPI->SPPR = 1; /* Manchester encoding */
+  TPI->FFCR = 0x100; /* Disable TPIU Formatter (bit 1 cleared) */
+
+  CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk; // Enable access to registers
+  DWT->CTRL = DWT_CTRL_CYCCNTENA_Msk | /* Enable Cycle Counter */ 
+              DWT_CTRL_POSTPRESET_Msk | /* POSTPRESET = 15 */
+              DWT_CTRL_POSTINIT_Msk | /* POSTINIT = 15 */
+              DWT_CTRL_CYCTAP_Msk | /* CYCTAP bit 10 */
+              DWT_CTRL_EXCTRCENA_Msk; /* Exception trace enabled */
+  DWT->CYCCNT = 0;
+  ITM->LAR = 0xC5ACCE55; /* Unlock ITM */
+  ITM->TPR = 0x0000000F; /* Allow stim port access */
+  ITM->TCR = (1 << ITM_TCR_TraceBusID_Pos) | /* Bus ID 1 */
+             ITM_TCR_DWTENA_Msk |
+             ITM_TCR_SYNCENA_Msk |
+             ITM_TCR_TSENA_Msk |
+             ITM_TCR_ITMENA_Msk;
+  ITM->TER = 0xF; /* Enable bottom 4 stim ports */
+}
+
+void itm_debug(const char *s) {
+  for (; *s != '\0'; s++) {
+    ITM_SendChar(*s);
+  }
+}
+
+void itm_event(uint32_t val) {
+  ITM->PORT[1].u32 = val;
+}
+
 void platform_init() {
-  NVIC_SetPriorityGrouping(3); /* 16 priority preemption levels */
+  nvic_priority_group_set(NVIC_PRIGROUP_PRE4_SUB0);
+  configure_swo();
 
   gd32f4xx_configure_scheduler();
   gd32f4xx_console_init();
@@ -259,9 +315,18 @@ void platform_init() {
   gd32f4xx_configure_pwm();
 
   setup_gpios();
-  setup_systick();
-  setup_watchdog();
-  setup_dwt();
+//  setup_systick();
+//  setup_watchdog();
+
+  itm_debug("platform_init() complete\n");
+
+}
+
+void vApplicationStackOverflowHook( 
+  TaskHandle_t xTask __attribute__((unused)),     
+  char *pcTaskName __attribute__((unused))) { 
+  itm_debug("stack overflow\n");
+  for (;;); 
 }
 
 void platform_benchmark_init() {}

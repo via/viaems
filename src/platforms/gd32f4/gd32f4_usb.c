@@ -35,6 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "gd32f4xx.h"
 #include "platform.h"
+#include "controllers.h"
 #include "util.h"
 
 #include "drv_usb_hw.h"
@@ -428,6 +429,7 @@ static uint8_t cdc_acm_in(usb_dev *udev, uint8_t ep_num) {
   if ((0U == transc->xfer_len % transc->max_len) && (0U != transc->xfer_len)) {
     usbd_ep_send(udev, ep_num, NULL, 0U);
   } else {
+    /* Notify write complete */
     state.pending_write = false;
   }
 
@@ -518,7 +520,7 @@ void gd32f4xx_console_init() {
 
   gpio_af_set(GPIOA, GPIO_AF_10, GPIO_PIN_11 | GPIO_PIN_12);
 
-  nvic_irq_enable(USBFS_IRQn, 4, 0);
+  nvic_irq_enable(USBFS_IRQn, 14, 0);
 
   usb_initialize_string(cdc_desc.strings[STR_IDX_MFC],
                         "https://github.com/via/viaems");

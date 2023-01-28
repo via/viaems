@@ -1488,12 +1488,12 @@ static void console_process_request(CborValue *request, CborEncoder *response) {
   }
 }
 
+static uint8_t response[16384];
 static void console_process_request_raw(int len) {
   CborParser parser;
   CborValue value;
   CborError err;
 
-  uint8_t response[16384];
   CborEncoder encoder;
 
   cbor_encoder_init(&encoder, response, sizeof(response), 0);
@@ -1519,9 +1519,9 @@ static void console_process_request_raw(int len) {
   console_write_full(response, write_size);
 }
 
+static uint8_t txbuffer[16384];
 void console_process() {
   static timeval_t last_desc_time = 0;
-  uint8_t txbuffer[16384];
 
   size_t read_size;
   if ((read_size = console_try_read())) {

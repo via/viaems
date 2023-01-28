@@ -1,8 +1,121 @@
-#include "tasks.h"
+#include "controllers.h"
 #include "config.h"
 #include "decoder.h"
 #include "platform.h"
 #include "util.h"
+
+#include "task.h"
+#include "queue.h"
+
+#define DECODE_QUEUE_SIZE 1
+
+static StaticTask_t decode_task;
+static StackType_t decode_task_stack[configMINIMAL_STACK_SIZE];
+static StaticQueue_t decode_queue;
+static struct trigger_event decode_queue_storage[DECODE_QUEUE_SIZE];
+QueueHandle_t decode_queue_handle = NULL;
+
+static void decode_loop(void *_unused) {
+  (void)_unused;
+
+  while (true) {
+    struct trigger_event ev;
+    if (!xQueueReceive(decode_queue_handle, &ev, portMAX_DELAY)) {
+      continue;
+    }
+
+    console_record_event((struct logged_event){
+      .type = EVENT_TRIGGER,
+      .value = ev.trigger,
+      .time = ev.time,
+    });
+
+    uint32_t old_rpm = config.decoder.rpm;
+    decoder_decode(&ev);
+    if ((old_rpm != config.decoder.rpm) && config.decoder.valid) {
+      /* decoder state changed, might need new fueling */
+      xTaskNotify(calculations_task_handle, 0, eNoAction);
+    } else {
+      /* Just update scheduling */
+      xTaskNotify(reschedule_task_handle, 0, eNoAction);
+    }
+
+  }
+}
+
+
+TaskHandle_t calculations_task_handle;
+static StaticTask_t calculations_task;
+static StackType_t calculations_task_stack[configMINIMAL_STACK_SIZE];
+
+static void calculations_loop(void *_unused) {
+  (void)_unused;
+
+  while (true) {
+    xTaskNotifyWait(0, 0, NULL, portMAX_DELAY);
+    calculate_ignition();
+    calculate_fueling();
+    xTaskNotify(reschedule_task_handle, 0, eNoAction);
+  }
+}
+
+TaskHandle_t console_task_handle;
+static StaticTask_t console_task;
+static StackType_t console_task_stack[512] = { 0 };
+
+static void console_loop(void *_unused) {
+  (void)_unused;
+  while (true) {
+    console_process();
+  }
+}
+
+TaskHandle_t sensor_task_handle;
+static StaticTask_t sensor_task;
+static StackType_t sensor_task_stack[configMINIMAL_STACK_SIZE] = { 0 };
+
+#define ADC_QUEUE_SIZE 1
+static StaticQueue_t adc_queue;
+static struct adc_update adc_queue_storage[ADC_QUEUE_SIZE];
+QueueHandle_t adc_queue_handle = NULL;
+
+static void sensor_loop(void *_unused) {
+  (void)_unused;
+  while (true) {
+    struct adc_update ev;
+    if (!xQueueReceive(adc_queue_handle, &ev, portMAX_DELAY)) {
+      /* TODO: Mark fault, we haven't received any adc updates */
+      continue;
+    }
+    /* New ADC data means new calculations */
+    xTaskNotify(calculations_task_handle, 0, eNoAction);
+    sensor_update_adc(&ev);
+  }
+}
+
+TaskHandle_t reschedule_task_handle;
+static StaticTask_t reschedule_task;
+static StackType_t reschedule_task_stack[configMINIMAL_STACK_SIZE] = { 0 };
+static void reschedule_loop(void *_unused) {
+  (void)_unused;
+  while (true) {
+    xTaskNotifyWait(0, 0, NULL, portMAX_DELAY);
+    for (unsigned int e = 0; e < MAX_EVENTS; ++e) {
+      schedule_event(&config.events[e]);
+    }
+  }
+}
+
+TaskHandle_t sim_task_handle;
+static StaticTask_t sim_task;
+static StackType_t sim_task_stack[configMINIMAL_STACK_SIZE] = { 0 };
+static void sim_loop(void *_unused) {
+  (void)_unused;
+  while (true) {
+    xTaskNotifyWait(0, 0, NULL, portMAX_DELAY);
+    execute_test_trigger(NULL);
+  }
+}
 
 static void handle_fuel_pump() {
   static timeval_t last_valid = 0;
@@ -142,12 +255,51 @@ void handle_emergency_shutdown() {
   }
 }
 
-void run_tasks() {
-  handle_fuel_pump();
-  handle_boost_control();
-  handle_idle_control();
-  handle_check_engine_light();
+TaskHandle_t tasks_task_handle;
+static StaticTask_t tasks_task;
+static StackType_t tasks_task_stack[configMINIMAL_STACK_SIZE] = { 0 };
+void tasks_loop() {
+  struct timer_callback timer = {
+    .task = tasks_task_handle,
+    .time = current_time(),
+  };
+
+  while (true) {
+    schedule_callback(&timer, timer.time + time_from_us(10000));
+    if (!xTaskNotifyWait(0, 0, NULL, pdMS_TO_TICKS(100))) {
+      /* TODO: We didn't get a callback within 100 ms, something bad happened */
+    }
+
+    handle_fuel_pump();
+    handle_boost_control();
+    handle_idle_control();
+    handle_check_engine_light();
+  }
 }
+
+void start_controllers(void) {
+  sim_task_handle = xTaskCreateStatic(sim_loop, "sim", configMINIMAL_STACK_SIZE, NULL, 5, sim_task_stack, &sim_task);
+
+  decode_queue_handle = xQueueCreateStatic(DECODE_QUEUE_SIZE, sizeof(struct trigger_event), (uint8_t *)decode_queue_storage, &decode_queue);
+  vQueueAddToRegistry(decode_queue_handle, "decode");
+  xTaskCreateStatic(decode_loop, "decode", configMINIMAL_STACK_SIZE, NULL, 4, decode_task_stack, &decode_task);
+
+  adc_queue_handle = xQueueCreateStatic(ADC_QUEUE_SIZE, sizeof(struct adc_update), (uint8_t *)adc_queue_storage, &adc_queue);
+  vQueueAddToRegistry(adc_queue_handle, "adc");
+  sensor_task_handle = xTaskCreateStatic(sensor_loop, "sensors", configMINIMAL_STACK_SIZE, NULL, 4, sensor_task_stack, &sensor_task);
+
+  reschedule_task_handle = xTaskCreateStatic(reschedule_loop, "reschedule", configMINIMAL_STACK_SIZE, NULL, 4, reschedule_task_stack, &reschedule_task);
+
+  calculations_task_handle = xTaskCreateStatic(calculations_loop, "calculate", configMINIMAL_STACK_SIZE, NULL, 4, calculations_task_stack, &calculations_task);
+
+  tasks_task_handle = xTaskCreateStatic(tasks_loop, "tasks", configMINIMAL_STACK_SIZE, NULL, 2, tasks_task_stack, &tasks_task);
+  console_task_handle = xTaskCreateStatic(console_loop, "console", 512, NULL, 1, console_task_stack, &console_task);
+
+  set_test_trigger_rpm(5000);
+
+  vTaskStartScheduler();
+}
+
 
 #ifdef UNITTEST
 #include <check.h>

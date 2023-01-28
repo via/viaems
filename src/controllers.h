@@ -3,6 +3,11 @@
 
 #include <stdint.h>
 
+#include "FreeRTOS.h"
+#include "message_buffer.h"
+#include "task.h"
+#include "queue.h"
+
 struct boost_control_config {
   struct table *pwm_duty_vs_rpm;
   float enable_threshold_kpa;
@@ -21,6 +26,14 @@ struct cel_config {
 
 void handle_emergency_shutdown(void);
 void run_tasks(void);
+
+extern QueueHandle_t decode_queue_handle;
+extern QueueHandle_t adc_queue_handle;
+extern TaskHandle_t reschedule_task_handle;
+extern TaskHandle_t calculations_task_handle;
+extern TaskHandle_t sim_task_handle;
+
+void start_controllers(void);
 
 #ifdef UNITTEST
 #include <check.h>

@@ -75,7 +75,7 @@ struct decoder {
   timeval_t times[MAX_TRIGGERS + 1];
 };
 
-struct decoder_event {
+struct trigger_event {
   unsigned int trigger;
   timeval_t time;
 #ifdef UNITTEST
@@ -87,7 +87,7 @@ struct decoder_event {
 };
 
 void decoder_init(struct decoder *);
-void decoder_update_scheduling(int input, timeval_t time);
+void decoder_decode(struct trigger_event *);
 void decoder_desync(decoder_loss_reason);
 degrees_t current_angle(void);
 

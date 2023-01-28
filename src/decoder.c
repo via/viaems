@@ -24,7 +24,7 @@ static void handle_decoder_expire() {
 }
 
 static void set_expire_event(timeval_t t) {
-  schedule_callback(&expire_event, t);
+//  schedule_callback(&expire_event, t);
 }
 
 void decoder_desync(decoder_loss_reason reason) {
@@ -143,7 +143,7 @@ static void even_tooth_sync_update(struct decoder *d) {
 }
 
 static void decode_even_with_camsync(struct decoder *d,
-                                     struct decoder_event *ev) {
+                                     struct trigger_event *ev) {
   decoder_state oldstate = d->state;
 
   if (ev->trigger == 0) {
@@ -163,7 +163,7 @@ static void decode_even_with_camsync(struct decoder *d,
   }
 }
 
-static void decode_even_no_sync(struct decoder *d, struct decoder_event *ev) {
+static void decode_even_no_sync(struct decoder *d, struct trigger_event *ev) {
   decoder_state oldstate = d->state;
   even_tooth_trigger_update(d, ev->time);
   if (d->state == DECODER_RPM || d->state == DECODER_SYNC) {
@@ -297,7 +297,7 @@ static uint32_t missing_tooth_average_rpm(const struct decoder *d) {
 }
 
 static void decode_missing_no_sync(struct decoder *d,
-                                   struct decoder_event *ev) {
+                                   struct trigger_event *ev) {
   decoder_state oldstate = d->state;
 
   if (ev->trigger == 0) {
@@ -322,7 +322,7 @@ static void decode_missing_no_sync(struct decoder *d,
 }
 
 static void decode_missing_with_camsync(struct decoder *d,
-                                        struct decoder_event *ev) {
+                                        struct trigger_event *ev) {
   bool was_valid = d->valid;
   static bool camsync_seen_this_rotation = false;
   static bool camsync_seen_last_rotation = false;
@@ -385,10 +385,19 @@ void decoder_init(struct decoder *d) {
   if (d->trigger_max_rpm_change == 0.0f) {
     d->trigger_max_rpm_change = 0.5f;
   }
-  expire_event.callback = handle_decoder_expire;
+//  expire_event.callback = handle_decoder_expire;
 }
 
-static void decode(struct decoder *d, struct decoder_event *ev) {
+void decoder_decode(struct trigger_event *ev) {
+  struct decoder *d = &config.decoder;
+
+  if (ev->trigger == 0) {
+    d->t0_count++;
+
+  } else if (ev->trigger == 1) {
+    d->t1_count++;
+  }
+  
   switch (d->type) {
   case TRIGGER_EVEN_NOSYNC:
     decode_even_no_sync(d, ev);
@@ -404,32 +413,6 @@ static void decode(struct decoder *d, struct decoder_event *ev) {
     break;
   default:
     break;
-  }
-}
-
-/* When decoder has new information, reschedule everything */
-void decoder_update_scheduling(int trigger, uint32_t time) {
-  struct decoder_event ev = { .trigger = trigger, .time = time };
-
-  console_record_event((struct logged_event){
-    .type = EVENT_TRIGGER,
-    .value = trigger,
-    .time = time,
-  });
-  if (trigger == 0) {
-    config.decoder.t0_count++;
-  } else if (trigger == 1) {
-    config.decoder.t1_count++;
-  }
-
-  decode(&config.decoder, &ev);
-
-  if (config.decoder.valid) {
-    calculate_ignition();
-    calculate_fueling();
-    for (unsigned int e = 0; e < MAX_EVENTS; ++e) {
-      schedule_event(&config.events[e]);
-    }
   }
 }
 

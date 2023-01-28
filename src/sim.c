@@ -2,6 +2,10 @@
 #include "config.h"
 #include "decoder.h"
 #include "platform.h"
+#include "controllers.h"
+
+#include "FreeRTOS.h"
+#include "queue.h"
 
 static struct timer_callback test_trigger_callback;
 
@@ -37,7 +41,7 @@ static struct test_wheel_event test_wheel_Nminus1_next(void) {
 
 static uint32_t test_trigger_rpm = 0;
 
-static void execute_test_trigger(void *_w) {
+void execute_test_trigger(void *_w) {
   (void)_w;
 
   if (test_trigger_rpm == 0) {
@@ -48,7 +52,13 @@ static void execute_test_trigger(void *_w) {
   struct test_wheel_event wheel_ev = test_wheel_Nminus1_next();
 
   /* Handle current */
-  decoder_update_scheduling(wheel_ev.trigger, ev_time);
+  struct trigger_event ev = {
+    .trigger = wheel_ev.trigger,
+    .time = ev_time,
+  };
+  if (decode_queue_handle) {
+    xQueueSend(decode_queue_handle, &ev, 1000);
+  }
 
   /* Schedule next */
   timeval_t delay = time_from_rpm_diff(test_trigger_rpm, wheel_ev.degrees);
@@ -59,8 +69,7 @@ static void execute_test_trigger(void *_w) {
 
 void set_test_trigger_rpm(uint32_t rpm) {
   test_trigger_rpm = rpm;
-  test_trigger_callback.callback = execute_test_trigger;
-  test_trigger_callback.data = NULL;
+  test_trigger_callback.task = sim_task_handle;
   schedule_callback(&test_trigger_callback, current_time() + 10000);
 }
 

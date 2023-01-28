@@ -3,6 +3,9 @@
 
 #include "gd32f4xx.h"
 
+#include "FreeRTOS.h"
+#include "queue.h"
+
 #ifdef SPI_TLV2553
 #include "tlv2553_adc.h"
 #define SPI_FREQ_DIVIDER SPI_PSC_8 /* 12 MHz */
@@ -75,7 +78,7 @@ __attribute__((section(".dmadata"))) spi_rx_buffer[2][NUM_SPI_TX] = { 0 };
 void setup_spi0_rx_dma(void) {
 
   /* Enable interrupt for dma completion */
-  nvic_irq_enable(DMA1_Channel0_IRQn, 3, 0);
+  nvic_irq_enable(DMA1_Channel0_IRQn, 10, 0);
 
   DMA_CH0PADDR(DMA1) = (uint32_t)&SPI_DATA(SPI0);
   DMA_CH0M0ADDR(DMA1) = (uint32_t)&spi_rx_buffer[0][0];
@@ -106,8 +109,13 @@ void DMA1_Channel0_IRQHandler(void) {
       float raw_value = (float)(5 * adc_value) / 4096.0f;
       update.values[i] = raw_value;
     }
-    sensor_update_adc(&update);
+    
+    BaseType_t yield = pdFALSE;
+    xQueueSendFromISR(adc_queue_handle, &update, &yield);
+
     process_knock_inputs(sequence);
+
+    portYIELD_FROM_ISR(yield);
   }
 }
 
