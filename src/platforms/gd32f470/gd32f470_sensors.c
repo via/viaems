@@ -3,36 +3,21 @@
 
 #include "gd32f4xx.h"
 
-#ifdef SPI_MAX11632
-#include "max11632_adc.h"
-#define SPI_FREQ_DIVIDER SPI_PSC_32 /* 3.75 MHz */
-#define SPI_SAMPLE_RATE 192000
-#elif SPI_TLV2553
+#ifdef SPI_TLV2553
 #include "tlv2553_adc.h"
-#define SPI_FREQ_DIVIDER SPI_PSC_16 /* 7.5 MHz */
+#define SPI_FREQ_DIVIDER SPI_PSC_8 /* 12 MHz */
 #define SPI_SAMPLE_RATE 150000
 #else
 #error No ADC specified!
 #endif
 
 
-/* Query a MAX11632 ADC on SPI0 at a fixed sampling rate of 192 KHz and a SPI
- * clock of 3.75 MHz.  SPI0 is on APB2 with a clock frequency of 120 MHz.
- * Prescale down to 3.75 (divide by 32) to keep under the maximum clock
- * frequency of the MAX11632.
- */
-
-/* Configure TIMER0 to update at 192 KHz and generate a DMA request. We use
- * TIMER0's output compare functionality to drive CS high and low once per
- * sample. */
-
 static void setup_timer0(void) {
   gpio_mode_set(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO_PIN_8);
   gpio_af_set(GPIOA, GPIO_AF_1, GPIO_PIN_8);
 
-  /* TIMER0 is on APB2's CK_TIMER, driven at 240 MHz (2x APB2's clock). Divide
-   * by 1250 */
-  const uint32_t period = 240000000 / SPI_SAMPLE_RATE;
+  /* TIMER0 is on APB2's CK_TIMER, driven at 192 MHz (2x APB2's clock) */
+  const uint32_t period = 192000000 / SPI_SAMPLE_RATE;
   TIMER_CAR(TIMER0) = period - 1;
 
   TIMER_DMAINTEN(TIMER0) = TIMER_DMAINTEN_UPDEN;
@@ -49,8 +34,6 @@ static void setup_timer0(void) {
   DBG_CTL1 |= DBG_CTL2_TIMER0_HOLD;
 }
 
-/* Configure SPI0 for a SPI clock of 3.75 MHz in master mode with hardware NSS
- */
 static void setup_spi0(void) {
 
   const uint32_t spi_pins = GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7;
@@ -63,7 +46,7 @@ static void setup_spi0(void) {
                       GPIO_OSPEED_SET(8, GPIO_OSPEED_25MHZ);
 
   SPI_CTL0(SPI0) = SPI_CTL0_FF16 |  /* 16 bit data format */
-                   SPI_FREQ_DIVIDER |     /* Divide to 3.75 MHz */
+                   SPI_FREQ_DIVIDER |
                    SPI_CTL0_MSTMOD; /* Master Mode */
 
   SPI_CTL1(SPI0) = SPI_CTL1_NSSDRV | /* Manage NSS Output */

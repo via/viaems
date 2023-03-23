@@ -18,10 +18,10 @@ void gd32f470_configure_pwm(void) {
   gpio_mode_set(GPIOC, GPIO_MODE_AF, GPIO_PUPD_NONE, pins);
   gpio_af_set(GPIOC, GPIO_AF_2, pins);
 
-  /* TIMER2 is 2x APB1's clock = 120 MHz, divide by 60 results in a period of 30
+  /* TIMER2 is 2x APB1's clock = 96 MHz, divide by 48 results in a period of 30
    * Hz when counting to 65536 */
   TIMER_CAR(TIMER2) = 65535;
-  TIMER_PSC(TIMER2) = 60;
+  TIMER_PSC(TIMER2) = 48;
 
   /* Set all outputs to zero */
   TIMER_CH0CV(TIMER2) = 0;

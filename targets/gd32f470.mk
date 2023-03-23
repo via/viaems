@@ -4,6 +4,7 @@ AR=arm-none-eabi-ar
 LD=arm-none-eabi-ld
 OBJCOPY=arm-none-eabi-objcopy
 SPI_ADC?=TLV2553
+CRYSTAL_FREQ?=8
 
 CMSIS=contrib/CMSIS_5
 GDLIB=contrib/GD32F4xx_Firmware_Library
@@ -67,6 +68,7 @@ OBJS+= libssp.a libssp_nonshared.a
 CFLAGS= -DNDEBUG -ffunction-sections -fdata-sections -O3 -ggdb \
             -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mthumb -mcpu=cortex-m4
 
+CFLAGS+= -DCRYSTAL_FREQ=${CRYSTAL_FREQ}
 CFLAGS+= -Isrc/platforms/gd32f470
 CFLAGS+= -I${CMSIS}/CMSIS/Core/Include
 CFLAGS+= -I${GDLIB}/GD32F4xx/Include

@@ -38,7 +38,7 @@ static void setup_timer7(void) {
   TIMER_CTL1(TIMER7) =
     TIMER_TRI_OUT_SRC_UPDATE; /* Master Mode: TRGO on counter update */
   TIMER_CAR(TIMER7) =
-    59; /* Period of (59+1) with 240 MHz Clock produces 4 MHz */
+    47; /* Period of (47+1) with 192 MHz Clock produces 4 MHz */
   TIMER_DMAINTEN(TIMER7) = TIMER_DMAINTEN_UPDEN; /* Enable DMA event on update*/
   TIMER_CTL0(TIMER7) = TIMER_CTL0_CEN;           /* Start */
 
