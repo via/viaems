@@ -26,6 +26,6 @@ jobs:
         run: make PLATFORM=hosted lint
       - name: build stm32f4 platform
         run: make PLATFORM=stm32f4
-      - name: build gd32f470 platform
-        run: make PLATFORM=gd32f470
+      - name: build gd32f4 platform
+        run: make PLATFORM=gd32f4
 

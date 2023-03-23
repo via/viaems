@@ -13,7 +13,7 @@ void platform_enable_event_logging() {}
 void platform_disable_event_logging() {}
 
 uint64_t cycles_to_ns(uint64_t cycles) {
-  return cycles * 1000 / 240;
+  return cycles * 1000 / 192;
 }
 
 uint64_t cycle_count() {
@@ -73,7 +73,7 @@ static void setup_watchdog() {
 
   FWDGT_CTL = 0x0000CCCC; /* Start watchdog */
   FWDGT_CTL = 0x00005555; /* Magic unlock sequence */
-  FWDGT_RLD = 1000;       /* Approx 30 mS */
+  FWDGT_RLD = 1250;       /* Approx 30 mS */
   reset_watchdog();
 }
 
@@ -85,9 +85,9 @@ void systick_handler(void) {
 static void setup_systick() {
   DBG_CTL1 |= DBG_CTL1_FWDGT_HOLD;
 
-  /* Systick is driven by AHB / 8 = 30 MHz
-   * Reload value 300000 for 30 MHz Systick and 10 ms period */
-  SysTick->LOAD = 300000;
+  /* Systick is driven by AHB / 8 = 25 MHz
+   * Reload value 250000 for 25 MHz Systick and 10 ms period */
+  SysTick->LOAD = 250000;
   SysTick->CTRL = SysTick_CTRL_ENABLE_Msk |
                   SysTick_CTRL_TICKINT_Msk; /* Enable interrupt and systick */
 
@@ -153,17 +153,19 @@ static void system_init(void) {
 
   pmu_ldo_output_select(PMU_LDOVS_HIGH);
 
-  rcu_ahb_clock_config(RCU_AHB_CKSYS_DIV1);   /* 240 MHz */
-  rcu_apb1_clock_config(RCU_APB1_CKAHB_DIV4); /* 60 MHz */
-  rcu_apb2_clock_config(RCU_APB2_CKAHB_DIV2); /* 120 MHz */
+  rcu_ahb_clock_config(RCU_AHB_CKSYS_DIV1);   /* 192 MHz */
+  rcu_apb1_clock_config(RCU_APB1_CKAHB_DIV4); /* 48 MHz */
+  rcu_apb2_clock_config(RCU_APB2_CKAHB_DIV2); /* 96 MHz */
 
-  /* Configure the main PLL, PSC = 8, PLL_N = 480, PLL_P = 2, PLL_Q = 10 */
-  rcu_pll_config(RCU_PLLSRC_HXTAL, 8, 480, 2, 10);
+  /* Configure the main PLL: Divide by crystal to get 1 MHz, multiple
+   * by 384 to get a frequency that works on any f450 or 470 */
+
+  /* example: PSC = 8, PLL_N = 384, PLL_P = 2, PLL_Q = 10 */
+  rcu_pll_config(RCU_PLLSRC_HXTAL, CRYSTAL_FREQ, 384, 2, 8);
 
   rcu_osci_on(RCU_PLL_CK);
   rcu_osci_stab_wait(RCU_PLL_CK);
 
-  /* Enable the high-drive to extend the clock frequency to 240 Mhz */
   pmu_highdriver_mode_enable();
   pmu_highdriver_switch_select(PMU_HIGHDR_SWITCH_EN);
 
@@ -207,8 +209,8 @@ void platform_save_config() {
   FWDGT_PSC = FWDGT_PSC_DIV256;
 
   fmc_unlock();
-  /* Erase sectors 8 (512 KB into main flash) */
-  fmc_sector_erase(CTL_SECTOR_NUMBER_8);
+  /* Erase sectors 7 (384 KB to 512 KB of main flash) */
+  fmc_sector_erase(CTL_SECTOR_NUMBER_7);
 
   uint32_t *src, *dest;
   for (dest = &_configdata_loadaddr, src = &_sconfigdata; src < &_econfigdata;
@@ -224,18 +226,18 @@ void platform_reset_into_bootloader() {
   /* TODO: unimplemented */
 }
 
-extern void gd32f470_configure_scheduler(void);
-extern void gd32f470_console_init(void);
-extern void gd32f470_configure_adc(void);
-extern void gd32f470_configure_pwm(void);
+extern void gd32f4xx_configure_scheduler(void);
+extern void gd32f4xx_console_init(void);
+extern void gd32f4xx_configure_adc(void);
+extern void gd32f4xx_configure_pwm(void);
 
 void platform_init() {
   NVIC_SetPriorityGrouping(3); /* 16 priority preemption levels */
 
-  gd32f470_configure_scheduler();
-  gd32f470_console_init();
-  gd32f470_configure_adc();
-  gd32f470_configure_pwm();
+  gd32f4xx_configure_scheduler();
+  gd32f4xx_console_init();
+  gd32f4xx_configure_adc();
+  gd32f4xx_configure_pwm();
 
   setup_gpios();
   setup_systick();

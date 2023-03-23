@@ -507,7 +507,7 @@ static void usb_initialize_string(usb_desc_str *desc, const char *str) {
   desc->header.bLength = USB_STRING_LEN(len);
 }
 
-void gd32f470_console_init() {
+void gd32f4xx_console_init() {
   rcu_pll48m_clock_config(RCU_PLL48MSRC_PLLQ);
   rcu_ck48m_clock_config(RCU_CK48MSRC_PLL48M);
 
