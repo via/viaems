@@ -9,12 +9,12 @@ CRYSTAL_FREQ?=8
 CMSIS=contrib/CMSIS_5
 GDLIB=contrib/GD32F4xx_Firmware_Library
 
-OBJS+= gd32f470_init.o \
-       gd32f470_vectors.o \
-       gd32f470_pwm.o \
-       gd32f470_usb.o \
-       gd32f470_sched.o \
-       gd32f470_sensors.o \
+OBJS+= gd32f4_init.o \
+       gd32f4_vectors.o \
+       gd32f4_pwm.o \
+       gd32f4_usb.o \
+       gd32f4_sched.o \
+       gd32f4_sensors.o \
        stm32_sched_buffers.o
 
 GD32PERIPH= \
@@ -68,8 +68,7 @@ OBJS+= libssp.a libssp_nonshared.a
 CFLAGS= -DNDEBUG -ffunction-sections -fdata-sections -O3 -ggdb \
             -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mthumb -mcpu=cortex-m4
 
-CFLAGS+= -DCRYSTAL_FREQ=${CRYSTAL_FREQ}
-CFLAGS+= -Isrc/platforms/gd32f470
+CFLAGS+= -Isrc/platforms/gd32f4
 CFLAGS+= -I${CMSIS}/CMSIS/Core/Include
 CFLAGS+= -I${GDLIB}/GD32F4xx/Include
 CFLAGS+= -I${GDLIB}/GD32F4xx_standard_peripheral/Include
@@ -80,9 +79,10 @@ CFLAGS+= -I${GDLIB}/GD32F4xx_usb_library/ustd/common
 CFLAGS+= -I${GDLIB}/GD32F4xx_usb_library/ustd/class/cdc
 CFLAGS+= -DGD32F470 -D TICKRATE=4000000
 CFLAGS+= -DSPI_${SPI_ADC}
+CFLAGS+= -DCRYSTAL_FREQ=${CRYSTAL_FREQ}
 
 LDFLAGS+= -lc -lnosys -nostartfiles -L ${OBJDIR} -Wl,--gc-sections
-LDFLAGS+= -T src/platforms/gd32f470/gd32f470.ld
+LDFLAGS+= -T src/platforms/gd32f4/gd32f4.ld
 
 ${OBJDIR}/libssp.a:
 	${AR} rcs ${OBJDIR}/libssp.a

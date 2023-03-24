@@ -1,7 +1,7 @@
-## GD32F470
+## GD32F4xx
 
-This chip is pin compatible with the STM32F407, but with a 240 MHz clock and 
-0-cycle "flash", it is significantly faster chip than the STM32F4.  More
+This chip is pin compatible with the STM32F407, but with a 200/240 MHz clock
+and 0-cycle "flash", it is significantly faster chip than the STM32F4.  More
 importantly, it is available, whereas STM32 chips are currently unavailable.
 
 The only notable difference is the lack of the DMA errata, allowing us to use 
@@ -21,7 +21,7 @@ PWM | `PC6`-`PC9`
 ### Resources
 System | Use
 --- | ---
-SPI0 | MAX11632 ADC
+SPI0 | TLV2553 ADC
 TIMER0 | SPI(ADC) sample timer
 TIMER1 | Main CPU Clock, event timer, and capture units for trigger inputs
 TIMER2 | PWM driver, fixed at 30 Hz
