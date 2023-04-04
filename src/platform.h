@@ -65,6 +65,8 @@ void platform_reset_into_bootloader(void);
  * when buffers are swapped, so it is safe to use this value to schedule events
  * if interrupts are disabled */
 timeval_t platform_output_earliest_schedulable_time(void);
+void itm_event(uint32_t val);
+void itm_debug(const char *val);
 
 #ifdef UNITTEST
 #include <check.h>

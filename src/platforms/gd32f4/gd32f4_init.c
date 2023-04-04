@@ -244,10 +244,43 @@ extern void gd32f4xx_spi_transaction(const uint8_t *tx,
                                      uint8_t *rx,
                                      size_t len);
 
+static void configure_swo(void) {
+
+  /* Configure PB3 as an TRACESWO */
+  gpio_mode_set(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO_PIN_3);
+  gpio_af_set(GPIOB, GPIO_AF_0, GPIO_PIN_3);
+  gpio_output_options_set(GPIOB, GPIO_OTYPE_PP, GPIO_OSPEED_MAX, GPIO_PIN_3);
+  dbg_trace_pin_enable(); 
+
+  /* Set TPI configuration */
+  TPI->ACPR = 11; /* 192 MHz / (11 + 1) = 16 MHz */
+  TPI->SPPR = 1;
+  TPI->FFCR = 0x100;
+
+  CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk; // Enable access to registers
+  DWT->CTRL = 0x400003FE; // DWT needs to provide sync for ITM
+  ITM->LAR = 0xC5ACCE55; // Allow access to the Control Register
+  ITM->TPR = 0x0000000F; // Trace access privilege from user level code, please
+  ITM->TCR = 0x0001000F;
+  ITM->TER = 0xF;
+}
+
+void itm_debug(const char *s) {
+  for (; *s != NULL; s++) {
+    ITM_SendChar(*s);
+  }
+}
+
+void itm_event(uint32_t val) {
+  ITM->PORT[1].u32 = val;
+}
+
 void platform_init() {
   NVIC_SetPriorityGrouping(3); /* 16 priority preemption levels */
 
+
   gd32f470_configure_scheduler();
+  configure_swo();
   gd32f470_console_init();
   gd32f470_configure_adc();
   gd32f470_configure_pwm();
@@ -259,6 +292,9 @@ void platform_init() {
   setup_systick();
   setup_watchdog();
   setup_dwt();
+
+  itm_debug("platform_init() complete\n");
+
 }
 
 void platform_benchmark_init() {}
