@@ -16,6 +16,7 @@ OBJS += calculations.o \
 				table.o \
 				tasks.o \
 				sim.o \
+        flash.o \
 				util.o
 
 include targets/${PLATFORM}.mk

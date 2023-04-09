@@ -15,6 +15,7 @@ OBJS+= gd32f4_init.o \
        gd32f4_usb.o \
        gd32f4_sched.o \
        gd32f4_sensors.o \
+       gd32f4_spiflash.o \
        stm32_sched_buffers.o
 
 GD32PERIPH= \
@@ -65,7 +66,7 @@ VPATH=src/platforms/${PLATFORM} \
 
 OBJS+= libssp.a libssp_nonshared.a
 
-CFLAGS= -DNDEBUG -ffunction-sections -fdata-sections -O3 -ggdb \
+CFLAGS= -DNDEBUG -ffunction-sections -fdata-sections -O2 -g3 -gdwarf-2 \
             -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mthumb -mcpu=cortex-m4
 
 CFLAGS+= -Isrc/platforms/gd32f4
