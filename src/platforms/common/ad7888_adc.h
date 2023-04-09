@@ -12,15 +12,8 @@
 
 /* clang-format off */
 static const uint16_t adc_transmit_sequence[NUM_SPI_TX] = {
-  SPI_INPUT(0),
-  SPI_INPUT(1),
-  SPI_INPUT(2),
-  SPI_INPUT(3),
-  SPI_INPUT(4),
-  SPI_INPUT(5),
-  SPI_INPUT(6),
-  SPI_INPUT(7),
-  SPI_INPUT(0),
+  SPI_INPUT(0), SPI_INPUT(1), SPI_INPUT(2), SPI_INPUT(3), SPI_INPUT(4),
+  SPI_INPUT(5), SPI_INPUT(6), SPI_INPUT(7), SPI_INPUT(0),
 };
 /* clang-format on */
 

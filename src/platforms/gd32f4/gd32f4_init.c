@@ -75,12 +75,16 @@ static void platform_disable_periphs(void) {
   rcu_periph_clock_disable(RCU_TIMER8);
 
   rcu_periph_clock_disable(RCU_GPIOA);
+  rcu_periph_clock_disable(RCU_GPIOB);
   rcu_periph_clock_disable(RCU_GPIOC);
   rcu_periph_clock_disable(RCU_GPIOD);
   rcu_periph_clock_disable(RCU_GPIOE);
 
   rcu_periph_clock_disable(RCU_SPI0);
+  rcu_periph_clock_disable(RCU_SPI1);
+  rcu_periph_clock_disable(RCU_SPI2);
 
+  rcu_periph_clock_disable(RCU_DMA0);
   rcu_periph_clock_disable(RCU_DMA1);
   rcu_periph_clock_disable(RCU_USBFS);
 }
@@ -96,12 +100,16 @@ static void platform_enable_periphs(void) {
   rcu_periph_clock_enable(RCU_TIMER8);
 
   rcu_periph_clock_enable(RCU_GPIOA);
+  rcu_periph_clock_enable(RCU_GPIOB);
   rcu_periph_clock_enable(RCU_GPIOC);
   rcu_periph_clock_enable(RCU_GPIOD);
   rcu_periph_clock_enable(RCU_GPIOE);
 
   rcu_periph_clock_enable(RCU_SPI0);
+  rcu_periph_clock_enable(RCU_SPI1);
+  rcu_periph_clock_enable(RCU_SPI2);
 
+  rcu_periph_clock_enable(RCU_DMA0);
   rcu_periph_clock_enable(RCU_DMA1);
   rcu_periph_clock_enable(RCU_USBFS);
 }
@@ -232,6 +240,11 @@ extern void gd32f4xx_console_init(void);
 extern void gd32f4xx_configure_adc(void);
 extern void gd32f4xx_configure_pwm(void);
 
+extern void gd32f4xx_configure_spi_flash(void);
+extern void gd32f4xx_spi_transaction(const uint8_t *tx,
+                                     uint8_t *rx,
+                                     size_t len);
+
 void platform_configure(bool is_benchmark) {
 
   NVIC_SetPriorityGrouping(3); /* 16 priority preemption levels */
@@ -247,4 +260,6 @@ void platform_configure(bool is_benchmark) {
 
   setup_dwt();
   gd32f4xx_console_init();
+
+
 }

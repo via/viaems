@@ -11,14 +11,17 @@ OBJS += calculations.o \
 				scheduler.o \
 				sensors.o \
 				table.o \
-				sim.o \
 				tasks.o \
-				util.o \
+				sim.o \
 				stream.o \
 				crc.o \
 				benchmark.o \
+        flash.o \
+				util.o \
 				viaems.o
 
+OBJS += ff.o \
+        ffunicode.o
 
 include targets/${PLATFORM}.mk
 include proto/rules.mk
@@ -29,6 +32,7 @@ DEPS = $(wildcard ${OBJDIR}/*.d)
 
 GITDESC=$(shell git describe --tags --dirty)
 CFLAGS+=-Isrc/ -Isrc/platforms/common -Wall -Wextra -ggdb -g3 -std=c11
+CFLAGS+=-Icontrib/fatfs
 CFLAGS+= -DGIT_DESCRIBE=\"${GITDESC}\" -DFW_PLATFORM=\"${PLATFORM}\"
 LDFLAGS+= -lm -L${OBJDIR}
 
@@ -36,7 +40,7 @@ ifeq "$(BENCH)" "1"
 	CFLAGS+=-DBENCHMARK=1
 endif
 
-VPATH+=src src/platforms src/platforms/common contrib/tinycbor/src
+VPATH+=src src/platforms src/platforms/common contrib/fatfs
 DESTOBJS = $(addprefix ${OBJDIR}/, ${OBJS})
 
 $(OBJDIR):

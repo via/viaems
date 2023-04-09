@@ -1,3 +1,13 @@
+#include "calculations.h"
+#include "config.h"
+#include "decoder.h"
+#include "flash.h"
+#include "platform.h"
+#include "scheduler.h"
+#include "sensors.h"
+#include "table.h"
+#include "tasks.h"
+#include "util.h"
 #include <assert.h>
 
 #include "config.h"
