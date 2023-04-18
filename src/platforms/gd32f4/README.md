@@ -12,6 +12,8 @@ Use | Pins
 --- | ---
 Trigger 0 | `PA0`
 Trigger 1 | `PA1`
+Freq 2 | `PA2`
+Freq/Pulsewidth 3 | `PA3`
 ADC | `PA5`, `PA6`, `PA7`, and `PA8`
 USB | `PA9`, `PA11`, and `PA12`
 OUT | `PD0`-`PD15`
@@ -26,6 +28,7 @@ TIMER0 | SPI(ADC) sample timer
 TIMER1 | Main CPU Clock, event timer, and capture units for trigger inputs
 TIMER2 | PWM driver, fixed at 30 Hz
 TIMER7 | TIM2 4 MHz tick driver, triggers TIM2 on update
+TIMER8 | Frequence/Pulsewidth measurement
 USBFS | Console
 SYSTICK | 100 Hz task driver
 

@@ -119,11 +119,80 @@ uint32_t platform_knock_samplerate(void) {
 }
 
 
+/* Configure TIMER8's CH0 and CH1 to provide both frequency and pulsewidth
+ * on a single input, CH1 (PA3). Fire interrupt on update */
+static void setup_freq_pw_input(void) {
+
+  /* Enable the trigger/freq input GPIOs */
+  gpio_mode_set(GPIOA, GPIO_MODE_AF, GPIO_PUPD_PULLUP, GPIO_PIN_3);
+  gpio_af_set(GPIOA, GPIO_AF_3, GPIO_PIN_3);
+
+  /* Only have update interrupt fire on overflow, so we can have a timeout */
+  TIMER_CTL0(TIMER8) = TIMER_CTL0_UPS;
+    /* 192 MHz APB2 Timer clock divided by 2930 gives approximagely 1 Hz for
+     * full 65536 wraparound */
+  TIMER_PSC(TIMER8) = 2930;
+  TIMER_CAR(TIMER8) = 65535;
+  /* Interrupt on rising edge and overflow */
+  TIMER_DMAINTEN(TIMER8) = TIMER_DMAINTEN_UPIE | TIMER_DMAINTEN_CH1IE;
+
+  /* Restart counter on input 1 to compare channel 1 */
+  /* Restart can only happen on input 0's output to capture 0 (which is not
+   * connected) or input 1's connection to capture 1, so we need that to be the
+   * rising edge for active high */
+  TIMER_SMCFG(TIMER8) = TIMER_SLAVE_MODE_RESTART | TIMER_SMCFG_TRGSEL_CI1FE1;
+
+  /* Configure both channels to capture the same input */
+  TIMER_CHCTL0(TIMER8) = 0x2 |
+                         (0x01 << 8);
+  TIMER_CHCTL2(TIMER8) = TIMER_CHCTL2_CH0EN | TIMER_CHCTL2_CH1EN;
+  bool active_high = true;
+
+  if (active_high) {
+    TIMER_CHCTL2(TIMER8) |= TIMER_CHCTL2_CH0P; /* CH0 captures falling edge */
+  } else {
+    TIMER_CHCTL2(TIMER8) |= TIMER_CHCTL2_CH1P; /* CH1 captures falling edge */
+  }
+
+  nvic_irq_enable(TIMER0_BRK_TIMER8_IRQn, 14, 0);
+  TIMER_CTL0(TIMER8) |= TIMER_CTL0_CEN;
+
+  DBG_CTL2 |= DBG_CTL2_TIMER8_HOLD;
+}
+
+void TIMER0_BRK_TIMER8_IRQHandler(void) {
+  if (TIMER_INTF(TIMER8) & TIMER_INTF_CH1IF) {
+    uint32_t pulsewidth = TIMER_CH0CV(TIMER8);
+    uint32_t period = TIMER_CH1CV(TIMER8);
+    bool valid = (period != 0);
+    struct freq_update update = {
+      .time = current_time(),
+      .valid = valid,
+      .pin = 3,
+      .frequency = valid ? (65536.0f / (float)period) : 0,
+      .pulsewidth = (float)pulsewidth / 65536.0f,
+    };
+    sensor_update_freq(&update);
+  }
+
+  if (TIMER_INTF(TIMER8) & TIMER_INTF_UPIF) {
+    TIMER_INTF(TIMER8) = ~TIMER_INTF_UPIF;
+    struct freq_update update = {
+      .time = current_time(),
+      .valid = false,
+      .pin = 3,
+    };
+    sensor_update_freq(&update);
+  }
+
+}
+
 void gd32f4xx_configure_adc(void) {
   setup_spi0();
   setup_spi0_tx_dma();
   setup_spi0_rx_dma();
   setup_timer0();
+  setup_freq_pw_input();
 
   knock_configure(&config.knock_inputs[0]);
   knock_configure(&config.knock_inputs[1]);

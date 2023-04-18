@@ -48,35 +48,49 @@ static void setup_timer7(void) {
 static void configure_trigger_inputs(void) {
   trigger_edge cc0_edge = config.freq_inputs[0].edge;
   trigger_edge cc1_edge = config.freq_inputs[1].edge;
-  bool cc0_en = (config.freq_inputs[0].type == TRIGGER);
-  bool cc1_en = (config.freq_inputs[1].type == TRIGGER);
+  trigger_edge cc2_edge = config.freq_inputs[2].edge;
+
+  bool cc0_en = (config.freq_inputs[0].type != NONE);
+  bool cc1_en = (config.freq_inputs[1].type != NONE);
+  bool cc2_en = (config.freq_inputs[2].type != NONE);
 
   bool cc0p = (cc0_edge == FALLING_EDGE) || (cc0_edge == BOTH_EDGES);
   bool cc0np = (cc0_edge == BOTH_EDGES);
+
   bool cc1p = (cc1_edge == FALLING_EDGE) || (cc1_edge == BOTH_EDGES);
   bool cc1np = (cc1_edge == BOTH_EDGES);
 
-  /* Ensure CH0 and CH1 are off */
-  TIMER_CHCTL2(TIMER1) &= ~(TIMER_CHCTL2_CH0EN | TIMER_CHCTL2_CH1EN);
+  bool cc2p = (cc2_edge == FALLING_EDGE) || (cc2_edge == BOTH_EDGES);
+  bool cc2np = (cc2_edge == BOTH_EDGES);
+
+  /* Ensure CH0, CH1, and CH2 are off */
+  TIMER_CHCTL2(TIMER1) &= ~(TIMER_CHCTL2_CH0EN | 
+                            TIMER_CHCTL2_CH1EN |
+                            TIMER_CHCTL2_CH2EN);
+
+  /* Enable third input for frequency input */
+  TIMER_CHCTL1(TIMER1) = TIMER_CHCTL1_CH2CAPFLT | /* DTS/32 filter */
+                         0x1; /* CH2MS Mode 01 -- CH2 input */
 
   /* Configure 2 input captures for trigger inputs */
-  TIMER_CHCTL0(TIMER1) = TIMER_CHCTL0_CH0CAPFLT | /* DTS/32 filter */
-                         0x1 | /* CH0MS Mode 01 -- CH0 input */
-                         TIMER_CHCTL0_CH1CAPFLT | /* DTS/32 filter */
+  TIMER_CHCTL0(TIMER1) = 0x1 | /* CH0MS Mode 01 -- CH0 input */
                          (0x1 << 8); /* CH1MS Mode 01 -- CH1 input */
+
 
   TIMER_CHCTL2(TIMER1) =
     (cc0p ? TIMER_CHCTL2_CH0P : 0) | (cc0np ? TIMER_CHCTL2_CH0NP : 0) |
     (cc1p ? TIMER_CHCTL2_CH1P : 0) | (cc1np ? TIMER_CHCTL2_CH2NP : 0) |
-    TIMER_CHCTL2_CH3EN | /* Setup output compare for callbacks */
-    (cc0_en ? TIMER_CHCTL2_CH0EN : 0) | (cc1_en ? TIMER_CHCTL2_CH1EN : 0);
+    (cc2p ? TIMER_CHCTL2_CH2P : 0) | (cc2np ? TIMER_CHCTL2_CH2NP : 0) |
+    (cc0_en ? TIMER_CHCTL2_CH0EN : 0) | (cc1_en ? TIMER_CHCTL2_CH1EN : 0) |
+    (cc2_en ? TIMER_CHCTL2_CH2EN : 0) | TIMER_CHCTL2_CH3EN;
 }
 
 static void setup_timer1(void) {
 
-  /* Enable the trigger input GPIOs */
-  gpio_mode_set(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO_PIN_0 | GPIO_PIN_1);
-  gpio_af_set(GPIOA, GPIO_AF_1, GPIO_PIN_0 | GPIO_PIN_1);
+  /* Enable the trigger/freq input GPIOs */
+  gpio_mode_set(GPIOA, GPIO_MODE_AF, GPIO_PUPD_PULLUP, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2);
+  gpio_af_set(GPIOA, GPIO_AF_1, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2);
+
 
   /* Timer is driven by ITI1, the output of TIMER7 */
   TIMER_SMCFG(TIMER1) = TIMER_SLAVE_MODE_EXTERNAL0 | TIMER_SMCFG_TRGSEL_ITI1;
@@ -85,7 +99,8 @@ static void setup_timer1(void) {
   configure_trigger_inputs();
 
   nvic_irq_enable(TIMER1_IRQn, 1, 0);
-  TIMER_DMAINTEN(TIMER1) = TIMER_DMAINTEN_CH0IE | TIMER_DMAINTEN_CH1IE;
+  TIMER_DMAINTEN(TIMER1) = TIMER_DMAINTEN_CH0IE | TIMER_DMAINTEN_CH1IE |
+    TIMER_DMAINTEN_CH2IE;
 
   TIMER_CTL0(TIMER1) |= TIMER_CTL0_CEN;
 
@@ -95,6 +110,17 @@ static void setup_timer1(void) {
 timeval_t current_time() {
   return TIMER_CNT(TIMER1);
 }
+
+struct gd32f4_timebase_freq_pin {
+  int pin;
+  timeval_t last_time;
+};
+
+static struct gd32f4_timebase_freq_pin tim1_ch2_freq = {
+  .pin = 2,
+  .last_time = 0,
+};
+
 
 void TIMER1_IRQHandler(void) {
   bool cc0_fired = false;
@@ -123,6 +149,23 @@ void TIMER1_IRQHandler(void) {
       decoder_update_scheduling(1, cc1);
     }
   }
+
+  /* Handle FREQ input */
+  if (TIMER_INTF(TIMER1) & TIMER_INTF_CH2IF) {
+    timeval_t freqtime = TIMER_CH2CV(TIMER1);
+    timeval_t period = freqtime - tim1_ch2_freq.last_time;
+    tim1_ch2_freq.last_time = freqtime;
+    bool valid = (period != 0);
+    struct freq_update update = {
+      .time = freqtime,
+      .valid = valid,
+      .pin = tim1_ch2_freq.pin,
+      .frequency = valid ? ((float)TICKRATE / period) : 0,
+      .pulsewidth = 0,
+    };
+    sensor_update_freq(&update);
+  }
+
 
   if (TIMER_INTF(TIMER1) & TIMER_INTF_CH3IF) {
     TIMER_INTF(TIMER1) = ~TIMER_INTF_CH3IF;
