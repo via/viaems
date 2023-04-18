@@ -42,23 +42,23 @@ const struct console_feed_node console_feed_nodes[] = {
     .uint32_ptr = &calculated_values.fuel_overduty_cut },
 
   { .id = "sensor.map",
-    .float_ptr = &config.sensors[SENSOR_MAP].processed_value },
+    .float_ptr = &config.sensors[SENSOR_MAP].value },
   { .id = "sensor.iat",
-    .float_ptr = &config.sensors[SENSOR_IAT].processed_value },
+    .float_ptr = &config.sensors[SENSOR_IAT].value },
   { .id = "sensor.clt",
-    .float_ptr = &config.sensors[SENSOR_CLT].processed_value },
+    .float_ptr = &config.sensors[SENSOR_CLT].value },
   { .id = "sensor.brv",
-    .float_ptr = &config.sensors[SENSOR_BRV].processed_value },
+    .float_ptr = &config.sensors[SENSOR_BRV].value },
   { .id = "sensor.tps",
-    .float_ptr = &config.sensors[SENSOR_TPS].processed_value },
+    .float_ptr = &config.sensors[SENSOR_TPS].value },
   { .id = "sensor.aap",
-    .float_ptr = &config.sensors[SENSOR_AAP].processed_value },
+    .float_ptr = &config.sensors[SENSOR_AAP].value },
   { .id = "sensor.frt",
-    .float_ptr = &config.sensors[SENSOR_FRT].processed_value },
+    .float_ptr = &config.sensors[SENSOR_FRT].value },
   { .id = "sensor.ego",
-    .float_ptr = &config.sensors[SENSOR_EGO].processed_value },
+    .float_ptr = &config.sensors[SENSOR_EGO].value },
   { .id = "sensor.frp",
-    .float_ptr = &config.sensors[SENSOR_FRP].processed_value },
+    .float_ptr = &config.sensors[SENSOR_FRP].value },
   { .id = "knock1.value",
     .float_ptr = &config.knock_inputs[0].value },
   { .id = "knock2.value",
@@ -1062,7 +1062,7 @@ static void render_sensor_object(struct console_request_context *ctx,
     (struct console_enum_mapping[]){ { SENSOR_NONE, "none" },
                                      { SENSOR_ADC, "adc" },
                                      { SENSOR_FREQ, "freq" },
-                                     { SENSOR_DIGITAL, "digital" },
+                                     { SENSOR_PULSEWIDTH, "pulsewidth" },
                                      { SENSOR_CONST, "const" },
                                      { 0, NULL } },
     &source);
@@ -1075,7 +1075,6 @@ static void render_sensor_object(struct console_request_context *ctx,
                         (struct console_enum_mapping[]){
                           { METHOD_LINEAR, "linear" },
                           { METHOD_LINEAR_WINDOWED, "linear-window" },
-                          { METHOD_TABLE, "table" },
                           { METHOD_THERM, "therm" },
                           { 0, NULL } },
                         &method);
@@ -1086,7 +1085,7 @@ static void render_sensor_object(struct console_request_context *ctx,
   render_float_map_field(
     ctx, "range-max", "max for linear mapping", &input->range.max);
   render_float_map_field(
-    ctx, "fixed-value", "value to hold for const input", &input->fixed_value);
+    ctx, "fixed-value", "value to hold for const input", &input->value);
   render_float_map_field(ctx, "therm-a", "thermistor A", &input->therm.a);
   render_float_map_field(ctx, "therm-b", "thermistor B", &input->therm.b);
   render_float_map_field(ctx, "therm-c", "thermistor C", &input->therm.c);
@@ -1094,11 +1093,11 @@ static void render_sensor_object(struct console_request_context *ctx,
                          "therm-bias",
                          "thermistor resistor bias value (ohms)",
                          &input->therm.bias);
-  render_uint32_map_field(ctx,
+  render_float_map_field(ctx,
                           "fault-min",
                           "Lower bound for raw sensor input",
                           &input->fault_config.min);
-  render_uint32_map_field(ctx,
+  render_float_map_field(ctx,
                           "fault-max",
                           "Upper bound for raw sensor input",
                           &input->fault_config.max);
@@ -1265,7 +1264,7 @@ static void render_freq_object(struct console_request_context *ctx, void *ptr) {
     "type",
     "input interpretation",
     (const struct console_enum_mapping[]){
-      { FREQ, "freq" }, { TRIGGER, "trigger" }, { 0, NULL } },
+      { NONE, "none" }, {FREQ, "freq" }, { TRIGGER, "trigger" }, { 0, NULL } },
     &type);
 
   f->edge = edge;

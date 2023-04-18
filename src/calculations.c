@@ -27,7 +27,7 @@ static bool rpm_cut() {
 
 static bool boost_cut() {
   calculated_values.boost_cut =
-    config.sensors[SENSOR_MAP].processed_value > config.boost_control.overboost;
+    config.sensors[SENSOR_MAP].value > config.boost_control.overboost;
   return calculated_values.boost_cut;
 }
 
@@ -43,7 +43,7 @@ void calculate_ignition() {
   calculated_values.timing_advance =
     interpolate_table_twoaxis(config.timing,
                               config.decoder.rpm,
-                              config.sensors[SENSOR_MAP].processed_value);
+                              config.sensors[SENSOR_MAP].value);
   switch (config.ignition.dwell) {
   case DWELL_FIXED_DUTY:
     calculated_values.dwell_us =
@@ -55,7 +55,7 @@ void calculate_ignition() {
   case DWELL_BRV:
     calculated_values.dwell_us =
       1000 * interpolate_table_oneaxis(
-               config.dwell, config.sensors[SENSOR_BRV].processed_value);
+               config.dwell, config.sensors[SENSOR_BRV].value);
     break;
   }
 }
@@ -137,14 +137,14 @@ void calculate_fueling() {
   float idt;
   float ete;
 
-  float iat = config.sensors[SENSOR_IAT].processed_value;
-  float brv = config.sensors[SENSOR_BRV].processed_value;
-  float map = config.sensors[SENSOR_MAP].processed_value;
-  float frt = config.sensors[SENSOR_FRT].processed_value;
-  float clt = config.sensors[SENSOR_CLT].processed_value;
+  float iat = config.sensors[SENSOR_IAT].value;
+  float brv = config.sensors[SENSOR_BRV].value;
+  float map = config.sensors[SENSOR_MAP].value;
+  float frt = config.sensors[SENSOR_FRT].value;
+  float clt = config.sensors[SENSOR_CLT].value;
 
-  float tps = config.sensors[SENSOR_TPS].processed_value;
-  float tpsrate = config.sensors[SENSOR_TPS].derivative.value;
+  float tps = config.sensors[SENSOR_TPS].value;
+  float tpsrate = config.sensors[SENSOR_TPS].derivative;
 
   if (config.ve) {
     ve = interpolate_table_twoaxis(config.ve, config.decoder.rpm, map);
@@ -220,7 +220,7 @@ END_TEST
 START_TEST(check_calculate_airmass) {
 
   /* Airmass for perfect VE, full map, 0 C*/
-  config.sensors[SENSOR_IAT].processed_value = 0.0f;
+  config.sensors[SENSOR_IAT].value = 0.0f;
   config.fueling.cylinder_cc = 500;
   float airmass = calculate_airmass(100, 100, 0);
   ck_assert_float_eq_tol(airmass, 0.646100, 0.001);

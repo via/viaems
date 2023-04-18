@@ -95,15 +95,17 @@ void DMA1_Channel0_IRQHandler(void) {
     const uint16_t *sequence = (dma_using_memory_get(DMA1, DMA_CH0) == 0)
                                  ? (const uint16_t *)spi_rx_buffer[1]
                                  : (const uint16_t *)spi_rx_buffer[0];
-    bool fault = !adc_response_is_valid(sequence);
-    for (int i = 0; i < NUM_SENSORS; ++i) {
-      if (config.sensors[i].source == SENSOR_ADC) {
-        config.sensors[i].fault = fault ? FAULT_CONN : FAULT_NONE;
-        config.sensors[i].raw_value =
-          read_adc_pin(sequence, config.sensors[i].pin);
-      }
+    struct adc_update update = {
+      .time = current_time(),
+      .valid = adc_response_is_valid(sequence),
+    };
+    for (int i = 0; i < MAX_ADC_PINS; ++i) {
+      uint32_t adc_value = read_adc_pin(sequence, i);
+      /* 5 volt ADC inputs */
+      float raw_value = (float)(5 * adc_value) / 4096.0f;
+      update.values[i] = raw_value;
     }
-    sensors_process(SENSOR_ADC);
+    sensor_update_adc(&update);
     process_knock_inputs(sequence);
   }
 }

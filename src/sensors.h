@@ -3,6 +3,7 @@
 
 #include "platform.h"
 #define SENSOR_FREQ_DIVIDER 4096
+#define MAX_ADC_PINS 16
 
 typedef enum {
   SENSOR_MAP, /* Manifold Absolute Pressure */
@@ -21,14 +22,13 @@ typedef enum {
   SENSOR_NONE,
   SENSOR_ADC,
   SENSOR_FREQ,
-  SENSOR_DIGITAL,
+  SENSOR_PULSEWIDTH,
   SENSOR_CONST,
 } sensor_source;
 
 typedef enum {
   METHOD_LINEAR,
   METHOD_LINEAR_WINDOWED,
-  METHOD_TABLE,
   METHOD_THERM,
 } sensor_method;
 
@@ -52,14 +52,15 @@ struct sensor_input {
     float min;
     float max;
   } range;
+  float raw_min;
+  float raw_max;
   struct table *table;
-  float fixed_value;
   struct thermistor_config therm;
 
   float lag;
   struct {
-    uint32_t min;
-    uint32_t max;
+    float min;
+    float max;
     float fault_value;
   } fault_config;
   struct window {
@@ -73,13 +74,16 @@ struct sensor_input {
     degrees_t collection_start_angle;
   } window;
 
-  uint32_t raw_value;
-  float processed_value;
-  struct {
-    timeval_t last_sample_time;
-    float last_sample_value;
-    float value;
-  } derivative;
+  timeval_t time;
+  float raw_value;
+  float value;
+
+  timeval_t previous_time;
+  float previous_raw_value;
+  float previous_value;
+
+  float derivative;
+
   sensor_fault fault;
 };
 
@@ -90,6 +94,7 @@ typedef enum {
 } trigger_edge;
 
 typedef enum {
+  NONE,
   FREQ,    /* Only generate frequency information */
   TRIGGER, /* Use as source of decoder position */
 } freq_type;
@@ -118,7 +123,24 @@ struct knock_input {
   float value;
 };
 
-void sensors_process(sensor_source source);
+struct freq_update {
+  timeval_t time;
+  bool valid;
+
+  uint32_t pin;
+  float frequency; /* Hz */
+  float pulsewidth; /* seconds */
+};
+
+struct adc_update {
+  timeval_t time;
+  bool valid;
+  float values[MAX_ADC_PINS]; /* Pin values in V */
+};
+
+void sensor_update_freq(const struct freq_update *);
+void sensor_update_adc(const struct adc_update *);
+
 uint32_t sensor_fault_status();
 
 void knock_add_sample(struct knock_input *, float sample);
