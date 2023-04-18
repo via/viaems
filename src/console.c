@@ -63,6 +63,8 @@ const struct console_feed_node console_feed_nodes[] = {
     .float_ptr = &config.knock_inputs[0].value },
   { .id = "knock2.value",
     .float_ptr = &config.knock_inputs[1].value },
+  { .id = "sensor.eth",
+    .float_ptr = &config.sensors[SENSOR_ETH].value },
 
   { .id = "sensor_faults", .uint32_fptr = sensor_fault_status },
 
@@ -1035,6 +1037,8 @@ static const char *sensor_name_from_type(sensor_input_type t) {
     return "ego";
   case SENSOR_FRP:
     return "frp";
+  case SENSOR_ETH:
+    return "eth";
   default:
     return "invalid";
   }

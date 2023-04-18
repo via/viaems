@@ -15,6 +15,7 @@ typedef enum {
   SENSOR_FRT, /* Fuel Rail Temperature */
   SENSOR_EGO, /* Exhaust Gas Oxygen */
   SENSOR_FRP, /* Fuel Rail Pressure */
+  SENSOR_ETH, /* Ethanol percentage */
   NUM_SENSORS,
 } sensor_input_type;
 
