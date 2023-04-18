@@ -65,7 +65,7 @@ VPATH=src/platforms/${PLATFORM} \
 
 OBJS+= libssp.a libssp_nonshared.a
 
-CFLAGS= -DNDEBUG -ffunction-sections -fdata-sections -O3 -ggdb \
+CFLAGS= -DNDEBUG -ffunction-sections -fdata-sections -O3 \
             -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mthumb -mcpu=cortex-m4
 
 CFLAGS+= -Isrc/platforms/gd32f4
