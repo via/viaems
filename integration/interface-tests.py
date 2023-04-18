@@ -115,7 +115,7 @@ class ViaemsInterfaceTests(unittest.TestCase):
         assert(outputs[0]['_type'] == 'output')
 
         sensors = result['response']['sensors']
-        assert(len(sensors) == 11)
+        assert(len(sensors) == 12)
         assert(sensors['iat']['_type'] == 'sensor')
 
     def test_structure_types(self):
