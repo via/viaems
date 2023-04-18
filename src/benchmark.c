@@ -58,11 +58,15 @@ static void do_schedule_ignition_event_bench() {
 
 static void do_sensor_adc_calcs() {
   platform_load_config();
-  for (int i = 0; i < NUM_SENSORS; i++) {
-    config.sensors[i].raw_value = 2048;
+  struct adc_update u = {
+    .time = current_time(),
+    .valid = true,
+  };
+  for (int i = 0; i < 16; i++) {
+    u.values[i] = 2.5f;
   }
   uint64_t start = cycle_count();
-  sensors_process(SENSOR_ADC);
+  sensor_update_adc(&u);
   uint64_t end = cycle_count();
 
   printf("process_sensor(adc): %d ns\r\n", (int)cycles_to_ns(end - start));
@@ -74,6 +78,7 @@ static void do_sensor_single_therm() {
     config.sensors[i].source = SENSOR_NONE;
   }
   config.sensors[0] = (struct sensor_input){
+    .pin = 0,
     .source = SENSOR_ADC,
     .method = METHOD_THERM,
     .therm = {
@@ -86,11 +91,16 @@ static void do_sensor_single_therm() {
       .min = 0,
       .max = 4095,
     },
-    .raw_value = 10,
+  };
+
+  struct adc_update u = {
+    .time = current_time(),
+    .valid = true,
+    .values = {2.5f},
   };
 
   uint64_t start = cycle_count();
-  sensors_process(SENSOR_ADC);
+  sensor_update_adc(&u);
   uint64_t end = cycle_count();
 
   printf("process_sensor(single-therm): %d ns\r\n",
@@ -99,10 +109,10 @@ static void do_sensor_single_therm() {
 
 int main() {
   /* Preparations for all benchmarks */
-  config.sensors[SENSOR_IAT].processed_value = 15.0f;
-  config.sensors[SENSOR_BRV].processed_value = 14.8f;
-  config.sensors[SENSOR_MAP].processed_value = 100.0f;
-  config.sensors[SENSOR_CLT].processed_value = 90.0f;
+  config.sensors[SENSOR_IAT].value = 15.0f;
+  config.sensors[SENSOR_BRV].value = 14.8f;
+  config.sensors[SENSOR_MAP].value = 100.0f;
+  config.sensors[SENSOR_CLT].value = 90.0f;
   config.decoder.rpm = 3000;
 
   do {

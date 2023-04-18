@@ -1,6 +1,7 @@
 ### master (unreleased)
  - Make gd32f4 default platform
  - implement knock inputs
+ - sensor api refactor, **breaking change for range values**
 
 ### 1.5.0 (2023 April 20)
 

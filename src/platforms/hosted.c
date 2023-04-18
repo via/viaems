@@ -431,8 +431,4 @@ void platform_init() {
       exit(EXIT_FAILURE);
     }
   }
-
-  sensors_process(SENSOR_ADC);
-  sensors_process(SENSOR_FREQ);
-  sensors_process(SENSOR_CONST);
 }

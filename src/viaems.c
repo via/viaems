@@ -17,7 +17,6 @@ int main() {
 
   assert(config_valid());
 
-  sensors_process(SENSOR_CONST);
   while (1) {
     console_process();
   }

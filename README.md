@@ -155,6 +155,8 @@ Member | Meaning
 `params` | Union used to configure a sensor. Contains `range` used for calculated sensors, and `table` for table lookup sensors.
 `params.range.min` | For processing, value that lowest raw sensor value reflects
 `params.range.max` | For processing, value that highest raw sensor value reflects
+`raw_min` | The raw input value that the minimum level is associated with
+`raw_max` | The raw input value that the maximum level is associated with
 `params.therm` | For processing, Bias resistor and A, B and C parameters of the Steinart-Hart equation
 `fault_config.min` | Raw sensor value, below this indicates sensor fault
 `fault_config.max` | Raw sensor value, above this indicates sensor fault
@@ -165,11 +167,10 @@ Member | Meaning
 `window.offset` | When method is windowed, offset of capture window inside total window
 
 For method `SENSOR_LINEAR`, the processed value is linear interpolated based on
-the raw value between min and max (with the raw value being 0 - 4095 for 12-bit
-ADCs).
+the raw value between min and max (with the raw value being between `raw_min` and `raw_max`)
 
 The onboard ADC is not used. Instead an external ADC is connected
-to SPI2 (PB12-PB15).  Currently a TLC2543 or AD7888 ADC is supported.
+to SPI2 (PB12-PB15).  Currently a TLV2553 or AD7888 ADC is supported.
 
 ### Tables
 Tables can be up to 24x24 float values that are bilinearly interpolated. Use

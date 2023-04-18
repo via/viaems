@@ -29,8 +29,8 @@ static void handle_fuel_pump() {
 
 static void handle_boost_control() {
   float duty;
-  float map = config.sensors[SENSOR_MAP].processed_value;
-  float tps = config.sensors[SENSOR_TPS].processed_value;
+  float map = config.sensors[SENSOR_MAP].value;
+  float tps = config.sensors[SENSOR_TPS].value;
   if (map < config.boost_control.enable_threshold_kpa) {
     /* Below the "enable" threshold, keep the valve off */
     duty = 0.0f;
@@ -73,8 +73,8 @@ static cel_state_t determine_next_cel_state() {
   int sensor_in_fault = (sensor_fault_status() > 0);
   int decode_loss = !config.decoder.valid && (config.decoder.rpm > 0);
   int lean_in_boost =
-    (config.sensors[SENSOR_MAP].processed_value > config.cel.lean_boost_kpa) &&
-    (config.sensors[SENSOR_EGO].processed_value > config.cel.lean_boost_ego);
+    (config.sensors[SENSOR_MAP].value > config.cel.lean_boost_kpa) &&
+    (config.sensors[SENSOR_EGO].value > config.cel.lean_boost_ego);
 
   /* Translate CEL condition to CEL blink state */
   if (lean_in_boost) {
@@ -212,8 +212,8 @@ START_TEST(check_tasks_next_cel_state) {
   /* Lean in boost */
   config.sensors[SENSOR_MAP].fault = FAULT_NONE;
   config.decoder.valid = 1;
-  config.sensors[SENSOR_MAP].processed_value = 180;
-  config.sensors[SENSOR_EGO].processed_value = 1.1;
+  config.sensors[SENSOR_MAP].value = 180;
+  config.sensors[SENSOR_EGO].value = 1.1;
   ck_assert_int_eq(determine_next_cel_state(), CEL_FASTBLINK);
 }
 END_TEST
