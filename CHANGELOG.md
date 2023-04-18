@@ -2,6 +2,7 @@
  - Make gd32f4 default platform
  - implement knock inputs
  - sensor api refactor, **breaking change for range values**
+ - implement pulsewidth and frequency input
 
 ### 1.5.0 (2023 April 20)
 

@@ -108,6 +108,7 @@ static void platform_disable_periphs(void) {
   rcu_periph_clock_disable(RCU_TIMER1);
   rcu_periph_clock_disable(RCU_TIMER2);
   rcu_periph_clock_disable(RCU_TIMER7);
+  rcu_periph_clock_disable(RCU_TIMER8);
 
   rcu_periph_clock_disable(RCU_GPIOA);
   rcu_periph_clock_disable(RCU_GPIOC);
@@ -128,6 +129,7 @@ static void platform_enable_periphs(void) {
   rcu_periph_clock_enable(RCU_TIMER1);
   rcu_periph_clock_enable(RCU_TIMER2);
   rcu_periph_clock_enable(RCU_TIMER7);
+  rcu_periph_clock_enable(RCU_TIMER8);
 
   rcu_periph_clock_enable(RCU_GPIOA);
   rcu_periph_clock_enable(RCU_GPIOC);
