@@ -15,7 +15,6 @@
 #error No ADC specified!
 #endif
 
-
 /* Query a MAX11632 ADC on SPI0 at a fixed sampling rate of 192 KHz and a SPI
  * clock of 3.75 MHz.  SPI0 is on APB2 with a clock frequency of 120 MHz.
  * Prescale down to 3.75 (divide by 32) to keep under the maximum clock
@@ -62,9 +61,9 @@ static void setup_spi0(void) {
                       GPIO_OSPEED_SET(7, GPIO_OSPEED_25MHZ) |
                       GPIO_OSPEED_SET(8, GPIO_OSPEED_25MHZ);
 
-  SPI_CTL0(SPI0) = SPI_CTL0_FF16 |  /* 16 bit data format */
-                   SPI_FREQ_DIVIDER |     /* Divide to 3.75 MHz */
-                   SPI_CTL0_MSTMOD; /* Master Mode */
+  SPI_CTL0(SPI0) = SPI_CTL0_FF16 |    /* 16 bit data format */
+                   SPI_FREQ_DIVIDER | /* Divide to 3.75 MHz */
+                   SPI_CTL0_MSTMOD;   /* Master Mode */
 
   SPI_CTL1(SPI0) = SPI_CTL1_NSSDRV | /* Manage NSS Output */
                    SPI_CTL1_DMAREN;  /* Enable RX DMA */

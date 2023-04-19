@@ -9,6 +9,8 @@
 /* AD7888 can sample up to 125 ksps with a SPI bus of 2 MHz. There is no self
  * test input.  We just collect all 8 inputs, plus one to read back the last
  * result */
+
+/* clang-format off */
 static const uint16_t adc_transmit_sequence[NUM_SPI_TX] = {
   SPI_INPUT(0),
   SPI_INPUT(1),
@@ -20,6 +22,7 @@ static const uint16_t adc_transmit_sequence[NUM_SPI_TX] = {
   SPI_INPUT(7),
   SPI_INPUT(0),
 };
+/* clang-format on */
 
 /* The 12 bit value from the ADC is in a 16 bit frame, MSB first, with four
  * leading zeros */

@@ -68,5 +68,4 @@ bool adc_response_is_valid(const uint16_t *values) {
   return true;
 }
 
-
 #endif

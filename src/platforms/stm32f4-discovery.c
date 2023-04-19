@@ -455,15 +455,16 @@ void dma1_stream3_isr(void) {
   dma_clear_interrupt_flags(DMA1, DMA_STREAM3, DMA_TCIF);
 
   const uint16_t *sequence = (dma_get_target(DMA1, DMA_STREAM3) == 0)
-    ? (const uint16_t *)spi_rx_raw_adc[1]
-    : (const uint16_t *)spi_rx_raw_adc[0];
+                               ? (const uint16_t *)spi_rx_raw_adc[1]
+                               : (const uint16_t *)spi_rx_raw_adc[0];
 
   bool fault = !adc_response_is_valid(sequence);
 
   for (int i = 0; i < NUM_SENSORS; ++i) {
     if (config.sensors[i].source == SENSOR_ADC) {
       config.sensors[i].fault = fault ? FAULT_CONN : FAULT_NONE;
-      config.sensors[i].raw_value = read_adc_pin(sequence, config.sensors[i].pin);
+      config.sensors[i].raw_value =
+        read_adc_pin(sequence, config.sensors[i].pin);
     }
   }
 
@@ -837,7 +838,6 @@ uint64_t cycle_count() {
 uint64_t cycles_to_ns(uint64_t cycles) {
   return cycles * 1000 / 168;
 }
-
 
 /* This is now the lowest priority interrupt, with buffer swapping and sensor
  * reading interrupts being higher priority.  Keep scheduled callbacks quick to
