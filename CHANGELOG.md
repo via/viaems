@@ -1,4 +1,4 @@
-### master (unreleased)
+### 1.5.0 (2023 April 20)
 
  - Implement simpler and easier-to-understand scheduler
  - Relicense to GPLv3
