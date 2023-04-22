@@ -73,7 +73,7 @@ static void setup_watchdog() {
 
   FWDGT_CTL = 0x0000CCCC; /* Start watchdog */
   FWDGT_CTL = 0x00005555; /* Magic unlock sequence */
-  FWDGT_RLD = 1250;       /* Approx 30 mS */
+  FWDGT_RLD = 250;       /* Approx 35 mS */
   reset_watchdog();
 }
 
@@ -172,10 +172,31 @@ static void system_init(void) {
   rcu_system_clock_source_config(RCU_CKSYSSRC_PLLP);
 }
 
+#define BOOTLOADER_FLAG 0x56780123
+static uint32_t bootloader_flag = 0;
+void platform_reset_into_bootloader() {
+  bootloader_flag = BOOTLOADER_FLAG;
+  NVIC_SystemReset();
+}
+
 /* Common symbols exported by the linker script(s): */
 extern uint32_t _data_loadaddr, _sdata, _edata, _ebss;
 
 void reset_handler(void) {
+  if (bootloader_flag == BOOTLOADER_FLAG) {
+    bootloader_flag = 0;
+    /* We've set this flag and reset the cpu, jump to system bootloader */
+    uint32_t *bootloader_msp = (uint32_t *)0x1fff0000;
+    uint32_t *bootloader_addr = bootloader_msp + 1;
+
+    /* Ensure bootloader is mapped at 0x00000000 */
+    rcu_periph_clock_enable(RCU_SYSCFG);
+    syscfg_bootmode_config(SYSCFG_BOOTMODE_BOOTLOADER);
+    __set_MSP(*bootloader_msp);
+    void (*bootloader)() = (void (*)(void))(*bootloader_addr);
+    bootloader();
+  }
+
   volatile uint32_t *src, *dest;
   for (src = &_data_loadaddr, dest = &_sdata; dest < &_edata; src++, dest++) {
     *dest = *src;
@@ -220,10 +241,6 @@ void platform_save_config() {
 
   fmc_lock();
   reset_handler();
-}
-
-void platform_reset_into_bootloader() {
-  /* TODO: unimplemented */
 }
 
 extern void gd32f4xx_configure_scheduler(void);
