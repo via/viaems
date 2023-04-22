@@ -1,4 +1,4 @@
-PLATFORM?=stm32f4
+PLATFORM?=gd32f4
 OBJDIR=obj/${PLATFORM}
 
 TINYCBOR_DIR=$(PWD)/contrib/tinycbor
