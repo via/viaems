@@ -198,7 +198,7 @@ void knock_configure(struct knock_input *knock) {
   knock->state.sprev2 = 0.0f;
 };
 
-void knock_add_sample(struct knock_input *knock, float sample) {
+static void knock_add_sample(struct knock_input *knock, float sample) {
 
   knock->state.n_samples += 1;
   float s = sample + knock->state.cr * 2 * knock->state.sprev - knock->state.sprev2;
@@ -213,6 +213,16 @@ void knock_add_sample(struct knock_input *knock, float sample) {
     knock->state.n_samples = 0;
     knock->state.sprev = 0;
     knock->state.sprev2 = 0;
+  }
+}
+
+void sensor_update_knock(const struct knock_update *update) {
+  struct knock_input *in = (update->pin == 0)
+    ? &config.knock_inputs[0] 
+    : &config.knock_inputs[1];
+
+  for (int i = 0; i < update->n_samples; i++) {
+    knock_add_sample(in, update->samples[i]);
   }
 }
 

@@ -83,13 +83,25 @@ static inline bool adc_response_is_valid(const uint16_t *values) {
 }
 
 static void process_knock_inputs(const uint16_t *values) {
+  timeval_t time = current_time(); /* TODO more useful */
+  struct knock_update knk1 = {
+    .valid = true,
+    .pin = 0,
+    .time = time,
+    .n_samples = 10,
+  };
+  struct knock_update knk2 = {
+    .valid = true,
+    .pin = 1,
+    .time = time,
+    .n_samples = 10,
+  };
   for (int i = 0; i < 10; i++) {
-    float in1 = (float)read_raw_from_position(values, (i * 3) + 1) / 4095.0f;
-    knock_add_sample(&config.knock_inputs[0], in1);
-
-    float in2 = (float)read_raw_from_position(values, (i * 3) + 2) / 4095.0f;
-    knock_add_sample(&config.knock_inputs[1], in2);
+    knk1.samples[i] = (float)read_raw_from_position(values, (i * 3) + 1) / 4095.0f;
+    knk2.samples[i] = (float)read_raw_from_position(values, (i * 3) + 2) / 4095.0f;
   }
+  sensor_update_knock(&knk1);
+  sensor_update_knock(&knk2);
 }
 
 

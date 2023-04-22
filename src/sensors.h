@@ -4,6 +4,7 @@
 #include "platform.h"
 #define SENSOR_FREQ_DIVIDER 4096
 #define MAX_ADC_PINS 16
+#define MAX_KNOCK_SAMPLES 16
 
 typedef enum {
   SENSOR_MAP, /* Manifold Absolute Pressure */
@@ -139,12 +140,20 @@ struct adc_update {
   float values[MAX_ADC_PINS]; /* Pin values in V */
 };
 
+struct knock_update {
+  timeval_t time; /* Time of first sample in set */
+  bool valid;
+  int pin;
+  int n_samples;
+  float samples[MAX_KNOCK_SAMPLES];
+};
+
 void sensor_update_freq(const struct freq_update *);
 void sensor_update_adc(const struct adc_update *);
+void sensor_update_knock(const struct knock_update *);
 
 uint32_t sensor_fault_status();
 
-void knock_add_sample(struct knock_input *, float sample);
 void knock_configure(struct knock_input *);
 
 #ifdef UNITTEST
