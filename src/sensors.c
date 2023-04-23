@@ -158,7 +158,7 @@ uint32_t sensor_fault_status() {
 void knock_configure(struct knock_input *knock) {
   uint32_t samplerate = platform_knock_samplerate();
   float bucketsize = samplerate / 64.0f;
-  uint32_t bucket = knock->frequency + bucketsize / bucketsize;
+  uint32_t bucket = (knock->frequency + bucketsize) / bucketsize;
 
   knock->state.width = 64,
   knock->state.freq = bucket,
@@ -389,6 +389,17 @@ START_TEST(check_current_angle_in_window) {
 }
 END_TEST
 
+START_TEST(check_knock_configure) {
+  struct knock_input ki = {
+    .frequency = 7000,
+  };
+
+  knock_configure(&ki);
+  ck_assert_int_eq(ki.state.width, 64);
+  ck_assert_int_eq(ki.state.freq, 9);
+
+} END_TEST
+
 TCase *setup_sensor_tests() {
   TCase *sensor_tests = tcase_create("sensors");
   tcase_add_test(sensor_tests, check_sensor_convert_linear);
@@ -400,6 +411,8 @@ TCase *setup_sensor_tests() {
   tcase_add_test(sensor_tests, check_sensor_convert_therm);
 
   tcase_add_test(sensor_tests, check_current_angle_in_window);
+
+  tcase_add_test(sensor_tests, check_knock_configure);
   return sensor_tests;
 }
 

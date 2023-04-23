@@ -112,11 +112,11 @@ void adc_gather(void *_adc) {
 }
 
 uint32_t platform_adc_samplerate(void) {
-  return 1000;
+  return 5000;
 }
 
 uint32_t platform_knock_samplerate(void) {
-  return 1000;
+  return 50000;
 }
 
 
