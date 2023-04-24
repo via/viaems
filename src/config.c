@@ -219,7 +219,7 @@ struct config config __attribute__((section(".configdata"))) = {
     [0] = {.edge = RISING_EDGE, .type = TRIGGER},
     [1] = {.edge = RISING_EDGE, .type = TRIGGER},
     [2] = {.edge = RISING_EDGE, .type = FREQ},
-    [3] = {.edge = RISING_EDGE, .type = FREQ},
+    [3] = {.edge = FALLING_EDGE, .type = FREQ},
   },
   .sensors = {
     [SENSOR_BRV] = {.pin=0, .source=SENSOR_ADC, .method=METHOD_LINEAR,

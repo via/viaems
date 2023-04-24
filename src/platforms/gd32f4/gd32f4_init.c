@@ -251,7 +251,7 @@ extern void gd32f4xx_configure_adc(void);
 extern void gd32f4xx_configure_pwm(void);
 
 void platform_init() {
-  NVIC_SetPriorityGrouping(3); /* 16 priority preemption levels */
+  NVIC_SetPriorityGrouping(4); /* 16 priority preemption levels */
 
   gd32f4xx_configure_scheduler();
   gd32f4xx_console_init();

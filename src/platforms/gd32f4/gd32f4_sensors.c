@@ -124,7 +124,7 @@ uint32_t platform_knock_samplerate(void) {
 static void setup_freq_pw_input(void) {
 
   /* Enable the trigger/freq input GPIOs */
-  gpio_mode_set(GPIOA, GPIO_MODE_AF, GPIO_PUPD_PULLUP, GPIO_PIN_3);
+  gpio_mode_set(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO_PIN_3);
   gpio_af_set(GPIOA, GPIO_AF_3, GPIO_PIN_3);
 
   /* Only have update interrupt fire on overflow, so we can have a timeout */
@@ -142,12 +142,13 @@ static void setup_freq_pw_input(void) {
    * rising edge for active high */
   TIMER_SMCFG(TIMER8) = TIMER_SLAVE_MODE_RESTART | TIMER_SMCFG_TRGSEL_CI1FE1;
 
-  /* Configure both channels to capture the same input */
-  TIMER_CHCTL0(TIMER8) = 0x2 |
-                         (0x01 << 8);
+  /* Configure both channels to capture the same input. Use highest filtering
+   * option available: 8x at fDTS_CK/32 */
+  TIMER_CHCTL0(TIMER8) = TIMER_CHCTL0_CH0CAPFLT | 0x2 |
+                         TIMER_CHCTL0_CH1CAPFLT | (0x01 << 8);
   TIMER_CHCTL2(TIMER8) = TIMER_CHCTL2_CH0EN | TIMER_CHCTL2_CH1EN;
-  bool active_high = true;
 
+  bool active_high = (config.freq_inputs[3].edge == RISING_EDGE);
   if (active_high) {
     TIMER_CHCTL2(TIMER8) |= TIMER_CHCTL2_CH0P; /* CH0 captures falling edge */
   } else {

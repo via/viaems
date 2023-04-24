@@ -68,13 +68,14 @@ static void configure_trigger_inputs(void) {
                             TIMER_CHCTL2_CH1EN |
                             TIMER_CHCTL2_CH2EN);
 
+  const uint32_t input_filter = 0x4 << 3; /* 6 samples at CK_DTS/2, this will introduce 1.5 uS delay */
   /* Enable third input for frequency input */
-  TIMER_CHCTL1(TIMER1) = TIMER_CHCTL1_CH2CAPFLT | /* DTS/32 filter */
+  TIMER_CHCTL1(TIMER1) = input_filter |
                          0x1; /* CH2MS Mode 01 -- CH2 input */
 
   /* Configure 2 input captures for trigger inputs */
-  TIMER_CHCTL0(TIMER1) = 0x1 | /* CH0MS Mode 01 -- CH0 input */
-                         (0x1 << 8); /* CH1MS Mode 01 -- CH1 input */
+  TIMER_CHCTL0(TIMER1) = input_filter | 0x1 | /* CH0MS Mode 01 -- CH0 input */
+                         ((input_filter | 0x1) << 8); /* CH1MS Mode 01 -- CH1 input */
 
 
   TIMER_CHCTL2(TIMER1) =
