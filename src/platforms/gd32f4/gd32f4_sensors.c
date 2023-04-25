@@ -32,7 +32,7 @@ static void setup_timer0(void) {
 
   TIMER_CTL0(TIMER0) = TIMER_CTL0_CEN;
 
-  DBG_CTL1 |= DBG_CTL2_TIMER0_HOLD;
+  DBG_CTL2 |= DBG_CTL2_TIMER0_HOLD;
 }
 
 static void setup_spi0(void) {
