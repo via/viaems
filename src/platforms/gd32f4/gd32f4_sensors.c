@@ -13,6 +13,7 @@
 #error No ADC specified!
 #endif
 
+static timeval_t time_of_adc_sample = 0;
 static void setup_timer0(void) {
   gpio_mode_set(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO_PIN_8);
   gpio_af_set(GPIOA, GPIO_AF_1, GPIO_PIN_8);
@@ -97,7 +98,7 @@ void DMA1_Channel0_IRQHandler(void) {
                                  ? (const uint16_t *)spi_rx_buffer[1]
                                  : (const uint16_t *)spi_rx_buffer[0];
     struct adc_update update = {
-      .time = current_time(),
+      .time = time_of_adc_sample,
       .valid = adc_response_is_valid(sequence),
     };
     for (int i = 0; i < MAX_ADC_PINS; ++i) {
@@ -108,6 +109,12 @@ void DMA1_Channel0_IRQHandler(void) {
     }
     sensor_update_adc(&update);
     process_knock_inputs(sequence);
+
+    time_of_adc_sample += time_from_us(1000000 / ADC_SAMPLE_RATE);
+    if (current_time() - time_of_adc_sample > time_from_us(1000)) {
+      /* TODO: This should be a diagnostic or something */
+      time_of_adc_sample = current_time();
+    }
   }
 }
 
