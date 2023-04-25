@@ -30,9 +30,10 @@ static void setup_timer0(void) {
   TIMER_CHCTL2(TIMER0) = TIMER_CHCTL2_CH0EN;
   TIMER_CCHP(TIMER0) = TIMER_CCHP_POEN | TIMER_CCHP_ROS;
 
+  time_of_adc_sample = current_time();
   TIMER_CTL0(TIMER0) = TIMER_CTL0_CEN;
 
-  DBG_CTL1 |= DBG_CTL2_TIMER0_HOLD;
+  DBG_CTL2 |= DBG_CTL2_TIMER0_HOLD;
 }
 
 static void setup_spi0(void) {
