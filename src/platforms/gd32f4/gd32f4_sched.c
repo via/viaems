@@ -68,14 +68,19 @@ static void configure_trigger_inputs(void) {
                             TIMER_CHCTL2_CH1EN |
                             TIMER_CHCTL2_CH2EN);
 
-  const uint32_t input_filter = 0x4 << 3; /* 6 samples at CK_DTS/2, this will introduce 1.5 uS delay */
-  /* Enable third input for frequency input */
-  TIMER_CHCTL1(TIMER1) = input_filter |
-                         0x1; /* CH2MS Mode 01 -- CH2 input */
+  const uint32_t input_filter = 0x0; /* sample at CK_DTS, which is the 4 MHz
+                                        clock provided by TIMER7.  The only
+                                        options are up to 8 samples at 240 MHz,
+                                        or a minimum of 6 samples at CK_DTS / 2,
+                                        which introduces a 3 uS delay. */
 
   /* Configure 2 input captures for trigger inputs */
   TIMER_CHCTL0(TIMER1) = input_filter | 0x1 | /* CH0MS Mode 01 -- CH0 input */
                          ((input_filter | 0x1) << 8); /* CH1MS Mode 01 -- CH1 input */
+
+  /* Enable third input for frequency input */
+  TIMER_CHCTL1(TIMER1) = input_filter |
+                         0x1; /* CH2MS Mode 01 -- CH2 input */
 
 
   TIMER_CHCTL2(TIMER1) =
