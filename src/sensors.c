@@ -92,7 +92,7 @@ static bool process_range_fault(struct sensor_input *in) {
 static void process_derivative(struct sensor_input *in) {
     in->derivative =
       TICKRATE * (in->value - in->previous_value) /
-      (in->time- in->previous_time);
+      time_from_us(1000000 / platform_adc_samplerate());
 }
 
 static void update_previous_sample(struct sensor_input *in) {

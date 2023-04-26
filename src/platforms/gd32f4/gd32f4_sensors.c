@@ -13,7 +13,6 @@
 #error No ADC specified!
 #endif
 
-static timeval_t time_of_adc_sample = 0;
 static void setup_timer0(void) {
   gpio_mode_set(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO_PIN_8);
   gpio_af_set(GPIOA, GPIO_AF_1, GPIO_PIN_8);
@@ -31,7 +30,6 @@ static void setup_timer0(void) {
   TIMER_CHCTL2(TIMER0) = TIMER_CHCTL2_CH0EN;
   TIMER_CCHP(TIMER0) = TIMER_CCHP_POEN | TIMER_CCHP_ROS;
 
-  time_of_adc_sample = current_time();
   TIMER_CTL0(TIMER0) = TIMER_CTL0_CEN;
 
   DBG_CTL2 |= DBG_CTL2_TIMER0_HOLD;
@@ -98,9 +96,10 @@ void DMA1_Channel0_IRQHandler(void) {
                                  ? (const uint16_t *)spi_rx_buffer[1]
                                  : (const uint16_t *)spi_rx_buffer[0];
     struct adc_update update = {
-      .time = time_of_adc_sample,
+      .time = current_time(),
       .valid = adc_response_is_valid(sequence),
     };
+
     for (int i = 0; i < MAX_ADC_PINS; ++i) {
       uint32_t adc_value = read_adc_pin(sequence, i);
       /* 5 volt ADC inputs */
@@ -109,12 +108,6 @@ void DMA1_Channel0_IRQHandler(void) {
     }
     sensor_update_adc(&update);
     process_knock_inputs(sequence);
-
-    time_of_adc_sample += time_from_us(1000000 / ADC_SAMPLE_RATE);
-    if (current_time() - time_of_adc_sample > time_from_us(1000)) {
-      /* TODO: This should be a diagnostic or something */
-      time_of_adc_sample = current_time();
-    }
   }
 }
 
