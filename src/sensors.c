@@ -74,67 +74,77 @@ float sensor_convert_thermistor(const struct sensor_input *in) {
   return t - 273.15f;
 }
 
-static bool process_range_fault(struct sensor_input *in) {
+static sensor_fault detect_faults(const struct sensor_input *in) {
+  if (in->fault != FAULT_NONE) {
+    /* Some faults come from platform code before this point, pass it back */
+    return in->fault;
+  }
   /* Handle conn and range fault conditions */
-  if ((in->fault == FAULT_NONE) && (in->fault_config.max != 0)) {
+  if ((in->fault_config.max != 0)) {
     if ((in->fault_config.min > in->raw_value) ||
         (in->fault_config.max < in->raw_value)) {
-      in->fault = FAULT_RANGE;
+      return FAULT_RANGE;
     }
   }
-  if (in->fault != FAULT_NONE) {
-    in->value = in->fault_config.fault_value;
-    return true; 
-  }
-  return false;
+  return FAULT_NONE;
 }
 
-static void process_derivative(struct sensor_input *in) {
-    in->derivative =
+static float process_derivative(const struct sensor_input *in) {
+    return
       TICKRATE * (in->value - in->previous_value) /
       time_from_us(1000000 / platform_adc_samplerate());
 }
 
-static void update_previous_sample(struct sensor_input *in) {
-  in->previous_time = in->time;
-  in->previous_raw_value = in->raw_value;
-  in->previous_value = in->value;
+static float process_lag_filter(const struct sensor_input *in, float new_value) {
+  if (in->lag == 0.0f) {
+    return new_value;
+  }
+  return ((in->previous_value * in->lag) +
+               (new_value * (100.0f - in->lag))) / 100.0f;
 }
 
-static void process_lag_filter(struct sensor_input *in) {
-  in->value = ((in->previous_value * in->lag) +
-               (in->value * (100.0f - in->lag))) / 100.0f;
+/* Compute coefficient for exponential moving average with provided frequency
+ * cutoff */
+static float lag_coefficient_from_cutoff_frequency(float freq) {
+  float delta_t = 1.0f / platform_adc_samplerate();
+  float coef = 2.0f * 3.14159f * delta_t * freq;
+  return 100.0f * (coef / (coef + 1.0f));
 }
 
 static void sensor_convert(struct sensor_input *in, float raw, timeval_t time) {
-
-  update_previous_sample(in);
-
   in->raw_value = raw;
   in->time = time;
 
-  if (process_range_fault(in)) {
-    return;
+  float new_value = 0.0f;
+  float new_derivative = 0.0f;
+
+  if (detect_faults(in) != FAULT_NONE) {
+    new_value = in->fault_config.fault_value;
+  } else {
+
+    switch (in->method) {
+      case METHOD_LINEAR:
+        new_value = sensor_convert_linear(in);
+        break;
+      case METHOD_LINEAR_WINDOWED:
+        new_value = sensor_convert_linear_windowed(in, current_angle());
+        break;
+      case METHOD_THERM:
+        new_value = sensor_convert_thermistor(in);
+        break;
+    }
+
+    new_value = process_lag_filter(in, new_value);
+    new_derivative = process_derivative(in);
+    in->previous_value = new_value;
   }
 
-  switch (in->method) {
-  case METHOD_LINEAR:
-    in->value = sensor_convert_linear(in);
-    break;
-  case METHOD_LINEAR_WINDOWED:
-    in->value =
-      sensor_convert_linear_windowed(in, current_angle());
-    break;
-  case METHOD_THERM:
-    in->value = sensor_convert_thermistor(in);
-    break;
-  }
-
-  if (in->lag != 0.0f) {
-    process_lag_filter(in);
-  }
-
-  process_derivative(in);
+  /* in->value and in->derivative are read by decode/calculation in interrupts,
+   * so these race */
+  disable_interrupts();
+  in->value = new_value;
+  in->derivative = new_derivative;
+  enable_interrupts();
 }
 
 void sensor_update_freq(const struct freq_update *u) {

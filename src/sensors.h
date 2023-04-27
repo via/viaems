@@ -80,10 +80,7 @@ struct sensor_input {
   float raw_value;
   float value;
 
-  timeval_t previous_time;
-  float previous_raw_value;
   float previous_value;
-
   float derivative;
 
   sensor_fault fault;
