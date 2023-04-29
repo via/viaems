@@ -64,9 +64,8 @@ static void configure_trigger_inputs(void) {
   bool cc2np = (cc2_edge == BOTH_EDGES);
 
   /* Ensure CH0, CH1, and CH2 are off */
-  TIMER_CHCTL2(TIMER1) &= ~(TIMER_CHCTL2_CH0EN | 
-                            TIMER_CHCTL2_CH1EN |
-                            TIMER_CHCTL2_CH2EN);
+  TIMER_CHCTL2(TIMER1) &=
+    ~(TIMER_CHCTL2_CH0EN | TIMER_CHCTL2_CH1EN | TIMER_CHCTL2_CH2EN);
 
   const uint32_t input_filter = 0x0; /* sample at CK_DTS, which is the 4 MHz
                                         clock provided by TIMER7.  The only
@@ -75,13 +74,12 @@ static void configure_trigger_inputs(void) {
                                         which introduces a 3 uS delay. */
 
   /* Configure 2 input captures for trigger inputs */
-  TIMER_CHCTL0(TIMER1) = input_filter | 0x1 | /* CH0MS Mode 01 -- CH0 input */
-                         ((input_filter | 0x1) << 8); /* CH1MS Mode 01 -- CH1 input */
+  TIMER_CHCTL0(TIMER1) =
+    input_filter | 0x1 |         /* CH0MS Mode 01 -- CH0 input */
+    ((input_filter | 0x1) << 8); /* CH1MS Mode 01 -- CH1 input */
 
   /* Enable third input for frequency input */
-  TIMER_CHCTL1(TIMER1) = input_filter |
-                         0x1; /* CH2MS Mode 01 -- CH2 input */
-
+  TIMER_CHCTL1(TIMER1) = input_filter | 0x1; /* CH2MS Mode 01 -- CH2 input */
 
   TIMER_CHCTL2(TIMER1) =
     (cc0p ? TIMER_CHCTL2_CH0P : 0) | (cc0np ? TIMER_CHCTL2_CH0NP : 0) |
@@ -94,9 +92,11 @@ static void configure_trigger_inputs(void) {
 static void setup_timer1(void) {
 
   /* Enable the trigger/freq input GPIOs */
-  gpio_mode_set(GPIOA, GPIO_MODE_AF, GPIO_PUPD_PULLUP, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2);
+  gpio_mode_set(GPIOA,
+                GPIO_MODE_AF,
+                GPIO_PUPD_PULLUP,
+                GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2);
   gpio_af_set(GPIOA, GPIO_AF_1, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2);
-
 
   /* Timer is driven by ITI1, the output of TIMER7 */
   TIMER_SMCFG(TIMER1) = TIMER_SLAVE_MODE_EXTERNAL0 | TIMER_SMCFG_TRGSEL_ITI1;
@@ -105,8 +105,8 @@ static void setup_timer1(void) {
   configure_trigger_inputs();
 
   nvic_irq_enable(TIMER1_IRQn, 1, 0);
-  TIMER_DMAINTEN(TIMER1) = TIMER_DMAINTEN_CH0IE | TIMER_DMAINTEN_CH1IE |
-    TIMER_DMAINTEN_CH2IE;
+  TIMER_DMAINTEN(TIMER1) =
+    TIMER_DMAINTEN_CH0IE | TIMER_DMAINTEN_CH1IE | TIMER_DMAINTEN_CH2IE;
 
   TIMER_CTL0(TIMER1) |= TIMER_CTL0_CEN;
 
@@ -126,7 +126,6 @@ static struct gd32f4_timebase_freq_pin tim1_ch2_freq = {
   .pin = 2,
   .last_time = 0,
 };
-
 
 void TIMER1_IRQHandler(void) {
   bool cc0_fired = false;
@@ -171,7 +170,6 @@ void TIMER1_IRQHandler(void) {
     };
     sensor_update_freq(&update);
   }
-
 
   if (TIMER_INTF(TIMER1) & TIMER_INTF_CH3IF) {
     TIMER_INTF(TIMER1) = ~TIMER_INTF_CH3IF;

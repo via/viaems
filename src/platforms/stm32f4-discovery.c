@@ -348,7 +348,6 @@ void exti15_10_isr() {
   show_scheduled_outputs();
 }
 
-
 /* We use TIM7 to control the sample rate.  It is set up to trigger a DMA event
  * on counter update to TX on SPI2.  When the full 16 bits is transmitted and
  * the SPI RX buffer is filled, the RX DMA event will fill, and populate

@@ -97,13 +97,13 @@ static void process_knock_inputs(const uint16_t *values) {
     .n_samples = 10,
   };
   for (int i = 0; i < 10; i++) {
-    knk1.samples[i] = (float)read_raw_from_position(values, (i * 3) + 1) / 4096.0f;
-    knk2.samples[i] = (float)read_raw_from_position(values, (i * 3) + 2) / 4096.0f;
+    knk1.samples[i] =
+      (float)read_raw_from_position(values, (i * 3) + 1) / 4096.0f;
+    knk2.samples[i] =
+      (float)read_raw_from_position(values, (i * 3) + 2) / 4096.0f;
   }
   sensor_update_knock(&knk1);
   sensor_update_knock(&knk2);
 }
-
-
 
 #endif

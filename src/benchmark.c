@@ -96,7 +96,7 @@ static void do_sensor_single_therm() {
   struct adc_update u = {
     .time = current_time(),
     .valid = true,
-    .values = {2.5f},
+    .values = { 2.5f },
   };
 
   uint64_t start = cycle_count();

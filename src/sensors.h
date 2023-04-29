@@ -127,7 +127,7 @@ struct freq_update {
   bool valid;
 
   uint32_t pin;
-  float frequency; /* Hz */
+  float frequency;  /* Hz */
   float pulsewidth; /* seconds */
 };
 
