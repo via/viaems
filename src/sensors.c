@@ -103,14 +103,6 @@ static float process_lag_filter(const struct sensor_input *in, float new_value) 
                (new_value * (100.0f - in->lag))) / 100.0f;
 }
 
-/* Compute coefficient for exponential moving average with provided frequency
- * cutoff */
-static float lag_coefficient_from_cutoff_frequency(float freq) {
-  float delta_t = 1.0f / platform_adc_samplerate();
-  float coef = 2.0f * 3.14159f * delta_t * freq;
-  return 100.0f * (coef / (coef + 1.0f));
-}
-
 static void sensor_convert(struct sensor_input *in, float raw, timeval_t time) {
   in->raw_value = raw;
   in->time = time;
