@@ -190,9 +190,9 @@ void knock_configure(struct knock_input *knock) {
   float bucketsize = samplerate / 64.0f;
   uint32_t bucket = (knock->frequency + bucketsize) / bucketsize;
 
-  knock->state.width = 64,
-  knock->state.freq = bucket,
-  knock->state.w = 2.0f * 3.14159f * (float)knock->state.freq / (float)knock->state.width,
+  knock->state.width = 64;
+  knock->state.freq = bucket;
+  knock->state.w = 2.0f * 3.14159f * (float)knock->state.freq / (float)knock->state.width;
   knock->state.cr = cosf(knock->state.w); 
 
   knock->state.n_samples = 0;
