@@ -369,7 +369,7 @@ void exti15_10_isr() {
 #error No ADC specified!
 #endif
 
-static volatile uint16_t spi_rx_raw_adc[2][NUM_SPI_TX] = { 0 };
+static volatile __attribute__((section(".dmadata"))) uint16_t spi_rx_raw_adc[2][NUM_SPI_TX] = { 0 };
 
 static void platform_init_spi_adc() {
   /* Configure SPI output */
@@ -740,6 +740,7 @@ void platform_init() {
 
   /* Wait for clock to spin up */
   rcc_wait_for_osc_ready(RCC_HSE);
+  flash_prefetch_enable();
 
   scb_set_priority_grouping(SCB_AIRCR_PRIGROUP_GROUP16_NOSUB);
   platform_init_scheduled_outputs();
@@ -747,6 +748,13 @@ void platform_init() {
   platform_init_spi_adc();
   platform_init_pwm();
   platform_init_usb();
+
+  /* Copy all text to ram */
+  const uint8_t *src = 0x08000000;
+  const uint8_t *srcmax = 0x08000000 + (100 * 1024);
+  uint8_t *dest = 0x20000000;
+  memcpy(dest, src, 100 * 1024);
+  SYSCFG_MEMRM = 0x3;
 
   dwt_enable_cycle_counter();
 

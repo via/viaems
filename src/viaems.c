@@ -17,6 +17,8 @@ int main() {
 
   assert(config_valid());
 
+  set_test_trigger_rpm(5000);
+
   while (1) {
     console_process();
   }
