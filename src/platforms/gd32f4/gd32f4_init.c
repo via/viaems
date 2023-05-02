@@ -172,6 +172,9 @@ static void system_init(void) {
   pmu_highdriver_switch_select(PMU_HIGHDR_SWITCH_EN);
 
   rcu_system_clock_source_config(RCU_CKSYSSRC_PLLP);
+
+  SCB->VTOR = 0x20000000;
+  SYSCFG_CFG0 |= 0x3; /* CODE points to SRAM0 */
 }
 
 #define BOOTLOADER_FLAG 0x56780123
@@ -183,6 +186,7 @@ void platform_reset_into_bootloader() {
 
 /* Common symbols exported by the linker script(s): */
 extern uint32_t _data_loadaddr, _sdata, _edata, _ebss;
+extern uint32_t _text_loadaddr, _stext, _etext;
 
 void reset_handler(void) {
   if (bootloader_flag == BOOTLOADER_FLAG) {
@@ -200,12 +204,19 @@ void reset_handler(void) {
   }
 
   volatile uint32_t *src, *dest;
+
   for (src = &_data_loadaddr, dest = &_sdata; dest < &_edata; src++, dest++) {
     *dest = *src;
   }
 
   while (dest < &_ebss) {
     *dest++ = 0;
+  }
+
+  size_t len = (uint32_t)&_etext - (uint32_t)&_stext;
+  uint32_t *end_sram_code = (uint32_t *)(0x20000000 + len);
+  for (src = &_text_loadaddr, dest = (uint32_t *)0x20000000; dest < end_sram_code; src++, dest++) {
+    *dest = *src;
   }
 
   system_init();
@@ -223,13 +234,11 @@ void platform_load_config() {
 }
 
 void platform_save_config() {
-  disable_interrupts();
-  handle_emergency_shutdown();
-  platform_disable_periphs();
-
   /* Ensure watchdog won't stop us from flashing */
+#if 0
   FWDGT_CTL = 0x00005555;
   FWDGT_PSC = FWDGT_PSC_DIV256;
+#endif
 
   fmc_unlock();
   /* Erase sectors 7 (384 KB to 512 KB of main flash) */
@@ -242,7 +251,6 @@ void platform_save_config() {
   }
 
   fmc_lock();
-  reset_handler();
 }
 
 extern void gd32f4xx_configure_scheduler(void);

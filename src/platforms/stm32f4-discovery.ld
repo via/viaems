@@ -26,7 +26,7 @@ MEMORY
   remap(rx) : ORIGIN = 0x00000000, LENGTH = 112K
 	rom(rx) : ORIGIN = 0x08000000, LENGTH = 1024K
 	ram1 (rwx) : ORIGIN = 0x20000000, LENGTH = 112K
-	ram2 (rwx) : ORIGIN = 0x20000000, LENGTH = 16K
+	ram2 (rwx) : ORIGIN = 0x2001C000, LENGTH = 16K
 	ram3 (rwx) : ORIGIN = 0x20020000, LENGTH = 64K
 	ccm (rw) : ORIGIN = 0x10000000, LENGTH = 64K
 }
@@ -58,15 +58,6 @@ SECTIONS {
 	. = ALIGN(4);
 	} >ram2
 
-	.data : {
-	. = ALIGN(4);
-		_data = .;
-		*(.data*)	/* Read-write initialized data */
-		. = ALIGN(4);
-		_edata = .;
-	} >ram3 AT >rom
-	_data_loadaddr = LOADADDR(.data);
-
 	.configdata : {
     . = ALIGN(4);
 		_sconfigdata = .;
@@ -75,6 +66,16 @@ SECTIONS {
 		_econfigdata = .;
 	} >ram3 AT >rom
 	_configdata_loadaddr = LOADADDR(.configdata);
+
+
+	.data : {
+	. = ALIGN(4);
+		_data = .;
+		*(.data*)	/* Read-write initialized data */
+		. = ALIGN(4);
+		_edata = .;
+	} >ram3 AT >rom
+	_data_loadaddr = LOADADDR(.data);
 
 	.bss : {
     . = ALIGN(4);

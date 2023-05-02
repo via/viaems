@@ -167,7 +167,7 @@ static void platform_init_eventtimer() {
   nvic_set_priority(NVIC_TIM2_IRQ, 32);
 
   /* Set debug unit to stop the timer on halt */
-  *((volatile uint32_t *)0xE0042008) |= 29; /*TIM2, TIM5, and TIM7 and */
+  *((volatile uint32_t *)0xE0042008) |= (29 | (1<<12)); /*TIM2, TIM5, and TIM7 and */
   *((volatile uint32_t *)0xE004200C) |= 2;  /* TIM8 stop */
 
   platform_setup_tim8();

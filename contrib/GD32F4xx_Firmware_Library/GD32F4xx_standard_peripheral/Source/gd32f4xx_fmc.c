@@ -187,6 +187,8 @@ fmc_state_enum fmc_page_erase(uint32_t page_addr)
       \arg        FMC_OPERR: operation error
       \arg        FMC_TOERR: timeout error
 */
+uint32_t erase_cycles = 0;
+uint64_t cycle_count(void);
 fmc_state_enum fmc_sector_erase(uint32_t fmc_sector)
 {
     fmc_state_enum fmc_state = FMC_READY;
@@ -197,7 +199,10 @@ fmc_state_enum fmc_sector_erase(uint32_t fmc_sector)
         /* start sector erase */
         FMC_CTL &= ~FMC_CTL_SN;
         FMC_CTL |= (FMC_CTL_SER | fmc_sector);
+        uint32_t before = cycle_count();
         FMC_CTL |= FMC_CTL_START;
+        uint32_t after = cycle_count();
+        erase_cycles = after - before;
 
         /* wait for the FMC ready */
         fmc_state = fmc_ready_wait(FMC_TIMEOUT_COUNT);
