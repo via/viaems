@@ -62,4 +62,9 @@ static inline bool adc_response_is_valid(const uint16_t *values) {
   return true;
 }
 
+/* Not implemented */
+static void process_knock_inputs(const uint16_t *values) {
+  (void)values;
+}
+
 #endif
