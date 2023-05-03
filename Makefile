@@ -29,13 +29,15 @@ CFLAGS+=-Isrc/ -Isrc/platforms/common -Wall -Wextra -ggdb -g3 -std=c11 -DGIT_DES
 CFLAGS+=-I${TINYCBOR_DIR}/src
 LDFLAGS+= -lm -L${OBJDIR} -l:${TINYCBOR_LIB}
 
-OPENCM3_DIR=$(PWD)/contrib/libopencm3
-
 VPATH+=src src/platforms src/platforms/common
 DESTOBJS = $(addprefix ${OBJDIR}/, ${OBJS})
 
 $(OBJDIR):
 	mkdir -p ${OBJDIR}
+
+
+$(OBJDIR)/%.o: %.s
+	${AS} -c -o $@ $<
 
 $(OBJDIR)/%.o: %.c
 	${CC} ${CFLAGS} -MMD -c -o $@ $<
