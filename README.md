@@ -204,7 +204,7 @@ Requires:
 - GNU make
 - check (for unit tests)
 
-Before trying to compile, make sure to bring in the libopencm3 submodule:
+Before trying to compile, make sure to bring in submodules in contrib:
 ```
 git submodule update --init
 ```
@@ -252,28 +252,12 @@ scheduling latency), make sure the threads have permissions to be realtime, or
 otherwise constrain it to a single cpu.
 
 # Hardware
-The current primary hardware platform is an ST Micro STM32F407VGT
-microcontroller.  There are a few non-production-ready hardware designs
+The current supported microcontrollers are the STMicro STM32F427 and GigaDevice
+GD32F450/470.  There are a few non-production-ready hardware designs
 available under https://github.com/via/viaems-boards, though I would recommend
-anyone attempting to use those designs contact me.  The STM32F4-DISCOVERY board
-*can* be used with this firmware, with appropriate extra hardware for vehicle
-interfacing.
+anyone attempting to use those designs contact me. Details on each platform are
+available in the README files in their platform directories.
 
+## [STM32F4](src/platforms/stm32f4/README.md)
 
-## STM32F4
-Note: These are subject to change with the next hardware design, which will be
-moving to better support a 64 pin chip and more flexible PWM outputs.
-
-System | Pins
---- | ---
-Trigger 0 | `PA0`
-Trigger 1 | `PA1`
-Frequency | `PA0`, `PA1`, `PA2`, `PA3`
-Test Trigger | `PB10`, `PB11`
-`CANL` | `PB5`
-`CANH` | `PB6`
-USB | `PA9`, `PA11`, and `PA12`
-ADC | `PB12`, `PB13`, `PB14`, and `PB15`
-OUT | `PD0`-`PD15`
-GPIO | `PE0`-`PE15`
-PWM | `PC6`, `PC7`, `PC8`, and `PC9` (currently all fixed at same frequenty)
+## [GD32F4](src/platforms/gd32f4/README.md)
