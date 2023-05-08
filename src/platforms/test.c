@@ -119,7 +119,6 @@ uint32_t platform_knock_samplerate(void) {
   return 50000;
 }
 
-
 void platform_save_config() {}
 
 void platform_load_config() {}

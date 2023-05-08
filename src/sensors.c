@@ -160,10 +160,10 @@ void knock_configure(struct knock_input *knock) {
   float bucketsize = samplerate / 64.0f;
   uint32_t bucket = (knock->frequency + bucketsize) / bucketsize;
 
-  knock->state.width = 64,
-  knock->state.freq = bucket,
-  knock->state.w = 2.0f * 3.14159f * (float)knock->state.freq / (float)knock->state.width,
-  knock->state.cr = cosf(knock->state.w); 
+  knock->state.width = 64, knock->state.freq = bucket,
+  knock->state.w =
+    2.0f * 3.14159f * (float)knock->state.freq / (float)knock->state.width,
+  knock->state.cr = cosf(knock->state.w);
 
   knock->state.n_samples = 0;
   knock->state.sprev = 0.0f;
@@ -173,14 +173,16 @@ void knock_configure(struct knock_input *knock) {
 void knock_add_sample(struct knock_input *knock, float sample) {
 
   knock->state.n_samples += 1;
-  float s = sample + knock->state.cr * 2 * knock->state.sprev - knock->state.sprev2;
+  float s =
+    sample + knock->state.cr * 2 * knock->state.sprev - knock->state.sprev2;
   knock->state.sprev2 = knock->state.sprev;
   knock->state.sprev = s;
 
   if (knock->state.n_samples == 64) {
-    knock->value = knock->state.sprev * knock->state.sprev + 
-                      knock->state.sprev2 * knock->state.sprev2 -
-                      knock->state.sprev * knock->state.sprev2 * knock->state.cr * 2;
+    knock->value =
+      knock->state.sprev * knock->state.sprev +
+      knock->state.sprev2 * knock->state.sprev2 -
+      knock->state.sprev * knock->state.sprev2 * knock->state.cr * 2;
 
     knock->state.n_samples = 0;
     knock->state.sprev = 0;
@@ -397,8 +399,8 @@ START_TEST(check_knock_configure) {
   knock_configure(&ki);
   ck_assert_int_eq(ki.state.width, 64);
   ck_assert_int_eq(ki.state.freq, 9);
-
-} END_TEST
+}
+END_TEST
 
 TCase *setup_sensor_tests() {
   TCase *sensor_tests = tcase_create("sensors");

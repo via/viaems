@@ -73,7 +73,7 @@ static void setup_watchdog() {
 
   FWDGT_CTL = 0x0000CCCC; /* Start watchdog */
   FWDGT_CTL = 0x00005555; /* Magic unlock sequence */
-  FWDGT_RLD = 250;       /* Approx 35 mS */
+  FWDGT_RLD = 250;        /* Approx 35 mS */
   reset_watchdog();
 }
 

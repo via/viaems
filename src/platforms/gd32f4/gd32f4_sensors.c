@@ -116,7 +116,6 @@ uint32_t platform_knock_samplerate(void) {
   return KNOCK_SAMPLE_RATE;
 }
 
-
 void gd32f4xx_configure_adc(void) {
   setup_spi0();
   setup_spi0_tx_dma();

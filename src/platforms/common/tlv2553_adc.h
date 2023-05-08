@@ -92,6 +92,4 @@ static void process_knock_inputs(const uint16_t *values) {
   }
 }
 
-
-
 #endif
