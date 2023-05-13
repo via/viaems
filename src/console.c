@@ -233,7 +233,7 @@ static size_t console_feed_line_keys(uint8_t *dest, size_t bsize) {
   return cbor_encoder_get_buffer_size(&encoder, dest);
 }
 
-static size_t console_feed_line(uint8_t *dest, size_t bsize) {
+size_t console_feed_line(uint8_t *dest, size_t bsize) {
   CborEncoder encoder;
 
   cbor_encoder_init(&encoder, dest, bsize, 0);

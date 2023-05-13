@@ -5,6 +5,9 @@
 #include "platform.h"
 #include "flash.h"
 
+#include "ff.h"
+#include "diskio.h"
+
 static uint8_t spi_tx_buffer[520];
 static uint8_t spi_rx_buffer[520];
 
@@ -221,6 +224,43 @@ static bool sdcard_data_read_command(uint8_t cmd, uint32_t arg, uint8_t *dest, s
   return true;
 }
 
+static bool sdcard_data_write_command(uint8_t cmd, uint32_t arg, uint8_t *src, size_t len) {
+
+  /* Optimistically assume minimal delay between command and data response, 32
+   * bytes at most */
+  memset(sdcard_scratchpad, 0xff, sizeof(sdcard_scratchpad));
+
+  uint8_t arg1 = arg >> 24;
+  uint8_t arg2 = (arg & 0xff0000) >> 16;
+  uint8_t arg3 = (arg & 0xff00) >> 8;
+  uint8_t arg4 = (arg & 0xff);
+  uint8_t cmdseq[6] = {0x40 | cmd, arg1, arg2, arg3, arg4, 0x0};
+  memcpy(sdcard_scratchpad, cmdseq, sizeof(cmdseq));
+
+  /* Command response must be within first 16 bytes, so start data packet at
+   * byte 24 */
+   sdcard_scratchpad[24] = 0xfe; /* Data token */
+   memcpy(&sdcard_scratchpad[25], src, len);
+
+  sdcard_spi_chipselect(true);
+  sdcard_spi_transaction(sdcard_scratchpad, sdcard_scratchpad, sizeof(sdcard_scratchpad));
+  sdcard_spi_chipselect(false);
+
+  uint8_t *r1 = find_response(sdcard_scratchpad + 6, sizeof(sdcard_scratchpad) - 6);
+  if (!r1 || (*r1 != 0)) {
+    return false;
+  }
+
+  uint8_t *token = find_response(sdcard_scratchpad + 25 + len, sizeof(sdcard_scratchpad) - 25 - len);
+  if (!token) {
+    return false;
+  }
+  if ((*token & 0x1f) != 0x05) { /* Data not accepted */
+    return false;
+  }
+  return true;
+}
+
 
 struct sdcard sdcard_init() {
   struct sdcard sdcard = {0};
@@ -251,8 +291,125 @@ struct sdcard sdcard_init() {
     }
   }
 
-  uint8_t csp[16];
-  bool success = sdcard_data_read_command(9, 0, csp, 16);
-
-  return (struct sdcard){.valid = success, .num_sectors=resp};
+  return (struct sdcard){.valid = true, .num_sectors=0};
 }
+
+static struct sdcard sd = {0};
+
+DSTATUS disk_status (
+	BYTE pdrv		/* Physical drive nmuber to identify the drive */
+)
+{
+	DSTATUS stat;
+	int result;
+
+  if (pdrv != 1) {
+    return STA_NOINIT;
+  }
+
+  if (!sd.valid) {
+    return STA_NOINIT;
+  }
+  return 0;
+}
+
+DSTATUS disk_initialize (
+	BYTE pdrv				/* Physical drive nmuber to identify the drive */
+)
+{
+  if (pdrv != 1) {
+    return STA_NOINIT;
+  }
+  sd = sdcard_init();
+	return disk_status(pdrv);
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/* Read Sector(s)                                                        */
+/*-----------------------------------------------------------------------*/
+
+DRESULT disk_read (
+	BYTE pdrv,		/* Physical drive nmuber to identify the drive */
+	BYTE *buff,		/* Data buffer to store read data */
+	LBA_t sector,	/* Start sector in LBA */
+	UINT count		/* Number of sectors to read */
+)
+{
+  if (pdrv != 1) {
+    return RES_NOTRDY;
+  }
+
+  while (count > 0) {
+    if (!sdcard_data_read_command(17, sector, buff, 512)) {
+      return RES_ERROR;
+    }
+    buff += 512;
+    sector += 1;
+    count -= 1;
+  }
+	return RES_OK;
+}
+
+DRESULT disk_write (
+	BYTE pdrv,			/* Physical drive nmuber to identify the drive */
+	const BYTE *buff,	/* Data to be written */
+	LBA_t sector,		/* Start sector in LBA */
+	UINT count			/* Number of sectors to write */
+)
+{
+	DRESULT res;
+	int result;
+
+	if (pdrv != 1) {
+    return RES_PARERR;
+  }
+  while (count > 0) {
+    if (!sdcard_data_write_command(24, sector, buff, 512)) {
+      return RES_ERROR;
+    }
+    buff += 512;
+    sector += 1;
+    count -= 1;
+  }
+	return RES_OK;
+
+}
+
+DRESULT disk_ioctl (
+	BYTE pdrv,		/* Physical drive nmuber (0..) */
+	BYTE cmd,		/* Control code */
+	void *buff		/* Buffer to send/receive control data */
+)
+{
+	DRESULT res;
+	int result;
+
+	if (pdrv != 1) {
+    return RES_PARERR;
+  }
+
+  switch (cmd) {
+    case CTRL_SYNC:
+      return RES_OK;
+    case GET_SECTOR_SIZE:
+      *(WORD *)buff = 512;
+      return RES_OK;
+    case GET_SECTOR_COUNT:
+      *(LBA_t *)buff = 10000;
+      return RES_OK;
+    case GET_BLOCK_SIZE:
+      *(DWORD *)buff = 1;
+      return RES_OK;
+    case CTRL_TRIM:
+      return RES_OK;
+  }
+
+	return RES_PARERR;
+}
+
+DWORD get_fattime (void) {
+  return 1;
+}
+

@@ -19,6 +19,9 @@ OBJS += calculations.o \
         flash.o \
 				util.o
 
+OBJS += ff.o \
+        ffunicode.o
+
 include targets/${PLATFORM}.mk
 
 DEPS = $(wildcard ${OBJDIR}/*.d)
@@ -26,13 +29,14 @@ DEPS = $(wildcard ${OBJDIR}/*.d)
 
 
 GITDESC=$(shell git describe --tags --dirty)
-CFLAGS+=-Isrc/ -Isrc/platforms/common -Wall -Wextra -g -std=c11 -DGIT_DESCRIBE=\"${GITDESC}\"
+CFLAGS+=-Isrc/ -Isrc/platforms/common -I contrib/fatfs
+CFLAGS+=-Wall -Wextra -g -std=c11 -DGIT_DESCRIBE=\"${GITDESC}\"
 CFLAGS+=-I${TINYCBOR_DIR}/src
 LDFLAGS+= -lm -L${OBJDIR} -l:${TINYCBOR_LIB}
 
 OPENCM3_DIR=$(PWD)/contrib/libopencm3
 
-VPATH+=src src/platforms src/platforms/common
+VPATH+=src src/platforms src/platforms/common contrib/fatfs
 DESTOBJS = $(addprefix ${OBJDIR}/, ${OBJS})
 
 $(OBJDIR):
