@@ -16,6 +16,7 @@ OBJS+= gd32f4_init.o \
        gd32f4_sched.o \
        gd32f4_sensors.o \
        gd32f4_spiflash.o \
+       gd32f4_sdcard.o \
        stm32_sched_buffers.o
 
 GD32PERIPH= \

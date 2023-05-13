@@ -134,3 +134,125 @@ bool flash_write(struct flash *f, const uint8_t *src, uint32_t address, size_t l
   return true;
 
 }
+
+static uint8_t *find_response(uint8_t *b, int32_t len) {
+  int32_t i = 0;
+  for (; i < len; i++) {
+    if (b[i] != 0xff) {
+      return &b[i];
+    }
+  }
+  return NULL;
+}
+
+static uint8_t sdcard_command(uint8_t cmd, uint32_t arg, uint8_t crc) {
+  uint8_t arg1 = arg >> 24;
+  uint8_t arg2 = (arg & 0xff0000) >> 16;
+  uint8_t arg3 = (arg & 0xff00) >> 8;
+  uint8_t arg4 = (arg & 0xff);
+  uint8_t tx[16] = {0x40 | cmd, arg1, arg2, arg3, arg4, crc};
+  uint8_t rx[16];
+  for (uint32_t i = 6; i < sizeof(tx); i++) {
+    tx[i] = 0xff;
+  }
+  sdcard_spi_chipselect(true);
+  sdcard_spi_transaction(tx, rx, sizeof(rx));
+  sdcard_spi_chipselect(false);
+  uint8_t *r1 = find_response(rx + 6, sizeof(rx) - 6);
+  if (r1) {
+    return *r1;
+  } else {
+    return 0xff;
+  }
+}
+
+uint8_t sdcard_scratchpad[1024];
+static bool sdcard_data_read_command(uint8_t cmd, uint32_t arg, uint8_t *dest, size_t len) {
+
+  /* Optimistically assume minimal delay between command and data response, 32
+   * bytes at most */
+  size_t readlen = len + 32;
+  memset(sdcard_scratchpad, 0xff, readlen);
+
+  uint8_t arg1 = arg >> 24;
+  uint8_t arg2 = (arg & 0xff0000) >> 16;
+  uint8_t arg3 = (arg & 0xff00) >> 8;
+  uint8_t arg4 = (arg & 0xff);
+  uint8_t cmdseq[6] = {0x40 | cmd, arg1, arg2, arg3, arg4, 0x0};
+  memcpy(sdcard_scratchpad, cmdseq, sizeof(cmdseq));
+
+  sdcard_spi_chipselect(true);
+  sdcard_spi_transaction(sdcard_scratchpad, sdcard_scratchpad, readlen);
+  uint8_t *r1 = find_response(sdcard_scratchpad + 6, readlen - 6);
+  if (!r1 || (*r1 != 0)) {
+    sdcard_spi_chipselect(false);
+    return false;
+  }
+
+  int32_t remaining_scratch = readlen - (r1 + 1 - sdcard_scratchpad);
+  uint8_t *token = find_response(r1 + 1, remaining_scratch);
+  if (!token) {
+    /* TODO: Do another transaction, loop until token found */
+  }
+  if ((*token & 0xe0) == 0x00) { /* Error token */
+    sdcard_spi_chipselect(false);
+    return false;
+  }
+  if (*token != 0xfe) { /* Not a data token */
+    sdcard_spi_chipselect(false);
+    return false;
+  }
+  remaining_scratch = readlen - (token + 1 - sdcard_scratchpad);
+
+  if (remaining_scratch > 0) {
+    size_t amt_to_copy = ((size_t)remaining_scratch > len) ? len : (size_t)remaining_scratch;  
+    memcpy(dest, token + 1, amt_to_copy);
+    len -= amt_to_copy;
+    dest += amt_to_copy;
+  }
+
+  if (len > 0) { /* Fetch more */
+    readlen = len + 16;
+    memset(sdcard_scratchpad, 0xff, readlen);
+    sdcard_spi_transaction(sdcard_scratchpad, sdcard_scratchpad, readlen);
+    memcpy(dest, sdcard_scratchpad, len);
+  }
+  sdcard_spi_chipselect(false);
+  return true;
+}
+
+
+struct sdcard sdcard_init() {
+  struct sdcard sdcard = {0};
+
+  /* Go to idle */
+  uint8_t resp = sdcard_command(0, 0, 0x95);
+  if (resp != 0x1) {
+    return sdcard;
+  }
+
+  bool initialized = false;
+  while (!initialized) {
+    /* Initialize with CMD8 */
+    resp = sdcard_command(8, 0x1aa, 0x87);
+    if (resp != 0x1) {
+      return sdcard;
+    }
+
+    /* Prefix CMD55 */
+    resp = sdcard_command(55, 0, 0x65);
+    if (resp & 0x4) { /* TODO: Invalid command, handle with CMD1 */
+      return sdcard;
+    }
+
+    resp = sdcard_command(41, 0x40000000, 0x77);
+    if (resp == 0) {
+      break;
+    }
+  }
+
+  uint8_t csp[16];
+  bool success = sdcard_data_read_command(9, 0, csp, 16);
+
+  return (struct sdcard){.valid = success, .num_sectors=resp};
+}

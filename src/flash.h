@@ -20,5 +20,15 @@ bool flash_read(struct flash *,  uint8_t *dest, uint32_t address, size_t length)
 bool flash_erase_sector(struct flash *, uint32_t address);
 bool flash_write(struct flash *, const uint8_t *src, uint32_t address, size_t length);
 
+struct sdcard {
+  bool valid;
+  size_t sector_size_bytes;
+  size_t num_sectors;
+};
+
+struct sdcard sdcard_init(void);
+bool sdcard_read(struct sdcard *s, uint8_t *dest, uint32_t lba_sector, size_t n_sectors);
+bool sdcard_write(struct sdcard *s, uint8_t *src, uint32_t lba_sector, size_t n_sectors);
+
 
 #endif

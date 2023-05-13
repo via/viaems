@@ -19,25 +19,7 @@ int main() {
 
   assert(config_valid());
 
-  struct flash f = flash_init();
-  uint8_t buf1[256];
-  uint8_t buf2[256];
-
-  flash_read(&f, buf1, 0, 256);
-  flash_erase_sector(&f, 0);
-  flash_erase_sector(&f, 0x1000);
-  flash_erase_sector(&f, 0x2000);
-  flash_erase_sector(&f, 0x3000);
-  for (int i = 0; i < 256; i++) {
-    buf1[i] -= 1;
-  }
-  before = cycle_count();
-  for (int p = 0; p < 256; p++) {
-    flash_write(&f, buf1, p * 256, 256);
-  }
-  after = cycle_count();
-
-  flash_read(&f, buf2, 0x2000, 256);
+  struct sdcard s = sdcard_init();
 
   sensors_process(SENSOR_CONST);
   while (1) {

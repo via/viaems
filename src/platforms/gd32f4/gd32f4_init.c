@@ -117,6 +117,7 @@ static void platform_disable_periphs(void) {
 
   rcu_periph_clock_disable(RCU_SPI0);
   rcu_periph_clock_disable(RCU_SPI1);
+  rcu_periph_clock_disable(RCU_SPI2);
 
   rcu_periph_clock_disable(RCU_DMA0);
   rcu_periph_clock_disable(RCU_DMA1);
@@ -140,6 +141,7 @@ static void platform_enable_periphs(void) {
 
   rcu_periph_clock_enable(RCU_SPI0);
   rcu_periph_clock_enable(RCU_SPI1);
+  rcu_periph_clock_enable(RCU_SPI2);
 
   rcu_periph_clock_enable(RCU_DMA0);
   rcu_periph_clock_enable(RCU_DMA1);
@@ -249,6 +251,7 @@ void platform_init() {
   gd32f470_configure_pwm();
 
   gd32f4xx_configure_spi_flash();
+  gd32f4xx_configure_sdcard();
 
   setup_gpios();
   setup_systick();
