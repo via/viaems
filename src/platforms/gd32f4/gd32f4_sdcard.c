@@ -74,3 +74,11 @@ void sdcard_spi_chipselect(bool asserted) {
   }
 }
 
+void sdcard_spi_highspeed(bool speed) {
+  if (speed) {
+    SPI_CTL0(SPI2) = SPI_CTL0_MSTMOD | SPI_PSC_64; /* APB2 (48 MHz) / 4 = 10.5 MHz */
+  } else {
+    SPI_CTL0(SPI2) = SPI_CTL0_MSTMOD | SPI_PSC_128; /* APB2 (48 MHz) / 4 = 10.5 MHz */
+  }
+}
+

@@ -55,6 +55,7 @@ void platform_save_config(void);
 void flash_spi_transaction(const uint8_t *tx, uint8_t *rx, size_t len);
 void sdcard_spi_transaction(const uint8_t *tx, uint8_t *rx, size_t len);
 void sdcard_spi_chipselect(bool asserted);
+void sdcard_spi_highspeed(bool fast);
 
 void platform_enable_event_logging(void);
 void platform_disable_event_logging(void);

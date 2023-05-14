@@ -30,6 +30,7 @@ int main() {
   res = f_open(&fil, "1:/hello.txt", FA_CREATE_NEW | FA_WRITE);
 
   sensors_process(SENSOR_CONST);
+  int count = 0;
   while (1) {
 //    console_process();
     size_t console_feed_line(uint8_t *dest, size_t bsize);
@@ -37,7 +38,10 @@ int main() {
     size_t len = console_feed_line(buf, 1024);
     UINT bw;
     f_write(&fil, buf, len, &bw);
-    f_sync(&fil);
+    if (count % 100 == 0) {
+      f_sync(&fil);
+    }
+    count += 1;
   }
 
   return 0;

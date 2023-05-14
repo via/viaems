@@ -196,6 +196,7 @@ static bool sdcard_data_read_command(uint8_t cmd, uint32_t arg, uint8_t *dest, s
   uint8_t *token = find_response(r1 + 1, remaining_scratch);
   if (!token) {
     /* TODO: Do another transaction, loop until token found */
+    return false;
   }
   if ((*token & 0xe0) == 0x00) { /* Error token */
     sdcard_spi_chipselect(false);
@@ -264,6 +265,7 @@ static bool sdcard_data_write_command(uint8_t cmd, uint32_t arg, uint8_t *src, s
 
 struct sdcard sdcard_init() {
   struct sdcard sdcard = {0};
+  sdcard_spi_highspeed(false);
 
   /* Go to idle */
   uint8_t resp = sdcard_command(0, 0, 0x95);
@@ -291,6 +293,7 @@ struct sdcard sdcard_init() {
     }
   }
 
+  sdcard_spi_highspeed(true);
   return (struct sdcard){.valid = true, .num_sectors=0};
 }
 
@@ -320,7 +323,9 @@ DSTATUS disk_initialize (
   if (pdrv != 1) {
     return STA_NOINIT;
   }
-  sd = sdcard_init();
+  if (!sd.valid) {
+    sd = sdcard_init();
+  }
 	return disk_status(pdrv);
 }
 
