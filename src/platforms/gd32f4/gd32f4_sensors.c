@@ -129,8 +129,8 @@ static void setup_freq_pw_input(void) {
 
   /* Only have update interrupt fire on overflow, so we can have a timeout */
   TIMER_CTL0(TIMER8) = TIMER_CTL0_UPS;
-    /* 192 MHz APB2 Timer clock divided by 2930 gives approximagely 1 Hz for
-     * full 65536 wraparound */
+  /* 192 MHz APB2 Timer clock divided by 2930 gives approximagely 1 Hz for
+   * full 65536 wraparound */
   TIMER_PSC(TIMER8) = 2930;
   TIMER_CAR(TIMER8) = 65535;
   /* Interrupt on rising edge and overflow */
@@ -144,8 +144,8 @@ static void setup_freq_pw_input(void) {
 
   /* Configure both channels to capture the same input. Use highest filtering
    * option available: 8x at fDTS_CK/32 */
-  TIMER_CHCTL0(TIMER8) = TIMER_CHCTL0_CH0CAPFLT | 0x2 |
-                         TIMER_CHCTL0_CH1CAPFLT | (0x01 << 8);
+  TIMER_CHCTL0(TIMER8) =
+    TIMER_CHCTL0_CH0CAPFLT | 0x2 | TIMER_CHCTL0_CH1CAPFLT | (0x01 << 8);
   TIMER_CHCTL2(TIMER8) = TIMER_CHCTL2_CH0EN | TIMER_CHCTL2_CH1EN;
 
   bool active_high = (config.freq_inputs[3].edge == RISING_EDGE);
@@ -185,7 +185,6 @@ void TIMER0_BRK_TIMER8_IRQHandler(void) {
     };
     sensor_update_freq(&update);
   }
-
 }
 
 void gd32f4xx_configure_adc(void) {

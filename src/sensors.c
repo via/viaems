@@ -13,7 +13,8 @@ static float sensor_convert_linear(const struct sensor_input *in) {
   return in->range.min + partial * (in->range.max - in->range.min);
 }
 
-static int current_angle_in_window(const struct sensor_input *in, degrees_t angle) {
+static int current_angle_in_window(const struct sensor_input *in,
+                                   degrees_t angle) {
   degrees_t cur_angle = clamp_angle(angle - in->window.offset, 720);
   for (uint32_t i = 0; i < 720; i += in->window.total_width) {
     if ((cur_angle >= i) && (cur_angle < i + in->window.capture_width)) {
@@ -89,18 +90,18 @@ static sensor_fault detect_faults(const struct sensor_input *in) {
   return FAULT_NONE;
 }
 
-static float process_derivative(const struct sensor_input *in, float new_value) {
-    return
-      TICKRATE * (new_value - in->value) /
-      time_from_us(1000000 / platform_adc_samplerate());
+static float process_derivative(const struct sensor_input *in,
+                                float new_value) {
+  return TICKRATE * (new_value - in->value) /
+         time_from_us(1000000 / platform_adc_samplerate());
 }
 
-static float process_lag_filter(const struct sensor_input *in, float new_value) {
+static float process_lag_filter(const struct sensor_input *in,
+                                float new_value) {
   if (in->lag == 0.0f) {
     return new_value;
   }
-  return ((in->value * in->lag) +
-               (new_value * (100.0f - in->lag))) / 100.0f;
+  return ((in->value * in->lag) + (new_value * (100.0f - in->lag))) / 100.0f;
 }
 
 static void sensor_convert(struct sensor_input *in, float raw, timeval_t time) {
@@ -115,15 +116,15 @@ static void sensor_convert(struct sensor_input *in, float raw, timeval_t time) {
   } else {
 
     switch (in->method) {
-      case METHOD_LINEAR:
-        new_value = sensor_convert_linear(in);
-        break;
-      case METHOD_LINEAR_WINDOWED:
-        new_value = sensor_convert_linear_windowed(in, current_angle());
-        break;
-      case METHOD_THERM:
-        new_value = sensor_convert_thermistor(in);
-        break;
+    case METHOD_LINEAR:
+      new_value = sensor_convert_linear(in);
+      break;
+    case METHOD_LINEAR_WINDOWED:
+      new_value = sensor_convert_linear_windowed(in, current_angle());
+      break;
+    case METHOD_THERM:
+      new_value = sensor_convert_thermistor(in);
+      break;
     }
 
     new_value = process_lag_filter(in, new_value);
@@ -155,7 +156,6 @@ void sensor_update_freq(const struct freq_update *u) {
       break;
     default:
       continue;
-                  
     }
   }
 }
@@ -191,8 +191,9 @@ void knock_configure(struct knock_input *knock) {
 
   knock->state.width = 64;
   knock->state.freq = bucket;
-  knock->state.w = 2.0f * 3.14159f * (float)knock->state.freq / (float)knock->state.width;
-  knock->state.cr = cosf(knock->state.w); 
+  knock->state.w =
+    2.0f * 3.14159f * (float)knock->state.freq / (float)knock->state.width;
+  knock->state.cr = cosf(knock->state.w);
 
   knock->state.n_samples = 0;
   knock->state.sprev = 0.0f;
@@ -220,9 +221,8 @@ static void knock_add_sample(struct knock_input *knock, float sample) {
 }
 
 void sensor_update_knock(const struct knock_update *update) {
-  struct knock_input *in = (update->pin == 0)
-    ? &config.knock_inputs[0] 
-    : &config.knock_inputs[1];
+  struct knock_input *in =
+    (update->pin == 0) ? &config.knock_inputs[0] : &config.knock_inputs[1];
 
   for (int i = 0; i < update->n_samples; i++) {
     knock_add_sample(in, update->samples[i]);
@@ -263,16 +263,13 @@ START_TEST(check_sensor_convert_linear_windowed) {
   config.decoder.rpm = 1000;
 
   si.raw_value = 2048.0f;
-  ck_assert_float_eq_tol(
-    sensor_convert_linear_windowed(&si, 0), 12.0, 0.01);
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 0), 12.0, 0.01);
 
   si.raw_value = 2500.0f;
-  ck_assert_float_eq_tol(
-    sensor_convert_linear_windowed(&si, 10), 12.0, 0.01);
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 10), 12.0, 0.01);
 
   si.raw_value = 2600.0f;
-  ck_assert_float_eq_tol(
-    sensor_convert_linear_windowed(&si, 40), 12.0, 0.01);
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 40), 12.0, 0.01);
 
   /* End of window, should average first three results together */
   si.raw_value = 2700.0f;
@@ -281,11 +278,9 @@ START_TEST(check_sensor_convert_linear_windowed) {
 
   /* All values in this non-capture window should be ignored */
   si.raw_value = 2800.0f;
-  ck_assert_float_eq_tol(
-    sensor_convert_linear_windowed(&si, 60), 12, 0.1);
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 60), 12, 0.1);
   si.raw_value = 2800.0f;
-  ck_assert_float_eq_tol(
-    sensor_convert_linear_windowed(&si, 80), 12, 0.1);
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 80), 12, 0.1);
 }
 END_TEST
 
@@ -303,16 +298,13 @@ START_TEST(check_sensor_convert_linear_windowed_skipped) {
   config.decoder.rpm = 1000;
 
   si.raw_value = 2048;
-  ck_assert_float_eq_tol(
-    sensor_convert_linear_windowed(&si, 0), 12.0, 0.01);
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 0), 12.0, 0.01);
 
   si.raw_value = 2500;
-  ck_assert_float_eq_tol(
-    sensor_convert_linear_windowed(&si, 10), 12.0, 0.01);
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 10), 12.0, 0.01);
 
   si.raw_value = 2600;
-  ck_assert_float_eq_tol(
-    sensor_convert_linear_windowed(&si, 40), 12.0, 0.01);
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 40), 12.0, 0.01);
 
   /* Move into next capture window, it should still produce average */
   si.raw_value = 2700;
@@ -321,12 +313,10 @@ START_TEST(check_sensor_convert_linear_windowed_skipped) {
 
   /* Remaining samples in this window should add to average */
   si.raw_value = 1000;
-  ck_assert_float_eq_tol(
-    sensor_convert_linear_windowed(&si, 120), 12, 0.1);
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 120), 12, 0.1);
 
   si.raw_value = 1500;
-  ck_assert_float_eq_tol(
-    sensor_convert_linear_windowed(&si, 130), 12, 0.1);
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 130), 12, 0.1);
 
   /* Reaches end of window, should average two prior samples */
   si.raw_value = 2000;
@@ -349,16 +339,13 @@ START_TEST(check_sensor_convert_linear_windowed_wide) {
   config.decoder.rpm = 1000;
 
   si.raw_value = 2048;
-  ck_assert_float_eq_tol(
-    sensor_convert_linear_windowed(&si, 0), 12.0, 0.01);
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 0), 12.0, 0.01);
 
   si.raw_value = 2500;
-  ck_assert_float_eq_tol(
-    sensor_convert_linear_windowed(&si, 45), 12.0, 0.01);
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 45), 12.0, 0.01);
 
   si.raw_value = 2600;
-  ck_assert_float_eq_tol(
-    sensor_convert_linear_windowed(&si, 89), 12.0, 0.01);
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 89), 12.0, 0.01);
 
   /* Move into next capture window, it should still produce average of all
    * three*/
@@ -368,12 +355,10 @@ START_TEST(check_sensor_convert_linear_windowed_wide) {
 
   /* Remaining samples in this window should add to average at end */
   si.raw_value = 1000;
-  ck_assert_float_eq_tol(
-    sensor_convert_linear_windowed(&si, 120), 12, 0.1);
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 120), 12, 0.1);
 
   si.raw_value = 1500;
-  ck_assert_float_eq_tol(
-    sensor_convert_linear_windowed(&si, 130), 12, 0.1);
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 130), 12, 0.1);
 
   /* TODO: right now this needs to be capture_width degrees past the first
    * sample in the last window, which is not ideal. We should just treat all
@@ -401,30 +386,24 @@ START_TEST(check_sensor_convert_linear_windowed_offset) {
 
   /* All values should be ignored */
   si.raw_value = 2048;
-  ck_assert_float_eq_tol(
-    sensor_convert_linear_windowed(&si, 0), 12.0, 0.01);
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 0), 12.0, 0.01);
 
   si.raw_value = 2500;
-  ck_assert_float_eq_tol(
-    sensor_convert_linear_windowed(&si, 10), 12.0, 0.01);
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 10), 12.0, 0.01);
 
   si.raw_value = 2600;
-  ck_assert_float_eq_tol(
-    sensor_convert_linear_windowed(&si, 40), 12.0, 0.01);
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 40), 12.0, 0.01);
 
   /* Start of real window */
   si.raw_value = 2700;
-  ck_assert_float_eq_tol(
-    sensor_convert_linear_windowed(&si, 50), 12, 0.1);
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 50), 12, 0.1);
 
   si.raw_value = 2400;
-  ck_assert_float_eq_tol(
-    sensor_convert_linear_windowed(&si, 80), 12, 0.1);
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 80), 12, 0.1);
 
   /* End of window, should produce average of two prior samples */
   si.raw_value = 2000;
-  ck_assert_float_eq_tol(
-    sensor_convert_linear_windowed(&si, 90), 2550, 0.1);
+  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 90), 2550, 0.1);
 }
 END_TEST
 

@@ -41,32 +41,20 @@ const struct console_feed_node console_feed_nodes[] = {
   { .id = "fuel_overduty_cut",
     .uint32_ptr = &calculated_values.fuel_overduty_cut },
 
-  { .id = "sensor.map",
-    .float_ptr = &config.sensors[SENSOR_MAP].value },
-  { .id = "sensor.iat",
-    .float_ptr = &config.sensors[SENSOR_IAT].value },
-  { .id = "sensor.clt",
-    .float_ptr = &config.sensors[SENSOR_CLT].value },
-  { .id = "sensor.brv",
-    .float_ptr = &config.sensors[SENSOR_BRV].value },
-  { .id = "sensor.tps",
-    .float_ptr = &config.sensors[SENSOR_TPS].value },
+  { .id = "sensor.map", .float_ptr = &config.sensors[SENSOR_MAP].value },
+  { .id = "sensor.iat", .float_ptr = &config.sensors[SENSOR_IAT].value },
+  { .id = "sensor.clt", .float_ptr = &config.sensors[SENSOR_CLT].value },
+  { .id = "sensor.brv", .float_ptr = &config.sensors[SENSOR_BRV].value },
+  { .id = "sensor.tps", .float_ptr = &config.sensors[SENSOR_TPS].value },
   { .id = "sensor.tps.rate",
     .float_ptr = &config.sensors[SENSOR_TPS].derivative },
-  { .id = "sensor.aap",
-    .float_ptr = &config.sensors[SENSOR_AAP].value },
-  { .id = "sensor.frt",
-    .float_ptr = &config.sensors[SENSOR_FRT].value },
-  { .id = "sensor.ego",
-    .float_ptr = &config.sensors[SENSOR_EGO].value },
-  { .id = "sensor.frp",
-    .float_ptr = &config.sensors[SENSOR_FRP].value },
-  { .id = "knock1.value",
-    .float_ptr = &config.knock_inputs[0].value },
-  { .id = "knock2.value",
-    .float_ptr = &config.knock_inputs[1].value },
-  { .id = "sensor.eth",
-    .float_ptr = &config.sensors[SENSOR_ETH].value },
+  { .id = "sensor.aap", .float_ptr = &config.sensors[SENSOR_AAP].value },
+  { .id = "sensor.frt", .float_ptr = &config.sensors[SENSOR_FRT].value },
+  { .id = "sensor.ego", .float_ptr = &config.sensors[SENSOR_EGO].value },
+  { .id = "sensor.frp", .float_ptr = &config.sensors[SENSOR_FRP].value },
+  { .id = "knock1.value", .float_ptr = &config.knock_inputs[0].value },
+  { .id = "knock2.value", .float_ptr = &config.knock_inputs[1].value },
+  { .id = "sensor.eth", .float_ptr = &config.sensors[SENSOR_ETH].value },
 
   { .id = "sensor_faults", .uint32_fptr = sensor_fault_status },
 
@@ -1100,13 +1088,13 @@ static void render_sensor_object(struct console_request_context *ctx,
                          "thermistor resistor bias value (ohms)",
                          &input->therm.bias);
   render_float_map_field(ctx,
-                          "fault-min",
-                          "Lower bound for raw sensor input",
-                          &input->fault_config.min);
+                         "fault-min",
+                         "Lower bound for raw sensor input",
+                         &input->fault_config.min);
   render_float_map_field(ctx,
-                          "fault-max",
-                          "Upper bound for raw sensor input",
-                          &input->fault_config.max);
+                         "fault-max",
+                         "Upper bound for raw sensor input",
+                         &input->fault_config.max);
   render_float_map_field(ctx,
                          "fault-value",
                          "Value to assume in fault condition",
@@ -1272,7 +1260,7 @@ static void render_freq_object(struct console_request_context *ctx, void *ptr) {
     "type",
     "input interpretation",
     (const struct console_enum_mapping[]){
-      { NONE, "none" }, {FREQ, "freq" }, { TRIGGER, "trigger" }, { 0, NULL } },
+      { NONE, "none" }, { FREQ, "freq" }, { TRIGGER, "trigger" }, { 0, NULL } },
     &type);
 
   f->edge = edge;

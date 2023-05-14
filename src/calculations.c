@@ -40,10 +40,8 @@ bool fuel_cut() {
 }
 
 void calculate_ignition() {
-  calculated_values.timing_advance =
-    interpolate_table_twoaxis(config.timing,
-                              config.decoder.rpm,
-                              config.sensors[SENSOR_MAP].value);
+  calculated_values.timing_advance = interpolate_table_twoaxis(
+    config.timing, config.decoder.rpm, config.sensors[SENSOR_MAP].value);
   switch (config.ignition.dwell) {
   case DWELL_FIXED_DUTY:
     calculated_values.dwell_us =
@@ -54,8 +52,8 @@ void calculate_ignition() {
     break;
   case DWELL_BRV:
     calculated_values.dwell_us =
-      1000 * interpolate_table_oneaxis(
-               config.dwell, config.sensors[SENSOR_BRV].value);
+      1000 *
+      interpolate_table_oneaxis(config.dwell, config.sensors[SENSOR_BRV].value);
     break;
   }
 }
