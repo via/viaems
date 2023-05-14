@@ -222,11 +222,11 @@ struct config config __attribute__((section(".configdata"))) = {
     [3] = {.edge = FALLING_EDGE, .type = FREQ},
   },
   .sensors = {
-    [SENSOR_BRV] = {.pin=0, .source=SENSOR_ADC, .method=METHOD_LINEAR,
+    [SENSOR_BRV] = {.pin=2, .source=SENSOR_ADC, .method=METHOD_LINEAR,
       .raw_min=0, .raw_max=5,
       .range={.min=0, .max=24.5}, .lag=80,
       .fault_config={.min = 0.1f, .max = 4.9f, .fault_value = 13.8}},
-    [SENSOR_IAT] = {.pin=1, .source=SENSOR_ADC, .method=METHOD_THERM,
+    [SENSOR_IAT] = {.pin=4, .source=SENSOR_ADC, .method=METHOD_THERM,
       .raw_min=0, .raw_max=5,
       .fault_config={.min = 0.05f, .max = 4.95f, .fault_value = 10.0},
       .therm={
@@ -235,7 +235,7 @@ struct config config __attribute__((section(".configdata"))) = {
         .b=0.00022887572003919,
         .c=1.64484831669638E-07,
       }},
-    [SENSOR_CLT] = {.pin=2, .source=SENSOR_ADC, .method=METHOD_THERM,
+    [SENSOR_CLT] = {.pin=5, .source=SENSOR_ADC, .method=METHOD_THERM,
       .raw_min=0, .raw_max=5,
       .fault_config={.min = 0.05f, .max = 4.95f, .fault_value = 50.0},
       .therm={
@@ -244,10 +244,10 @@ struct config config __attribute__((section(".configdata"))) = {
         .b=0.00025618700140100302,
         .c=0.00000018474199456928,
       }},
-    [SENSOR_EGO] = {.pin=3, .source=SENSOR_ADC, .method=METHOD_LINEAR,
+    [SENSOR_EGO] = {.pin=7, .source=SENSOR_ADC, .method=METHOD_LINEAR,
       .raw_min=0, .raw_max=5,
       .range={.min=0.499, .max=1.309}},
-    [SENSOR_MAP] = {.pin=4, .source=SENSOR_ADC, .method=METHOD_LINEAR_WINDOWED,
+    [SENSOR_MAP] = {.pin=3, .source=SENSOR_ADC, .method=METHOD_LINEAR_WINDOWED,
       .raw_min=0, .raw_max=5,
       .range={.min=12, .max=420}, /* AEM 3.5 bar MAP sensor*/
       .fault_config={.min = 0.05f, .max = 4.95f, .fault_value = 50.0},
