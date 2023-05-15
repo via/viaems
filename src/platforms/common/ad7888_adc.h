@@ -10,15 +10,8 @@
  * test input.  We just collect all 8 inputs, plus one to read back the last
  * result */
 static const uint16_t adc_transmit_sequence[NUM_SPI_TX] = {
-  SPI_INPUT(0),
-  SPI_INPUT(1),
-  SPI_INPUT(2),
-  SPI_INPUT(3),
-  SPI_INPUT(4),
-  SPI_INPUT(5),
-  SPI_INPUT(6),
-  SPI_INPUT(7),
-  SPI_INPUT(0),
+  SPI_INPUT(0), SPI_INPUT(1), SPI_INPUT(2), SPI_INPUT(3), SPI_INPUT(4),
+  SPI_INPUT(5), SPI_INPUT(6), SPI_INPUT(7), SPI_INPUT(0),
 };
 
 /* The 12 bit value from the ADC is in a 16 bit frame, MSB first, with four

@@ -11,7 +11,6 @@
 #error No ADC specified!
 #endif
 
-
 static void setup_timer0(void) {
   gpio_mode_set(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO_PIN_8);
   gpio_af_set(GPIOA, GPIO_AF_1, GPIO_PIN_8);
@@ -45,9 +44,8 @@ static void setup_spi0(void) {
                       GPIO_OSPEED_SET(7, GPIO_OSPEED_25MHZ) |
                       GPIO_OSPEED_SET(8, GPIO_OSPEED_25MHZ);
 
-  SPI_CTL0(SPI0) = SPI_CTL0_FF16 |  /* 16 bit data format */
-                   SPI_FREQ_DIVIDER |
-                   SPI_CTL0_MSTMOD; /* Master Mode */
+  SPI_CTL0(SPI0) = SPI_CTL0_FF16 |                     /* 16 bit data format */
+                   SPI_FREQ_DIVIDER | SPI_CTL0_MSTMOD; /* Master Mode */
 
   SPI_CTL1(SPI0) = SPI_CTL1_NSSDRV | /* Manage NSS Output */
                    SPI_CTL1_DMAREN;  /* Enable RX DMA */

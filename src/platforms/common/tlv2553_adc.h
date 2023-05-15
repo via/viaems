@@ -6,13 +6,13 @@
 #define NUM_SPI_TX 30
 #define SPI_INPUT(X) ((X << 12) | (0x0C00)) /* Specify 16 bit frames */
 
-/* TLV2553 can be driven up to 15 MHz. The best we can do with the STM32F4 is 10.4
-MHz, though we can do 15 MHz with the GD32F470.  However, even at 15 we can't do
-200 ksps with 16 bit transfers (only 12), which is not an option on either chip,
-since there's up to 4.15 uS Tconv time.  On all platforms lets run at 150 ksps,
-which gives us plenty of room even at 7.5 MHz for a falling/rising CS between
-samples (CS can rise immediately after data is sent, it doesn't need to be after
-Tconv has passed).
+/* TLV2553 can be driven up to 15 MHz. The best we can do with the STM32F4
+is 10.4 MHz, though we can do 15 MHz with the GD32F470.  However, even at 15 we
+can't do 200 ksps with 16 bit transfers (only 12), which is not an option on
+either chip, since there's up to 4.15 uS Tconv time.  On all platforms lets run
+at 150 ksps, which gives us plenty of room even at 7.5 MHz for a falling/rising
+CS between samples (CS can rise immediately after data is sent, it doesn't need
+to be after Tconv has passed).
 
 We want two high frequency knock inputs, so for a sampling strategy we sample
 those two inputs each time we sample one of the other inputs. There are 11
@@ -21,16 +21,12 @@ total of 12 low speed and 2 high speed inputs. At 150 ksps, this gives us 5 KHz
 for the low speed inputs, and 50 KHz for the knock inputs */
 
 static const uint16_t adc_transmit_sequence[NUM_SPI_TX] = {
-  SPI_INPUT(0), SPI_INPUT(1),  SPI_INPUT(2),
-  SPI_INPUT(0), SPI_INPUT(1),  SPI_INPUT(3),
-  SPI_INPUT(0), SPI_INPUT(1),  SPI_INPUT(4),
-  SPI_INPUT(0), SPI_INPUT(1),  SPI_INPUT(5),
-  SPI_INPUT(0), SPI_INPUT(1),  SPI_INPUT(6),
-  SPI_INPUT(0), SPI_INPUT(1),  SPI_INPUT(7),
-  SPI_INPUT(0), SPI_INPUT(1),  SPI_INPUT(8),
-  SPI_INPUT(0), SPI_INPUT(1),  SPI_INPUT(9),
-  SPI_INPUT(0), SPI_INPUT(1),  SPI_INPUT(10),
-  SPI_INPUT(0), SPI_INPUT(1),  SPI_INPUT(11),
+  SPI_INPUT(0), SPI_INPUT(1),  SPI_INPUT(2), SPI_INPUT(0), SPI_INPUT(1),
+  SPI_INPUT(3), SPI_INPUT(0),  SPI_INPUT(1), SPI_INPUT(4), SPI_INPUT(0),
+  SPI_INPUT(1), SPI_INPUT(5),  SPI_INPUT(0), SPI_INPUT(1), SPI_INPUT(6),
+  SPI_INPUT(0), SPI_INPUT(1),  SPI_INPUT(7), SPI_INPUT(0), SPI_INPUT(1),
+  SPI_INPUT(8), SPI_INPUT(0),  SPI_INPUT(1), SPI_INPUT(9), SPI_INPUT(0),
+  SPI_INPUT(1), SPI_INPUT(10), SPI_INPUT(0), SPI_INPUT(1), SPI_INPUT(11),
 };
 
 /* The 12 bit value from the ADC is in a 16 bit frame, MSB first, with four
@@ -74,8 +70,7 @@ static inline uint16_t read_adc_pin(const uint16_t *values, int pin) {
 /* Self test pin is (Vref+ + Vref-) / 2, which should be 2048 */
 static inline bool adc_response_is_valid(const uint16_t *values) {
   uint16_t self_test = read_adc_pin(values, 11);
-  if ((self_test < (2048 - 10)) || 
-      (self_test > (2048 + 10))) {
+  if ((self_test < (2048 - 10)) || (self_test > (2048 + 10))) {
     return false;
   }
   return true;

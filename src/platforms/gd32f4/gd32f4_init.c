@@ -240,7 +240,9 @@ extern void gd32f470_configure_adc(void);
 extern void gd32f470_configure_pwm(void);
 
 extern void gd32f4xx_configure_spi_flash(void);
-extern void gd32f4xx_spi_transaction(const uint8_t *tx, uint8_t *rx, size_t len);
+extern void gd32f4xx_spi_transaction(const uint8_t *tx,
+                                     uint8_t *rx,
+                                     size_t len);
 
 void platform_init() {
   NVIC_SetPriorityGrouping(3); /* 16 priority preemption levels */

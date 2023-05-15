@@ -1,8 +1,8 @@
 #include "calculations.h"
 #include "config.h"
 #include "decoder.h"
-#include "platform.h"
 #include "flash.h"
+#include "platform.h"
 #include "scheduler.h"
 #include "sensors.h"
 #include "table.h"
@@ -21,7 +21,6 @@ int main() {
 
   assert(config_valid());
 
-
   BYTE fmt_work_buf[FF_MAX_SS];
   FATFS fs;
   FIL fil;
@@ -32,8 +31,8 @@ int main() {
   sensors_process(SENSOR_CONST);
   int count = 0;
   while (1) {
-//    console_process();
-    size_t console_feed_line(uint8_t *dest, size_t bsize);
+    //    console_process();
+    size_t console_feed_line(uint8_t * dest, size_t bsize);
     uint8_t buf[1024];
     size_t len = console_feed_line(buf, 1024);
     UINT bw;

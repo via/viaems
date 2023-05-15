@@ -1,5 +1,5 @@
-#include "platform.h"
 #include "gd32f4xx.h"
+#include "platform.h"
 
 void gd32f4xx_configure_sdcard(void) {
 
@@ -15,7 +15,7 @@ void gd32f4xx_configure_sdcard(void) {
 
   sdcard_spi_chipselect(false);
 
-  SPI_CTL0(SPI2) = SPI_PSC_128 | /* APB2 (48 MHz) / 128 = 375 KHz */
+  SPI_CTL0(SPI2) = SPI_PSC_128 |    /* APB2 (48 MHz) / 128 = 375 KHz */
                    SPI_CTL0_MSTMOD; /* Master Mode */
 
   SPI_CTL1(SPI2) = SPI_CTL1_NSSDRV | /* Manage NSS Output */
@@ -23,9 +23,7 @@ void gd32f4xx_configure_sdcard(void) {
                    SPI_CTL1_DMATEN;  /* Enable TX DMA */
 
   nvic_irq_enable(DMA0_Channel2_IRQn, 7, 0);
-
 }
-
 
 /* Use DMA0 CH2(0) for RX and DMA0 CH5(0) for TX */
 void sdcard_spi_transaction(const uint8_t *tx, uint8_t *rx, size_t len) {
@@ -36,7 +34,7 @@ void sdcard_spi_transaction(const uint8_t *tx, uint8_t *rx, size_t len) {
 
   DMA_CH2CTL(DMA0) =
     DMA_PERIPH_0_SELECT | DMA_MEMORY_WIDTH_8BIT | DMA_PERIPH_WIDTH_8BIT |
-    DMA_PERIPH_TO_MEMORY | DMA_CHXCTL_MNAGA | 
+    DMA_PERIPH_TO_MEMORY | DMA_CHXCTL_MNAGA |
     DMA_CHXCTL_FTFIE | /* Enable interrupt on buffer completion */
     DMA_CHXCTL_CHEN;
 
@@ -51,13 +49,13 @@ void sdcard_spi_transaction(const uint8_t *tx, uint8_t *rx, size_t len) {
   SPI_CTL0(SPI2) |= SPI_CTL0_SPIEN;
 
   /* Block until done */
-  while (DMA_CH2CTL(DMA0) & DMA_CHXCTL_CHEN);
+  while (DMA_CH2CTL(DMA0) & DMA_CHXCTL_CHEN)
+    ;
 
   SPI_CTL0(SPI2) &= ~SPI_CTL0_SPIEN; /* Disable DMA */
 
   /* Errata for gd32f450: manually clear completion flags */
   DMA_INTC1(DMA0) = (1 << 11) | (1 << 10);
-
 }
 
 void DMA0_Channel2_IRQHandler(void) {
@@ -76,9 +74,10 @@ void sdcard_spi_chipselect(bool asserted) {
 
 void sdcard_spi_highspeed(bool speed) {
   if (speed) {
-    SPI_CTL0(SPI2) = SPI_CTL0_MSTMOD | SPI_PSC_64; /* APB2 (48 MHz) / 4 = 10.5 MHz */
+    SPI_CTL0(SPI2) =
+      SPI_CTL0_MSTMOD | SPI_PSC_32; /* APB2 (48 MHz) / 4 = 10.5 MHz */
   } else {
-    SPI_CTL0(SPI2) = SPI_CTL0_MSTMOD | SPI_PSC_128; /* APB2 (48 MHz) / 4 = 10.5 MHz */
+    SPI_CTL0(SPI2) =
+      SPI_CTL0_MSTMOD | SPI_PSC_128; /* APB2 (48 MHz) / 4 = 10.5 MHz */
   }
 }
-
