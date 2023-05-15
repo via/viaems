@@ -1079,6 +1079,10 @@ static void render_sensor_object(struct console_request_context *ctx,
   render_float_map_field(
     ctx, "range-max", "max for linear mapping", &input->range.max);
   render_float_map_field(
+    ctx, "raw-min", "min raw input for linear mapping", &input->raw_min);
+  render_float_map_field(
+    ctx, "raw-max", "max raw input for linear mapping", &input->raw_max);
+  render_float_map_field(
     ctx, "fixed-value", "value to hold for const input", &input->value);
   render_float_map_field(ctx, "therm-a", "thermistor A", &input->therm.a);
   render_float_map_field(ctx, "therm-b", "thermistor B", &input->therm.b);
