@@ -1,8 +1,9 @@
 ### master (unreleased)
  - Make gd32f4 default platform
- - implement knock inputs
- - sensor api refactor, **breaking change for range values**
- - implement pulsewidth and frequency input
+ - Implement knock inputs
+ - Sensor api refactor, **breaking change for range values**
+ - Implement pulsewidth and frequency input
+ - Add fuel pulsewidth offset table for nonlinear corrections
 
 ### 1.5.0 (2023 April 20)
 

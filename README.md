@@ -97,7 +97,8 @@ Member | Meaning
 `timing` | Points to table to do MAP/RPM lookup on for timing advance.
 `ve` | Points to table for volumetric efficiency lookups
 `commanded_lambda` | Points to table containing target lambda
-`injector_pw_compensation` | Points to table containing Voltage vs dead time
+`injector_deadtime_offset` | Points to table containing Voltage vs dead time
+`injector_pw_correction` | Points to table containing pulsewidth offsets to apply 
 `engine_temp_enrich` | Points to table containing CLT/MAP vs enrichment percentage
 `tipin_enrich_amount` | Points to table containing Tipin enrich quantities
 `tipin_enrich_duration` | Points to table containing Tipin enrich durations

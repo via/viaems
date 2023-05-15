@@ -29,6 +29,7 @@ const struct console_feed_node console_feed_nodes[] = {
   { .id = "fuel_pulsewidth_us", .uint32_ptr = &calculated_values.fueling_us },
   { .id = "temp_enrich_percent", .float_ptr = &calculated_values.ete },
   { .id = "injector_dead_time", .float_ptr = &calculated_values.idt },
+  { .id = "injector_pw_correction", .float_ptr = &calculated_values.pwc },
   { .id = "accel_enrich_percent", .float_ptr = &calculated_values.tipin },
   { .id = "airmass_per_cycle",
     .float_ptr = &calculated_values.airmass_per_cycle },
@@ -912,7 +913,11 @@ static void render_tables(struct console_request_context *ctx, void *ptr) {
   render_map_map_field(ctx,
                        "injector_dead_time",
                        render_table_object,
-                       config.injector_pw_compensation);
+                       config.injector_deadtime_offset);
+  render_map_map_field(ctx,
+                       "injector_pw_correction",
+                       render_table_object,
+                       config.injector_pw_correction);
   render_map_map_field(
     ctx, "temp-enrich", render_table_object, config.engine_temp_enrich);
   render_map_map_field(

@@ -33,7 +33,8 @@ struct config {
   struct table *timing;
   struct table *ve;
   struct table *commanded_lambda;
-  struct table *injector_pw_compensation;
+  struct table *injector_deadtime_offset;
+  struct table *injector_pw_correction;
   struct table *engine_temp_enrich;
   struct table *dwell;
   struct table *tipin_enrich_amount;

@@ -49,6 +49,7 @@ struct calculated_values {
   float airmass_per_cycle;
   float fuelvol_per_cycle;
   float idt;
+  float pwc;
   float lambda;
   float ve;
   float ete;

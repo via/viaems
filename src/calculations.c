@@ -133,6 +133,7 @@ void calculate_fueling() {
   float ve;
   float lambda;
   float idt;
+  float pwc;
   float ete;
 
   float iat = config.sensors[SENSOR_IAT].value;
@@ -157,8 +158,8 @@ void calculate_fueling() {
     lambda = 1.0;
   }
 
-  if (config.injector_pw_compensation) {
-    idt = interpolate_table_oneaxis(config.injector_pw_compensation, brv);
+  if (config.injector_deadtime_offset) {
+    idt = interpolate_table_oneaxis(config.injector_deadtime_offset, brv);
   } else {
     idt = 1.0;
   }
@@ -192,11 +193,20 @@ void calculate_fueling() {
     60000000 /                           /* uS per minute */
     config.fueling.injections_per_cycle; /* This many pulses */
 
+  if (config.injector_pw_correction) {
+    pwc = interpolate_table_oneaxis(config.injector_pw_correction,
+                                    raw_pw_us / 1000.0f);
+  } else {
+    pwc = 0.0f;
+  }
+
   calculated_values.ete = ete;
   calculated_values.idt = idt;
+  calculated_values.pwc = pwc;
   calculated_values.ve = ve;
   calculated_values.lambda = lambda;
-  calculated_values.fueling_us = (raw_pw_us * ete) + (idt * 1000);
+  calculated_values.fueling_us =
+    (raw_pw_us * ete) + (pwc * 1000.0f) + (idt * 1000.0f);
 }
 
 #ifdef UNITTEST

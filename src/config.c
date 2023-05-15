@@ -178,6 +178,17 @@ struct table injector_dead_time __attribute__((section(".configdata"))) = {
   },
 };
 
+struct table injector_pw_correction __attribute__((section(".configdata"))) = {
+  .title = "pulse_width_correction", .num_axis = 1,
+  .axis = { { .name = "PW(ms)", .num = 6,
+    .values = {0, 0.333, 0.521, 0.816, 1.278, 2.0},
+    },
+  },
+  .data = {
+    .one = {0, 0.090, 0.086, 0.038, 0.023, 0},
+  },
+};
+
 struct table boost_control_pwm __attribute__((section(".configdata"))) = {
   .title = "boost_control", .num_axis = 1,
   .axis = { { .name = "RPM", .num = 6,
@@ -265,7 +276,8 @@ struct config config __attribute__((section(".configdata"))) = {
       .raw_min=50, .raw_max=150, .range={.min=0, .max=100}},
   },
   .timing = &timing_vs_rpm_and_map,
-  .injector_pw_compensation = &injector_dead_time,
+  .injector_deadtime_offset = &injector_dead_time,
+  .injector_pw_correction = &injector_pw_correction,
   .ve = &ve_vs_rpm_and_map,
   .commanded_lambda = &lambda_vs_rpm_and_map,
   .engine_temp_enrich = &enrich_vs_temp_and_map,
@@ -316,8 +328,8 @@ int config_valid() {
     return 0;
   }
 
-  if (config.injector_pw_compensation &&
-      !table_valid(config.injector_pw_compensation)) {
+  if (config.injector_pw_correction &&
+      !table_valid(config.injector_pw_correction)) {
     return 0;
   }
 
