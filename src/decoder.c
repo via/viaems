@@ -413,8 +413,9 @@ void decoder_update_scheduling(int trigger, uint32_t time) {
 
   console_record_event((struct logged_event){
     .type = EVENT_TRIGGER,
-    .value = trigger,
-    .time = time,
+    .ev = {
+      .trigger = ev,
+      },
   });
   if (trigger == 0) {
     config.decoder.t0_count++;

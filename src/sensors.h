@@ -135,6 +135,15 @@ struct adc_update {
   float values[MAX_ADC_PINS]; /* Pin values in V */
 };
 
+struct adc_result {
+  timeval_t time;
+  struct {
+    float value;
+    float derivative;
+    sensor_fault fault;
+  } sensors[NUM_SENSORS];
+};
+
 struct knock_update {
   timeval_t time; /* Time of first sample in set */
   bool valid;

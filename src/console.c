@@ -81,7 +81,7 @@ static struct {
   struct logged_event events[32];
   volatile uint32_t read;
   volatile uint32_t write;
-} event_log = { 0 };
+} event_log = { .enabled = true };
 
 static struct logged_event get_logged_event() {
   if (!event_log.enabled || (event_log.read == event_log.write)) {
@@ -115,41 +115,31 @@ static size_t console_event_message(uint8_t *dest,
   cbor_encoder_init(&encoder, dest, bsize, 0);
 
   CborEncoder top_encoder;
-  cbor_encoder_create_map(&encoder, &top_encoder, 3);
-  cbor_encode_text_stringz(&top_encoder, "type");
-  cbor_encode_text_stringz(&top_encoder, "event");
-
-  cbor_encode_text_stringz(&top_encoder, "time");
-  cbor_encode_int(&top_encoder, ev->time);
-
-  cbor_encode_text_stringz(&top_encoder, "event");
-
-  CborEncoder event_encoder;
-
+  cbor_encoder_create_map(&encoder, &top_encoder, CborIndefiniteLength);
   switch (ev->type) {
-  case EVENT_OUTPUT:
-    cbor_encoder_create_map(&top_encoder, &event_encoder, 2);
-    cbor_encode_text_stringz(&event_encoder, "type");
-    cbor_encode_text_stringz(&event_encoder, "output");
-    cbor_encode_text_stringz(&event_encoder, "outputs");
-    cbor_encode_int(&event_encoder, ev->value);
-    cbor_encoder_close_container(&top_encoder, &event_encoder);
-    break;
-  case EVENT_GPIO:
-    cbor_encoder_create_map(&top_encoder, &event_encoder, 2);
-    cbor_encode_text_stringz(&event_encoder, "type");
-    cbor_encode_text_stringz(&event_encoder, "gpio");
-    cbor_encode_text_stringz(&event_encoder, "outputs");
-    cbor_encode_int(&event_encoder, ev->value);
-    cbor_encoder_close_container(&top_encoder, &event_encoder);
-    break;
   case EVENT_TRIGGER:
-    cbor_encoder_create_map(&top_encoder, &event_encoder, 2);
-    cbor_encode_text_stringz(&event_encoder, "type");
-    cbor_encode_text_stringz(&event_encoder, "trigger");
-    cbor_encode_text_stringz(&event_encoder, "pin");
-    cbor_encode_int(&event_encoder, ev->value);
-    cbor_encoder_close_container(&top_encoder, &event_encoder);
+
+    cbor_encode_text_stringz(&top_encoder, "time");
+    cbor_encode_int(&top_encoder, ev->ev.trigger.time);
+    cbor_encode_text_stringz(&top_encoder, "type");
+    cbor_encode_text_stringz(&top_encoder, "trigger");
+    cbor_encode_text_stringz(&top_encoder, "pin");
+    cbor_encode_int(&top_encoder, ev->ev.trigger.trigger);
+    break;
+  case EVENT_ADC:
+
+    cbor_encode_text_stringz(&top_encoder, "time");
+    cbor_encode_int(&top_encoder, ev->ev.adc.time);
+    cbor_encode_text_stringz(&top_encoder, "type");
+    cbor_encode_text_stringz(&top_encoder, "adc");
+    cbor_encode_text_stringz(&top_encoder, "values");
+    CborEncoder value_encoder;
+    cbor_encoder_create_array(
+        &top_encoder, &value_encoder, NUM_SENSORS);
+    for (int i = 0; i < NUM_SENSORS; i++) {
+      cbor_encode_float(&value_encoder, ev->ev.adc.sensors[i].value);
+    }
+    cbor_encoder_close_container(&top_encoder, &value_encoder);
     break;
   default:
     break;
@@ -1529,6 +1519,7 @@ void console_process() {
     ev = get_logged_event();
   }
 
+  return;
   /* Has it been 100ms since the last description? */
   if (time_diff(current_time(), last_desc_time) > time_from_us(100000)) {
     /* If so, print a description message */

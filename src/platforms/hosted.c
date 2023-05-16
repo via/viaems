@@ -104,14 +104,6 @@ void set_gpio(int output, char value) {
   } else {
     gpios &= ~(1 << output);
   }
-
-  if (old_gpios != gpios) {
-    console_record_event((struct logged_event){
-      .time = current_time(),
-      .value = gpios,
-      .type = EVENT_GPIO,
-    });
-  }
 }
 
 void set_pwm(int output, float value) {
@@ -317,11 +309,6 @@ static void do_output_slots() {
     char output[64];
     sprintf(output, "# OUTPUTS %lu %2x\n", (long unsigned)curtime, cur_outputs);
     write(STDERR_FILENO, output, strlen(output));
-    console_record_event((struct logged_event){
-      .time = curtime,
-      .value = cur_outputs,
-      .type = EVENT_OUTPUT,
-    });
   }
 }
 

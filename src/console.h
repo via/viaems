@@ -5,16 +5,19 @@
 
 #include "platform.h"
 #include "sim.h"
+#include "decoder.h"
+#include "sensors.h"
 
 struct logged_event {
-  timeval_t time;
   enum {
     EVENT_NONE,
-    EVENT_OUTPUT,
-    EVENT_GPIO,
+    EVENT_ADC,
     EVENT_TRIGGER,
   } type;
-  uint32_t value;
+  union {
+    struct adc_result adc;
+    struct decoder_event trigger;
+  } ev;
 };
 
 typedef enum {

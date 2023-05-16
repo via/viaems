@@ -161,6 +161,9 @@ void sensor_update_freq(const struct freq_update *u) {
 }
 
 void sensor_update_adc(const struct adc_update *update) {
+  struct adc_result res = {
+    .time = update->time,
+  };
   for (int i = 0; i < NUM_SENSORS; ++i) {
     struct sensor_input *in = &config.sensors[i];
     if (in->source != SENSOR_ADC) {
@@ -171,7 +174,18 @@ void sensor_update_adc(const struct adc_update *update) {
     }
     in->fault = update->valid ? FAULT_NONE : FAULT_CONN;
     sensor_convert(in, update->values[in->pin], update->time);
+
+    res.sensors[i].value = in->value;
+    res.sensors[i].derivative = in->derivative;
+    res.sensors[i].fault = in->fault;
   }
+  struct logged_event ev = {
+    .type = EVENT_ADC,
+    .ev = {
+      .adc = res,
+    },
+  };
+  console_record_event(ev);
 }
 
 uint32_t sensor_fault_status() {
