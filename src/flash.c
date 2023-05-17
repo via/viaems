@@ -157,6 +157,16 @@ static uint8_t *find_response(uint8_t *b, int32_t len) {
   return NULL;
 }
 
+static uint8_t *find_nonbusy(uint8_t *b, int32_t len) {
+  int32_t i = 0;
+  for (; i < len; i++) {
+    if (b[i] != 0x00) {
+      return &b[i];
+    }
+  }
+  return NULL;
+}
+
 static uint8_t sdcard_command(uint8_t cmd, uint32_t arg, uint8_t crc) {
   uint8_t arg1 = arg >> 24;
   uint8_t arg2 = (arg & 0xff0000) >> 16;
@@ -176,6 +186,16 @@ static uint8_t sdcard_command(uint8_t cmd, uint32_t arg, uint8_t crc) {
   } else {
     return 0xff;
   }
+}
+
+struct slice {
+  uint8_t *ptr;
+  size_t len;
+};
+
+void slice_advance(struct slice *s, size_t amt) {
+  s->ptr += amt;
+  s->len -= amt;
 }
 
 uint8_t sdcard_scratchpad[1024];
@@ -204,27 +224,31 @@ static bool sdcard_data_read_command(uint8_t cmd,
     return false;
   }
 
-  int32_t remaining_scratch = readlen - (r1 + 1 - sdcard_scratchpad);
-  uint8_t *token = find_response(r1 + 1, remaining_scratch);
-  if (!token) {
-    /* TODO: Do another transaction, loop until token found */
-    sdcard_spi_chipselect(false);
-    return false;
+  struct slice buf = {.ptr = r1 + 1, .len = readlen - (r1 + 1 - sdcard_scratchpad)};
+  while (true) {
+    uint8_t *token = find_response(buf.ptr, buf.len);
+    if (token) {
+      if ((*token & 0xe0) == 0x00) { /* Error token */
+        sdcard_spi_chipselect(false);
+        return false;
+      }
+      if (*token != 0xfe) { /* Not a data token */
+        sdcard_spi_chipselect(false);
+        return false;
+      }
+      slice_advance(&buf, token + 1 - buf.ptr);
+      break;
+    }
+    memset(sdcard_scratchpad, 0xff, 256);
+    buf = (struct slice){ .ptr = sdcard_scratchpad, .len = 256 };
+    sdcard_spi_transaction(buf.ptr, buf.ptr, buf.len);
   }
-  if ((*token & 0xe0) == 0x00) { /* Error token */
-    sdcard_spi_chipselect(false);
-    return false;
-  }
-  if (*token != 0xfe) { /* Not a data token */
-    sdcard_spi_chipselect(false);
-    return false;
-  }
-  remaining_scratch = readlen - (token + 1 - sdcard_scratchpad);
 
-  if (remaining_scratch > 0) {
+
+  if (buf.len > 0) {
     size_t amt_to_copy =
-      ((size_t)remaining_scratch > len) ? len : (size_t)remaining_scratch;
-    memcpy(dest, token + 1, amt_to_copy);
+      ((size_t)buf.len > len) ? len : (size_t)buf.len;
+    memcpy(dest, buf.ptr, amt_to_copy);
     len -= amt_to_copy;
     dest += amt_to_copy;
   }
@@ -237,16 +261,6 @@ static bool sdcard_data_read_command(uint8_t cmd,
   }
   sdcard_spi_chipselect(false);
   return true;
-}
-
-struct slice {
-  uint8_t *ptr;
-  size_t len;
-};
-
-void slice_advance(struct slice *s, size_t amt) {
-  s->ptr += amt;
-  s->len -= amt;
 }
 
 static bool sdcard_data_write_command(uint8_t cmd,
@@ -278,6 +292,7 @@ static bool sdcard_data_write_command(uint8_t cmd,
     find_response(sdcard_scratchpad + 6, sizeof(sdcard_scratchpad) - 6);
   if (!r1 || (*r1 != 0)) {
     sdcard_spi_chipselect(false);
+    abort();
     return false;
   }
 
@@ -289,9 +304,10 @@ static bool sdcard_data_write_command(uint8_t cmd,
     if (token) {
       if ((*token & 0x1f) != 0x05) { /* Data not accepted */
         sdcard_spi_chipselect(false);
+        abort();
         return false;
       }
-      slice_advance(&buf, token - buf.ptr);
+      slice_advance(&buf, token - buf.ptr + 1);
       break;
     }
     memset(sdcard_scratchpad, 0xff, 256);
@@ -300,7 +316,7 @@ static bool sdcard_data_write_command(uint8_t cmd,
   }
 
   while (true) {
-    uint8_t *resp = find_response(buf.ptr, buf.len);
+    uint8_t *resp = find_nonbusy(buf.ptr, buf.len);
     if (resp) {
       break;
     }
@@ -446,7 +462,7 @@ static bool sdcard_data_write_command(uint8_t cmd,
       *(WORD *)buff = 512;
       return RES_OK;
     case GET_SECTOR_COUNT:
-      *(LBA_t *)buff = 10000;
+      *(LBA_t *)buff = 10000000;
       return RES_OK;
     case GET_BLOCK_SIZE:
       *(DWORD *)buff = 1;
