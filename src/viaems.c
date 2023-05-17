@@ -21,7 +21,7 @@ int main() {
 
   assert(config_valid());
 
-  BYTE fmt_work_buf[FF_MAX_SS];
+  BYTE fmt_work_buf[8192];
   FATFS fs;
   FIL fil;
   FRESULT res = f_mkfs("1:", 0, fmt_work_buf, sizeof(fmt_work_buf));

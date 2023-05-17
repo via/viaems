@@ -55,6 +55,7 @@ void sdcard_spi_transaction(const uint8_t *tx, uint8_t *rx, size_t len) {
   SPI_CTL0(SPI2) &= ~SPI_CTL0_SPIEN; /* Disable DMA */
 
   /* Errata for gd32f450: manually clear completion flags */
+  DMA_INTC0(DMA0) = (1 << 21) | (1 << 20);
   DMA_INTC1(DMA0) = (1 << 11) | (1 << 10);
 }
 
@@ -75,7 +76,7 @@ void sdcard_spi_chipselect(bool asserted) {
 void sdcard_spi_highspeed(bool speed) {
   if (speed) {
     SPI_CTL0(SPI2) =
-      SPI_CTL0_MSTMOD | SPI_PSC_8; /* APB2 (48 MHz) / 4 = 5.25 MHz */
+      SPI_CTL0_MSTMOD | SPI_PSC_4; /* APB2 (48 MHz) / 4 = 5.25 MHz */
   } else {
     SPI_CTL0(SPI2) =
       SPI_CTL0_MSTMOD | SPI_PSC_128; /* APB2 (48 MHz) / 4 = 375 KHz */
