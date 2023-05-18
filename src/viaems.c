@@ -39,7 +39,9 @@ int main() {
 
     if (writebuflen > 16000) {
       UINT bw;
+      set_gpio(7, 1);
       f_write(&fil, writebuf, writebuflen, &bw);
+      set_gpio(7, 0);
       writebuflen = 0;
     }
     if (count % 3000 == 0) {

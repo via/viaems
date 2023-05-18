@@ -46,13 +46,16 @@ void sdcard_spi_transaction(const uint8_t *tx, uint8_t *rx, size_t len) {
                      DMA_PERIPH_WIDTH_8BIT | DMA_MEMORY_TO_PERIPH |
                      DMA_CHXCTL_MNAGA | DMA_CHXCTL_CHEN;
 
+  set_gpio(8, 1);
   SPI_CTL0(SPI2) |= SPI_CTL0_SPIEN;
 
   /* Block until done */
   while (DMA_CH2CTL(DMA0) & DMA_CHXCTL_CHEN)
     ;
+  while (SPI_STAT(SPI2) & SPI_STAT_TRANS);
 
   SPI_CTL0(SPI2) &= ~SPI_CTL0_SPIEN; /* Disable DMA */
+  set_gpio(8, 0);
 
   /* Errata for gd32f450: manually clear completion flags */
   DMA_INTC0(DMA0) = (1 << 21) | (1 << 20);

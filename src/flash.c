@@ -412,16 +412,16 @@ static bool sdcard_data_write_multiple(uint32_t arg,
   /* Send write multiple command */
   sdcard_spi_chipselect(true);
   sdcard_spi_transaction(
-    sdcard_txbuffer, sdcard_rxbuffer, 32);
+    sdcard_txbuffer, sdcard_rxbuffer, 16);
 
   struct slice buf = {
     .rxstorageptr = sdcard_rxbuffer,
     .txstorageptr = sdcard_txbuffer,
     .storagelen = sizeof(sdcard_txbuffer),
-    .len = 32,
+    .len = 16,
     .ptr = sdcard_rxbuffer,
   };
-  slice_skip(&buf, sizeof(cmdseq), 32); /* Start search after command */
+  slice_skip(&buf, sizeof(cmdseq), 16); /* Start search after command */
 
   int r1_retries = 1024;
   uint8_t byte;
@@ -456,7 +456,7 @@ static bool sdcard_data_write_multiple(uint32_t arg,
 
     int response_retries = 2048;
     for (; response_retries > 0; response_retries--) {
-      byte = slice_next_byte(&buf, 32);
+      byte = slice_next_byte(&buf, 16);
       if ((byte & 0xe0) == 0) { /* Error token */
         sdcard_spi_chipselect(false);
         itm_debug("write: failed to find response token!\n");
