@@ -569,7 +569,7 @@ DSTATUS disk_status(
   DSTATUS stat;
   int result;
 
-  if (pdrv != 1) {
+  if (pdrv != 0) {
     return STA_NOINIT;
   }
 
@@ -582,7 +582,7 @@ DSTATUS disk_status(
 DSTATUS disk_initialize(
     BYTE pdrv /* Physical drive nmuber to identify the drive */
     ) {
-  if (pdrv != 1) {
+  if (pdrv != 0) {
     return STA_NOINIT;
   }
   if (!sd.valid) {
@@ -600,7 +600,7 @@ DRESULT disk_read(BYTE pdrv, /* Physical drive nmuber to identify the drive */
     LBA_t sector, /* Start sector in LBA */
     UINT count    /* Number of sectors to read */
     ) {
-  if (pdrv != 1) {
+  if (pdrv != 0) {
     return RES_NOTRDY;
   }
 
@@ -625,7 +625,7 @@ DRESULT disk_write(
   DRESULT res;
   int result;
 
-  if (pdrv != 1) {
+  if (pdrv != 0) {
     return RES_PARERR;
   }
   if (!sdcard_data_write_multiple(sector, buff, count)) {
@@ -641,7 +641,7 @@ DRESULT disk_ioctl(BYTE pdrv, /* Physical drive nmuber (0..) */
   DRESULT res;
   int result;
 
-  if (pdrv != 1) {
+  if (pdrv != 0) {
     return RES_PARERR;
   }
 
@@ -667,3 +667,100 @@ DRESULT disk_ioctl(BYTE pdrv, /* Physical drive nmuber (0..) */
 DWORD get_fattime(void) {
   return 1;
 }
+
+static FATFS fs;
+static FIL logfile;
+
+bool logstorage_get_path(char *path) {
+  uint32_t fileno = 0;
+  DIR dir;
+  FRESULT res;
+  res = f_opendir(&dir, "/");
+  if (res != RES_OK) {
+    return false;
+  }
+
+  while (true) {
+    FILINFO fno;
+    res = f_readdir(&dir, &fno);
+    if ((res != RES_OK) || (fno.fname[0] == '\0')) {
+      break;
+    }
+    if (fno.fattrib & AM_DIR) {
+      uint32_t this_no = atoi(fno.fname);
+      if (this_no > fileno) {
+        fileno = this_no;
+      }
+    }
+  }
+  f_closedir(&dir);
+  fileno += 1;
+
+  /* Now make a directory with that name */
+  char buf[8];
+  itoa(fileno, &buf, 10);
+  path[0] = '\0';
+  strcat(path, "/");
+  strcat(path, buf);
+  strcat(path, "/");
+  res = f_mkdir(path);
+  return true;
+}
+bool logstorage_init(void) {
+
+  /* First attempt to mount an existing FS */
+  FRESULT res = f_mount(&fs, "", 1);
+  if (res == FR_NO_FILESYSTEM) {
+    /* SD card exists but no fs, make one */
+    BYTE fmt_work_buf[512];
+    res = f_mkfs("", 0, fmt_work_buf, sizeof(fmt_work_buf));
+    if (res != RES_OK) {
+      return false;
+    }
+    res = f_mount(&fs, "", 1);
+    /* If it still doesn't work.. */
+    if (res != RES_OK) {
+      return false;
+    }
+  }
+  if (res != RES_OK) {
+    return false;
+  }
+
+  char buf[32];
+  if (!logstorage_get_path(&buf)) {
+    return false;
+  }
+
+  strcat(buf, "log");
+  res = f_open(&logfile, buf, FA_CREATE_NEW | FA_WRITE);
+  if (res != RES_OK) {
+    return false;
+  }
+  return true;
+}
+
+uint8_t filebuffer[16384];
+size_t filebufferlen = 0;
+size_t writes = 0;
+
+bool logstorage_log_write(uint8_t *buf, size_t len) {
+
+  if (filebufferlen + len > sizeof(filebuffer)) {
+    UINT bw;
+    FRESULT res = f_write(&logfile, filebuffer, filebufferlen, &bw);
+    if (bw != filebufferlen) {
+      return false;
+    }
+    filebufferlen = 0;
+    writes += 1;
+    if (writes > 100) {
+      f_sync(&logfile);
+      writes = 0;
+    }
+  } 
+  memcpy(filebuffer + filebufferlen, buf, len);
+  filebufferlen += len;
+  return true;
+}
+

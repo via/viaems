@@ -20,34 +20,15 @@ int main() {
   platform_init(0, NULL);
 
   assert(config_valid());
-
-  BYTE fmt_work_buf[512];
-  FATFS fs;
-  FIL fil;
-  FRESULT res = f_mkfs("1:", 0, fmt_work_buf, sizeof(fmt_work_buf));
-  f_mount(&fs, "1:", 0);
-  res = f_open(&fil, "1:/hello.txt", FA_CREATE_NEW | FA_WRITE);
-
   sensors_process(SENSOR_CONST);
-  int count = 0;
-  uint8_t writebuf[16384];
-  size_t writebuflen = 0;
-  while (1) {
-    //    console_process();
-    size_t console_feed_line(uint8_t * dest, size_t bsize);
-    writebuflen += console_feed_line(writebuf + writebuflen, 1024);
+  bool open_file = logstorage_init();
 
-    if (writebuflen > 16000) {
-      UINT bw;
-      set_gpio(7, 1);
-      f_write(&fil, writebuf, writebuflen, &bw);
-      set_gpio(7, 0);
-      writebuflen = 0;
+  while (true) { 
+    char buf[512];
+    size_t len = console_feed_line(buf, 512);
+    if (open_file) {
+      open_file = logstorage_log_write(buf, len);
     }
-    if (count % 3000 == 0) {
-      f_sync(&fil);
-    }
-    count += 1;
   }
 
   return 0;
