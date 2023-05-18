@@ -351,7 +351,7 @@ static bool sdcard_data_write_command(uint8_t cmd,
     return false;
   }
 
-  int response_retries = 2048;
+  int response_retries = 16384;
   for (; response_retries > 0; response_retries--) {
     byte = slice_next_byte(&buf, 512);
     if ((byte & 0xe0) == 0) { /* Error token */
@@ -363,6 +363,7 @@ static bool sdcard_data_write_command(uint8_t cmd,
       if ((byte & 0x1f) != 0x05) { /* Not accepted */
         itm_debug("write: received invalid token\n");
         sdcard_spi_chipselect(false);
+        while (1);
         return false;
       }
       break;
@@ -386,6 +387,136 @@ static bool sdcard_data_write_command(uint8_t cmd,
     sdcard_spi_chipselect(false);
     return false;
   }
+
+  itm_debug("write: success\n");
+  sdcard_spi_chipselect(false);
+  return true;
+}
+
+static bool sdcard_data_write_multiple(uint32_t arg,
+                                      uint8_t *src,
+                                      size_t n_sectors) {
+
+  const uint8_t cmd = 25;
+  /* Optimistically assume minimal delay between command and data response, 32
+   * bytes at most */
+  memset(sdcard_txbuffer, 0xff, sizeof(sdcard_txbuffer));
+
+  uint8_t arg1 = arg >> 24;
+  uint8_t arg2 = (arg & 0xff0000) >> 16;
+  uint8_t arg3 = (arg & 0xff00) >> 8;
+  uint8_t arg4 = (arg & 0xff);
+  uint8_t cmdseq[6] = { 0x40 | cmd, arg1, arg2, arg3, arg4, 0x0 };
+  memcpy(sdcard_txbuffer, cmdseq, sizeof(cmdseq));
+
+  /* Send write multiple command */
+  sdcard_spi_chipselect(true);
+  sdcard_spi_transaction(
+    sdcard_txbuffer, sdcard_rxbuffer, 32);
+
+  struct slice buf = {
+    .rxstorageptr = sdcard_rxbuffer,
+    .txstorageptr = sdcard_txbuffer,
+    .storagelen = sizeof(sdcard_txbuffer),
+    .len = 32,
+    .ptr = sdcard_rxbuffer,
+  };
+  slice_skip(&buf, sizeof(cmdseq), 32); /* Start search after command */
+
+  int r1_retries = 1024;
+  uint8_t byte;
+  for (; r1_retries > 0; r1_retries--) {
+    byte = slice_next_byte(&buf, 32);
+    if ((byte & 0x80) == 0) {
+      break;
+    }
+  }
+  if (r1_retries == 0) { /* Exhausted attempts */
+    sdcard_spi_chipselect(false);
+    itm_debug("mwrite: failed to find r1!\n");
+    return false;
+  }
+  if (byte != 0) {
+    sdcard_spi_chipselect(false);
+    itm_debug("mwrite: r1 response indicates error\n");
+    while(1);
+    return false;
+  }
+
+  while (n_sectors > 0) {
+    itm_debug("mwrite: new sector\n");
+    /* Write a sector */
+    sdcard_txbuffer[0] = 0xfc; /* multiple-write */
+    memcpy(&sdcard_txbuffer[1], src, 512);
+    sdcard_txbuffer[513] = 0x0;
+    sdcard_txbuffer[514] = 0x0;
+    sdcard_spi_transaction(sdcard_txbuffer, sdcard_rxbuffer, 515); /* Full data packet */
+
+    buf.len = 0;
+
+    int response_retries = 2048;
+    for (; response_retries > 0; response_retries--) {
+      byte = slice_next_byte(&buf, 32);
+      if ((byte & 0xe0) == 0) { /* Error token */
+        sdcard_spi_chipselect(false);
+        itm_debug("write: failed to find response token!\n");
+        while(1);
+        return false;
+      }
+      if ((byte & 0x11) == 1) {
+        if ((byte & 0x1f) != 0x05) { /* Not accepted */
+          itm_debug("write: received invalid token\n");
+          sdcard_spi_chipselect(false);
+          while(1);
+          return false;
+        }
+        break;
+      }
+    }
+    if (response_retries == 0) { /* Exhausted attempts */
+      itm_debug("write: timed out\n");
+      sdcard_spi_chipselect(false);
+      return false;
+    }
+
+    int busywait_retries = 500000;
+    for (; busywait_retries > 0; busywait_retries--) {
+      byte = slice_next_byte(&buf, 128);
+      if (byte != 0) {
+        break;
+      }
+    }
+    if (busywait_retries == 0) { /* Exhausted attempts */
+      itm_debug("write: busy timed out\n");
+      sdcard_spi_chipselect(false);
+      return false;
+    }
+
+    src += 512;
+    n_sectors -= 1;
+  }
+
+  /* send stop command */
+  sdcard_txbuffer[0] = 0xfd;
+  sdcard_txbuffer[1] = 0xff;
+  sdcard_txbuffer[2] = 0xff;
+  sdcard_txbuffer[3] = 0xff;
+  sdcard_spi_transaction(sdcard_txbuffer, sdcard_rxbuffer, 4);
+  buf.len = 0;
+
+  int busywait_retries = 500000;
+  for (; busywait_retries > 0; busywait_retries--) {
+    byte = slice_next_byte(&buf, 128);
+    if (byte != 0) {
+      break;
+    }
+  }
+  if (busywait_retries == 0) { /* Exhausted attempts */
+    itm_debug("mwrite: final busy timed out\n");
+    sdcard_spi_chipselect(false);
+    return false;
+  }
+
 
   itm_debug("write: success\n");
   sdcard_spi_chipselect(false);
@@ -497,14 +628,8 @@ DRESULT disk_write(
   if (pdrv != 1) {
     return RES_PARERR;
   }
-  if (count > max_sector_write) max_sector_write = count;
-  while (count > 0) {
-    if (!sdcard_data_write_command(24, sector, buff, 512)) {
-      return RES_ERROR;
-    }
-    buff += 512;
-    sector += 1;
-    count -= 1;
+  if (!sdcard_data_write_multiple(sector, buff, count)) {
+    return RES_ERROR;
   }
   return RES_OK;
 }

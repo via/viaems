@@ -21,7 +21,7 @@ int main() {
 
   assert(config_valid());
 
-  BYTE fmt_work_buf[8192];
+  BYTE fmt_work_buf[512];
   FATFS fs;
   FIL fil;
   FRESULT res = f_mkfs("1:", 0, fmt_work_buf, sizeof(fmt_work_buf));
@@ -30,14 +30,19 @@ int main() {
 
   sensors_process(SENSOR_CONST);
   int count = 0;
+  uint8_t writebuf[16384];
+  size_t writebuflen = 0;
   while (1) {
     //    console_process();
     size_t console_feed_line(uint8_t * dest, size_t bsize);
-    uint8_t buf[1024];
-    size_t len = console_feed_line(buf, 1024);
-    UINT bw;
-    f_write(&fil, buf, len, &bw);
-    if (count % 100 == 0) {
+    writebuflen += console_feed_line(writebuf + writebuflen, 1024);
+
+    if (writebuflen > 16000) {
+      UINT bw;
+      f_write(&fil, writebuf, writebuflen, &bw);
+      writebuflen = 0;
+    }
+    if (count % 3000 == 0) {
       f_sync(&fil);
     }
     count += 1;
