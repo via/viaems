@@ -397,7 +397,7 @@ static void replay_callback(void *ptr) {
   struct decoder_event *ev = (struct decoder_event *)ptr;
   if (ev != NULL) {
     /* Handle current */
-    decoder_update_scheduling(ev, 1);
+    decoder_update_scheduling(ev->trigger, ev->time);
   }
 
   static char *linebuf = NULL;
