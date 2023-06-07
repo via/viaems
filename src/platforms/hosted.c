@@ -396,7 +396,10 @@ static void replay_callback(void *ptr) {
   
   struct decoder_event *ev = (struct decoder_event *)ptr;
   if (ev != NULL) {
-    /* Handle current */
+    if (ev->trigger > 1) {
+      /* Any other trigger input means end */
+      exit(EXIT_SUCCESS);
+    }
     decoder_update_scheduling(ev->trigger, ev->time);
   }
 

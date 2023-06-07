@@ -13,8 +13,11 @@ class ToothEvent:
     return [self.delay, self.trigger]
 
 class EndEvent:
+  def __init__(self, delay):
+    self.delay = delay
+
   def render(self):
-    return [0, -1]
+    return [self.delay, 99]
 
 def clamp_angle(angle):
   if angle >= 720:
@@ -114,8 +117,9 @@ class Scenario:
     while self.time <= targettime:
       self._try_next(4000 * ms)
 
-  def end(self):
-    pass
+  def end(self, delay=1):
+    ev = EndEvent(delay=delay * 4000000)
+    self.events.append(ev)
 
   def cross_reference_resuls(self, results):
     return results
@@ -156,8 +160,6 @@ class NMinus1DecoderTests(unittest.TestCase):
       scenario.end()
 
       results = self.conn.execute_scenario(scenario)
-      for r in results:
-        print(r)
 
 #      enriched_results = scenario.cross_reference_results(results)
 #      enriched_results.validate_events()

@@ -29,7 +29,7 @@ class ViaemsWrapper:
 
         self.process = subprocess.Popen(args, bufsize=-1,
                 stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                stderr=subprocess.DEVNULL)
+                stderr=subprocess.PIPE)
 
     def kill(self):
         if not self.process:
@@ -98,6 +98,8 @@ class ViaemsWrapper:
         d, t = ev.render()
         payload["events"].append(ev.render())
         tf.write(f"{d} {t}\n")
+      tf.close()
+
 
       self.start(replay=tf.name)
       results = []
@@ -107,6 +109,10 @@ class ViaemsWrapper:
           results.append(msg)
         except EOFError:
           break
+
+      for line in self.process.stderr:
+          print(line)
+      
 
       results.sort(key=lambda x: x["time"])
       with open(f"scenario_{scenario.name}.log", "w") as output:
