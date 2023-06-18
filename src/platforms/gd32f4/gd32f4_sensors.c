@@ -174,6 +174,8 @@ void TIMER0_BRK_TIMER8_IRQHandler(void) {
       .pulsewidth = (float)pulsewidth / 65536.0f,
     };
     sensor_update_freq(&update);
+    /* TODO: handle successive 0-period results by disabling the input
+     * completely to protect the main loop */
   }
 
   if (TIMER_INTF(TIMER8) & TIMER_INTF_UPIF) {

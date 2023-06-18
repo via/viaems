@@ -111,7 +111,9 @@ static void sensor_convert(struct sensor_input *in, float raw, timeval_t time) {
   float new_value = 0.0f;
   float new_derivative = 0.0f;
 
-  if (detect_faults(in) != FAULT_NONE) {
+
+  sensor_fault new_fault = detect_faults(in);
+  if (new_fault != FAULT_NONE) {
     new_value = in->fault_config.fault_value;
   } else {
 
@@ -134,6 +136,7 @@ static void sensor_convert(struct sensor_input *in, float raw, timeval_t time) {
   /* in->value and in->derivative are read by decode/calculation in interrupts,
    * so these race */
   disable_interrupts();
+  in->fault = new_fault;
   in->value = new_value;
   in->derivative = new_derivative;
   enable_interrupts();

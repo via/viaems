@@ -52,9 +52,9 @@ static void handle_idle_control() {}
 /* Checks for a variety of failure conditions, and produces a check engine
  * output:
  *
- * Sensor input in fault - 3s constant steady light
- * Decoder loss - 3s of 1/2s blink
- * Lean in boost - 3s of 1/5s blink
+ * Sensor input in fault - 5s constant steady light
+ * Decoder loss - 5s of 1/2s blink
+ * Lean in boost - 5s of 1/5s blink
  */
 
 typedef enum {
@@ -110,8 +110,8 @@ static void handle_check_engine_light() {
 
   cel_state_t next_cel_state = determine_next_cel_state();
 
-  /* Handle 3s reset of CEL state */
-  if (time_diff(current_time(), last_cel) > time_from_us(3000000)) {
+  /* Handle 5s reset of CEL state */
+  if (time_diff(current_time(), last_cel) > time_from_us(5000000)) {
     cel_state = CEL_NONE;
   }
 
