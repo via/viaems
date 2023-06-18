@@ -33,9 +33,12 @@ const struct console_feed_node console_feed_nodes[] = {
   { .id = "accel_enrich_percent", .float_ptr = &calculated_values.tipin },
   { .id = "airmass_per_cycle",
     .float_ptr = &calculated_values.airmass_per_cycle },
+  { .id = "stoich",
+    .float_ptr = &calculated_values.effective_stoich },
 
   /* Ignition */
   { .id = "advance", .float_ptr = &calculated_values.timing_advance },
+  { .id = "flexfuel-advance", .float_ptr = &calculated_values.flexfuel_ign_correction },
   { .id = "dwell", .uint32_ptr = &calculated_values.dwell_us },
   { .id = "rpm_cut", .uint32_ptr = &calculated_values.rpm_limit_cut },
   { .id = "boost_cut", .uint32_ptr = &calculated_values.boost_cut },
@@ -1235,6 +1238,20 @@ static void render_boost_control(struct console_request_context *ctx,
     ctx, "pwm", render_table_object, config.boost_control.pwm_duty_vs_rpm);
 }
 
+static void render_flexfuel(struct console_request_context *ctx,
+                                 void *ptr) {
+  (void)ptr;
+  render_bool_map_field(
+    ctx, "enabled", "enable ethanol corrections", &config.flexfuel.enabled);
+  render_float_map_field(ctx,
+                         "alt-fuel-stoich-ratio",
+                         "Stoich ratio at 100%% of alt fuel",
+                         &config.flexfuel.alt_fuel_stoich_ratio);
+
+  render_map_map_field(
+    ctx, "timing-correction", render_table_object, config.flexfuel.ignition_correction);
+}
+
 static void render_cel(struct console_request_context *ctx, void *ptr) {
   (void)ptr;
   render_uint32_map_field(
@@ -1339,6 +1356,7 @@ static void console_toplevel_request(struct console_request_context *ctx,
   render_map_map_field(ctx, "ignition", render_ignition, NULL);
   render_map_map_field(ctx, "tables", render_tables, NULL);
   render_map_map_field(ctx, "boost-control", render_boost_control, NULL);
+  render_map_map_field(ctx, "flexfuel", render_flexfuel, NULL);
   render_map_map_field(ctx, "check-engine-light", render_cel, NULL);
   render_array_map_field(ctx, "freq", render_freq_list, NULL);
   render_map_map_field(ctx, "test", render_test, NULL);

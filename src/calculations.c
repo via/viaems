@@ -40,8 +40,19 @@ bool fuel_cut() {
 }
 
 void calculate_ignition() {
-  calculated_values.timing_advance = interpolate_table_twoaxis(
-    config.timing, config.decoder.rpm, config.sensors[SENSOR_MAP].value);
+  float map = config.sensors[SENSOR_MAP].value;
+  float base_advance = interpolate_table_twoaxis(config.timing, config.decoder.rpm, map);
+  float flexfuel_advance = 0;
+
+  if (config.flexfuel.enabled) {
+    float eth = config.sensors[SENSOR_ETH].value;
+    float flexfuel_max = interpolate_table_twoaxis(config.flexfuel.ignition_correction, config.decoder.rpm, map);
+    flexfuel_advance = (eth / 100.0f) * flexfuel_max;
+  }
+
+  calculated_values.timing_advance = base_advance + flexfuel_advance;
+  calculated_values.flexfuel_ign_correction = flexfuel_advance;
+
   switch (config.ignition.dwell) {
   case DWELL_FIXED_DUTY:
     calculated_values.dwell_us =
@@ -67,6 +78,7 @@ static float air_density(float iat_celsius) {
 
 /* Compute fuel density from temperature, returns g/cm^3 */
 static float fuel_density(float fuel_celsius) {
+  /* TODO: update for dynamic density calculation from ETH */
   const float beta = 950.0; /* Gasoline 10^-6/K */
   float delta_temp = fuel_celsius - 15.0f;
   return config.fueling.density_of_fuel - (delta_temp * beta / 1000000.0f);
@@ -84,10 +96,20 @@ static float calculate_airmass(float ve, float map, float iat) {
   return injested_air_mass_per_cycle;
 }
 
+static float calculate_stoich_ratio(float eth) {
+  if (!config.flexfuel.enabled) {
+    return config.fueling.fuel_stoich_ratio;
+  }
+  float a = config.fueling.fuel_stoich_ratio;
+  float b = config.flexfuel.alt_fuel_stoich_ratio;
+  float fraction = eth / 100.0f;
+  return a * (1.0f - fraction) + (b * fraction);
+}
+
 /* Given an airmass and a fuel temperature, returns stoich amount of fuel volume
  */
-static float calculate_fuel_volume(float airmass, float frt) {
-  float fuel_mass = airmass / config.fueling.fuel_stoich_ratio;
+static float calculate_fuel_volume(float airmass, float stoich, float frt) {
+  float fuel_mass = airmass / stoich;
   float fuel_volume = fuel_mass / fuel_density(frt);
 
   return fuel_volume;
@@ -141,9 +163,11 @@ void calculate_fueling() {
   float map = config.sensors[SENSOR_MAP].value;
   float frt = config.sensors[SENSOR_FRT].value;
   float clt = config.sensors[SENSOR_CLT].value;
+  float eth = config.sensors[SENSOR_ETH].value;
 
   float tps = config.sensors[SENSOR_TPS].value;
   float tpsrate = config.sensors[SENSOR_TPS].derivative;
+  float stoich = calculate_stoich_ratio(eth);
 
   if (config.ve) {
     ve = interpolate_table_twoaxis(config.ve, config.decoder.rpm, map);
@@ -182,7 +206,7 @@ void calculate_fueling() {
   calculated_values.airmass_per_cycle = calculate_airmass(ve, map, iat);
 
   float fuel_vol_at_stoich =
-    calculate_fuel_volume(calculated_values.airmass_per_cycle, frt);
+    calculate_fuel_volume(calculated_values.airmass_per_cycle, stoich, frt);
 
   calculated_values.fuelvol_per_cycle = fuel_vol_at_stoich / lambda;
 
@@ -200,6 +224,7 @@ void calculate_fueling() {
     pwc = 0.0f;
   }
 
+  calculated_values.effective_stoich = stoich;
   calculated_values.ete = ete;
   calculated_values.idt = idt;
   calculated_values.pwc = pwc;

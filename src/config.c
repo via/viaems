@@ -132,6 +132,24 @@ struct table lambda_vs_rpm_and_map __attribute__((section(".configdata"))) = {
   },
 };
 
+struct table flexfuel_timing_corrections __attribute__((section(".configdata"))) = {
+  .title = "Flexfuel timing modifier", .num_axis = 2,
+  .axis = {
+    { .name = "RPM", .num = 8,
+      .values = {900, 1200, 2000, 3000, 4000, 5000, 6000, 7000},
+    },
+    {
+      .name = "MAP", .num = 7,
+      .values = {0, 50, 100, 150, 200, 250, 300},
+    },
+  },
+  .data = {
+    .two = {
+      {0}
+    },
+  },
+};
+
 struct table timing_vs_rpm_and_map __attribute__((section(".configdata"))) = {
   .title = "Timing", .num_axis = 2,
   .axis = {
@@ -303,6 +321,11 @@ struct config config __attribute__((section(".configdata"))) = {
   .ignition = {
     .dwell = DWELL_BRV,
     .min_fire_time_us = 500,
+  },
+  .flexfuel = {
+    .enabled = false,
+    .alt_fuel_stoich_ratio = 14.7,
+    .ignition_correction = &flexfuel_timing_corrections,
   },
   .boost_control = {
     .pwm_duty_vs_rpm = &boost_control_pwm,

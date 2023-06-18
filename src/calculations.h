@@ -35,6 +35,13 @@ struct ignition_config {
   uint32_t min_fire_time_us;
 };
 
+struct flexfuel_config {
+  bool enabled;
+  float alt_fuel_stoich_ratio;
+  struct table *ignition_correction;
+};
+
+
 struct calculated_values {
   /* Ignition */
   float timing_advance;
@@ -46,6 +53,8 @@ struct calculated_values {
   /* Fueling */
   uint32_t fueling_us;
   float tipin;
+  float effective_stoich;
+  float flexfuel_ign_correction;
   float airmass_per_cycle;
   float fuelvol_per_cycle;
   float idt;

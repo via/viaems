@@ -43,6 +43,7 @@ struct config {
   /* Fuel information */
   struct fueling_config fueling;
   struct ignition_config ignition;
+  struct flexfuel_config flexfuel;
   struct boost_control_config boost_control;
   struct cel_config cel;
 
