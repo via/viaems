@@ -16,6 +16,7 @@ Use | Pins
 --- | ---
 Trigger 0 | `PA0`
 Trigger 1 | `PA1`
+Flexfuel  | `PA3`
 ADC | `PA5`, `PA6`, `PA7`, and `PA8`
 USB | `PA9`, `PA11`, and `PA12`
 OUT | `PD0`-`PD15`
@@ -30,6 +31,7 @@ TIM1 | SPI(ADC) sample timer
 TIM2 | Main CPU Clock, event timer, and capture units for trigger inputs
 TIM3 | PWM driver, fixed at 30 Hz
 TIM8 | TIM2 4 MHz tick driver, triggers TIM2 on update
+TIM9 | Flexfuel frequency/pulsewidth measurement
 USBFS | Console
 SYSTICK | 100 Hz task driver
 
