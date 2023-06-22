@@ -82,6 +82,12 @@ static void configure_trigger_inputs(void) {
 
 static void setup_tim2(void) {
 
+  /* Set A0, A1 as AF1 */
+  GPIOA->MODER |= _VAL2FLD(GPIO_MODER_MODE0, 2) |      /* Pin 0 AF */ 
+                  _VAL2FLD(GPIO_MODER_MODE1, 2);       /* Pin 1 AF */
+  GPIOA->AFR[0] |= _VAL2FLD(GPIO_AFRL_AFSEL0, 1) |
+                   _VAL2FLD(GPIO_AFRL_AFSEL1, 1);
+
   TIM2->SMCR = _VAL2FLD(TIM_SMCR_SMS, 7) | /* External clock mode 1 */
                _VAL2FLD(TIM_SMCR_TS, 1);   /* ITR1 (TRGO from TIM8) */
   TIM2->ARR = 0xffffffff;
@@ -127,7 +133,7 @@ void TIM2_IRQHandler(void) {
     cc1_fired = true;
   }
 
-  if (TIM2->SR & TIM_SR_CC1IF) {
+  if (TIM2->SR & TIM_SR_CC2IF) {
     cc2 = TIM2->CCR2;
     cc2_fired = true;
   }

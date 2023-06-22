@@ -153,11 +153,82 @@ uint32_t platform_knock_samplerate(void) {
   return KNOCK_SAMPLE_RATE;
 }
 
+/* Configure TIM9's CH1 and CH1 to provide both frequency and pulsewidth
+ * on a single input, CH2 (PA3). Fire interrupt on update */
+static void setup_freq_pw_input(void) {
+  GPIOA->MODER |= _VAL2FLD(GPIO_MODER_MODE3, 2);  /* GPIO Mode AF */
+  GPIOA->AFR[0] |= _VAL2FLD(GPIO_AFRL_AFSEL3, 3); /* AF3 (TIM9) */
+
+  /* Only have update interrupt fire on overflow, so we can have a timeout */
+  TIM9->CR1 = TIM_CR1_URS;
+
+  /* 168 MHz APB2 Timer clock divided by 2563 gives approximagely 1 Hz for
+   * full 65536 wraparound */
+  TIM9->PSC = 2563;
+  TIM9->ARR = 65535;
+  /* Interrupt on rising edge and overflow */
+  TIM9->DIER = TIM_DIER_UIE | TIM_DIER_CC2IE;
+
+  /* Restart counter on input 2 to compare channel 2 */
+  /* Restart can only happen on input 1's output to capture 1 (which is not
+   * connected) or input 2's connection to capture 2, so we need that to be the
+   * rising edge for active high */
+  TIM9->SMCR = _VAL2FLD(TIM_SMCR_SMS, 4) | /* Slave Mode Restart */
+               _VAL2FLD(TIM_SMCR_TS, 6);   /* Trigger: TI2FP2 */
+
+  /* Configure both channels to capture the same input. Use highest filtering
+   * option available: 8x at fDTS_CK/32 */
+  TIM9->CCMR1 = _VAL2FLD(TIM_CCMR1_CC2S, 1) | TIM_CCMR1_IC2F |
+                _VAL2FLD(TIM_CCMR1_CC1S, 2) | TIM_CCMR1_IC1F;
+  TIM9->CCER = TIM_CCER_CC1E | TIM_CCER_CC2E;
+
+  bool active_high = (config.freq_inputs[3].edge == RISING_EDGE);
+  if (active_high) {
+    TIM9->CCER |= TIM_CCER_CC1P;
+  } else {
+    TIM9->CCER |= TIM_CCER_CC2P;
+  }
+
+  NVIC_EnableIRQ(TIM1_BRK_TIM9_IRQn);
+  NVIC_SetPriority(TIM1_BRK_TIM9_IRQn, 14);
+  TIM9->CR1 |= TIM_CR1_CEN;
+
+  DBGMCU->APB2FZ |= DBGMCU_APB2_FZ_DBG_TIM9_STOP;
+}
+
+void TIM1_BRK_TIM9_IRQHandler(void) {
+  if (TIM9->SR & TIM_SR_CC2IF) {
+    uint32_t pulsewidth = TIM9->CCR1;
+    uint32_t period = TIM9->CCR2;
+    bool valid = (period != 0);
+    struct freq_update update = {
+      .time = current_time(),
+      .valid = valid,
+      .pin = 3,
+      .frequency = valid ? (65536.0f / (float)period) : 0,
+      .pulsewidth = (float)pulsewidth / 65536.0f,
+    };
+    sensor_update_freq(&update);
+  }
+
+  if (TIM9->SR & TIM_SR_UIF) {
+    TIM9->SR = ~TIM_SR_UIF;
+    struct freq_update update = {
+      .time = current_time(),
+      .valid = false,
+      .pin = 3,
+    };
+    sensor_update_freq(&update);
+  }
+}
+
 void stm32f4_configure_adc(void) {
   setup_spi1();
   setup_spi1_tx_dma();
   setup_spi1_rx_dma();
   setup_tim1();
+
+  setup_freq_pw_input();
 
   knock_configure(&config.knock_inputs[0]);
   knock_configure(&config.knock_inputs[1]);
