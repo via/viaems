@@ -2,7 +2,10 @@
 #include <stdint.h>
 
 #include "platform.h"
-#include "tasks.h"
+#include "controllers.h"
+
+#include <FreeRTOS.h>
+#include "task.h"
 
 #ifndef CRYSTAL_FREQ
 #define CRYSTAL_FREQ 8
@@ -129,6 +132,7 @@ static void setup_watchdog() {
   reset_watchdog();
 }
 
+#if 0
 void SysTick_Handler(void) {
   run_tasks();
   reset_watchdog();
@@ -141,6 +145,7 @@ static void setup_systick() {
                   SysTick_CTRL_CLKSOURCE_Msk | /* Use HCLK */
                   SysTick_CTRL_ENABLE_Msk;
 }
+#endif
 
 extern unsigned _configdata_loadaddr, _sconfigdata, _econfigdata;
 void platform_save_config() {
@@ -262,8 +267,8 @@ void platform_init() {
 
   NVIC_SetPriorityGrouping(3); /* 16 priority preemption levels */
 
-  setup_systick();
-  setup_watchdog();
+  //setup_systick();
+//  setup_watchdog();
   setup_gpios();
 
   stm32f4_configure_scheduler();
@@ -278,4 +283,22 @@ void platform_benchmark_init() {
   setup_dwt();
   NVIC_SetPriorityGrouping(3); /* 16 priority preemption levels */
   stm32f4_configure_usb();
+}
+
+// FreeRTOS
+void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer,
+                                    StackType_t **ppxIdleTaskStackBuffer,
+                                    uint32_t *pulIdleTaskStackSize ) {
+  static StaticTask_t xIdleTaskTCB;
+  static StackType_t uxIdleTaskStack[configMINIMAL_STACK_SIZE];
+
+  *ppxIdleTaskTCBBuffer = &xIdleTaskTCB;
+  *ppxIdleTaskStackBuffer = uxIdleTaskStack;
+  *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
+}
+
+void vApplicationStackOverflowHook( 
+  TaskHandle_t xTask __attribute__((unused)),     
+  char *pcTaskName __attribute__((unused))) { 
+  for (;;); 
 }

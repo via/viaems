@@ -2,14 +2,14 @@
 #define FREERTOS_CONFIG_H
 #include "platform.h"
 
-#define vPortSVCHandler sv_call_handler
-#define xPortPendSVHandler pend_sv_handler
-#define xPortSysTickHandler systick_handler
+#define vPortSVCHandler SVC_Handler
+#define xPortPendSVHandler PendSV_Handler
+#define xPortSysTickHandler SysTick_Handler
 
 #define configUSE_PREEMPTION		1
 #define configUSE_IDLE_HOOK		0
 #define configUSE_TICK_HOOK		0
-#define configCPU_CLOCK_HZ		( ( unsigned long ) 192000000 )	
+#define configCPU_CLOCK_HZ		( ( unsigned long ) 168000000 )	
 #define configTICK_RATE_HZ		( ( TickType_t ) 1000 )
 #define configMAX_PRIORITIES		( 8 )
 #define configMINIMAL_STACK_SIZE	( ( unsigned short ) 128 )
@@ -21,12 +21,10 @@
 #define configIDLE_SHOULD_YIELD		1
 #define configUSE_MUTEXES		0
 #define configCHECK_FOR_STACK_OVERFLOW	1
-//#define configCHECK_FOR_STACK_OVERFLOW	0
 #define configUSE_PORT_OPTIMISED_TASK_SELECTION 1
 #define configGENERATE_RUN_TIME_STATS 1
-//#define configGENERATE_RUN_TIME_STATS 0
 #define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()
-#define portGET_RUN_TIME_COUNTER_VALUE() current_time()
+#define portGET_RUN_TIME_COUNTER_VALUE() cycle_count()
 #define configQUEUE_REGISTRY_SIZE 4
 #define configSTACK_DEPTH_TYPE unsigned int
 

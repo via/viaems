@@ -10,10 +10,18 @@ CMSISDEV=contrib/cmsis_device_f4/
 LIBUSB=contrib/libusb_stm32
 
 VPATH=src/platforms/${PLATFORM} \
-      contrib/libusb_stm32/src
+      contrib/libusb_stm32/src \
+      contrib/FreeRTOS-Kernel \
+      contrib/FreeRTOS-Kernel/portable/GCC/ARM_CM4F
 
 LIBUSB_OBJS= usbd_core.o \
              usbd_stm32f429_otgfs.o
+
+FR_OBJS+= list.o \
+          queue.o \
+          stream_buffer.o \
+          tasks.o \
+          port.o
 
 OBJS+= stm32f4.o \
        stm32f4_sched.o \
@@ -22,6 +30,7 @@ OBJS+= stm32f4.o \
        stm32f4_sensors.o \
        stm32f4_pwm.o \
        stm32_sched_buffers.o \
+			 ${FR_OBJS} \
        ${LIBUSB_OBJS}
 
 
@@ -36,6 +45,9 @@ CFLAGS+= -I${CMSIS}/CMSIS/Core/Include
 CFLAGS+= -I${CMSISDEV}/Include
 CFLAGS+= -I${LIBUSB}/inc
 CFLAGS+= -DTICKRATE=4000000 -DSPI_${SPI_ADC}
+CFLAGS+= -Icontrib/FreeRTOS-Kernel/include
+CFLAGS+= -Icontrib/FreeRTOS-Kernel/portable/GCC/ARM_CM4F
+CFLAGS+= -Isrc/platforms/stm32f4
 
 LDFLAGS+= -lc -lnosys -L ${OBJDIR} -nostartfiles -Wl,--gc-sections
 LDFLAGS+= -T src/platforms/stm32f4/stm32f4.ld

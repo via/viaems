@@ -7,6 +7,10 @@
 
 #include "stm32_sched_buffers.h"
 
+#include "FreeRTOS.h"
+#include "task.h"
+#include "queue.h"
+
 /* The primary outputs are driven by the DMA copying from a circular
  * double-buffer to the GPIO's BSRR register.  TIM8 is configured to generate
  * an update even at 4 MHz, and that update event triggers the DMA.  The same
@@ -73,7 +77,7 @@ static void setup_tim2(void) {
 
   configure_trigger_inputs();
 
-  NVIC_SetPriority(TIM2_IRQn, 3);
+  NVIC_SetPriority(TIM2_IRQn, 9);
   NVIC_EnableIRQ(TIM2_IRQn);
 
   TIM2->DIER = TIM_DIER_CC1IE | TIM_DIER_CC2IE; /* Enable trigger input capture
@@ -98,6 +102,20 @@ void schedule_event_timer(timeval_t time) {
    * just in case */
   if (time_before_or_equal(time, current_time())) {
     TIM2->EGR = TIM_EGR_CC4G;
+  }
+}
+
+static void decoder_update_scheduling(int trigger, timeval_t time) {
+  if (decode_queue_handle == NULL) {
+    return;
+  }
+
+  struct trigger_event ev = {
+    .trigger = trigger,
+    .time = time,
+  };
+  if (xQueueSendFromISR(decode_queue_handle, &ev, NULL)) {
+    /* TODO: This should report some type of error, right? */
   }
 }
 
@@ -133,6 +151,7 @@ void TIM2_IRQHandler(void) {
     TIM2->SR = ~TIM_SR_CC4IF;
     scheduler_callback_timer_execute();
   }
+  portYIELD_FROM_ISR(pdTRUE);
 }
 
 extern void abort(void); /* TODO handle this better */

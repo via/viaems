@@ -100,7 +100,7 @@ __attribute__((section(".dmadata"))) spi_rx_buffer[2][NUM_SPI_TX] = { 0 };
 void setup_spi1_rx_dma(void) {
 
   /* Enable interrupt for dma completion */
-  NVIC_SetPriority(DMA2_Stream0_IRQn, 3);
+  NVIC_SetPriority(DMA2_Stream0_IRQn, 12);
   NVIC_EnableIRQ(DMA2_Stream0_IRQn);
 
   /* Use DMA2 Stream 0 Channel 3 (SPI1_RX) to read SPI_DR into the receive
@@ -140,7 +140,7 @@ void DMA2_Stream0_IRQHandler(void) {
       float raw_value = (float)(5 * adc_value) / 4096.0f;
       update.values[i] = raw_value;
     }
-    sensor_update_adc(&update);
+//    sensor_update_adc(&update);
     process_knock_inputs(sequence);
   }
 }
