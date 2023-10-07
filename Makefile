@@ -26,7 +26,7 @@ DEPS = $(wildcard ${OBJDIR}/*.d)
 
 GITDESC=$(shell git describe --tags --dirty)
 CFLAGS+=-Isrc/ -Isrc/platforms/common -Wall -Wextra -ggdb -g3 -std=c11 -DGIT_DESCRIBE=\"${GITDESC}\"
-CFLAGS+=-I${TINYCBOR_DIR}/src
+CFLAGS+=-I${TINYCBOR_DIR}/src -pipe
 LDFLAGS+= -lm -L${OBJDIR} -l:${TINYCBOR_LIB}
 
 VPATH+=src src/platforms src/platforms/common

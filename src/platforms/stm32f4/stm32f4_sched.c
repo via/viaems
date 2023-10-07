@@ -106,17 +106,11 @@ void schedule_event_timer(timeval_t time) {
 }
 
 static void decoder_update_scheduling(int trigger, timeval_t time) {
-  if (decode_queue_handle == NULL) {
-    return;
-  }
-
   struct trigger_event ev = {
     .trigger = trigger,
     .time = time,
   };
-  if (xQueueSendFromISR(decode_queue_handle, &ev, NULL)) {
-    /* TODO: This should report some type of error, right? */
-  }
+  publish_trigger_event(&ev);
 }
 
 void TIM2_IRQHandler(void) {

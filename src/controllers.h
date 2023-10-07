@@ -2,6 +2,8 @@
 #define TASKS_H
 
 #include <stdint.h>
+#include "decoder.h"
+#include "sensors.h"
 
 #include "FreeRTOS.h"
 #include "message_buffer.h"
@@ -27,11 +29,11 @@ struct cel_config {
 void handle_emergency_shutdown(void);
 void run_tasks(void);
 
-extern QueueHandle_t decode_queue_handle;
-extern QueueHandle_t adc_queue_handle;
-extern TaskHandle_t reschedule_task_handle;
-extern TaskHandle_t calculations_task_handle;
 extern TaskHandle_t sim_task_handle;
+
+void publish_trigger_event(const struct trigger_event *ev);
+void publish_raw_adc(const struct adc_update *ev);
+void publish_reschedule();
 
 void start_controllers(void);
 

@@ -140,7 +140,7 @@ void DMA2_Stream0_IRQHandler(void) {
       float raw_value = (float)(5 * adc_value) / 4096.0f;
       update.values[i] = raw_value;
     }
-//    sensor_update_adc(&update);
+    publish_raw_adc(&update);
     process_knock_inputs(sequence);
   }
 }

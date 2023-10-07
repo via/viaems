@@ -56,9 +56,7 @@ void execute_test_trigger(void *_w) {
     .trigger = wheel_ev.trigger,
     .time = ev_time,
   };
-  if (decode_queue_handle) {
-    xQueueSend(decode_queue_handle, &ev, 1000);
-  }
+  publish_trigger_event(&ev);
 
   /* Schedule next */
   timeval_t delay = time_from_rpm_diff(test_trigger_rpm, wheel_ev.degrees);
