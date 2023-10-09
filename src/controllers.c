@@ -4,6 +4,7 @@
 #include "platform.h"
 #include "util.h"
 
+#include "FreeRTOS.h"
 #include "task.h"
 #include "queue.h"
 
@@ -29,6 +30,7 @@ void publish_trigger_event(const struct trigger_event *ev) {
   if (xQueueSendFromISR(decode_queue_handle, &ev, NULL)) {
   }
 
+  itm_debug("Pt\n");
   xTaskNotify(engine_task_handle, MAIN_LOOP_TRIGGER_EVENT, eSetBits);
 }
 
@@ -36,10 +38,12 @@ void publish_raw_adc(const struct adc_update *ev) {
   if (xQueueSendFromISR(adc_queue_handle, &ev, NULL)) {
   }
 
+  itm_debug("Pa\n");
   xTaskNotify(engine_task_handle, MAIN_LOOP_RAW_ADC, eSetBits);
 }
 
 void publish_reschedule() {
+  itm_debug("Pr\n");
   xTaskNotify(engine_task_handle, MAIN_LOOP_RESCHEDULE, eSetBits);
 }
 
@@ -51,6 +55,8 @@ static void engine_loop(void *unused) {
       abort();
     }
 
+   itm_debug("Le\n");
+
     bool is_new_cycle = false;
     bool is_new_sensors = false;
 
@@ -59,6 +65,7 @@ static void engine_loop(void *unused) {
       if (!xQueueReceive(decode_queue_handle, &ev, 0)) {
         abort();
       }
+      itm_debug("Rt\n");
 
       decoder_decode(&ev);
       /* TODO: determine if new engine cycle */
@@ -70,6 +77,7 @@ static void engine_loop(void *unused) {
       if (!xQueueReceive(adc_queue_handle, &ev, 0)) {
         abort();
       }
+      itm_debug("Ra\n");
       sensor_update_adc(&ev);
       is_new_sensors = true;
     }
@@ -83,6 +91,7 @@ static void engine_loop(void *unused) {
       schedule_event(&config.events[e]);
     }
 
+   itm_debug("Fe\n");
   }
 }
 
@@ -91,9 +100,42 @@ TaskHandle_t console_task_handle;
 static StaticTask_t console_task;
 static StackType_t console_task_stack[512] = { 0 };
 
+#define CONSOLE_LOOP_TRIGGER_EVENT 1
+#define CONSOLE_LOOP_RAW_ADC 2
+#define CONSOLE_LOOP_RESCHEDULE 4
+#define CONSOLE_LOOP_RX_READY 8
+#define CONSOLE_LOOP_TX_READY 16
+
 static void console_loop(void *_unused) {
   (void)_unused;
+
   while (true) {
+    bool tx_ready = false;
+    bool rx_ready = false;
+
+    uint32_t val = 0;
+    if (!xTaskNotifyWait(0, ULONG_MAX, &val, portMAX_DELAY)) {
+      abort();
+    }
+    if (val & CONSOLE_LOOP_RX_READY) {
+      rx_ready = true;
+    }
+    if (val & CONSOLE_LOOP_TX_READY) {
+      tx_ready = true;
+    }
+
+#if 0
+    if (rx_ready && tx_ready) {
+      transmit(process_command());
+      rx_ready = false;
+      tx_ready = false;
+    } else if (tx_ready) {
+      if (console_loop_trigger_event_has_next()) {
+        transmit(render_trigger_event(console_loop_trigger_event_next()));
+        tx_ready = false;
+      }
+    }
+#endif
     console_process();
   }
 }

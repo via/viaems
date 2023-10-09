@@ -1,9 +1,13 @@
 #include <string.h>
 
 #include "platform.h"
+#include "controllers.h"
 #include "stm32f4xx.h"
 #include "usb.h"
 #include "usb_cdc.h"
+
+#include "FreeRTOS.h"
+#include "task.h"
 
 #define CDC_EP0_SIZE 0x08
 #define CDC_RXD_EP 0x01
@@ -151,6 +155,9 @@ uint32_t ubuf[0x20];
 static char usb_rx_buf[USB_RX_BUF_LEN];
 static _Atomic size_t usb_rx_len = 0;
 
+static const char *usb_tx_buf;
+static size_t usb_tx_remaining = 0;
+
 static struct usb_cdc_line_coding cdc_line = {
   .dwDTERate = 115200,
   .bCharFormat = USB_CDC_1_STOP_BITS,
@@ -243,8 +250,22 @@ static usbd_respond cdc_control(usbd_device *dev,
   return usbd_fail;
 }
 
+extern uint32_t txready_count = 0;
 static void cdc_rx(usbd_device *dev, uint8_t event, uint8_t ep) {
   (void)event;
+
+  if (ep == CDC_TXD_EP) {
+    if (usb_tx_remaining > 0) {
+      int written = usbd_ep_write(&udev, CDC_TXD_EP, (void *)usb_tx_buf, usb_tx_remaining > 64 ? 64 : usb_tx_remaining);
+      usb_tx_remaining -= written;
+      usb_tx_buf += written;
+    } else {
+      BaseType_t yield;
+      xTaskNotifyFromISR(console_task_handle, 16, eSetBits, &yield);
+      portYIELD_FROM_ISR(yield);
+    }
+    return;
+  }
   if (ep != CDC_RXD_EP) {
     return;
   }
@@ -260,6 +281,9 @@ static void cdc_rx(usbd_device *dev, uint8_t event, uint8_t ep) {
     memcpy(usb_rx_buf + usb_rx_len, buf, ret);
     usb_rx_len += ret;
   }
+  BaseType_t yield;
+  xTaskNotifyFromISR(console_task_handle, 8, eSetBits, &yield);
+  portYIELD_FROM_ISR(yield);
 }
 
 static usbd_respond cdc_setconf(usbd_device *dev, uint8_t cfg) {
@@ -270,6 +294,7 @@ static usbd_respond cdc_setconf(usbd_device *dev, uint8_t cfg) {
     usbd_ep_deconfig(dev, CDC_TXD_EP);
     usbd_ep_deconfig(dev, CDC_RXD_EP);
     usbd_reg_endpoint(dev, CDC_RXD_EP, 0);
+    usbd_reg_endpoint(dev, CDC_TXD_EP, 0);
     return usbd_ack;
   case 1:
     /* configuring device */
@@ -279,6 +304,7 @@ static usbd_respond cdc_setconf(usbd_device *dev, uint8_t cfg) {
       dev, CDC_TXD_EP, USB_EPTYPE_BULK | USB_EPTYPE_DBLBUF, CDC_DATA_SZ);
     usbd_ep_config(dev, CDC_NTF_EP, USB_EPTYPE_INTERRUPT, CDC_NTF_SZ);
     usbd_reg_endpoint(dev, CDC_RXD_EP, cdc_rx);
+    usbd_reg_endpoint(dev, CDC_TXD_EP, cdc_rx);
     usbd_ep_write(dev, CDC_TXD_EP, 0, 0);
     return usbd_ack;
   default:
@@ -307,19 +333,19 @@ size_t console_read(void *ptr, size_t max) {
   return amt;
 }
 
+uint8_t buf3[16384];
 size_t console_write(const void *ptr, size_t max) {
-  int amt = max;
-  if (amt > CDC_DATA_SZ) {
-    amt = CDC_DATA_SZ;
-  }
-
-  disable_interrupts();
-  int written = usbd_ep_write(&udev, CDC_TXD_EP, (void *)ptr, amt);
-  enable_interrupts();
-  if (written < 0) {
+  if (usb_tx_remaining > 0) {
     return 0;
   }
-  return written;
+  memcpy(buf3, ptr, max);
+  disable_interrupts();
+  int written = usbd_ep_write(&udev, CDC_TXD_EP, (void *)ptr, max > 64 ? 64 : max);
+  usb_tx_buf = buf3 + written;
+  usb_tx_remaining = max - written;
+  enable_interrupts();
+
+  return max;
 }
 
 void stm32f4_configure_usb(void) {

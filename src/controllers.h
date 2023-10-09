@@ -30,6 +30,7 @@ void handle_emergency_shutdown(void);
 void run_tasks(void);
 
 extern TaskHandle_t sim_task_handle;
+extern TaskHandle_t console_task_handle;
 
 void publish_trigger_event(const struct trigger_event *ev);
 void publish_raw_adc(const struct adc_update *ev);

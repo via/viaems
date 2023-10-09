@@ -259,6 +259,43 @@ extern void stm32f4_configure_usb(void);
 extern void stm32f4_configure_adc(void);
 extern void stm32f4_configure_pwm(void);
 
+static void configure_swo(void) {
+
+  /* Configure PB3 as an TRACESWO */
+  GPIOB->MODER |= _VAL2FLD(GPIO_MODER_MODE3, 2);       /* Pin 8 AF */
+  GPIOB->AFR[0] |= _VAL2FLD(GPIO_AFRL_AFSEL3, 0);      /* AF1 */
+  GPIOB->OSPEEDR |= _VAL2FLD(GPIO_OSPEEDR_OSPEED3, 3); /* 25 MHz */
+  DBGMCU->CR |= DBGMCU_CR_TRACE_IOEN;
+
+  /* Set TPI configuration */
+  TPI->ACPR = 1; /* 168 MHz / (1 + 3) = 42 MHz */
+  TPI->SPPR = 1; /* Manchester encoding */
+  TPI->FFCR = 0x100; /* Disable TPIU Formatter (bit 1 cleared) */
+
+  CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk; // Enable access to registers
+  DWT->CTRL = DWT_CTRL_CYCCNTENA_Msk | /* Enable Cycle Counter */ 
+              DWT_CTRL_POSTPRESET_Msk | /* POSTPRESET = 15 */
+              DWT_CTRL_POSTINIT_Msk | /* POSTINIT = 15 */
+              DWT_CTRL_CYCTAP_Msk | /* CYCTAP bit 10 */
+              DWT_CTRL_EXCTRCENA_Msk; /* Exception trace enabled */
+  DWT->CYCCNT = 0;
+  ITM->LAR = 0xC5ACCE55; /* Unlock ITM */
+  ITM->TPR = 0x0000000F; /* Allow stim port access */
+  ITM->TCR = (1 << ITM_TCR_TraceBusID_Pos) | /* Bus ID 1 */
+             ITM_TCR_DWTENA_Msk |
+             ITM_TCR_SYNCENA_Msk |
+             ITM_TCR_TSENA_Msk |
+             ITM_TCR_ITMENA_Msk;
+  ITM->TER = 0xF; /* Enable bottom 4 stim ports */
+}
+
+void itm_debug(const char *s) {
+  for (; *s != '\0'; s++) {
+//    ITM_SendChar(*s);
+  }
+}
+
+
 void platform_init() {
   enable_peripherals();
   setup_clocks();
@@ -275,6 +312,8 @@ void platform_init() {
   stm32f4_configure_usb();
   stm32f4_configure_adc();
   stm32f4_configure_pwm();
+  configure_swo();
+  itm_debug("init!\n");
 }
 
 void platform_benchmark_init() {

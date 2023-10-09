@@ -47,5 +47,4 @@ to exclude the API function. */
 #define configMAX_SYSCALL_INTERRUPT_PRIORITY 	128 /* equivalent to 0x80, or priority 8. */
 #define configLIBRARY_KERNEL_INTERRUPT_PRIORITY	8
 
-
 #endif /* FREERTOS_CONFIG_H */
