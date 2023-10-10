@@ -7,17 +7,17 @@ TINYCBOR_LIB=libtinycbor.a
 
 all: $(OBJDIR)/viaems $(OBJDIR)/benchmark
 
-OBJS += calculations.o \
-				config.o \
-				console.o \
-				decoder.o \
-				scheduler.o \
-				sensors.o \
-				table.o \
-				controllers.o \
-				sim.o \
-				util.o
-
+#OBJS += calculations.o \
+#				config.o \
+#				console.o \
+#				decoder.o \
+#				scheduler.o \
+#				sensors.o \
+#        table.o \
+#				controllers.o \
+#				sim.o \
+#				util.o
+#
 include targets/${PLATFORM}.mk
 
 DEPS = $(wildcard ${OBJDIR}/*.d)
