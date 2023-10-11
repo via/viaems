@@ -8,7 +8,9 @@ SPI_ADC?=TLV2553
 CMSIS=contrib/CMSIS_5/
 CMSISDEV=contrib/CMSIS_Device_S32K344/
 
-VPATH=src/platforms/${PLATFORM}
+VPATH=src/platforms/${PLATFORM} \
+      contrib/FreeRTOS-Kernel \
+      contrib/FreeRTOS-Kernel/portable/GCC/ARM_CM4F
 
 LIBUSB_OBJS= usbd_core.o \
              usbd_stm32f429_otgfs.o
@@ -19,7 +21,9 @@ FR_OBJS+= list.o \
           tasks.o \
           port.o
 
-OBJS+= s32k344_boot.o
+OBJS+= s32k344.o \
+       s32k344_boot.o \
+			 ${FR_OBJS}
 
 
 OBJS+= libssp.a libssp_nonshared.a

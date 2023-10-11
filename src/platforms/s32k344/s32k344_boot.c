@@ -453,18 +453,7 @@ void __attribute__((naked))  InitECC(void) {
 
 }
 
-void SystemInit (void)
-{
-
-  SCB->VTOR = (uint32_t) &(__VECTOR_TABLE[0]);
-  SCB->CPACR |= ((3U << 10U*2U) |           /* enable CP10 Full Access */
-                 (3U << 11U*2U)  );         /* enable CP11 Full Access */
-
-  SCB->CCR |= SCB_CCR_UNALIGN_TRP_Msk;
-}
-
 extern int main(void);
-
 void __attribute__((naked)) Reset_Handler(void)
 {
   __disable_irq();
@@ -472,7 +461,15 @@ void __attribute__((naked)) Reset_Handler(void)
   InitECC();
   __enable_irq();
 
-  SystemInit();                             /* CMSIS System Initialization */
+  // Make some LEDS do things
+  IP_SIUL2->MSCR[142] = SIUL2_MSCR_OBE_MASK;
+  IP_SIUL2->GPDO142 = 0;
+
+  IP_SIUL2->MSCR[27] = SIUL2_MSCR_OBE_MASK;
+  IP_SIUL2->GPDO27 = 1;
+
+  SCB->CPACR |= ((3U << 10U*2U) |           /* enable CP10 Full Access */
+                 (3U << 11U*2U)  );         /* enable CP11 Full Access */
   main();
 }
 

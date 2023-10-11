@@ -11,13 +11,13 @@
 #include <stdio.h>
 
 int main() {
-//  platform_load_config();
-//  decoder_init(&config.decoder);
-//  platform_init(0, NULL);
+  platform_load_config();
+  decoder_init(&config.decoder);
+  platform_init(0, NULL);
 
-//  assert(config_valid());
+  assert(config_valid());
 
-//  start_controllers();
+  start_controllers();
 
   while (1);
   return 0;
