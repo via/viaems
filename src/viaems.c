@@ -17,8 +17,8 @@ int main() {
 
   assert(config_valid());
 
+  while (1);
   start_controllers();
 
-  while (1);
   return 0;
 }

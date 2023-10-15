@@ -448,18 +448,42 @@ void __attribute__((naked))  InitECC(void) {
 "        CMP      R5,#0x00\n"
 "        BNE      DTCM_Loop\n"
 "\n"
+"        // Initialize ITCM\n"
+"        LDR      R2,=0\n"
+"        LDR      R3,=0\n"
+"        LDR      R4,=0x00000000\n"
+"        LDR      R5,=0x10000\n"
+"        \n"
+"        LSRS     R5,R5,#3\n"
+"ITCM_Loop:\n"
+"        STRD     r2,r3,[R4,#0]\n"
+"        ADDS     R4,R4,#0x08\n"
+"        SUBS     R5,R5,#1\n"
+"        CMP      R5,#0x00\n"
+"        BNE      ITCM_Loop\n"
+"\n"
 "        BX       LR                     // Return\n"
   );
 
 }
 
 extern int main(void);
+extern uint32_t _data_loadaddr, _sdata, _edata, _ebss;
 void __attribute__((naked)) Reset_Handler(void)
 {
   __disable_irq();
   DisableSWT0();
   InitECC();
   __enable_irq();
+
+  volatile uint32_t *src, *dest;
+  for (src = &_data_loadaddr, dest = &_sdata; dest < &_edata; src++, dest++) {
+    *dest = *src;
+  }
+
+  while (dest < &_ebss) {
+    *dest++ = 0;
+  }
 
   // Make some LEDS do things
   IP_SIUL2->MSCR[142] = SIUL2_MSCR_OBE_MASK;

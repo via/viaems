@@ -268,7 +268,7 @@ static void configure_swo(void) {
   DBGMCU->CR |= DBGMCU_CR_TRACE_IOEN;
 
   /* Set TPI configuration */
-  TPI->ACPR = 1; /* 168 MHz / (1 + 3) = 42 MHz */
+  TPI->ACPR = 7; /* 168 MHz / (1 + 3) = 42 MHz */
   TPI->SPPR = 1; /* Manchester encoding */
   TPI->FFCR = 0x100; /* Disable TPIU Formatter (bit 1 cleared) */
 
@@ -291,7 +291,7 @@ static void configure_swo(void) {
 
 void itm_debug(const char *s) {
   for (; *s != '\0'; s++) {
-//    ITM_SendChar(*s);
+    ITM_SendChar(*s);
   }
 }
 
@@ -320,8 +320,10 @@ void platform_benchmark_init() {
   enable_peripherals();
   setup_clocks();
   setup_dwt();
+  configure_swo();
   NVIC_SetPriorityGrouping(3); /* 16 priority preemption levels */
   stm32f4_configure_usb();
+  itm_debug("benchinit!\n");
 }
 
 // FreeRTOS

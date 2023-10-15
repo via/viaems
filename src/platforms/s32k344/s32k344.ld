@@ -62,4 +62,4 @@ SECTIONS {
 	end = .;
 }
 
-PROVIDE(_estack = ORIGIN(sram) + LENGTH(sram));
+PROVIDE(_estack = ORIGIN(dtcm) + LENGTH(dtcm));

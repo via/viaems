@@ -13,13 +13,16 @@
 #include "controllers.h"
 #include "util.h"
 
+static char buf[256];
+
 static void do_fuel_calculation_bench() {
   platform_load_config();
 
   uint64_t start = cycle_count();
   calculate_fueling();
   uint64_t end = cycle_count();
-  printf("calculate_fueling: %d ns\r\n", (int)cycles_to_ns(end - start));
+  sprintf(buf, "calculate_fueling: %d ns\r\n", (int)cycles_to_ns(end - start));
+  itm_debug(buf);
 }
 
 static void do_schedule_ignition_event_bench() {
@@ -38,22 +41,25 @@ static void do_schedule_ignition_event_bench() {
   uint64_t end = cycle_count();
   assert(config.events[0].start.state == SCHED_SCHEDULED);
 
-  printf("fresh ignition schedule_event: %d ns\r\n",
+  sprintf(buf, "fresh ignition schedule_event: %d ns\r\n",
          (int)cycles_to_ns(end - start));
+  itm_debug(buf);
 
   calculated_values.timing_advance = 25.0f;
   start = cycle_count();
   schedule_event(&config.events[0]);
   end = cycle_count();
 
-  printf("backward schedule_event: %d ns\r\n", (int)cycles_to_ns(end - start));
+  sprintf(buf,"backward schedule_event: %d ns\r\n", (int)cycles_to_ns(end - start));
+  itm_debug(buf);
 
   calculated_values.timing_advance = 15.0f;
   start = cycle_count();
   schedule_event(&config.events[0]);
   end = cycle_count();
 
-  printf("forward schedule_event: %d ns\r\n", (int)cycles_to_ns(end - start));
+  sprintf(buf, "forward schedule_event: %d ns\r\n", (int)cycles_to_ns(end - start));
+  itm_debug(buf);
 }
 
 static void do_sensor_adc_calcs() {
@@ -69,7 +75,8 @@ static void do_sensor_adc_calcs() {
   sensor_update_adc(&u);
   uint64_t end = cycle_count();
 
-  printf("process_sensor(adc): %d ns\r\n", (int)cycles_to_ns(end - start));
+  sprintf(buf, "process_sensor(adc): %d ns\r\n", (int)cycles_to_ns(end - start));
+  itm_debug(buf);
 }
 
 static void do_sensor_single_therm() {
@@ -103,11 +110,13 @@ static void do_sensor_single_therm() {
   sensor_update_adc(&u);
   uint64_t end = cycle_count();
 
-  printf("process_sensor(single-therm): %d ns\r\n",
+  sprintf(buf, "process_sensor(single-therm): %d ns\r\n",
          (int)cycles_to_ns(end - start));
+  itm_debug(buf);
 }
 
 int main() {
+  platform_benchmark_init();
   /* Preparations for all benchmarks */
   config.sensors[SENSOR_IAT].value = 15.0f;
   config.sensors[SENSOR_BRV].value = 14.8f;
