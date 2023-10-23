@@ -28,7 +28,7 @@ OBJS+= s32k344.o \
 
 OBJS+= libssp.a libssp_nonshared.a
 
-CFLAGS=  -DNDEBUG -ffunction-sections -fdata-sections -O3 -ggdb
+CFLAGS=  -ffunction-sections -fdata-sections -Og -ggdb
 CFLAGS+= -mfloat-abi=hard -mfpu=fpv5-sp-d16 -mthumb -mcpu=cortex-m7
 CFLAGS+= -DTICKRATE=4000000 -DSPI_${SPI_ADC}
 

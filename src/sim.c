@@ -68,7 +68,7 @@ void execute_test_trigger(void *_w) {
 void set_test_trigger_rpm(uint32_t rpm) {
   test_trigger_rpm = rpm;
   test_trigger_callback.task = sim_task_handle;
-  schedule_callback(&test_trigger_callback, current_time() + 10000);
+  schedule_callback(&test_trigger_callback, current_time() + 10000000);
 }
 
 uint32_t get_test_trigger_rpm() {

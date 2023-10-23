@@ -1,9 +1,6 @@
 
 #include "S32K344.h"
 
-extern void DisableSWT0(void);
-extern void InitECC(void);
-
 /*----------------------------------------------------------------------------
   Internal References
  *----------------------------------------------------------------------------*/
@@ -415,11 +412,11 @@ extern const VECTOR_TABLE_Type __VECTOR_TABLE[NUMBER_OF_INT_VECTORS];
   SoC_PLL_Handler                                /* 212 PLL LOL interrupt */
 };
 
-void __attribute__((naked)) DisableSWT0(void) {
+static __attribute__((section(".boottext"))) void __attribute__((naked)) DisableSWT0(void) {
   return;
 }
 
-void __attribute__((naked))  InitECC(void) {
+static __attribute__((section(".boottext"))) void __attribute__((naked))  InitECC(void) {
   __asm__(
 "        LDR      R2,=0\n"
 "        LDR      R3,=0\n"
@@ -468,8 +465,8 @@ void __attribute__((naked))  InitECC(void) {
 }
 
 extern int main(void);
-extern uint32_t _data_loadaddr, _sdata, _edata, _ebss;
-void __attribute__((naked)) Reset_Handler(void)
+extern uint32_t _data_loadaddr, _sdata, _edata, _ebss, _text_loadaddr, _stext, _etext;
+void __attribute__((section(".boottext"))) __attribute__((naked)) Reset_Handler(void)
 {
   __disable_irq();
   DisableSWT0();
@@ -485,12 +482,12 @@ void __attribute__((naked)) Reset_Handler(void)
     *dest++ = 0;
   }
 
-  // Make some LEDS do things
-  IP_SIUL2->MSCR[142] = SIUL2_MSCR_OBE_MASK;
-  IP_SIUL2->GPDO142 = 0;
+#if 0
+  for (src = &_text_loadaddr, dest = &_stext; dest < &_etext; src++, dest++) {
+    *dest = *src;
+  }
+#endif
 
-  IP_SIUL2->MSCR[27] = SIUL2_MSCR_OBE_MASK;
-  IP_SIUL2->GPDO27 = 1;
 
   SCB->CPACR |= ((3U << 10U*2U) |           /* enable CP10 Full Access */
                  (3U << 11U*2U)  );         /* enable CP11 Full Access */
