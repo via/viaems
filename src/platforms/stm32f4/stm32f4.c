@@ -91,11 +91,11 @@ static void setup_clocks() {
     ; /* Wait for PLL to be stable */
 
   PWR->CR |= PWR_CR_ODEN;
-  while ((PWR->CR & PWR_CSR_ODRDY) == 0)
+  while ((PWR->CSR & PWR_CSR_ODRDY) == 0)
     ; /* Wait for overdrive ready */
 
   PWR->CR |= PWR_CR_ODSWEN;
-  while ((PWR->CR & PWR_CSR_ODSWRDY) == 0)
+  while ((PWR->CSR & PWR_CSR_ODSWRDY) == 0)
     ; /* Wait for overdrive switch */
 
   RCC->CFGR = RCC_CFGR_PPRE2_DIV2 |       /* APB2 = HCLK / 2 = 84 MHz */
