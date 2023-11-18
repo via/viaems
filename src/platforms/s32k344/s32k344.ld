@@ -33,8 +33,8 @@ SECTIONS {
 		*(.text*)	/* Program code */
 		. = ALIGN(4);
     _etext = .;
-/*	} >itcm AT >pflash */
 	} >pflash
+/*	} >pflash */
   _text_loadaddr = LOADADDR(.text);
 
 	.data : {
@@ -43,7 +43,7 @@ SECTIONS {
 		*(.dmadata*)	/* DMA regions, no different from normal data on stm32f4 */
 		. = ALIGN(4);
 		_edata = .;
-	} >sram AT >pflash
+	} >dtcm AT >pflash
 	_data_loadaddr = LOADADDR(.data);
 
 	.configdata : {
@@ -51,7 +51,7 @@ SECTIONS {
 		*(.configdata*)
 		. = ALIGN(4);
 		_econfigdata = .;
-	} >sram AT >dflash
+	} >dtcm AT >dflash
 	_configdata_loadaddr = LOADADDR(.configdata);
 
 	.bss : {
@@ -59,7 +59,7 @@ SECTIONS {
 		*(COMMON)
 		. = ALIGN(4);
 		_ebss = .;
-	} >sram
+	} >dtcm
 
 	/*
 	 * The .eh_frame section appears to be used for C++ exception handling.
@@ -71,4 +71,4 @@ SECTIONS {
 	end = .;
 }
 
-PROVIDE(_estack = ORIGIN(sram) + LENGTH(sram));
+PROVIDE(_estack = ORIGIN(dtcm) + LENGTH(dtcm));

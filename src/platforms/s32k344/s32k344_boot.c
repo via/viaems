@@ -498,7 +498,7 @@ void __attribute__((section(".boottext"))) __attribute__((naked)) Reset_Handler(
 /*----------------------------------------------------------------------------
   Hard Fault Handler
  *----------------------------------------------------------------------------*/
-void HardFault_Handler(void)
+void __attribute__((section(".boottext"))) HardFault_Handler(void)
 {
   while(1);
 }
@@ -506,7 +506,7 @@ void HardFault_Handler(void)
 /*----------------------------------------------------------------------------
   Default Handler for Exceptions / Interrupts
  *----------------------------------------------------------------------------*/
-void Default_Handler(void)
+void __attribute__((section(".boottext"))) Default_Handler(void)
 {
   while(1);
 }
