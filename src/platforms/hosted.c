@@ -1,3 +1,4 @@
+#define _GNU_SOURCE 1
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h> /* For O_* constants */
@@ -9,6 +10,9 @@
 #include <sys/stat.h> /* For mode constants */
 #include <time.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 
 #include "config.h"
 #include "console.h"
@@ -121,29 +125,27 @@ void set_pwm(int output, float value) {
 
 void adc_gather() {}
 
+int console_sock = -1;
+
 timeval_t last_tx = 0;
 size_t console_write(const void *buf, size_t len) {
   struct timespec wait = {
     .tv_nsec = 100000,
   };
   nanosleep(&wait, NULL);
-  ssize_t written = -1;
-  while ((written = write(STDOUT_FILENO, buf, len)) < 0)
-    ;
-  if (written > 0) {
-    last_tx = curtime;
-    return written;
+
+  if (send(console_sock, buf, len, 0) > 0) {
+    return len;
   }
   return 0;
 }
 
 size_t console_read(void *buf, size_t len) {
-  int s = len > 64 ? 64 : len;
-  ssize_t res = read(STDIN_FILENO, buf, s);
-  if (res < 0) {
+  ssize_t recvd = recv(console_sock, buf, len, MSG_DONTWAIT);
+  if (recvd < 0) {
     return 0;
   }
-  return (size_t)res;
+  return recvd;
 }
 
 void platform_load_config() {}
@@ -385,6 +387,26 @@ void platform_init() {
 
   /* Set stdin nonblock */
   fcntl(STDIN_FILENO, F_SETFL, fcntl(STDIN_FILENO, F_GETFL, 0) | O_NONBLOCK);
+
+  console_sock = socket(AF_INET, SOCK_DGRAM, 0);
+  if (console_sock < 0)
+    perror("socket");
+
+  struct sockaddr_in sock_addr;
+  sock_addr.sin_family = AF_INET;
+  sock_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+  sock_addr.sin_port = htons(5555);
+  if (bind(console_sock, &sock_addr, sizeof(sock_addr)) < 0) {
+    perror("bind");
+    return 0;
+  }
+
+  sock_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+  sock_addr.sin_port = htons(5556);
+  if (connect(console_sock, &sock_addr, sizeof(sock_addr)) < 0) {
+    perror("connect");
+    return 0;
+  }
 
   pipe(interrupt_pipes);
 
