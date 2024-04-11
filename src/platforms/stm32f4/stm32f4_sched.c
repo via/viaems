@@ -113,7 +113,7 @@ static void decoder_update_scheduling(int trigger, timeval_t time) {
   publish_trigger_event(&ev);
 }
 
-void TIM2_IRQHandler(void) {
+void _TIM2_IRQHandler(void) {
   bool cc1_fired = false;
   bool cc2_fired = false;
   timeval_t cc1;
@@ -150,7 +150,7 @@ void TIM2_IRQHandler(void) {
 
 extern void abort(void); /* TODO handle this better */
 
-void DMA2_Stream1_IRQHandler(void) {
+void _DMA2_Stream1_IRQHandler(void) {
   if (DMA2->LISR & DMA_LISR_TCIF1) {
     DMA2->LIFCR = DMA_LIFCR_CTCIF1;
     stm32_buffer_swap();

@@ -293,7 +293,7 @@ static void cdc_init_usbd(void) {
   usbd_reg_descr(&udev, cdc_getdesc);
 }
 
-void OTG_FS_IRQHandler(void) {
+void _OTG_FS_IRQHandler(void) {
   usbd_poll(&udev);
 }
 

@@ -13,11 +13,36 @@ MEMORY
 
 ENTRY(Reset_Handler)
 
+_Privileged_Functions_Region_Size = 64K;
+_Privileged_Data_Region_Size = 32K;
+
+__privileged_functions_start__ = ORIGIN( rom );
+__privileged_functions_end__ = __privileged_functions_start__ + _Privileged_Functions_Region_Size;
+
+__privileged_data_start__ = ORIGIN( ram );
+__privileged_data_end__ = ORIGIN( ram ) + _Privileged_Data_Region_Size;
+
+__FLASH_segment_start__ = ORIGIN( rom );
+__FLASH_segment_end__ = __FLASH_segment_start__ + LENGTH( rom );
+
+
+__SRAM_segment_start__ = ORIGIN( ram );
+__SRAM_segment_end__ = __SRAM_segment_start__ + LENGTH( ram );
+
 SECTIONS {
 
 	.text : {
 		KEEP(*(.isr_vector))
 		. = ALIGN(4);
+
+    *(privileged_functions)
+    __privileged_functions_actual_end__ = .;
+    . = _Privileged_Functions_Region_Size;
+
+    __syscalls_flash_start__ = .;
+    *(freertos_system_calls)
+    __syscalls_flash_end__ = .;
+
 		*(.text*)	/* Program code */
 		. = ALIGN(4);
 		*(.rodata*)	/* Read-only data */
@@ -27,6 +52,11 @@ SECTIONS {
 
 
 	.data : {
+   *(privileged_data)
+    /* Non kernel data is kept out of the first _Privileged_Data_Region_Size
+        bytes of SRAM. */
+    __privileged_data_actual_end__ = .;
+    . = _Privileged_Data_Region_Size;
 		_sdata = .;
 		*(.data*)	/* Read-write initialized data */
 		*(.dmadata*)	/* DMA regions, no different from normal data on stm32f4 */
@@ -62,3 +92,6 @@ SECTIONS {
 
 PROVIDE(_estack = ORIGIN(ram) + LENGTH(ram));
 
+__Main_Stack_Size = 2048 ;
+PROVIDE ( _Main_Stack_Size = __Main_Stack_Size ) ;
+__Main_Stack_Limit = _estack  - __Main_Stack_Size ;

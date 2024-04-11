@@ -271,10 +271,10 @@ void platform_init() {
 //  setup_watchdog();
   setup_gpios();
 
-  stm32f4_configure_scheduler();
-  stm32f4_configure_usb();
-  stm32f4_configure_adc();
-  stm32f4_configure_pwm();
+//  stm32f4_configure_scheduler();
+//  stm32f4_configure_usb();
+//  stm32f4_configure_adc();
+//  stm32f4_configure_pwm();
 }
 
 void platform_benchmark_init() {
@@ -283,6 +283,12 @@ void platform_benchmark_init() {
   setup_dwt();
   NVIC_SetPriorityGrouping(3); /* 16 priority preemption levels */
   stm32f4_configure_usb();
+}
+
+void itm_debug(const char *s) {
+  for (; *s != '\0'; s++) {
+    ITM_SendChar(*s);
+  }
 }
 
 // FreeRTOS

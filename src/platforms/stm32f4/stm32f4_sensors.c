@@ -122,7 +122,7 @@ void setup_spi1_rx_dma(void) {
     DMA_SxCR_EN;                    /* Enable DMA */
 }
 
-void DMA2_Stream0_IRQHandler(void) {
+void _DMA2_Stream0_IRQHandler(void) {
   if (DMA2->LISR & DMA_LISR_TCIF0) {
     DMA2->LIFCR = DMA_LIFCR_CTCIF0;
     uint32_t dma_current_buffer = _FLD2VAL(DMA_SxCR_CT, DMA2_Stream0->CR);
@@ -196,7 +196,7 @@ static void setup_freq_pw_input(void) {
   DBGMCU->APB2FZ |= DBGMCU_APB2_FZ_DBG_TIM9_STOP;
 }
 
-void TIM1_BRK_TIM9_IRQHandler(void) {
+void _TIM1_BRK_TIM9_IRQHandler(void) {
   if (TIM9->SR & TIM_SR_CC2IF) {
     uint32_t pulsewidth = TIM9->CCR1;
     uint32_t period = TIM9->CCR2;

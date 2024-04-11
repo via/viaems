@@ -43,6 +43,28 @@ void publish_reschedule() {
   xTaskNotify(engine_task_handle, MAIN_LOOP_RESCHEDULE, eSetBits);
 }
 
+#if 0
+decoder_loop:
+  waits on trigger_event:
+  decode
+  produce engine position state, set globally
+  notify loop
+  produce log
+
+adc loop:
+  waits on adc raw data
+  convert
+  produce sensor state, set globally
+  notify engine loop
+  produce log
+
+engine loop:
+  wait for notifications
+  recalculate, set globally
+  produce calculations log
+  reschedule all events
+#endif
+
 static void engine_loop(void *unused) {
 
   while (true) {
@@ -269,21 +291,75 @@ void tasks_loop() {
   }
 }
 
+static StaticTask_t test1_task;
+static TaskHandle_t test1_task_handle;
+static StackType_t test1_task_stack[configMINIMAL_STACK_SIZE] __attribute__((aligned(configMINIMAL_STACK_SIZE)));
+
+static StaticTask_t test2_task;
+static TaskHandle_t test2_task_handle;
+static StackType_t test2_task_stack[configMINIMAL_STACK_SIZE] __attribute__((aligned(configMINIMAL_STACK_SIZE)));
+
+uint32_t delay __attribute__((externally_visible)) = 0 ;
+
+static StaticQueue_t test_queue;
+static uint32_t test_queue_storage[16];
+QueueHandle_t test_queue_handle = NULL;
+
+static void test1(void *unused) {
+  while (true) {
+    vTaskDelay(1000);
+    uint32_t cycles = cycle_count();
+    xQueueSend(test_queue_handle, &cycles, 10000);
+  }
+}
+
+static void test2(void *unused) {
+  while (true) {
+    uint32_t cycles;
+    xQueueReceive(test_queue_handle, &cycles, 10000);
+    uint32_t delay = cycle_count() - cycles;
+  }
+}
+
+
+static const TaskParameters_t test1_params = {
+  test1,
+  "test1",
+  configMINIMAL_STACK_SIZE,
+  NULL,
+  4, test1_task_stack,
+  {}
+};
+
+static const TaskParameters_t test2_params = {
+  test2,
+  "test2",
+  configMINIMAL_STACK_SIZE,
+  NULL,
+  5, test2_task_stack,
+  {}
+};
+
 void start_controllers(void) {
-  sim_task_handle = xTaskCreateStatic(sim_loop, "sim", configMINIMAL_STACK_SIZE, NULL, 5, sim_task_stack, &sim_task);
+ // sim_task_handle = xTaskCreateStatic(sim_loop, "sim", configMINIMAL_STACK_SIZE, NULL, 5, sim_task_stack, &sim_task);
 
-  decode_queue_handle = xQueueCreateStatic(DECODE_QUEUE_SIZE, sizeof(struct trigger_event), (uint8_t *)decode_queue_storage, &decode_queue);
-  vQueueAddToRegistry(decode_queue_handle, "decode");
+//  decode_queue_handle = xQueueCreateStatic(DECODE_QUEUE_SIZE, sizeof(struct trigger_event), (uint8_t *)decode_queue_storage, &decode_queue);
+//  vQueueAddToRegistry(decode_queue_handle, "decode");
 
-  adc_queue_handle = xQueueCreateStatic(ADC_QUEUE_SIZE, sizeof(struct adc_update), (uint8_t *)adc_queue_storage, &adc_queue);
-  vQueueAddToRegistry(adc_queue_handle, "adc");
+ // adc_queue_handle = xQueueCreateStatic(ADC_QUEUE_SIZE, sizeof(struct adc_update), (uint8_t *)adc_queue_storage, &adc_queue);
+ // vQueueAddToRegistry(adc_queue_handle, "adc");
 
-  engine_task_handle = xTaskCreateStatic(engine_loop, "engine", configMINIMAL_STACK_SIZE, NULL, 4, engine_task_stack, &engine_task);
+//  engine_task_handle = xTaskCreateStatic(engine_loop, "engine", configMINIMAL_STACK_SIZE, NULL, 4, engine_task_stack, &engine_task);
 
-  tasks_task_handle = xTaskCreateStatic(tasks_loop, "tasks", configMINIMAL_STACK_SIZE, NULL, 2, tasks_task_stack, &tasks_task);
-  console_task_handle = xTaskCreateStatic(console_loop, "console", 512, NULL, 1, console_task_stack, &console_task);
+//  tasks_task_handle = xTaskCreateStatic(tasks_loop, "tasks", configMINIMAL_STACK_SIZE, NULL, 2, tasks_task_stack, &tasks_task);
+//  console_task_handle = xTaskCreateStatic(console_loop, "console", 512, NULL, 1, console_task_stack, &console_task);
 
-  set_test_trigger_rpm(5000);
+//  set_test_trigger_rpm(5000);
+  test_queue_handle = xQueueCreateStatic(16, sizeof(uint32_t), (uint8_t *)test_queue_storage, &test_queue);
+//  test1_task_handle = xTaskCreateStatic(test1, "test1", configMINIMAL_STACK_SIZE, NULL, 4, test1_task_stack, &test1_task);
+//  test2_task_handle = xTaskCreateStatic(test2, "test2", configMINIMAL_STACK_SIZE, NULL, 5, test2_task_stack, &test2_task);
+    xTaskCreateRestrictedStatic(&test1_params, &test1_task);
+    xTaskCreateRestrictedStatic(&test2_params, &test2_task);
 
   vTaskStartScheduler();
 }

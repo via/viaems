@@ -12,7 +12,10 @@ LIBUSB=contrib/libusb_stm32
 VPATH=src/platforms/${PLATFORM} \
       contrib/libusb_stm32/src \
       contrib/FreeRTOS-Kernel \
-      contrib/FreeRTOS-Kernel/portable/GCC/ARM_CM4F
+      contrib/FreeRTOS-Kernel/portable/Common \
+      contrib/FreeRTOS-Kernel/portable/GCC/ARM_CM4_MPU
+#
+#      contrib/FreeRTOS-Kernel/portable/GCC/ARM_CM4F
 
 LIBUSB_OBJS= usbd_core.o \
              usbd_stm32f429_otgfs.o
@@ -20,8 +23,13 @@ LIBUSB_OBJS= usbd_core.o \
 FR_OBJS+= list.o \
           queue.o \
           stream_buffer.o \
+          event_groups.o \
           tasks.o \
-          port.o
+          port.o \
+					mpu_wrappers.o \
+					mpu_wrappers_v2.o \
+					mpu_wrappers_v2_asm.o
+
 
 OBJS+= stm32f4.o \
        stm32f4_sched.o \
@@ -36,7 +44,7 @@ OBJS+= stm32f4.o \
 
 OBJS+= libssp.a libssp_nonshared.a
 
-CFLAGS= -DNDEBUG -ffunction-sections -fdata-sections -O3
+CFLAGS= -DNDEBUG -ffunction-sections -fdata-sections -O1 
 CFLAGS+= -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mthumb -mcpu=cortex-m4
 CFLAGS+= -DSTM32F4 -DSTM32F4xx -DSTM32F427xx
 CFLAGS+= -DPLATFORMIO -DUSBD_SOF_DISABLED
@@ -46,7 +54,7 @@ CFLAGS+= -I${CMSISDEV}/Include
 CFLAGS+= -I${LIBUSB}/inc
 CFLAGS+= -DTICKRATE=4000000 -DSPI_${SPI_ADC}
 CFLAGS+= -Icontrib/FreeRTOS-Kernel/include
-CFLAGS+= -Icontrib/FreeRTOS-Kernel/portable/GCC/ARM_CM4F
+CFLAGS+= -Icontrib/FreeRTOS-Kernel/portable/GCC/ARM_CM4_MPU
 CFLAGS+= -Isrc/platforms/stm32f4
 
 LDFLAGS+= -lc -lnosys -L ${OBJDIR} -nostartfiles -Wl,--gc-sections

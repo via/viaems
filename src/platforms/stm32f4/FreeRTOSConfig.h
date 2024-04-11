@@ -7,6 +7,7 @@
 #define xPortSysTickHandler SysTick_Handler
 
 #define configUSE_PREEMPTION		1
+#define configUSE_TIME_SLICING 0
 #define configUSE_IDLE_HOOK		0
 #define configUSE_TICK_HOOK		0
 #define configCPU_CLOCK_HZ		( ( unsigned long ) 168000000 )	
@@ -20,9 +21,9 @@
 #define configUSE_16_BIT_TICKS		0
 #define configIDLE_SHOULD_YIELD		1
 #define configUSE_MUTEXES		0
-#define configCHECK_FOR_STACK_OVERFLOW	1
+#define configCHECK_FOR_STACK_OVERFLOW	0
 #define configUSE_PORT_OPTIMISED_TASK_SELECTION 1
-#define configGENERATE_RUN_TIME_STATS 1
+#define configGENERATE_RUN_TIME_STATS 0
 #define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()
 #define portGET_RUN_TIME_COUNTER_VALUE() cycle_count()
 #define configQUEUE_REGISTRY_SIZE 4
@@ -41,11 +42,17 @@ to exclude the API function. */
 #define INCLUDE_vTaskCleanUpResources	0
 #define INCLUDE_vTaskSuspend		1
 #define INCLUDE_vTaskDelayUntil		0
-#define INCLUDE_vTaskDelay		0
+#define INCLUDE_vTaskDelay		1
+#define INCLUDE_xEventGroupSetBitFromISR 1
 
 #define configKERNEL_INTERRUPT_PRIORITY 	255
 #define configMAX_SYSCALL_INTERRUPT_PRIORITY 	128 /* equivalent to 0x80, or priority 8. */
 #define configLIBRARY_KERNEL_INTERRUPT_PRIORITY	8
+#define configSYSTEM_CALL_STACK_SIZE 100
+#define configENFORCE_SYSTEM_CALLS_FROM_KERNEL_ONLY 1
 
+#define configUSE_MPU_WRAPPERS_V1 0
+#define configPROTECTED_KERNEL_OBJECT_POOL_SIZE 150
+#define configALLOW_UNPRIVILEGED_CRITICAL_SECTIONS 0
 
 #endif /* FREERTOS_CONFIG_H */
