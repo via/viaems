@@ -197,6 +197,7 @@ void platform_load_config() {
 
 /* Common symbols exported by the linker script(s): */
 extern uint32_t _data_loadaddr, _sdata, _edata, _ebss;
+extern uint32_t _privileged_data_loadaddr, __privileged_data_start__, __privileged_data_actual_end__;
 
 void Reset_Handler(void) {
   bool jump_to_bootloader = false;
@@ -206,6 +207,10 @@ void Reset_Handler(void) {
   }
 
   volatile uint32_t *src, *dest;
+  for (src = &_privileged_data_loadaddr, dest = &__privileged_data_start__; dest < &__privileged_data_actual_end__; src++, dest++) {
+    *dest = *src;
+  }
+
   for (src = &_data_loadaddr, dest = &_sdata; dest < &_edata; src++, dest++) {
     *dest = *src;
   }

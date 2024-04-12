@@ -13,8 +13,8 @@ MEMORY
 
 ENTRY(Reset_Handler)
 
-_Privileged_Functions_Region_Size = 64K;
-_Privileged_Data_Region_Size = 32K;
+_Privileged_Functions_Region_Size = 32K;
+_Privileged_Data_Region_Size = 4K;
 
 __privileged_functions_start__ = ORIGIN( rom );
 __privileged_functions_end__ = __privileged_functions_start__ + _Privileged_Functions_Region_Size;
@@ -51,12 +51,16 @@ SECTIONS {
 	} >rom
 
 
-	.data : {
+  .privileged_data : {
    *(privileged_data)
     /* Non kernel data is kept out of the first _Privileged_Data_Region_Size
         bytes of SRAM. */
     __privileged_data_actual_end__ = .;
     . = _Privileged_Data_Region_Size;
+  } >ram AT >rom
+	_privileged_data_loadaddr = LOADADDR(.privileged_data);
+
+	.data : {
 		_sdata = .;
 		*(.data*)	/* Read-write initialized data */
 		*(.dmadata*)	/* DMA regions, no different from normal data on stm32f4 */

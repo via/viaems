@@ -293,11 +293,11 @@ void tasks_loop() {
 
 static StaticTask_t test1_task;
 static TaskHandle_t test1_task_handle;
-static StackType_t test1_task_stack[configMINIMAL_STACK_SIZE] __attribute__((aligned(configMINIMAL_STACK_SIZE)));
+static StackType_t test1_task_stack[configMINIMAL_STACK_SIZE] __attribute__((aligned(configMINIMAL_STACK_SIZE * 4)));
 
 static StaticTask_t test2_task;
 static TaskHandle_t test2_task_handle;
-static StackType_t test2_task_stack[configMINIMAL_STACK_SIZE] __attribute__((aligned(configMINIMAL_STACK_SIZE)));
+static StackType_t test2_task_stack[configMINIMAL_STACK_SIZE] __attribute__((aligned(configMINIMAL_STACK_SIZE * 4)));
 
 uint32_t delay __attribute__((externally_visible)) = 0 ;
 
@@ -305,39 +305,46 @@ static StaticQueue_t test_queue;
 static uint32_t test_queue_storage[16];
 QueueHandle_t test_queue_handle = NULL;
 
-static void test1(void *unused) {
+static void test1(QueueHandle_t q) {
   while (true) {
     vTaskDelay(1000);
     uint32_t cycles = cycle_count();
-    xQueueSend(test_queue_handle, &cycles, 10000);
+    xQueueSend(q, &cycles, 10000);
   }
 }
 
-static void test2(void *unused) {
+static void test2(QueueHandle_t q) {
   while (true) {
     uint32_t cycles;
-    xQueueReceive(test_queue_handle, &cycles, 10000);
+    xQueueReceive(q, &cycles, 10000);
     uint32_t delay = cycle_count() - cycles;
   }
 }
 
-
-static const TaskParameters_t test1_params = {
+static TaskParameters_t test1_params = {
   test1,
   "test1",
   configMINIMAL_STACK_SIZE,
   NULL,
-  4, test1_task_stack,
-  {}
+  4,
+  test1_task_stack,
+  {
+    { 0xE0001000, 256, tskMPU_REGION_READ_ONLY | tskMPU_REGION_DEVICE_MEMORY },
+  },
+  &test1_task,
 };
 
-static const TaskParameters_t test2_params = {
+static TaskParameters_t test2_params = {
   test2,
   "test2",
   configMINIMAL_STACK_SIZE,
   NULL,
-  5, test2_task_stack,
-  {}
+  5,
+  test2_task_stack,
+  {
+    { 0xE0001000, 256, tskMPU_REGION_READ_ONLY | tskMPU_REGION_DEVICE_MEMORY},
+  },
+  &test2_task,
 };
 
 void start_controllers(void) {
@@ -358,8 +365,10 @@ void start_controllers(void) {
   test_queue_handle = xQueueCreateStatic(16, sizeof(uint32_t), (uint8_t *)test_queue_storage, &test_queue);
 //  test1_task_handle = xTaskCreateStatic(test1, "test1", configMINIMAL_STACK_SIZE, NULL, 4, test1_task_stack, &test1_task);
 //  test2_task_handle = xTaskCreateStatic(test2, "test2", configMINIMAL_STACK_SIZE, NULL, 5, test2_task_stack, &test2_task);
-    xTaskCreateRestrictedStatic(&test1_params, &test1_task);
-    xTaskCreateRestrictedStatic(&test2_params, &test2_task);
+    test1_params.pvParameters = (void *)test_queue_handle;
+    test2_params.pvParameters = (void *)test_queue_handle;
+    xTaskCreateRestrictedStatic(&test1_params, &test1_task_handle);
+    xTaskCreateRestrictedStatic(&test2_params, &test2_task_handle);
 
   vTaskStartScheduler();
 }
