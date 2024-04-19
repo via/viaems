@@ -313,7 +313,7 @@ struct config config __attribute__((section(".configdata"))) = {
     .overboost = 260.0,
   },
   .cel = {
-    .pin = 2,
+    .pin = 0,
     .lean_boost_kpa = 140.0,
     .lean_boost_ego = .91,
   },

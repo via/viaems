@@ -24,9 +24,11 @@ void platform_reset_into_bootloader() {
 
 void disable_interrupts() {
   __disable_irq();
+  set_gpio(6, 1);
 }
 
 void enable_interrupts() {
+  set_gpio(6, 0);
   __enable_irq();
 }
 

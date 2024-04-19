@@ -31,9 +31,10 @@ void run_tasks(void);
 
 extern TaskHandle_t sim_task_handle;
 
+struct engine_pump_update;
 void publish_trigger_event(const struct trigger_event *ev);
 void publish_raw_adc(const struct adc_update *ev);
-void publish_reschedule();
+void trigger_engine_pump(struct engine_pump_update *ev);
 
 void start_controllers(void);
 

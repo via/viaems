@@ -151,21 +151,31 @@ void TIM2_IRQHandler(void) {
 extern void abort(void); /* TODO handle this better */
 
 void DMA2_Stream1_IRQHandler(void) {
+  static timeval_t current_start = 0;
+  set_gpio(4, 1);
   if (DMA2->LISR & DMA_LISR_TCIF1) {
     DMA2->LIFCR = DMA_LIFCR_CTCIF1;
-    stm32_buffer_swap();
+    struct engine_pump_update up = {
+      .retire_start_time = current_start,
+      .retire_length = NUM_SLOTS,
+      .populate_start_time = current_start + NUM_SLOTS * 2,
+      .populate_length = NUM_SLOTS,
+    };
+    trigger_engine_pump(&up);
+    current_start += NUM_SLOTS;
   }
 
   /* If we overran, abort */
   uint32_t dma_current_buffer = _FLD2VAL(DMA_SxCR_CT, DMA2_Stream1->CR);
   if (dma_current_buffer != stm32_current_buffer()) {
-    abort();
+//    abort();
   }
 
   /* In the event of a transfer error, abort */
   if (DMA2->LISR & DMA_LISR_TEIF1) {
     abort();
   }
+  set_gpio(4, 0);
 }
 
 static void setup_scheduled_outputs(void) {

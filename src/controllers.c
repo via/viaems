@@ -7,81 +7,147 @@
 #include "task.h"
 #include "queue.h"
 
-static StaticTask_t engine_task;
-static TaskHandle_t engine_task_handle;
-static StackType_t engine_task_stack[configMINIMAL_STACK_SIZE];
-
 #define DECODE_QUEUE_SIZE 1
 static StaticQueue_t decode_queue;
 static struct trigger_event decode_queue_storage[DECODE_QUEUE_SIZE];
 QueueHandle_t decode_queue_handle = NULL;
+
+
+void publish_trigger_event(const struct trigger_event *ev) {
+  BaseType_t wake;
+  xQueueOverwriteFromISR(decode_queue_handle, ev, &wake);
+  if (wake) {
+    portYIELD();
+  }
+}
 
 #define ADC_QUEUE_SIZE 1
 static StaticQueue_t adc_queue;
 static struct adc_update adc_queue_storage[ADC_QUEUE_SIZE];
 QueueHandle_t adc_queue_handle = NULL;
 
-#define MAIN_LOOP_TRIGGER_EVENT 1
-#define MAIN_LOOP_RAW_ADC 2
-#define MAIN_LOOP_RESCHEDULE 4
-
-void publish_trigger_event(const struct trigger_event *ev) {
-  if (xQueueSendFromISR(decode_queue_handle, &ev, NULL)) {
-  }
-
-  xTaskNotify(engine_task_handle, MAIN_LOOP_TRIGGER_EVENT, eSetBits);
-}
 
 void publish_raw_adc(const struct adc_update *ev) {
-  if (xQueueSendFromISR(adc_queue_handle, &ev, NULL)) {
+  BaseType_t wake;
+  xQueueOverwriteFromISR(adc_queue_handle, ev, &wake);
+  if (wake) {
+    portYIELD();
   }
-
-  xTaskNotify(engine_task_handle, MAIN_LOOP_RAW_ADC, eSetBits);
 }
 
-void publish_reschedule() {
-  xTaskNotify(engine_task_handle, MAIN_LOOP_RESCHEDULE, eSetBits);
+TaskHandle_t decoder_task_handle;
+static StaticTask_t decoder_task;
+static StackType_t decoder_task_stack[configMINIMAL_STACK_SIZE] = { 0 };
+
+static void decoder_loop(void *unused) {
+  while (true) {
+    struct trigger_event ev;
+    if (!xQueueReceive(decode_queue_handle, &ev, portMAX_DELAY)) {
+      abort();
+    }
+    set_gpio(2, 1);
+
+    decoder_decode(&ev);
+    set_gpio(2, 0);
+  }
 }
+
+TaskHandle_t sensor_task_handle;
+static StaticTask_t sensor_task;
+static StackType_t sensor_task_stack[configMINIMAL_STACK_SIZE] = { 0 };
+
+static void sensor_loop(void *unused) {
+  while (true) {
+    struct adc_update ev;
+    if (!xQueueReceive(adc_queue_handle, &ev, portMAX_DELAY)) {
+      abort();
+    }
+    set_gpio(1, 1);
+
+    sensor_update_adc(&ev);
+    set_gpio(1, 0);
+  }
+}
+
+#define ENGINE_QUEUE_SIZE 1
+static StaticQueue_t engine_queue;
+static struct engine_pump_update engine_queue_storage[ENGINE_QUEUE_SIZE];
+QueueHandle_t engine_queue_handle = NULL;
+
+void trigger_engine_pump(struct engine_pump_update *ev) {
+  BaseType_t wake;
+  xQueueSendFromISR(engine_queue_handle, ev, &wake);
+
+  if (wake) {
+    portYIELD();
+  }
+}
+
+TaskHandle_t engine_task_handle;
+static StaticTask_t engine_task;
+static StackType_t engine_task_stack[configMINIMAL_STACK_SIZE] = { 0 };
+
+
+static void retire_range(timeval_t start, timeval_t length) {
+  for (int i = 0; i < MAX_EVENTS; i++) {
+    struct output_event *oev = &config.events[i];
+
+    timeval_t offset_from_start = oev->start.time - start;
+    if (oev->start.state == SCHED_SUBMITTED &&
+        offset_from_start < length) {
+      oev->start.state = SCHED_FIRED;
+    }
+
+    offset_from_start = oev->stop.time - start;
+    if (oev->stop.state == SCHED_SUBMITTED &&
+        offset_from_start < length) {
+      oev->stop.state = SCHED_FIRED;
+    }
+  }
+}
+
+static void populate_range(timeval_t start, timeval_t length) {
+  for (int i = 0; i < MAX_EVENTS; i++) {
+    struct output_event *oev = &config.events[i];
+
+    timeval_t offset_from_start = oev->start.time - start;
+    if (oev->start.state == SCHED_SCHEDULED &&
+        offset_from_start < length) {
+      oev->start.state = SCHED_SUBMITTED;
+    }
+
+    offset_from_start = oev->stop.time - start;
+    if (oev->stop.state == SCHED_SCHEDULED &&
+        offset_from_start < length) {
+      oev->stop.state = SCHED_SUBMITTED;
+    }
+  }
+}
+
 
 static void engine_loop(void *unused) {
 
   while (true) {
-    uint32_t val = 0;
-    if (!xTaskNotifyWait(0, ULONG_MAX, &val, portMAX_DELAY)) {
-      abort();
-    }
+    struct engine_pump_update update;
+    xQueueReceive(engine_queue_handle, &update, portMAX_DELAY);
+    set_gpio(3, 1);
 
-    bool is_new_cycle = false;
-    bool is_new_sensors = false;
-
-    if (val & MAIN_LOOP_TRIGGER_EVENT) {
-      struct trigger_event ev;
-      if (!xQueueReceive(decode_queue_handle, &ev, 0)) {
-        abort();
-      }
-
-      decoder_decode(&ev);
-      /* TODO: determine if new engine cycle */
-      is_new_cycle = true;
-    }
-
-    if (val & MAIN_LOOP_RAW_ADC) {
-      struct adc_update ev;
-      if (!xQueueReceive(adc_queue_handle, &ev, 0)) {
-        abort();
-      }
-      sensor_update_adc(&ev);
-      is_new_sensors = true;
-    }
-
-    if (is_new_sensors || is_new_cycle) {
-      calculate_ignition();
-      calculate_fueling();
-    }
+    set_gpio(5, 1);
+    retire_range(update.retire_start_time, update.retire_length);
+    set_gpio(5, 0);
+    
+    calculate_ignition();
+    calculate_fueling();
 
     for (unsigned int e = 0; e < MAX_EVENTS; ++e) {
       schedule_event(&config.events[e]);
     }
+
+    // Retire all events for time X-Y
+    set_gpio(5, 1);
+    populate_range(update.populate_start_time, update.populate_length);
+    set_gpio(5, 0);
+    set_gpio(3, 0);
 
   }
 }
@@ -274,10 +340,14 @@ void start_controllers(void) {
 
   decode_queue_handle = xQueueCreateStatic(DECODE_QUEUE_SIZE, sizeof(struct trigger_event), (uint8_t *)decode_queue_storage, &decode_queue);
   vQueueAddToRegistry(decode_queue_handle, "decode");
+  decoder_task_handle = xTaskCreateStatic(decoder_loop, "decoder", configMINIMAL_STACK_SIZE, NULL, 4, decoder_task_stack, &decoder_task);
 
   adc_queue_handle = xQueueCreateStatic(ADC_QUEUE_SIZE, sizeof(struct adc_update), (uint8_t *)adc_queue_storage, &adc_queue);
   vQueueAddToRegistry(adc_queue_handle, "adc");
+  sensor_task_handle = xTaskCreateStatic(sensor_loop, "sensors", configMINIMAL_STACK_SIZE, NULL, 4, sensor_task_stack, &sensor_task);
 
+  engine_queue_handle = xQueueCreateStatic(ENGINE_QUEUE_SIZE, sizeof(struct engine_pump_update), (uint8_t *)engine_queue_storage, &engine_queue);
+  vQueueAddToRegistry(engine_queue_handle, "engine_pump");
   engine_task_handle = xTaskCreateStatic(engine_loop, "engine", configMINIMAL_STACK_SIZE, NULL, 4, engine_task_stack, &engine_task);
 
   tasks_task_handle = xTaskCreateStatic(tasks_loop, "tasks", configMINIMAL_STACK_SIZE, NULL, 2, tasks_task_stack, &tasks_task);

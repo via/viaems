@@ -20,6 +20,7 @@
 #define configUSE_16_BIT_TICKS		0
 #define configIDLE_SHOULD_YIELD		1
 #define configUSE_MUTEXES		0
+#define configUSE_TIME_SLICING 0
 #define configCHECK_FOR_STACK_OVERFLOW	1
 #define configUSE_PORT_OPTIMISED_TASK_SELECTION 1
 #define configGENERATE_RUN_TIME_STATS 1

@@ -27,17 +27,25 @@ struct sched_entry {
   timeval_t time;
   uint8_t pin;
   bool val;
-  _Atomic sched_state_t state;
+  sched_state_t state;
 };
 
 static inline sched_state_t sched_entry_get_state(struct sched_entry *s) {
-  return atomic_load_explicit(&s->state, memory_order_relaxed);
+  return s->state;
 }
 
 static inline void sched_entry_set_state(struct sched_entry *s,
                                          sched_state_t state) {
-  atomic_store_explicit(&s->state, state, memory_order_relaxed);
+  s->state = state;
 }
+
+struct engine_pump_update {
+  timeval_t retire_start_time;
+  timeval_t retire_length;
+
+  timeval_t populate_start_time;
+  timeval_t populate_length;
+};
 
 struct timer_callback {
   TaskHandle_t task;
