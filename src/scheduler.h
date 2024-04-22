@@ -5,9 +5,6 @@
 #include <stdatomic.h>
 #include <stdbool.h>
 
-#include "FreeRTOS.h"
-#include "task.h"
-
 typedef enum {
   DISABLED_EVENT,
   FUEL_EVENT,
@@ -40,17 +37,18 @@ static inline void sched_entry_set_state(struct sched_entry *s,
 }
 
 struct engine_pump_update {
-  timeval_t retire_start_time;
-  timeval_t retire_length;
+  timeval_t retire_start;
+  timeval_t retire_duration;
 
-  timeval_t populate_start_time;
-  timeval_t populate_length;
+  timeval_t plan_start;
+  timeval_t plan_duration;
 };
 
 struct timer_callback {
-  TaskHandle_t task;
   timeval_t time;
   bool scheduled;
+  void *data;
+  void (*callback)(void *);
 };
 
 struct output_event {

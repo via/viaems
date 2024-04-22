@@ -4,9 +4,6 @@
 #include "platform.h"
 #include "controllers.h"
 
-#include <FreeRTOS.h>
-#include "task.h"
-
 #ifndef CRYSTAL_FREQ
 #define CRYSTAL_FREQ 8
 #endif
@@ -241,15 +238,15 @@ void Reset_Handler(void) {
 }
 
 /* Use usb to send text from newlib printf */
-int __attribute__((externally_visible))
-_write(int fd, const char *buf, size_t count) {
-  (void)fd;
-  size_t pos = 0;
-  while (pos < count) {
-    pos += console_write(buf + pos, count - pos);
-  }
-  return count;
-}
+//int __attribute__((externally_visible))
+//_write(int fd, const char *buf, size_t count) {
+//  (void)fd;
+//  size_t pos = 0;
+//  while (pos < count) {
+//    pos += console_write(buf + pos, count - pos);
+//  }
+//  return count;
+//}
 
 static void setup_gpios(void) {
   GPIOE->MODER = 0x55555555;   /* All of GPIOE is output */
@@ -287,20 +284,3 @@ void platform_benchmark_init() {
   stm32f4_configure_usb();
 }
 
-// FreeRTOS
-void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer,
-                                    StackType_t **ppxIdleTaskStackBuffer,
-                                    uint32_t *pulIdleTaskStackSize ) {
-  static StaticTask_t xIdleTaskTCB;
-  static StackType_t uxIdleTaskStack[configMINIMAL_STACK_SIZE];
-
-  *ppxIdleTaskTCBBuffer = &xIdleTaskTCB;
-  *ppxIdleTaskStackBuffer = uxIdleTaskStack;
-  *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
-}
-
-void vApplicationStackOverflowHook( 
-  TaskHandle_t xTask __attribute__((unused)),     
-  char *pcTaskName __attribute__((unused))) { 
-  for (;;); 
-}

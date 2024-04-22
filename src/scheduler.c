@@ -315,7 +315,9 @@ void scheduler_callback_timer_execute() {
 
   struct timer_callback *cb = callbacks[0];
   callback_remove(cb);
-  xTaskNotifyFromISR(cb->task, 0, eNoAction, NULL);
+  if (cb->callback) {
+    cb->callback(cb->data);
+  }
 
   if (n_callbacks > 0) {
     schedule_event_timer(callbacks[0]->time);

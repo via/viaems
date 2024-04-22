@@ -3,7 +3,7 @@
 
 #include "platform.h"
 #include <stdint.h>
-#define NUM_SLOTS 400
+#define NUM_SLOTS 800
 
 /* Implement STM32 and GD32 support for output buffer handling.  Currently this
  * includes the STM32F4, STM32H7, and GD32F4.

@@ -37,7 +37,7 @@ $(OBJDIR):
 
 
 $(OBJDIR)/%.o: %.s
-	${AS} -c -o $@ $<
+	${AS} ${ASFLAGS} -c -o $@ $<
 
 $(OBJDIR)/%.o: %.c
 	${CC} ${CFLAGS} -MMD -c -o $@ $<

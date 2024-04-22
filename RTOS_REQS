@@ -1,0 +1,18 @@
+scheduling:
+  priority preemption
+  single-priority cooperate without time slicing
+    (nth) watchdog on max execution time before yield
+
+message queues:
+  ability to overwrite
+
+notifications: pend a task
+
+alarms:
+  - create an alarm as a timeout and pass to queue. when consumer is 
+    done with task, cancel the alarm. otherwise alarm calls a callback.
+    used as a watchdog for various tasks/queues
+
+nice to haves:
+  mpu isolation of individual task threads
+  mpu isolation of groups of tasks data/bss

@@ -7,10 +7,6 @@
 
 #include "stm32_sched_buffers.h"
 
-#include "FreeRTOS.h"
-#include "task.h"
-#include "queue.h"
-
 /* The primary outputs are driven by the DMA copying from a circular
  * double-buffer to the GPIO's BSRR register.  TIM8 is configured to generate
  * an update even at 4 MHz, and that update event triggers the DMA.  The same
@@ -145,7 +141,6 @@ void TIM2_IRQHandler(void) {
     TIM2->SR = ~TIM_SR_CC4IF;
     scheduler_callback_timer_execute();
   }
-  portYIELD_FROM_ISR(pdTRUE);
 }
 
 extern void abort(void); /* TODO handle this better */
@@ -155,20 +150,7 @@ void DMA2_Stream1_IRQHandler(void) {
   set_gpio(4, 1);
   if (DMA2->LISR & DMA_LISR_TCIF1) {
     DMA2->LIFCR = DMA_LIFCR_CTCIF1;
-    struct engine_pump_update up = {
-      .retire_start_time = current_start,
-      .retire_length = NUM_SLOTS,
-      .populate_start_time = current_start + NUM_SLOTS * 2,
-      .populate_length = NUM_SLOTS,
-    };
-    trigger_engine_pump(&up);
-    current_start += NUM_SLOTS;
-  }
-
-  /* If we overran, abort */
-  uint32_t dma_current_buffer = _FLD2VAL(DMA_SxCR_CT, DMA2_Stream1->CR);
-  if (dma_current_buffer != stm32_current_buffer()) {
-//    abort();
+    stm32_buffer_swap();
   }
 
   /* In the event of a transfer error, abort */

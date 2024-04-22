@@ -14,3 +14,6 @@
 [submodule "contrib/FreeRTOS-Kernel"]
 	path = contrib/FreeRTOS-Kernel
 	url = https://github.com/FreeRTOS/FreeRTOS-Kernel
+[submodule "contrib/threadx"]
+	path = contrib/threadx
+	url = https://github.com/eclipse-threadx/threadx

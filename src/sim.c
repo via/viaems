@@ -4,9 +4,6 @@
 #include "platform.h"
 #include "controllers.h"
 
-#include "FreeRTOS.h"
-#include "queue.h"
-
 static struct timer_callback test_trigger_callback;
 
 struct test_wheel_event {
@@ -56,6 +53,7 @@ void execute_test_trigger(void *_w) {
     .trigger = wheel_ev.trigger,
     .time = ev_time,
   };
+
   publish_trigger_event(&ev);
 
   /* Schedule next */
@@ -67,7 +65,8 @@ void execute_test_trigger(void *_w) {
 
 void set_test_trigger_rpm(uint32_t rpm) {
   test_trigger_rpm = rpm;
-  test_trigger_callback.task = sim_task_handle;
+//  test_trigger_callback.task = sim_task_handle;
+  test_trigger_callback.callback = trigger_sim;
   schedule_callback(&test_trigger_callback, current_time() + 10000);
 }
 
