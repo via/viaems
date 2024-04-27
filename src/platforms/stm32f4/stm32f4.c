@@ -33,6 +33,7 @@ uint64_t cycles_to_ns(uint64_t cycles) {
   return cycles * 1000 / 168;
 }
 
+__attribute__((externally_visible)) 
 uint64_t cycle_count() {
   return DWT->CYCCNT;
 }
@@ -274,6 +275,9 @@ void platform_init() {
   stm32f4_configure_usb();
   stm32f4_configure_adc();
   stm32f4_configure_pwm();
+
+
+  *((volatile uint32_t *)0xe000ed20) |= (255 << 16);
 }
 
 void platform_benchmark_init() {

@@ -4,66 +4,71 @@
 #include "platform.h"
 #include "util.h"
 
-#include "tx_api.h"
+#include "fiber.h"
 
-TX_QUEUE decoder_queue;
-struct trigger_event decoder_queue_data[1];
+int32_t decoder_queue;
+struct trigger_event decoder_queue_data[2];
 
-TX_QUEUE adc_queue;
-struct adc_update adc_queue_data[1];
+int32_t adc_queue;
+struct adc_update adc_queue_data[2];
 
-TX_QUEUE engine_pump_queue;
-struct engine_pump_update engine_pump_queue_data[1];
+int32_t engine_pump_queue;
+struct engine_pump_update engine_pump_queue_data[2];
+
+uint32_t before_cycles __attribute__((externally_visible)) = 0;
+uint32_t duration __attribute__((externally_visible)) = 0;
 
 void publish_trigger_event(const struct trigger_event *ev) {
-  tx_queue_send(&decoder_queue, ev, TX_NO_WAIT);
+  before_cycles = cycle_count();
+  uak_queue_put(decoder_queue, ev);
 }
 
 
 void publish_raw_adc(const struct adc_update *ev) {
-  tx_queue_send(&adc_queue, ev, TX_NO_WAIT);
+  uak_queue_put(adc_queue, ev);
 }
 
 
-TX_THREAD decoder_thread;
+int32_t decoder_thread;
 uint32_t decoder_thread_stack[128];
 
 static void decoder_loop(void *unused) {
   while (true) {
     struct trigger_event ev;
-    tx_queue_receive(&decoder_queue, &ev, TX_WAIT_FOREVER);
+    uak_queue_get(decoder_queue, &ev);
+    duration = cycle_count() - before_cycles;
+
     set_gpio(2, 1);
     decoder_decode(&ev);
     set_gpio(2, 0);
   }
 }
 
-TX_THREAD sensor_thread;
+int32_t sensor_thread;
 uint32_t sensor_thread_stack[128];
 
 static void sensor_loop(void *unused) {
   while (true) {
     struct adc_update ev;
-    tx_queue_receive(&adc_queue, &ev, TX_WAIT_FOREVER);
-
+    uak_queue_get(adc_queue, &ev);
     set_gpio(1, 1);
     sensor_update_adc(&ev);
     set_gpio(1, 0);
   }
 }
 
-TX_THREAD engine_pump_thread;
+int32_t engine_pump_thread;
 uint32_t engine_pump_stack[128];
 
 void trigger_engine_pump(struct engine_pump_update *ev) {
-  tx_queue_send(&engine_pump_queue, ev, TX_NO_WAIT);
+  uak_queue_put(engine_pump_queue, ev);
 }
 
 static void engine_loop(void *unused) {
 
   while (true) {
     struct engine_pump_update update;
-    tx_queue_receive(&engine_pump_queue, &update, TX_WAIT_FOREVER);
+    uak_queue_get(engine_pump_queue, &update);
     set_gpio(3, 1);
 
     set_gpio(5, 1);
@@ -86,6 +91,8 @@ static void engine_loop(void *unused) {
   }
 }
 
+int32_t console_thread;
+uint32_t console_thread_stack[512];
 
 static void console_loop(void *_unused) {
   (void)_unused;
@@ -94,19 +101,17 @@ static void console_loop(void *_unused) {
   }
 }
 
-TX_THREAD sim_thread;
+int32_t sim_thread;
 uint32_t sim_thread_stack[128];
 
-TX_EVENT_FLAGS_GROUP sim_flags;
 void trigger_sim() {
-  tx_event_flags_set(&sim_flags, 0x1, TX_OR);
+  uak_notify_set(sim_thread, 0x1);
 }
 
 static void sim_loop(void *_unused) {
   (void)_unused;
   while (true) {
-    uint32_t flags;
-    tx_event_flags_get(&sim_flags, 0x1, TX_AND_CLEAR, &flags, TX_WAIT_FOREVER);
+    uak_wait_for_notify();
     execute_test_trigger(NULL);
   }
 }
@@ -265,36 +270,27 @@ void tasks_loop() {
 }
 
 void start_controllers(void) {
+  decoder_queue = uak_queue_create(decoder_queue_data, sizeof(struct trigger_event), 2);
+  adc_queue = uak_queue_create(adc_queue_data, sizeof(struct adc_update), 2);
+  engine_pump_queue = uak_queue_create(engine_pump_queue_data, sizeof(struct engine_pump_update), 2);
+
+  decoder_thread = uak_fiber_create(decoder_loop, 0, 2, decoder_thread_stack, sizeof(decoder_thread_stack));
+  sensor_thread = uak_fiber_create(sensor_loop, 0, 2, sensor_thread_stack, sizeof(sensor_thread_stack));
+  engine_pump_thread = uak_fiber_create(engine_loop, 0, 2, engine_pump_stack, sizeof(engine_pump_stack));
+
+  console_thread = uak_fiber_create(console_loop, 0, 3, console_thread_stack, sizeof(console_thread_stack));
+  sim_thread = uak_fiber_create(sim_loop, 0, 1, sim_thread_stack, sizeof(sim_thread_stack));
+
+  platform_init(0, NULL);
   set_test_trigger_rpm(5000);
 
-  tx_kernel_enter();
+  void fiber_md_start(void);
+  fiber_md_start();
 }
 
-TX_THREAD t0;
-TX_THREAD t1;
 
 
-void tx_application_define(void *_unused) {
 
-  tx_queue_create(&decoder_queue, "trigger events", sizeof(struct trigger_event) / 4, decoder_queue_data, sizeof(decoder_queue_data));
-  tx_queue_create(&adc_queue, "adc events", sizeof(struct adc_update) / 4, adc_queue_data, sizeof(adc_queue_data));
-  tx_queue_create(&engine_pump_queue, "engine pump triggers", sizeof(struct engine_pump_update) / 4, engine_pump_queue_data, sizeof(engine_pump_queue_data));
-
-  tx_event_flags_create(&sim_flags, "sim flags");
-
-  tx_thread_create(&decoder_thread, "decoder", decoder_loop, 0, decoder_thread_stack, sizeof(decoder_thread_stack), 2, 2,
-      TX_NO_TIME_SLICE, TX_AUTO_START);
-
-//  tx_thread_create(&sensor_thread, "sensors", sensor_loop, 0, sensor_thread_stack, sizeof(sensor_thread_stack), 2, 2,
-//      TX_NO_TIME_SLICE, TX_AUTO_START);
-
-  tx_thread_create(&engine_pump_thread, "engine pump", engine_loop, 0, engine_pump_stack, sizeof(engine_pump_stack), 2, 2,
-      TX_NO_TIME_SLICE, TX_AUTO_START);
-
-  tx_thread_create(&sim_thread, "sim", sim_loop, 0, sim_thread_stack, sizeof(sim_thread_stack), 1, 1,
-      TX_NO_TIME_SLICE, TX_AUTO_START);
-
-}
 
 #ifdef UNITTEST
 #include <check.h>

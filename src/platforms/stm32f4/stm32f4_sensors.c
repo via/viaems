@@ -140,7 +140,9 @@ void DMA2_Stream0_IRQHandler(void) {
       float raw_value = (float)(5 * adc_value) / 4096.0f;
       update.values[i] = raw_value;
     }
+    set_gpio(1, 1);
     publish_raw_adc(&update);
+    set_gpio(1, 0);
     process_knock_inputs(sequence);
   }
 }

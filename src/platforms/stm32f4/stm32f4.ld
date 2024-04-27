@@ -14,7 +14,6 @@ MEMORY
 ENTRY(Reset_Handler)
 
 SECTIONS {
-
 	.text : {
 		KEEP(*(.isr_vector))
 		. = ALIGN(4);
