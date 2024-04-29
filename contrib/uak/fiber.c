@@ -5,7 +5,9 @@
 #include "fiber.h"
 #include "fiber-private.h"
 
-struct executor executor = { 0 };
+static struct executor executor = { 0 };
+
+#include "md/cortex-m4f-m7.c"
 
 #if 1
 static uint32_t queue_next_idx(uint32_t current, uint32_t max) {
@@ -104,10 +106,8 @@ uint32_t uak_wait_for_notify() {
   struct fiber *f = executor.current;
   if (f->notification_value == 0) {
     uak_suspend(f, UAK_BLOCK_ON_NOTIFY);
-    uak_md_unlock_scheduler();
-
     uak_md_request_reschedule();
-
+    uak_md_unlock_scheduler();
     uak_md_lock_scheduler();
   }
   uint32_t result = f->notification_value;

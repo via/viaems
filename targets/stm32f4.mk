@@ -18,8 +18,8 @@ LIBUSB_OBJS= usbd_core.o \
              usbd_stm32f429_otgfs.o
 
 
-UAK_OBJS = fiber.o \
-					 cortex-m4f-m7.o
+UAK_OBJS = fiber.o 
+#					 cortex-m4f-m7.o
 
 OBJS+= stm32f4.o \
        stm32f4_sched.o \
@@ -36,7 +36,7 @@ OBJS+= libssp.a libssp_nonshared.a
 
 ASFLAGS= -g -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mthumb -mfloat-abi=hard
 
-CFLAGS= -DNDEBUG -ffunction-sections -fdata-sections -O3 -g3
+CFLAGS= -DNDEBUG -ffunction-sections -fdata-sections -O3 -flto -g3
 CFLAGS+= -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mthumb -mcpu=cortex-m4 -pipe
 CFLAGS+= -DSTM32F4 -DSTM32F4xx -DSTM32F427xx
 CFLAGS+= -DPLATFORMIO -DUSBD_SOF_DISABLED

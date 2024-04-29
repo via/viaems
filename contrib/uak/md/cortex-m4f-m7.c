@@ -31,10 +31,7 @@ void uak_md_fiber_create(struct fiber *f) {
 void uak_md_request_reschedule() {
   volatile uint32_t *ICSR = (volatile uint32_t *)0x0E000ED04;
   uint32_t ICSR_PENDSVSET = (1ULL << 28);
-
   *ICSR = ICSR_PENDSVSET;
-  __asm__("dsb");
-  __asm__("isb");
 }
 
 void fiber_md_start() {
@@ -112,5 +109,6 @@ void uak_md_lock_scheduler() {
 
 void uak_md_unlock_scheduler() {
   __asm__("msr PRIMASK, %0" : : "r"(primask));
+  __asm__("isb");
 }
 
