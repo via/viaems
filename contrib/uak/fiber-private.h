@@ -71,7 +71,6 @@ struct executor {
   size_t n_queues;
 };
 
-
 struct fiber *uak_current_fiber(void);
 void uak_fiber_reschedule(void);
 

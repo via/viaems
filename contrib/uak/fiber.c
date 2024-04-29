@@ -5,7 +5,27 @@
 #include "fiber.h"
 #include "fiber-private.h"
 
-static struct executor executor = { 0 };
+struct executor executor = { 0 };
+
+#if 1
+static uint32_t queue_next_idx(uint32_t current, uint32_t max) {
+  if (current == max - 1) {
+    return 0;
+  } else {
+    return current + 1;
+  }
+}
+#else
+static uint32_t queue_next_idx(uint32_t current, uint32_t max) {
+  if (current == 0) {
+    return max - 1;
+  } else {
+    return current - 1;
+  }
+}
+
+#endif
+
 
 static void uak_suspend(struct fiber *f, enum uak_fiber_state reason) {
   assert(f->state == UAK_RUNNABLE);
@@ -13,15 +33,12 @@ static void uak_suspend(struct fiber *f, enum uak_fiber_state reason) {
   f->state = reason;
   struct priority *pri_level = &executor.priorities[f->priority];
 
-  uint32_t next_latest = pri_level->latest + 1;
-  if (next_latest >= N_FIBERS_PER_PRIO) {
-    next_latest = 0;
-  }
+  uint32_t next_latest = queue_next_idx(pri_level->latest, N_FIBERS_PER_PRIO);
   pri_level->latest = next_latest;
 
   /* Make sure to mark whole level unrunnable if needed */
   if (pri_level->oldest == pri_level->latest) {
-    executor.priority_readiness &= ~(0x80000000ULL >> f->priority);
+    executor.priority_readiness &= ~(0x80000000UL >> f->priority);
   }
 }
 
@@ -30,16 +47,12 @@ static void uak_make_runnable(struct fiber *f) {
 
   struct priority *pri_level = &executor.priorities[f->priority];
 
-  uint32_t next_oldest = pri_level->oldest;
-  pri_level->run_queue[next_oldest] = f;
-  next_oldest += 1;
-  if (next_oldest >= N_FIBERS_PER_PRIO) {
-    next_oldest = 0;
-  }
+  pri_level->run_queue[pri_level->oldest] = f;
+  uint32_t next_oldest = queue_next_idx(pri_level->oldest, N_FIBERS_PER_PRIO);
   pri_level->oldest = next_oldest;
 
   /* Mark priority level as runnable */
-  executor.priority_readiness |= (0x80000000ULL >> f->priority);
+  executor.priority_readiness |= (0x80000000UL >> f->priority);
 }
 
 /* Initializes fiber scheduler with an array of fibers `f` with length `n`. */
@@ -86,30 +99,20 @@ void uak_fiber_reschedule() {
   executor.current = pri_level->run_queue[pri_level->latest];
 }
 
-struct fiber *uak_current_fiber(void) {
-  return executor.current;
-}
-
-
 uint32_t uak_wait_for_notify() {
   uak_md_lock_scheduler();
   struct fiber *f = executor.current;
-  if (f->notification_value != 0) {
-    uint32_t result = f->notification_value;
-    f->notification_value = 0;
+  if (f->notification_value == 0) {
+    uak_suspend(f, UAK_BLOCK_ON_NOTIFY);
     uak_md_unlock_scheduler();
-    return result;
+
+    uak_md_request_reschedule();
+
+    uak_md_lock_scheduler();
   }
-
-  uak_suspend(f, UAK_BLOCK_ON_NOTIFY);
-  uak_md_request_reschedule();
-  uak_md_unlock_scheduler();
-
-  uak_md_lock_scheduler();
   uint32_t result = f->notification_value;
   f->notification_value = 0;
   uak_md_unlock_scheduler();
-
   return result;
 }
 
@@ -155,9 +158,10 @@ bool uak_queue_get_nonblock(int32_t queue_handle, void *msg) {
   bool valid = false;
   uak_md_lock_scheduler();
   if (q->read != q->write) {
-    uint8_t *cdata = q->data;
+    char *cdata = q->data;
     uint32_t read = q->read;
-    memcpy(msg, &cdata[read * q->msg_size], q->msg_size);
+    uint32_t *aligned_cdata = (uint32_t *)&cdata[read * q->msg_size];
+    memcpy(msg, aligned_cdata, q->msg_size);
     valid = true;
 
     read += 1;
@@ -188,9 +192,10 @@ bool uak_queue_get(int32_t queue_handle, void *msg) {
   }
 
   assert(q->read != q->write);
-  uint8_t *cdata = q->data;
   uint32_t read = q->read;
-  memcpy(msg, &cdata[read * q->msg_size], q->msg_size);
+  uint8_t *cdata = q->data;
+  uint8_t *aligned_cdata = &cdata[read * q->msg_size];
+  memcpy(msg, aligned_cdata, q->msg_size);
 
   read += 1;
   if (read >= q->n_msgs) {
@@ -217,7 +222,8 @@ bool uak_queue_put(int32_t queue_handle, const void *msg) {
     return false;
   }
 
-  memcpy(&cdata[write * q->msg_size], msg, q->msg_size);
+  uint8_t *aligned_cdata = &cdata[write * q->msg_size];
+  memcpy(aligned_cdata, msg, q->msg_size);
   q->write = next_write;
 
   if (q->waiter && q->waiter->state == UAK_BLOCK_ON_QUEUE) {

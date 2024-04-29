@@ -8,10 +8,6 @@
 
 #include "gd32f4xx.h"
 
-#include <FreeRTOS.h>
-#include "task.h"
-#include "queue.h"
-
 void platform_enable_event_logging() {}
 
 void platform_disable_event_logging() {}
@@ -254,17 +250,6 @@ extern void gd32f4xx_console_init(void);
 extern void gd32f4xx_configure_adc(void);
 extern void gd32f4xx_configure_pwm(void);
 
-void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer,
-                                    StackType_t **ppxIdleTaskStackBuffer,
-                                    uint32_t *pulIdleTaskStackSize ) {
-  static StaticTask_t xIdleTaskTCB;
-  static StackType_t uxIdleTaskStack[configMINIMAL_STACK_SIZE];
-
-  *ppxIdleTaskTCBBuffer = &xIdleTaskTCB;
-  *ppxIdleTaskStackBuffer = uxIdleTaskStack;
-  *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
-}
-
 static void configure_swo(void) {
 
   /* Configure PB3 as an TRACESWO */
@@ -309,24 +294,19 @@ void platform_init() {
   nvic_priority_group_set(NVIC_PRIGROUP_PRE4_SUB0);
   configure_swo();
 
-  gd32f4xx_configure_scheduler();
-  gd32f4xx_console_init();
-  gd32f4xx_configure_adc();
+//  gd32f4xx_configure_scheduler();
+//  gd32f4xx_console_init();
+//  gd32f4xx_configure_adc();
   gd32f4xx_configure_pwm();
 
   setup_gpios();
 //  setup_systick();
 //  setup_watchdog();
+  *((volatile uint32_t *)0xe000ed20) |= (255 << 16);
 
   itm_debug("platform_init() complete\n");
 
 }
 
-void vApplicationStackOverflowHook( 
-  TaskHandle_t xTask __attribute__((unused)),     
-  char *pcTaskName __attribute__((unused))) { 
-  itm_debug("stack overflow\n");
-  for (;;); 
-}
 
 void platform_benchmark_init() {}

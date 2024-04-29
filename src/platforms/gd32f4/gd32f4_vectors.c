@@ -40,6 +40,9 @@ void sv_call_handler(void) __attribute__((weak, alias("null_handler")));
 void pend_sv_handler(void) __attribute__((weak, alias("null_handler")));
 void systick_handler(void) __attribute__((weak, alias("null_handler")));
 
+void SVC_Handler(void);
+void PendSV_Handler(void);
+
 void WWDGT_IRQHandler(void) __attribute__((weak, alias("null_handler")));
 void LVD_IRQHandler(void) __attribute__((weak, alias("null_handler")));
 void TAMPER_STAMP_IRQHandler(void) __attribute__((weak, alias("null_handler")));
@@ -165,8 +168,8 @@ struct vector_table vector_table = {
 	.bus_fault = bus_fault_handler,
 	.usage_fault = usage_fault_handler,
 	.debug_monitor = debug_monitor_handler,
-	.sv_call = sv_call_handler,
-	.pend_sv = pend_sv_handler,
+	.sv_call = SVC_Handler,
+	.pend_sv = PendSV_Handler,
 	.systick = systick_handler,
   .irqs = {
     [WWDGT_IRQn] = WWDGT_IRQHandler,

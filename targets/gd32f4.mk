@@ -9,19 +9,18 @@ CRYSTAL_FREQ?=25
 CMSIS=contrib/CMSIS_5
 GDLIB=contrib/GD32F4xx_Firmware_Library
 
+UAK_OBJS = fiber.o \
+					 cortex-m4f-m7.o
+
+
 OBJS+= gd32f4_init.o \
        gd32f4_vectors.o \
        gd32f4_pwm.o \
        gd32f4_usb.o \
        gd32f4_sched.o \
        gd32f4_sensors.o \
-       stm32_sched_buffers.o
-
-FR_OBJS+= list.o \
-          queue.o \
-          stream_buffer.o \
-          tasks.o \
-          port.o
+       stm32_sched_buffers.o \
+			 ${UAK_OBJS}
 
 GD32PERIPH= \
       gd32f4xx_adc.o \
@@ -67,15 +66,13 @@ OBJS+= ${GD32USB} ${GD32PERIPH} ${FR_OBJS}
 VPATH=src/platforms/${PLATFORM} \
       ${GDLIB}/GD32F4xx_usb_library/device/core/Source \
       ${GDLIB}/GD32F4xx_usb_library/driver/Source \
-      ${GDLIB}/GD32F4xx_standard_peripheral/Source
-
-# FreeRTOS
-VPATH+= contrib/FreeRTOS-Kernel \
-        contrib/FreeRTOS-Kernel/portable/GCC/ARM_CM4F \
+      ${GDLIB}/GD32F4xx_standard_peripheral/Source \
+			contrib/uak/ \
+      contrib/uak/md
 
 OBJS+= libssp.a libssp_nonshared.a
 
-CFLAGS= -DNDEBUG -ffunction-sections -fdata-sections -O3 \
+CFLAGS= -DNDEBUG -ffunction-sections -fdata-sections -O3 -flto \
             -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mthumb -mcpu=cortex-m4
 
 CFLAGS+= -Isrc/platforms/gd32f4
@@ -87,8 +84,7 @@ CFLAGS+= -I${GDLIB}/GD32F4xx_usb_library/device/core/Include
 CFLAGS+= -I${GDLIB}/GD32F4xx_usb_library/device/class/cdc/Include
 CFLAGS+= -I${GDLIB}/GD32F4xx_usb_library/ustd/common
 CFLAGS+= -I${GDLIB}/GD32F4xx_usb_library/ustd/class/cdc
-CFLAGS+= -Icontrib/FreeRTOS-Kernel/include
-CFLAGS+= -Icontrib/FreeRTOS-Kernel/portable/GCC/ARM_CM4F
+CFLAGS+= -Icontrib/uak
 CFLAGS+= -DGD32F470 -D TICKRATE=4000000
 CFLAGS+= -DSPI_${SPI_ADC}
 CFLAGS+= -DCRYSTAL_FREQ=${CRYSTAL_FREQ}

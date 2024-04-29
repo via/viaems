@@ -12,9 +12,6 @@
 
 #include "stm32_sched_buffers.h"
 
-#include "FreeRTOS.h"
-#include "task.h"
-#include "message_buffer.h"
 
 /* The primary outputs are driven by the DMA copying from a circular
  * double-buffer to the GPIO's BSRR register.  TIMER7 is configured to generate
@@ -133,17 +130,11 @@ static struct gd32f4_timebase_freq_pin tim1_ch2_freq = {
 };
 
 static void decoder_update_scheduling(int trigger, timeval_t time) {
-  if (decode_queue_handle == NULL) {
-    return;
-  }
-
   struct trigger_event ev = {
     .trigger = trigger,
     .time = time,
   };
-  if (xQueueSendFromISR(decode_queue_handle, &ev, NULL)) {
-    /* TODO: This should report some type of error, right? */
-  }
+  publish_trigger_event(&ev);
 }
 
 void TIMER1_IRQHandler(void) {
@@ -163,18 +154,16 @@ void TIMER1_IRQHandler(void) {
   }
 
   
-  if (decode_queue_handle) {
-    if (cc0_fired && cc1_fired && time_before(cc1, cc0)) {
+  if (cc0_fired && cc1_fired && time_before(cc1, cc0)) {
 
-      decoder_update_scheduling(1, cc1);
+    decoder_update_scheduling(1, cc1);
+    decoder_update_scheduling(0, cc0);
+  } else {
+    if (cc0_fired) {
       decoder_update_scheduling(0, cc0);
-    } else {
-      if (cc0_fired) {
-        decoder_update_scheduling(0, cc0);
-      }
-      if (cc1_fired) {
-        decoder_update_scheduling(1, cc1);
-      }
+    }
+    if (cc1_fired) {
+      decoder_update_scheduling(1, cc1);
     }
   }
 
@@ -199,8 +188,6 @@ void TIMER1_IRQHandler(void) {
     TIMER_INTF(TIMER1) = ~TIMER_INTF_CH3IF;
     scheduler_callback_timer_execute();
   }
-
-  portYIELD_FROM_ISR(pdTRUE);
 }
 
 void schedule_event_timer(timeval_t time) {
@@ -219,28 +206,12 @@ void schedule_event_timer(timeval_t time) {
 }
 
 void DMA1_Channel1_IRQHandler(void) {
-  uint32_t before = cycle_count();
-  bool retired = false;
   if (dma_interrupt_flag_get(DMA1, DMA_CH1, DMA_INT_FLAG_FTF) == SET) {
     dma_interrupt_flag_clear(DMA1, DMA_CH1, DMA_INT_FLAG_FTF);
-    retired = stm32_buffer_swap();
+    stm32_buffer_swap();
   }
 
-  /* If we overran, abort */
-  if (dma_using_memory_get(DMA1, DMA_CH1) != stm32_current_buffer()) {
-    abort();
-  }
 
-  /* In the event of a transfer error, abort */
-  if (dma_interrupt_flag_get(DMA1, DMA_CH1, DMA_INT_FLAG_TAE)) {
-    abort();
-  }
-
-  if (reschedule_task_handle && retired) {
-    BaseType_t yield = pdFALSE;
-    xTaskNotifyFromISR(reschedule_task_handle, 0, eNoAction, &yield);
-    portYIELD_FROM_ISR(yield);
-  }
 }
 
 static void setup_scheduled_outputs(void) {

@@ -36,7 +36,7 @@ OBJS+= libssp.a libssp_nonshared.a
 
 ASFLAGS= -g -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mthumb -mfloat-abi=hard
 
-CFLAGS= -DNDEBUG -ffunction-sections -fdata-sections -O3 -flto
+CFLAGS= -DNDEBUG -ffunction-sections -fdata-sections -O3 -g3
 CFLAGS+= -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mthumb -mcpu=cortex-m4 -pipe
 CFLAGS+= -DSTM32F4 -DSTM32F4xx -DSTM32F427xx
 CFLAGS+= -DPLATFORMIO -DUSBD_SOF_DISABLED

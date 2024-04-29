@@ -271,10 +271,10 @@ void platform_init() {
 //  setup_watchdog();
   setup_gpios();
 
-  stm32f4_configure_scheduler();
-  stm32f4_configure_usb();
-  stm32f4_configure_adc();
-  stm32f4_configure_pwm();
+ // stm32f4_configure_scheduler();
+//  stm32f4_configure_usb();
+//  stm32f4_configure_adc();
+//  stm32f4_configure_pwm();
 
 
   *((volatile uint32_t *)0xe000ed20) |= (255 << 16);

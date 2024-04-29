@@ -3,9 +3,6 @@
 
 #include "gd32f4xx.h"
 
-#include "FreeRTOS.h"
-#include "queue.h"
-
 #ifdef SPI_TLV2553
 #include "tlv2553_adc.h"
 #define SPI_FREQ_DIVIDER SPI_PSC_8 /* 12 MHz */
@@ -110,12 +107,8 @@ void DMA1_Channel0_IRQHandler(void) {
       update.values[i] = raw_value;
     }
     
-    BaseType_t yield = pdFALSE;
-    xQueueSendFromISR(adc_queue_handle, &update, &yield);
-
     process_knock_inputs(sequence);
-
-    portYIELD_FROM_ISR(yield);
+    publish_raw_adc(&update);
   }
 }
 

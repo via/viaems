@@ -16,10 +16,9 @@ int32_t engine_pump_queue;
 struct engine_pump_update engine_pump_queue_data[2];
 
 uint32_t before_cycles __attribute__((externally_visible)) = 0;
-uint32_t duration __attribute__((externally_visible)) = 0;
+volatile uint32_t duration __attribute__((externally_visible)) = 0;
 
 void publish_trigger_event(const struct trigger_event *ev) {
-  before_cycles = cycle_count();
   uak_queue_put(decoder_queue, ev);
 }
 
@@ -36,7 +35,6 @@ static void decoder_loop(void *unused) {
   while (true) {
     struct trigger_event ev;
     uak_queue_get(decoder_queue, &ev);
-    duration = cycle_count() - before_cycles;
 
     set_gpio(2, 1);
     decoder_decode(&ev);
@@ -97,7 +95,7 @@ uint32_t console_thread_stack[512];
 static void console_loop(void *_unused) {
   (void)_unused;
   while (true) {
-    console_process();
+//    console_process();
   }
 }
 
@@ -105,6 +103,7 @@ int32_t sim_thread;
 uint32_t sim_thread_stack[128];
 
 void trigger_sim() {
+  before_cycles = cycle_count();
   uak_notify_set(sim_thread, 0x1);
 }
 
@@ -112,6 +111,8 @@ static void sim_loop(void *_unused) {
   (void)_unused;
   while (true) {
     uak_wait_for_notify();
+    duration = cycle_count() - before_cycles;
+    __asm__("bkpt");
     execute_test_trigger(NULL);
   }
 }
@@ -269,7 +270,37 @@ void tasks_loop() {
   }
 }
 
+int32_t t1, t2;
+uint32_t t1_stack[128];
+uint32_t t2_stack[128];
+
+int32_t q1;
+uint32_t q1_data[2];
+
+void t1_loop(void *) {
+  while (true) {
+    for (int i = 0; i < 100000; i++);
+    __asm__("bkpt");
+    uint32_t c = cycle_count();
+//    uak_queue_put(q1, &c);
+    uak_notify_set(t2, c);
+    uak_wait_for_notify();
+  }
+}
+
+void t2_loop(void *) {
+  while (true) {
+  //  uint32_t value;
+ //   uak_queue_get(q1, &value);
+    uint32_t value = uak_wait_for_notify();
+    duration = cycle_count() - value;
+    __asm__("bkpt");
+    uak_notify_set(t1, 1);
+  }
+}
+
 void start_controllers(void) {
+#if 0
   decoder_queue = uak_queue_create(decoder_queue_data, sizeof(struct trigger_event), 2);
   adc_queue = uak_queue_create(adc_queue_data, sizeof(struct adc_update), 2);
   engine_pump_queue = uak_queue_create(engine_pump_queue_data, sizeof(struct engine_pump_update), 2);
@@ -281,8 +312,16 @@ void start_controllers(void) {
   console_thread = uak_fiber_create(console_loop, 0, 3, console_thread_stack, sizeof(console_thread_stack));
   sim_thread = uak_fiber_create(sim_loop, 0, 1, sim_thread_stack, sizeof(sim_thread_stack));
 
+#endif
+
+#if 1
+  q1 = uak_queue_create(q1_data, sizeof(uint32_t), 2);
+  t1 = uak_fiber_create(t1_loop, 0, 2, t1_stack, sizeof(t1_stack));
+  t2 = uak_fiber_create(t2_loop, 0, 1, t2_stack, sizeof(t2_stack));
+#endif
+
   platform_init(0, NULL);
-  set_test_trigger_rpm(5000);
+//  set_test_trigger_rpm(5000);
 
   void fiber_md_start(void);
   fiber_md_start();
