@@ -275,12 +275,14 @@ uint32_t t1_stack[128];
 uint32_t t2_stack[128];
 
 int32_t q1;
-uint32_t q1_data[2];
+struct adc_update q1_data[2];
 
 void t1_loop(void *) {
   while (true) {
     uint32_t c = cycle_count();
-    uak_queue_put(q1, &c);
+    struct adc_update u;
+    u.time = c;
+    uak_queue_put(q1, &u);
 //    uak_notify_set(t2, c);
     uak_wait_for_notify();
   }
@@ -289,9 +291,10 @@ void t1_loop(void *) {
 void t2_loop(void *) {
   while (true) {
     uint32_t value;
-    uak_queue_get(q1, &value);
+    struct adc_update u;
+    uak_queue_get(q1, &u);
 //    uint32_t value = uak_wait_for_notify();
-    duration = cycle_count() - value;
+    duration = cycle_count() - u.time;
     uak_notify_set(t1, 1);
   }
 }
@@ -312,7 +315,7 @@ void start_controllers(void) {
 #endif
 
 #if 1
-  q1 = uak_queue_create(q1_data, sizeof(uint32_t), 2);
+  q1 = uak_queue_create(q1_data, sizeof(struct adc_update), 2);
   t1 = uak_fiber_create(t1_loop, 0, 2, t1_stack, sizeof(t1_stack));
   t2 = uak_fiber_create(t2_loop, 0, 1, t2_stack, sizeof(t2_stack));
 #endif

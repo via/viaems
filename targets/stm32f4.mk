@@ -47,6 +47,7 @@ CFLAGS+= -I${LIBUSB}/inc
 CFLAGS+= -DTICKRATE=4000000 -DSPI_${SPI_ADC}
 CFLAGS+= -Icontrib/uak
 CFLAGS+= -Isrc/platforms/stm32f4
+#CFLAGS+= -Wstrict-aliasing=2 -fno-builtin-memcpy -fno-builtin-memmove -fno-builtin
 
 LDFLAGS+= -lc -lnosys -L ${OBJDIR} -nostartfiles -Wl,--gc-sections
 LDFLAGS+= -T src/platforms/stm32f4/stm32f4.ld

@@ -2,6 +2,7 @@
 
 MEMORY
 {
+  code(rx) : ORIGIN = 0x00000000, LENGTH = 112K,
 	rom(rx) : ORIGIN = 0x08000000, LENGTH = 512K
 
   /* Store configrom in the first 64K of the second bank.  

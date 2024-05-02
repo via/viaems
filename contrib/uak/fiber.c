@@ -12,10 +12,12 @@ static struct executor executor = { 0 };
 static void memcpy_aligned4(char *restrict dst, const char *restrict src, size_t n) {
   uint32_t *restrict u32_dst = dst;
   uint32_t *restrict u32_src = src;
-  uint32_t u32_n = n & ~(0x3U);
-  while (n > 0) {
+  uint32_t u32_n = n >> 2;
+  while (u32_n > 0) {
     *u32_dst = *u32_src;
-    n--;
+    u32_dst++;
+    u32_src++;
+    u32_n--;
   }
 }
 
@@ -171,8 +173,7 @@ bool uak_queue_get_nonblock(int32_t queue_handle, void *msg) {
   if (q->read != q->write) {
     char *cdata = q->data;
     uint32_t read = q->read;
-    uint32_t *aligned_cdata = (uint32_t *)&cdata[read * q->msg_size];
-    memcpy_aligned4(msg, aligned_cdata, q->msg_size);
+    memcpy_aligned4(msg, &q->data[read * q->msg_size], q->msg_size);
     valid = true;
 
     read += 1;
@@ -204,7 +205,7 @@ bool uak_queue_get(int32_t queue_handle, void *msg) {
 
   assert(q->read != q->write);
   uint32_t read = q->read;
-  memcpy_aligned4(msg, &q->data[read * q->msg_size], q->msg_size);
+  memcpy(msg, &q->data[read * q->msg_size], q->msg_size);
 
   q->read = queue_next_idx(read, q->n_msgs);
 
@@ -225,7 +226,7 @@ bool uak_queue_put(int32_t queue_handle, const void *msg) {
     return false;
   }
 
-  memcpy_aligned4(&q->data[write * q->msg_size], msg, q->msg_size);
+  memcpy(&q->data[write * q->msg_size], msg, q->msg_size);
   q->write = next_write;
 
   if (q->waiter && q->waiter->state == UAK_BLOCK_ON_QUEUE) {

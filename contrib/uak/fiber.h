@@ -5,6 +5,8 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+#include "sensors.h"
+
 
 /* Create a fiber and return a handle to the fiber.
  * Return values < 0 indicate error.
