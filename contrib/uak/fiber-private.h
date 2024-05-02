@@ -26,7 +26,7 @@ struct fiber {
 struct queue {
   uint32_t n_msgs;
   uint8_t msg_size;
-  void *data;
+  char *data;
 
   uint32_t read;
   uint32_t write;
@@ -81,8 +81,10 @@ void uak_md_fiber_create(struct fiber *);
 
 
 /* Global scheduler lock implementation */
-void uak_md_lock_scheduler(void);
-void uak_md_unlock_scheduler(void);
+#if 0
+uint32_t uak_md_lock_scheduler(void);
+void uak_md_unlock_scheduler(uint32_t);
+#endif
 
 /* Pend a scheduler call:
  * - If this is called from an ISR, it is expected that the ISR

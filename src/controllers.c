@@ -279,22 +279,19 @@ uint32_t q1_data[2];
 
 void t1_loop(void *) {
   while (true) {
-    for (int i = 0; i < 100000; i++);
-    __asm__("bkpt");
     uint32_t c = cycle_count();
-//    uak_queue_put(q1, &c);
-    uak_notify_set(t2, c);
+    uak_queue_put(q1, &c);
+//    uak_notify_set(t2, c);
     uak_wait_for_notify();
   }
 }
 
 void t2_loop(void *) {
   while (true) {
-  //  uint32_t value;
- //   uak_queue_get(q1, &value);
-    uint32_t value = uak_wait_for_notify();
+    uint32_t value;
+    uak_queue_get(q1, &value);
+//    uint32_t value = uak_wait_for_notify();
     duration = cycle_count() - value;
-    __asm__("bkpt");
     uak_notify_set(t1, 1);
   }
 }

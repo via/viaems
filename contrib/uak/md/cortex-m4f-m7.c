@@ -97,18 +97,15 @@ void SVC_Handler(void) {
 }
 
 
-static uint32_t primask = 0;
-void uak_md_lock_scheduler() {
+static uint32_t uak_md_lock_scheduler() {
+  uint32_t result;
   __asm__("mrs %0, PRIMASK\n" :
-          "=r"(primask) : );
-  __asm__("cpsid i");
-  __asm__("dsb");
-  __asm__("isb");
-
+          "=r"(result) : );
+  __asm__("cpsid i" : : : "memory");
+ return result;
 }
 
-void uak_md_unlock_scheduler() {
-  __asm__("msr PRIMASK, %0" : : "r"(primask));
-  __asm__("isb");
+static void uak_md_unlock_scheduler(uint32_t primask) {
+  __asm__("msr PRIMASK, %0" : : "r"(primask) : "memory");
 }
 

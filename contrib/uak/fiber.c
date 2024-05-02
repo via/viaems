@@ -9,6 +9,17 @@ static struct executor executor = { 0 };
 
 #include "md/cortex-m4f-m7.c"
 
+static void memcpy_aligned4(char *restrict dst, const char *restrict src, size_t n) {
+  uint32_t *restrict u32_dst = dst;
+  uint32_t *restrict u32_src = src;
+  uint32_t u32_n = n & ~(0x3U);
+  while (n > 0) {
+    *u32_dst = *u32_src;
+    n--;
+  }
+}
+
+
 #if 1
 static uint32_t queue_next_idx(uint32_t current, uint32_t max) {
   if (current == max - 1) {
@@ -102,24 +113,24 @@ void uak_fiber_reschedule() {
 }
 
 uint32_t uak_wait_for_notify() {
-  uak_md_lock_scheduler();
+  uint32_t posture = uak_md_lock_scheduler();
   struct fiber *f = executor.current;
   if (f->notification_value == 0) {
     uak_suspend(f, UAK_BLOCK_ON_NOTIFY);
     uak_md_request_reschedule();
-    uak_md_unlock_scheduler();
-    uak_md_lock_scheduler();
+    uak_md_unlock_scheduler(posture);
+    posture = uak_md_lock_scheduler();
   }
   uint32_t result = f->notification_value;
   f->notification_value = 0;
-  uak_md_unlock_scheduler();
+  uak_md_unlock_scheduler(posture);
   return result;
 }
 
 
 void uak_notify_set(int32_t fiber, uint32_t value) {
   struct fiber *f = &executor.fibers[fiber];
-  uak_md_lock_scheduler();
+  uint32_t posture = uak_md_lock_scheduler();
   f->notification_value = value;
   if (f->state == UAK_BLOCK_ON_NOTIFY) {
     uak_make_runnable(f);
@@ -127,7 +138,7 @@ void uak_notify_set(int32_t fiber, uint32_t value) {
       uak_md_request_reschedule();
     }
   };
-  uak_md_unlock_scheduler();
+  uak_md_unlock_scheduler(posture);
 }
 
 /* Initializes fiber scheduler with an array of fibers `f` with length `n`. */
@@ -161,7 +172,7 @@ bool uak_queue_get_nonblock(int32_t queue_handle, void *msg) {
     char *cdata = q->data;
     uint32_t read = q->read;
     uint32_t *aligned_cdata = (uint32_t *)&cdata[read * q->msg_size];
-    memcpy(msg, aligned_cdata, q->msg_size);
+    memcpy_aligned4(msg, aligned_cdata, q->msg_size);
     valid = true;
 
     read += 1;
@@ -170,14 +181,14 @@ bool uak_queue_get_nonblock(int32_t queue_handle, void *msg) {
     }
     q->read = read;
   }
-  uak_md_unlock_scheduler();
+  uak_md_unlock_scheduler(0);
 
   return valid;
 }
 
 bool uak_queue_get(int32_t queue_handle, void *msg) {
   struct queue *q = &executor.queues[queue_handle];
-  uak_md_lock_scheduler();
+  uint32_t lock = uak_md_lock_scheduler();
   if (q->read == q->write) {
     assert(q->waiter == NULL);
 
@@ -185,45 +196,36 @@ bool uak_queue_get(int32_t queue_handle, void *msg) {
     q->waiter = executor.current;
     uak_suspend(executor.current, UAK_BLOCK_ON_QUEUE);
     uak_md_request_reschedule();
-    uak_md_unlock_scheduler();
+    uak_md_unlock_scheduler(lock);
 
-    uak_md_lock_scheduler();
+    lock = uak_md_lock_scheduler();
     q->waiter = NULL;
   }
 
   assert(q->read != q->write);
   uint32_t read = q->read;
-  uint8_t *cdata = q->data;
-  uint8_t *aligned_cdata = &cdata[read * q->msg_size];
-  memcpy(msg, aligned_cdata, q->msg_size);
+  memcpy_aligned4(msg, &q->data[read * q->msg_size], q->msg_size);
 
-  read += 1;
-  if (read >= q->n_msgs) {
-    read = 0;
-  }
-  q->read = read;
-  uak_md_unlock_scheduler();
+  q->read = queue_next_idx(read, q->n_msgs);
+
+  uak_md_unlock_scheduler(lock);
   return true;
 }
 
 bool uak_queue_put(int32_t queue_handle, const void *msg) {
   struct queue *q = &executor.queues[queue_handle];
-  uak_md_lock_scheduler();
+  uint32_t lock = uak_md_lock_scheduler();
 
-  uint8_t *cdata = q->data;
   uint32_t write = q->write;
-  uint32_t next_write = write + 1;
-  if (next_write >= q->n_msgs) {
-    next_write = 0;
-  }
+  uint32_t next_write = queue_next_idx(write, q->n_msgs);
+
   if (next_write == q->read) {
     /* full! */
-    uak_md_unlock_scheduler();
+    uak_md_unlock_scheduler(lock);
     return false;
   }
 
-  uint8_t *aligned_cdata = &cdata[write * q->msg_size];
-  memcpy(aligned_cdata, msg, q->msg_size);
+  memcpy_aligned4(&q->data[write * q->msg_size], msg, q->msg_size);
   q->write = next_write;
 
   if (q->waiter && q->waiter->state == UAK_BLOCK_ON_QUEUE) {
@@ -233,6 +235,6 @@ bool uak_queue_put(int32_t queue_handle, const void *msg) {
     }
   }
 
-  uak_md_unlock_scheduler();
+  uak_md_unlock_scheduler(lock);
   return true;
 }
