@@ -72,13 +72,10 @@ static void reset_fired_event(struct output_event *ev) {
 /* Attempt to deschedule an output event. If the start event can't be disabled,
  * do nothing. */
 void deschedule_event(struct output_event *ev) {
-  disable_interrupts();
-
   int success = sched_entry_disable(&ev->start);
   if (success) {
     sched_entry_disable(&ev->stop);
   }
-  enable_interrupts();
 }
 
 void invalidate_scheduled_events(struct output_event *evs, int n) {
@@ -108,8 +105,6 @@ static void schedule_output_event_safely(struct output_event *ev,
   ev->stop.pin = ev->pin;
   ev->stop.val = ev->inverted ? 1 : 0;
 
-  disable_interrupts();
-
   if (event_is_unscheduled(ev)) {
     /* Schedule start first, if it succeeds we're gauranteed to be able to
      * schedule the stop and be done, if we failed, leave the event unscheduled
@@ -129,8 +124,6 @@ static void schedule_output_event_safely(struct output_event *ev,
     }
     sched_entry_enable(&ev->stop, newstop);
   }
-
-  enable_interrupts();
 }
 
 static int schedule_ignition_event(struct output_event *ev,

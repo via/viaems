@@ -36,7 +36,7 @@ OBJS+= libssp.a libssp_nonshared.a
 
 ASFLAGS= -g -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mthumb -mfloat-abi=hard
 
-CFLAGS= -DNDEBUG -ffunction-sections -fdata-sections -O3 -g3
+CFLAGS= -DNDEBUG -ffunction-sections -fdata-sections -O3 -flto -g3
 CFLAGS+= -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mthumb -mcpu=cortex-m4 -pipe
 CFLAGS+= -DSTM32F4 -DSTM32F4xx -DSTM32F427xx
 CFLAGS+= -DPLATFORMIO -DUSBD_SOF_DISABLED
@@ -47,7 +47,6 @@ CFLAGS+= -I${LIBUSB}/inc
 CFLAGS+= -DTICKRATE=4000000 -DSPI_${SPI_ADC}
 CFLAGS+= -Icontrib/uak
 CFLAGS+= -Isrc/platforms/stm32f4
-#CFLAGS+= -Wstrict-aliasing=2 -fno-builtin-memcpy -fno-builtin-memmove -fno-builtin
 
 LDFLAGS+= -lc -lnosys -L ${OBJDIR} -nostartfiles -Wl,--gc-sections
 LDFLAGS+= -T src/platforms/stm32f4/stm32f4.ld

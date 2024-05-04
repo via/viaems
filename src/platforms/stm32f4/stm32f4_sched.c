@@ -173,7 +173,7 @@ static void setup_scheduled_outputs(void) {
   GPIOD->OSPEEDR = 0xffffffff; /* All GPIOD set to High speed*/
 
   /* Enable Interrupt on buffer swap at highest priority */
-  NVIC_SetPriority(DMA2_Stream1_IRQn, 0);
+  NVIC_SetPriority(DMA2_Stream1_IRQn, 8);
   NVIC_EnableIRQ(DMA2_Stream1_IRQn);
 
   /* Use DMA2 Stream 1 Channel 7 to write to GPIOD's BSRR whenever TIMER8

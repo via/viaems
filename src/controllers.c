@@ -92,10 +92,15 @@ static void engine_loop(void *unused) {
 int32_t console_thread;
 uint32_t console_thread_stack[512];
 
+void trigger_console() {
+  uak_notify_set(console_thread, 0x1);
+}
+
 static void console_loop(void *_unused) {
   (void)_unused;
   while (true) {
-//    console_process();
+    uak_wait_for_notify();
+    console_process();
   }
 }
 
@@ -112,7 +117,6 @@ static void sim_loop(void *_unused) {
   while (true) {
     uak_wait_for_notify();
     duration = cycle_count() - before_cycles;
-    __asm__("bkpt");
     execute_test_trigger(NULL);
   }
 }
@@ -299,29 +303,38 @@ void t2_loop(void *) {
   }
 }
 
+int32_t idle_thread;
+uint32_t idle_loop_stack[32];
+static void idle_loop(void *unused) {
+  while (true) {
+  }
+}
+
 void start_controllers(void) {
-#if 0
+#if 1
   decoder_queue = uak_queue_create(decoder_queue_data, sizeof(struct trigger_event), 2);
   adc_queue = uak_queue_create(adc_queue_data, sizeof(struct adc_update), 2);
   engine_pump_queue = uak_queue_create(engine_pump_queue_data, sizeof(struct engine_pump_update), 2);
 
-  decoder_thread = uak_fiber_create(decoder_loop, 0, 2, decoder_thread_stack, sizeof(decoder_thread_stack));
-  sensor_thread = uak_fiber_create(sensor_loop, 0, 2, sensor_thread_stack, sizeof(sensor_thread_stack));
-  engine_pump_thread = uak_fiber_create(engine_loop, 0, 2, engine_pump_stack, sizeof(engine_pump_stack));
+  decoder_thread = uak_fiber_create(decoder_loop, 0, 1, decoder_thread_stack, sizeof(decoder_thread_stack));
+  sensor_thread = uak_fiber_create(sensor_loop, 0, 1, sensor_thread_stack, sizeof(sensor_thread_stack));
+  engine_pump_thread = uak_fiber_create(engine_loop, 0, 1, engine_pump_stack, sizeof(engine_pump_stack));
 
-  console_thread = uak_fiber_create(console_loop, 0, 3, console_thread_stack, sizeof(console_thread_stack));
-  sim_thread = uak_fiber_create(sim_loop, 0, 1, sim_thread_stack, sizeof(sim_thread_stack));
+  console_thread = uak_fiber_create(console_loop, 0, 2, console_thread_stack, sizeof(console_thread_stack));
+  sim_thread = uak_fiber_create(sim_loop, 0, 0, sim_thread_stack, sizeof(sim_thread_stack));
+
+  idle_thread = uak_fiber_create(idle_loop, 0, 3, idle_loop_stack, sizeof(idle_loop_stack));
 
 #endif
 
-#if 1
+#if 0
   q1 = uak_queue_create(q1_data, sizeof(struct adc_update), 2);
   t1 = uak_fiber_create(t1_loop, 0, 2, t1_stack, sizeof(t1_stack));
   t2 = uak_fiber_create(t2_loop, 0, 1, t2_stack, sizeof(t2_stack));
 #endif
 
   platform_init(0, NULL);
-//  set_test_trigger_rpm(5000);
+  set_test_trigger_rpm(5000);
 
   void fiber_md_start(void);
   fiber_md_start();

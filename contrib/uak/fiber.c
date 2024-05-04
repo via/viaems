@@ -9,20 +9,6 @@ static struct executor executor = { 0 };
 
 #include "md/cortex-m4f-m7.c"
 
-static void memcpy_aligned4(char *restrict dst, const char *restrict src, size_t n) {
-  uint32_t *restrict u32_dst = dst;
-  uint32_t *restrict u32_src = src;
-  uint32_t u32_n = n >> 2;
-  while (u32_n > 0) {
-    *u32_dst = *u32_src;
-    u32_dst++;
-    u32_src++;
-    u32_n--;
-  }
-}
-
-
-#if 1
 static uint32_t queue_next_idx(uint32_t current, uint32_t max) {
   if (current == max - 1) {
     return 0;
@@ -30,17 +16,6 @@ static uint32_t queue_next_idx(uint32_t current, uint32_t max) {
     return current + 1;
   }
 }
-#else
-static uint32_t queue_next_idx(uint32_t current, uint32_t max) {
-  if (current == 0) {
-    return max - 1;
-  } else {
-    return current - 1;
-  }
-}
-
-#endif
-
 
 static void uak_suspend(struct fiber *f, enum uak_fiber_state reason) {
   assert(f->state == UAK_RUNNABLE);
@@ -173,7 +148,7 @@ bool uak_queue_get_nonblock(int32_t queue_handle, void *msg) {
   if (q->read != q->write) {
     char *cdata = q->data;
     uint32_t read = q->read;
-    memcpy_aligned4(msg, &q->data[read * q->msg_size], q->msg_size);
+    memcpy(msg, &q->data[read * q->msg_size], q->msg_size);
     valid = true;
 
     read += 1;

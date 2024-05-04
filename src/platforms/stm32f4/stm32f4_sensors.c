@@ -100,7 +100,7 @@ __attribute__((section(".dmadata"))) spi_rx_buffer[2][NUM_SPI_TX] = { 0 };
 void setup_spi1_rx_dma(void) {
 
   /* Enable interrupt for dma completion */
-  NVIC_SetPriority(DMA2_Stream0_IRQn, 12);
+  NVIC_SetPriority(DMA2_Stream0_IRQn, 10);
   NVIC_EnableIRQ(DMA2_Stream0_IRQn);
 
   /* Use DMA2 Stream 0 Channel 3 (SPI1_RX) to read SPI_DR into the receive
@@ -192,7 +192,7 @@ static void setup_freq_pw_input(void) {
   }
 
   NVIC_EnableIRQ(TIM1_BRK_TIM9_IRQn);
-  NVIC_SetPriority(TIM1_BRK_TIM9_IRQn, 14);
+  NVIC_SetPriority(TIM1_BRK_TIM9_IRQn, 11);
   TIM9->CR1 |= TIM_CR1_CEN;
 
   DBGMCU->APB2FZ |= DBGMCU_APB2_FZ_DBG_TIM9_STOP;

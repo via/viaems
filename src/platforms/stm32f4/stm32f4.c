@@ -106,7 +106,7 @@ static void setup_clocks() {
               _VAL2FLD(RCC_CFGR_HPRE, 0); /* AHB = HCLK = 168 MHz */
 
   FLASH->ACR =
-    FLASH_ACR_LATENCY_5WS | FLASH_ACR_ICEN | FLASH_ACR_DCEN | FLASH_ACR_PRFTEN;
+    FLASH_ACR_LATENCY_5WS | FLASH_ACR_ICEN | FLASH_ACR_DCEN |0;// FLASH_ACR_PRFTEN;
 
   while ((RCC->CR & RCC_CR_PLLRDY) == 0)
     ; /* Wait for PLL lock */
@@ -265,18 +265,19 @@ void platform_init() {
 
   setup_dwt();
 
-  NVIC_SetPriorityGrouping(3); /* 16 priority preemption levels */
+  NVIC_SetPriorityGrouping(0); /* 16 priority preemption levels */
 
   //setup_systick();
 //  setup_watchdog();
   setup_gpios();
 
- // stm32f4_configure_scheduler();
-//  stm32f4_configure_usb();
-//  stm32f4_configure_adc();
-//  stm32f4_configure_pwm();
+  stm32f4_configure_scheduler();
+  stm32f4_configure_usb();
+  stm32f4_configure_adc();
+  stm32f4_configure_pwm();
 
 
+  /* TODO set pendsv appropriately. maybe a helper? */
   *((volatile uint32_t *)0xe000ed20) |= (255 << 16);
 }
 
@@ -284,7 +285,7 @@ void platform_benchmark_init() {
   enable_peripherals();
   setup_clocks();
   setup_dwt();
-  NVIC_SetPriorityGrouping(3); /* 16 priority preemption levels */
+  NVIC_SetPriorityGrouping(0); /* 16 priority preemption levels */
   stm32f4_configure_usb();
 }
 

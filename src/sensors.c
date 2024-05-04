@@ -131,12 +131,8 @@ static void sensor_convert(struct sensor_input *in, float raw, timeval_t time) {
     new_derivative = process_derivative(in, new_value);
   }
 
-  /* in->value and in->derivative are read by decode/calculation in interrupts,
-   * so these race */
-  disable_interrupts();
   in->value = new_value;
   in->derivative = new_derivative;
-  enable_interrupts();
 }
 
 void sensor_update_freq(const struct freq_update *u) {

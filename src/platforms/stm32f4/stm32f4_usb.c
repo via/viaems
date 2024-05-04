@@ -5,6 +5,8 @@
 #include "usb.h"
 #include "usb_cdc.h"
 
+#include "controllers.h"
+
 #define CDC_EP0_SIZE 0x08
 #define CDC_RXD_EP 0x01
 #define CDC_TXD_EP 0x81
@@ -243,9 +245,18 @@ static usbd_respond cdc_control(usbd_device *dev,
   return usbd_fail;
 }
 
+static void cdc_tx(usbd_device *dev, uint8_t event, uint8_t ep) {
+  if (ep != CDC_TXD_EP) {
+    return;
+  }
+  trigger_console();
+}
+
 static void cdc_rx(usbd_device *dev, uint8_t event, uint8_t ep) {
   (void)event;
+
   if (ep != CDC_RXD_EP) {
+    trigger_console();
     return;
   }
   char buf[64];
@@ -260,6 +271,7 @@ static void cdc_rx(usbd_device *dev, uint8_t event, uint8_t ep) {
     memcpy(usb_rx_buf + usb_rx_len, buf, ret);
     usb_rx_len += ret;
   }
+  trigger_console();
 }
 
 static usbd_respond cdc_setconf(usbd_device *dev, uint8_t cfg) {
@@ -279,6 +291,7 @@ static usbd_respond cdc_setconf(usbd_device *dev, uint8_t cfg) {
       dev, CDC_TXD_EP, USB_EPTYPE_BULK | USB_EPTYPE_DBLBUF, CDC_DATA_SZ);
     usbd_ep_config(dev, CDC_NTF_EP, USB_EPTYPE_INTERRUPT, CDC_NTF_SZ);
     usbd_reg_endpoint(dev, CDC_RXD_EP, cdc_rx);
+//    usbd_reg_endpoint(dev, CDC_TXD_EP, cdc_tx);
     usbd_ep_write(dev, CDC_TXD_EP, 0, 0);
     return usbd_ack;
   default:
@@ -332,7 +345,7 @@ void stm32f4_configure_usb(void) {
                    _VAL2FLD(GPIO_AFRH_AFSEL12, 10); /* AF10 (USB FS)*/
 
   cdc_init_usbd();
-  NVIC_SetPriority(OTG_FS_IRQn, 15);
+  NVIC_SetPriority(OTG_FS_IRQn, 14);
   NVIC_EnableIRQ(OTG_FS_IRQn);
   usbd_enable(&udev, true);
   usbd_connect(&udev, true);
