@@ -16,3 +16,14 @@ alarms:
 nice to haves:
   mpu isolation of individual task threads
   mpu isolation of groups of tasks data/bss
+
+
+
+re: mpus:
+  svc is used by unpriv code
+  pendsv remains a task switch
+  but task switch should take action when returning to blocked threads:
+    - if they're blocked on a notification, and we're waking it up, put the
+      notification value into r0
+    - if they're blocked on a blocking queue get, etc, perform the memcpy and
+      queue ptr management

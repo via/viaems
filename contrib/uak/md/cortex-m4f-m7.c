@@ -17,14 +17,19 @@ void uak_md_fiber_create(struct fiber *f) {
   uint32_t *sp = &f->stack[f->stack_size / 4];
   *(sp - 9) = 0xfffffffd;
   *(sp - 8) = 0; /* r0 */
-  *(sp - 7) = 0; /* r1 */
-  *(sp - 6) = 0; /* r2 */
-  *(sp - 5) = 0; /* r3 */
-  *(sp - 4) = 0; /* r12 */
+  *(sp - 7) = 1; /* r1 */
+  *(sp - 6) = 2; /* r2 */
+  *(sp - 5) = 3; /* r3 */
+  *(sp - 4) = 12; /* r12 */
   *(sp - 3) = (uint32_t)hang_forever; /* lr */
   *(sp - 2) = (uint32_t)f->entry; /* pc */
   *(sp - 1) = 0x21000000; /* psr */
   f->_md = sp - 17;
+}
+
+static void uak_md_set_return_value(struct fiber *f, uint32_t value) {
+  uint32_t *sp = f->_md;
+  sp[9] = value; /* Set r0 */
 }
 
 
@@ -37,9 +42,22 @@ void uak_md_request_reschedule() {
 void fiber_md_start() {
   uak_fiber_reschedule();
   __asm__(
-      "svc 0\n"
+      "mov r0, %0\n"
+      "ldmia r0!, {r4-r11, lr}\n"
+      "msr psp, r0\n"
+
+      /* Set CONTROL.SPSEL to use PSP in thread mode */
+      "mrs r0, control\n" 
+      "orr r0, r0, #2\n"
+      "bic r0, r0, #4\n" /* Clear FP active */
+      "msr control, r0\n"
+      "isb\n"
+
+
+      "ldmia sp!, {r0-r3, r12, lr}\n"
+      "pop {pc}\n" 
       "nop\n"
-      );
+      : : "r" (executor.current->_md));
 }
 
 extern struct executor executor;
@@ -60,7 +78,6 @@ __asm__ (
         ".global PendSV_Handler\n"
          ".thumb_func\n"
         "PendSV_Handler:\n"
-        "cpsid i\n"
 
         /* Save the registers that aren't hardware-saved onto the stack still
          * pointed at by PSP */
@@ -81,19 +98,27 @@ __asm__ (
         "msr psp, r0\n"
         /* We jump to the same LR that was saved to preserve FP state, otherwise
          * hardware will restore frame very wrong */
-        "cpsie i\n"
         "bx lr\n"
 );
 
-void SVC_Handler(void) {
-  __asm__(
-        "mov r0, %0\n"
-        /* Restore non-hardware-saved context */
-        "ldmia r0!, {r4-r11, lr}\n"
-        "msr psp, r0\n"
-        "bx lr\n"
-      : :  "r" (executor.current->_md));
+void internal_uak_notify_set(int32_t fiber, uint32_t value);
+int32_t internal_wait_on_notify(int32_t fiber);
 
+int32_t SVC_Handler(uint32_t syscall, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
+  switch (syscall) {
+    case 1: {
+      int32_t fiber_id = (int32_t)arg1;;
+      uint32_t value = arg2;
+      internal_uak_notify_set(fiber_id, value);
+      return 0;
+            }
+    case 2: {
+      int32_t fiber_id = (int32_t)arg1;;
+      return internal_wait_on_notify(fiber_id);
+            }
+    default:
+      break;
+  }
 }
 
 

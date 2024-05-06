@@ -22,6 +22,26 @@ void publish_trigger_event(const struct trigger_event *ev) {
   uak_queue_put(decoder_queue, ev);
 }
 
+__attribute__((externally_visible)) 
+__attribute__((used)) 
+bool do_thing(uint32_t vals) {
+  int8_t val1 = vals >> 24;
+  int8_t val2 = (vals & 0xff0000)  >> 16;
+  int8_t val3 = (vals & 0xff00)  >> 8;
+  int8_t val4 = vals & 0xff;
+  val1 -= 1;
+  val2 -= 1;
+  val3 -= 1;
+  val4 -= 1;
+  if ((val1 == 0) ||
+      (val2 == 0) ||
+      (val3 == 0) ||
+      (val4 == 0)) { 
+    return true;
+  } 
+  return false;
+}
+
 
 void publish_raw_adc(const struct adc_update *ev) {
   uak_queue_put(adc_queue, ev);
@@ -281,24 +301,47 @@ uint32_t t2_stack[128];
 int32_t q1;
 struct adc_update q1_data[2];
 
+__attribute__((naked))
+static inline uint32_t syscall2(uint32_t number,
+                      uint32_t arg1,
+                      uint32_t arg2) {
+  __asm__("svc 0\n"
+          "bx lr\n");
+}
+
+__attribute__((naked))
+
+static inline uint32_t syscall1(uint32_t number,
+                      uint32_t arg1) {
+  __asm__("svc 0\n"
+          "bx lr\n");
+}
+
 void t1_loop(void *) {
   while (true) {
     uint32_t c = cycle_count();
-    struct adc_update u;
-    u.time = c;
-    uak_queue_put(q1, &u);
+//    uak_queue_put(q1, &u);
 //    uak_notify_set(t2, c);
+      syscall2(1, t2, c);
+#if 0
+    __asm__("mov r0, %0\n"
+            "mov r1, %1\n"
+            "svc 0\n"
+            : : "r"(t2), "r"(c) : "r0", "r1");
+#endif
+
     uak_wait_for_notify();
+
   }
 }
 
 void t2_loop(void *) {
   while (true) {
-    uint32_t value;
-    struct adc_update u;
-    uak_queue_get(q1, &u);
-//    uint32_t value = uak_wait_for_notify();
-    duration = cycle_count() - u.time;
+//    uint32_t value;
+//    struct adc_update u;
+//    uak_queue_get(q1, &u);
+    uint32_t value = syscall2(2, t2, 0xdeadbeef);
+    duration = cycle_count() - value;
     uak_notify_set(t1, 1);
   }
 }
@@ -311,7 +354,7 @@ static void idle_loop(void *unused) {
 }
 
 void start_controllers(void) {
-#if 1
+#if 0
   decoder_queue = uak_queue_create(decoder_queue_data, sizeof(struct trigger_event), 2);
   adc_queue = uak_queue_create(adc_queue_data, sizeof(struct adc_update), 2);
   engine_pump_queue = uak_queue_create(engine_pump_queue_data, sizeof(struct engine_pump_update), 2);
@@ -327,14 +370,14 @@ void start_controllers(void) {
 
 #endif
 
-#if 0
+#if 1
   q1 = uak_queue_create(q1_data, sizeof(struct adc_update), 2);
   t1 = uak_fiber_create(t1_loop, 0, 2, t1_stack, sizeof(t1_stack));
   t2 = uak_fiber_create(t2_loop, 0, 1, t2_stack, sizeof(t2_stack));
 #endif
 
   platform_init(0, NULL);
-  set_test_trigger_rpm(5000);
+//  set_test_trigger_rpm(5000);
 
   void fiber_md_start(void);
   fiber_md_start();

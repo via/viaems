@@ -118,6 +118,30 @@ void uak_notify_set(int32_t fiber, uint32_t value) {
   uak_md_unlock_scheduler(posture);
 }
 
+void internal_uak_notify_set(int32_t fiber, uint32_t value) {
+  struct fiber *f = &executor.fibers[fiber];
+  f->notification_value = value;
+  if (f->state == UAK_BLOCK_ON_NOTIFY) {
+    uak_make_runnable(f);
+    uak_md_set_return_value(f, value);
+    f->notification_value = 0;
+    if (f->priority < executor.current->priority) {
+      uak_md_request_reschedule();
+    }
+  };
+}
+
+int32_t internal_wait_on_notify(int32_t fiber) {
+  struct fiber *f = executor.current;
+  if (f->notification_value != 0) {
+    return f->notification_value;
+  }
+  uak_suspend(f, UAK_BLOCK_ON_NOTIFY);
+  uak_md_request_reschedule();
+  __asm__("dsb\n");
+  __asm__("isb\n");
+}
+
 /* Initializes fiber scheduler with an array of fibers `f` with length `n`. */
 int32_t uak_queue_create(void *data,
                          uint32_t msg_size,
