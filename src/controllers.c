@@ -16,7 +16,6 @@ int32_t engine_pump_queue;
 struct engine_pump_update engine_pump_queue_data[2];
 
 uint32_t before_cycles __attribute__((externally_visible)) = 0;
-volatile uint32_t duration __attribute__((externally_visible)) = 0;
 
 void publish_trigger_event(const struct trigger_event *ev) {
   uak_queue_put(decoder_queue, ev);
@@ -136,7 +135,7 @@ static void sim_loop(void *_unused) {
   (void)_unused;
   while (true) {
     uak_wait_for_notify();
-    duration = cycle_count() - before_cycles;
+    //duration = cycle_count() - before_cycles;
     execute_test_trigger(NULL);
   }
 }
@@ -294,58 +293,6 @@ void tasks_loop() {
   }
 }
 
-int32_t t1, t2;
-uint32_t t1_stack[128];
-uint32_t t2_stack[128];
-
-int32_t q1;
-struct adc_update q1_data[2];
-
-__attribute__((naked))
-static inline uint32_t syscall2(uint32_t number,
-                      uint32_t arg1,
-                      uint32_t arg2) {
-  __asm__("svc 0\n"
-          "bx lr\n");
-}
-
-__attribute__((naked))
-
-static inline uint32_t syscall1(uint32_t number,
-                      uint32_t arg1) {
-  __asm__("svc 0\n"
-          "bx lr\n");
-}
-
-void t1_loop(void *) {
-  while (true) {
-    uint32_t c = cycle_count();
-//    uak_queue_put(q1, &u);
-//    uak_notify_set(t2, c);
-      syscall2(1, t2, c);
-#if 0
-    __asm__("mov r0, %0\n"
-            "mov r1, %1\n"
-            "svc 0\n"
-            : : "r"(t2), "r"(c) : "r0", "r1");
-#endif
-
-    uak_wait_for_notify();
-
-  }
-}
-
-void t2_loop(void *) {
-  while (true) {
-//    uint32_t value;
-//    struct adc_update u;
-//    uak_queue_get(q1, &u);
-    uint32_t value = syscall2(2, t2, 0xdeadbeef);
-    duration = cycle_count() - value;
-    uak_notify_set(t1, 1);
-  }
-}
-
 int32_t idle_thread;
 uint32_t idle_loop_stack[32];
 static void idle_loop(void *unused) {
@@ -353,6 +300,10 @@ static void idle_loop(void *unused) {
   }
 }
 
+uint32_t t1_stack[128] __attribute__((aligned(512)));
+uint32_t t2_stack[128] __attribute__((aligned(512)));
+
+#include "test_loops.h"
 void start_controllers(void) {
 #if 0
   decoder_queue = uak_queue_create(decoder_queue_data, sizeof(struct trigger_event), 2);
@@ -371,7 +322,8 @@ void start_controllers(void) {
 #endif
 
 #if 1
-  q1 = uak_queue_create(q1_data, sizeof(struct adc_update), 2);
+//  q1 = uak_queue_create(q1_data, sizeof(struct adc_update), 2);
+
   t1 = uak_fiber_create(t1_loop, 0, 2, t1_stack, sizeof(t1_stack));
   t2 = uak_fiber_create(t2_loop, 0, 1, t2_stack, sizeof(t2_stack));
 #endif

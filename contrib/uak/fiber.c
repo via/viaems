@@ -131,7 +131,7 @@ void internal_uak_notify_set(int32_t fiber, uint32_t value) {
   };
 }
 
-int32_t internal_wait_on_notify(int32_t fiber) {
+int32_t internal_wait_on_notify() {
   struct fiber *f = executor.current;
   if (f->notification_value != 0) {
     return f->notification_value;

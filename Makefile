@@ -16,7 +16,12 @@ OBJS += calculations.o \
 				table.o \
 				controllers.o \
 				sim.o \
-				util.o
+				util.o \
+				test_loops.process.o
+
+TEST_LOOPS_OBJS += test_loops.o
+
+ENGINE_MGMT_OBJS +=
 
 include targets/${PLATFORM}.mk
 
@@ -47,6 +52,10 @@ $(OBJDIR)/viaems: ${OBJDIR} ${DESTOBJS} ${OBJDIR}/${TINYCBOR_LIB} ${OBJDIR}/viae
 
 $(OBJDIR)/benchmark: ${OBJDIR} ${DESTOBJS} ${OBJDIR}/${TINYCBOR_LIB} ${OBJDIR}/benchmark.o
 	${CC} -o $@ ${CFLAGS} ${DESTOBJS} ${OBJDIR}/benchmark.o ${LDFLAGS}
+
+$(OBJDIR)/test_loops.process.o: ${TEST_LOOPS_OBJS}
+	${CC} ${CFLAGS} -r -flinker-output=nolto-rel -o ${OBJDIR}/test_loops.process.o ${TEST_LOOPS_OBJS}
+
 
 ${OBJDIR}/${TINYCBOR_LIB}:
 	$(MAKE) -C ${TINYCBOR_DIR} ${MAKEFLAGS} clean

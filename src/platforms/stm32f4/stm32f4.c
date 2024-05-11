@@ -196,7 +196,7 @@ void platform_load_config() {
 }
 
 /* Common symbols exported by the linker script(s): */
-extern uint32_t _data_loadaddr, _sdata, _edata, _ebss;
+extern uint32_t _data_loadaddr, _sdata, _edata, _sbss, _ebss;
 
 void Reset_Handler(void) {
   bool jump_to_bootloader = false;
@@ -210,7 +210,18 @@ void Reset_Handler(void) {
     *dest = *src;
   }
 
+  dest = &_sbss;
   while (dest < &_ebss) {
+    *dest++ = 0;
+  }
+
+  /* Populate address space for test_loops */
+  extern uint32_t _data_test_loops_romaddr, _sdata_test_loops, _edata_test_loops,  _ebss_test_loops;
+  for (src = &_data_test_loops_romaddr, dest = &_sdata_test_loops; dest < &_edata_test_loops; src++, dest++) {
+    *dest = *src;
+  }
+
+  while (dest < &_ebss_test_loops) {
     *dest++ = 0;
   }
 
@@ -280,6 +291,7 @@ void platform_init() {
   /* TODO set pendsv appropriately. maybe a helper? */
   *((volatile uint32_t *)0xe000ed1c) |= (255 << 24);
   *((volatile uint32_t *)0xe000ed20) |= (255 << 16);
+
 }
 
 void platform_benchmark_init() {

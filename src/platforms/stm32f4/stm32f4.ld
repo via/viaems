@@ -15,15 +15,32 @@ MEMORY
 ENTRY(Reset_Handler)
 
 SECTIONS {
-	.text : {
+	.isrs : {
 		KEEP(*(.isr_vector))
 		. = ALIGN(4);
-		*(.text*)	/* Program code */
-		. = ALIGN(4);
-		*(.rodata*)	/* Read-only data */
-		. = ALIGN(4);
-    _etext = .;
-	} >rom
+  } >rom
+
+  .text.test_loops : ALIGN(4096) {
+		_stext_test_loops = .;
+    */test_loops.process.o(.text* .rodata*)
+    _etext_test_loops = .;
+    . = ALIGN(4096);
+  } >rom
+
+  .data.test_loops : ALIGN(4096) {
+		_sdata_test_loops = .;
+    KEEP(*/test_loops.process.o(.data*))
+    _edata_test_loops = .;
+    KEEP(*/test_loops.process.o(.bss*))
+    _ebss_test_loops = .;
+    . = ALIGN(4096);
+  } >ram AT >rom
+	_data_test_loops_romaddr = LOADADDR(.data.test_loops);
+
+
+  .text : {
+    *(*.text* *.rodata*)
+  } >rom
 
 
 	.data : {
@@ -44,6 +61,7 @@ SECTIONS {
 	_configdata_loadaddr = LOADADDR(.configdata);
 
 	.bss : {
+		_sbss = .;
 		*(.bss*)	/* Read-write zero initialized data */
 		*(COMMON)
 		. = ALIGN(4);
