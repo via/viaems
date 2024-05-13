@@ -12,6 +12,13 @@ enum uak_fiber_state {
 
 struct fiber {
   enum uak_fiber_state state;
+  union { /*TODO*/
+    /* UAK_BLOCK_ON_NOTIFY */
+    uint32_t *notification_value;
+
+    /* UAK_BLOCK_ON_QUEUE */
+    char *queue_get_dest;
+  } blockers;
   uint8_t priority;
   void (*entry)(void *);
   void *argument;
@@ -19,6 +26,7 @@ struct fiber {
   uint32_t notification_value;
 
   void *_md;
+  void *_md_mpu;
   uint32_t *stack;
   uint32_t stack_size;
 };
@@ -75,6 +83,8 @@ struct fiber *uak_current_fiber(void);
 void uak_fiber_reschedule(void);
 
 /* *** MD-layer API *** */
+
+bool uak_internal_notify_wait(uint32_t *result);
 
 /* Selects a new fiber to run, sets current fiber accordingly */
 void uak_md_fiber_create(struct fiber *);

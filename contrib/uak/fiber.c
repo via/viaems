@@ -89,57 +89,49 @@ void uak_fiber_reschedule() {
   executor.current = pri_level->run_queue[pri_level->latest];
 }
 
-uint32_t uak_wait_for_notify() {
+/* Set the task notification value.
+ * If the task is suspended, waiting for non-zero notification value, the task
+ * will be made runnable.  If that task is higher priority than the current
+ * thread, a context switch is scheduled.
+ *
+ * This function locks the scheduler, and is safe to call from ISRs
+ */
+void uak_notify_set_from_privileged(int32_t fiber, uint32_t value) {
   uint32_t posture = uak_md_lock_scheduler();
-  struct fiber *f = executor.current;
-  if (f->notification_value == 0) {
-    uak_suspend(f, UAK_BLOCK_ON_NOTIFY);
-    uak_md_request_reschedule();
-    uak_md_unlock_scheduler(posture);
-    posture = uak_md_lock_scheduler();
-  }
-  uint32_t result = f->notification_value;
-  f->notification_value = 0;
-  uak_md_unlock_scheduler(posture);
-  return result;
-}
-
-
-void uak_notify_set(int32_t fiber, uint32_t value) {
   struct fiber *f = &executor.fibers[fiber];
-  uint32_t posture = uak_md_lock_scheduler();
-  f->notification_value = value;
   if (f->state == UAK_BLOCK_ON_NOTIFY) {
-    uak_make_runnable(f);
-    if (f->priority < executor.current->priority) {
-      uak_md_request_reschedule();
-    }
-  };
-  uak_md_unlock_scheduler(posture);
-}
-
-void internal_uak_notify_set(int32_t fiber, uint32_t value) {
-  struct fiber *f = &executor.fibers[fiber];
-  f->notification_value = value;
-  if (f->state == UAK_BLOCK_ON_NOTIFY) {
-    uak_make_runnable(f);
     uak_md_set_return_value(f, value);
-    f->notification_value = 0;
+    uak_make_runnable(f);
     if (f->priority < executor.current->priority) {
       uak_md_request_reschedule();
     }
-  };
+  } else {
+    f->notification_value = value;
+  }
+
+  uak_md_unlock_scheduler(posture);
 }
 
-int32_t internal_wait_on_notify() {
+/* Check task notify and either:
+ *   If already set, set result and return true
+ *   If not set, suspend the fiber and return false
+ *
+ *  This task should only be called from a system-call context. */
+bool uak_internal_notify_wait(uint32_t *result) {
+  uint32_t posture = uak_md_lock_scheduler();
   struct fiber *f = executor.current;
+
   if (f->notification_value != 0) {
-    return f->notification_value;
+    *result = f->notification_value;
+    f->notification_value = 0;
+    uak_md_unlock_scheduler(posture);
+    return true;
   }
+
   uak_suspend(f, UAK_BLOCK_ON_NOTIFY);
   uak_md_request_reschedule();
-  __asm__("dsb\n");
-  __asm__("isb\n");
+  uak_md_unlock_scheduler(posture);
+  return false;
 }
 
 /* Initializes fiber scheduler with an array of fibers `f` with length `n`. */

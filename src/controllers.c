@@ -118,7 +118,7 @@ void trigger_console() {
 static void console_loop(void *_unused) {
   (void)_unused;
   while (true) {
-    uak_wait_for_notify();
+//    uak_wait_for_notify();
     console_process();
   }
 }
@@ -126,7 +126,7 @@ static void console_loop(void *_unused) {
 int32_t sim_thread;
 uint32_t sim_thread_stack[128];
 
-void trigger_sim() {
+void trigger_sim(void *_unused) {
   before_cycles = cycle_count();
   uak_notify_set(sim_thread, 0x1);
 }
@@ -134,7 +134,7 @@ void trigger_sim() {
 static void sim_loop(void *_unused) {
   (void)_unused;
   while (true) {
-    uak_wait_for_notify();
+//    uak_wait_for_notify();
     //duration = cycle_count() - before_cycles;
     execute_test_trigger(NULL);
   }

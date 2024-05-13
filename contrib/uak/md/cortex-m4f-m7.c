@@ -69,13 +69,6 @@ static uint32_t mpu_asr(bool xn,
   return result;
 }
 
-static inline uint32_t syscall0(uint32_t number) {
-  volatile register uint32_t _r0 __asm__ ("r0") = number;
-
-  __asm__ volatile ("svc 0" : "=r"(_r0) : "r"(_r0));
-  return _r0;
-}
-
 extern uint32_t _stext_test_loops;
 extern uint32_t _etext_test_loops;
 
@@ -192,20 +185,29 @@ __asm__ (
         "bx lr\n"
 );
 
-void internal_uak_notify_set(int32_t fiber, uint32_t value);
-int32_t internal_wait_on_notify();
 uint64_t cycle_count(void);
 
-uint32_t SVC_Handler(uint32_t syscall, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
+void SVC_Handler(uint32_t syscall, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
   switch (syscall) {
     case 1: {
       int32_t fiber_id = (int32_t)arg1;;
       uint32_t value = arg2;
-      internal_uak_notify_set(fiber_id, value);
-      return 0;
+      uak_notify_set_from_privileged(fiber_id, value);
+      return;
             }
     case 2: {
-      return internal_wait_on_notify();
+      uint32_t result;
+      if (uak_internal_notify_wait(&result)) {
+        /* This fiber has already received a notification, return the value
+         * immediately */
+        __asm__(
+            "mrs r0, psp\n"
+            "str.w %0, [r0]\n"
+            : : "r"(result) : "r0");
+      return;
+      }
+      /* unreachable */
+            break;
             }
     case 0xf: {
              uint32_t v = cycle_count();

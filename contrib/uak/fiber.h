@@ -7,6 +7,12 @@
 
 #include "sensors.h"
 
+/* Functions that must pass through a system call interface must be directly
+ * included and inlined to ensure that they are linked in the same code segment
+ * that they are used from.  The actual system calls are defiend in the
+ * port-specific header */
+#define SYSCALL static inline
+
 
 /* Create a fiber and return a handle to the fiber.
  * Return values < 0 indicate error.
@@ -20,13 +26,17 @@ int32_t uak_fiber_create(void (*entry)(void *),
  
 /* Set a fiber's notification value. If it is currently blocked on a
  * notification, and the value set is non-zero, the fiber will become runnable */
-void uak_notify_set(int32_t fiber, uint32_t value);
+SYSCALL void uak_notify_set(int32_t fiber, uint32_t value);
+
+/* Same as uak_notify_set, but intended to run from non-fiber privileged
+ * contexts like ISRs */
+void uak_notify_set_from_privileged(int32_t fiber, uint32_t value);
 
 /* If the fiber's notification slot is non-zero, it will be cleared and this
  * function returns immediately. Otherwise, the fiber will be set to blocking on
  * a notification value, and then any non-zero notification will make the fiber
  * become runnable again */
-uint32_t uak_wait_for_notify(void);
+SYSCALL uint32_t uak_notify_wait(void);
 
 
 /* Create a message queue for messages of the given size and count, backed by an
@@ -49,6 +59,9 @@ bool uak_queue_put(int32_t queue, const void *msg);
 /* Puts a message onto a queue. If the queue is full, the oldest message in the
  * queue is replaced */
 bool uak_queue_put_overwrite(int32_t queue, const void *msg);
+
+
+#include "cortex-m4f-m7.h"
 
 #endif
 

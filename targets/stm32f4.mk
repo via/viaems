@@ -45,7 +45,7 @@ CFLAGS+= -I${CMSIS}/CMSIS/Core/Include
 CFLAGS+= -I${CMSISDEV}/Include
 CFLAGS+= -I${LIBUSB}/inc
 CFLAGS+= -DTICKRATE=4000000 -DSPI_${SPI_ADC}
-CFLAGS+= -Icontrib/uak
+CFLAGS+= -Icontrib/uak -Icontrib/uak/md
 CFLAGS+= -Isrc/platforms/stm32f4
 
 LDFLAGS+= -lc -lnosys -L ${OBJDIR} -nostartfiles -Wl,--gc-sections

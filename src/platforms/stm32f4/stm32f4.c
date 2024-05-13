@@ -147,7 +147,7 @@ static void setup_systick() {
 }
 #endif
 
-extern unsigned _configdata_loadaddr, _sconfigdata, _econfigdata;
+extern uint32_t _configdata_loadaddr, _sconfigdata, _econfigdata;
 void platform_save_config() {
 
   /* Unlock FLASH_CR */
@@ -188,7 +188,7 @@ void platform_save_config() {
 }
 
 void platform_load_config() {
-  volatile unsigned *src, *dest;
+  uint32_t *src, *dest;
   for (src = &_configdata_loadaddr, dest = &_sconfigdata; dest < &_econfigdata;
        src++, dest++) {
     *dest = *src;
