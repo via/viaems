@@ -30,7 +30,7 @@ static void uak_suspend(struct fiber *f, enum uak_fiber_state reason) {
   if (pri_level->oldest == pri_level->latest) {
     executor.priority_readiness &= ~(0x80000000UL >> f->priority);
   }
-  emit_trace(FIBER_SUSPEND, 0);
+  //emit_trace(FIBER_SUSPEND, 0);
 }
 
 static void uak_make_runnable(struct fiber *f) {
@@ -44,7 +44,7 @@ static void uak_make_runnable(struct fiber *f) {
 
   /* Mark priority level as runnable */
   executor.priority_readiness |= (0x80000000UL >> f->priority);
-  emit_trace(FIBER_BECOMES_RUNNABLE, 0);
+  //emit_trace(FIBER_BECOMES_RUNNABLE, 0);
 }
 
 /* Initializes fiber scheduler with an array of fibers `f` with length `n`. */
@@ -137,7 +137,7 @@ bool uak_internal_notify_wait(uint32_t *result) {
 }
 
 /* Initializes fiber scheduler with an array of fibers `f` with length `n`. */
-int32_t uak_queue_create(char *data,
+int32_t uak_queue_create(void *data,
                          uint32_t msg_size,
                          uint32_t msg_count) {
 
@@ -159,7 +159,7 @@ int32_t uak_queue_create(char *data,
   return q_handle; 
 }
 
-bool uak_internal_queue_get(int32_t queue_handle, char *msg) {
+bool uak_internal_queue_get(int32_t queue_handle, void *msg) {
   struct queue *q = &executor.queues[queue_handle];
   uint32_t lock = uak_md_lock_scheduler();
   bool immediate_result = false;
@@ -182,7 +182,7 @@ bool uak_internal_queue_get(int32_t queue_handle, char *msg) {
   return immediate_result;
 }
 
-bool uak_queue_put_from_privileged(int32_t queue_handle, const char *msg) {
+bool uak_queue_put_from_privileged(int32_t queue_handle, const void *msg) {
   struct queue *q = &executor.queues[queue_handle];
   uint32_t lock = uak_md_lock_scheduler();
 

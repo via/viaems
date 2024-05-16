@@ -50,11 +50,11 @@ static uint32_t uak_syscall_get_cycle_count() {
   return syscall0(SYSCALL_GET_CYCLE_COUNT);
 }
 
-static inline void uak_queue_put(int32_t queue, const char *msg) {
+static inline void uak_queue_put(int32_t queue, const void *msg) {
   syscall2(SYSCALL_QUEUE_PUT, queue, (uint32_t)msg);
 }
 
-static inline void uak_queue_get(int32_t queue, const char *msg) {
+static inline void uak_queue_get(int32_t queue, const void *msg) {
   syscall2(SYSCALL_QUEUE_GET, queue, (uint32_t)msg);
 }
 

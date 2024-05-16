@@ -221,13 +221,13 @@ void SVC_Handler(uint32_t syscall, uint32_t arg1, uint32_t arg2, uint32_t arg3) 
     case SYSCALL_NOTIFY_SET: {
       int32_t fiber_id = (int32_t)arg1;;
       uint32_t value = arg2;
-      emit_trace(NOTIFY_SET, fiber_id);
+ //     emit_trace(NOTIFY_SET, fiber_id);
       uak_notify_set_from_privileged(fiber_id, value);
       return;
             }
     case SYSCALL_NOTIFY_WAIT: {
       uint32_t result;
-      emit_trace(NOTIFY_WAIT, 0);
+//      emit_trace(NOTIFY_WAIT, 0);
       if (uak_internal_notify_wait(&result)) {
         /* This fiber has already received a notification, return the value
          * immediately */

@@ -302,6 +302,7 @@ static void idle_loop(void *unused) {
 
 uint32_t t1_stack[128] __attribute__((aligned(512)));
 uint32_t t2_stack[128] __attribute__((aligned(512)));
+uint32_t q1_data[8];
 
 #include "test_loops.h"
 void start_controllers(void) {
@@ -322,7 +323,7 @@ void start_controllers(void) {
 #endif
 
 #if 1
-//  q1 = uak_queue_create(q1_data, sizeof(struct adc_update), 2);
+  q1 = uak_queue_create((char *)q1_data, sizeof(uint32_t), 8);
 
   t1 = uak_fiber_create(t1_loop, 0, 2, t1_stack, sizeof(t1_stack));
   t2 = uak_fiber_create(t2_loop, 0, 1, t2_stack, sizeof(t2_stack));
