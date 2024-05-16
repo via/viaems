@@ -30,6 +30,7 @@ static void uak_suspend(struct fiber *f, enum uak_fiber_state reason) {
   if (pri_level->oldest == pri_level->latest) {
     executor.priority_readiness &= ~(0x80000000UL >> f->priority);
   }
+  emit_trace(FIBER_SUSPEND, 0);
 }
 
 static void uak_make_runnable(struct fiber *f) {
@@ -43,6 +44,7 @@ static void uak_make_runnable(struct fiber *f) {
 
   /* Mark priority level as runnable */
   executor.priority_readiness |= (0x80000000UL >> f->priority);
+  emit_trace(FIBER_BECOMES_RUNNABLE, 0);
 }
 
 /* Initializes fiber scheduler with an array of fibers `f` with length `n`. */
@@ -135,7 +137,7 @@ bool uak_internal_notify_wait(uint32_t *result) {
 }
 
 /* Initializes fiber scheduler with an array of fibers `f` with length `n`. */
-int32_t uak_queue_create(void *data,
+int32_t uak_queue_create(char *data,
                          uint32_t msg_size,
                          uint32_t msg_count) {
 
@@ -157,54 +159,30 @@ int32_t uak_queue_create(void *data,
   return q_handle; 
 }
 
-bool uak_queue_get_nonblock(int32_t queue_handle, void *msg) {
-  struct queue *q = &executor.queues[queue_handle];
-  bool valid = false;
-  uak_md_lock_scheduler();
-  if (q->read != q->write) {
-    char *cdata = q->data;
-    uint32_t read = q->read;
-    memcpy(msg, &q->data[read * q->msg_size], q->msg_size);
-    valid = true;
-
-    read += 1;
-    if (read >= q->n_msgs) {
-      read = 0;
-    }
-    q->read = read;
-  }
-  uak_md_unlock_scheduler(0);
-
-  return valid;
-}
-
-bool uak_queue_get(int32_t queue_handle, void *msg) {
+bool uak_internal_queue_get(int32_t queue_handle, char *msg) {
   struct queue *q = &executor.queues[queue_handle];
   uint32_t lock = uak_md_lock_scheduler();
+  bool immediate_result = false;
   if (q->read == q->write) {
-    assert(q->waiter == NULL);
-
     /* Block */
     q->waiter = executor.current;
+    q->waiter->blockers.queue_get_dest = msg;
     uak_suspend(executor.current, UAK_BLOCK_ON_QUEUE);
     uak_md_request_reschedule();
-    uak_md_unlock_scheduler(lock);
-
-    lock = uak_md_lock_scheduler();
-    q->waiter = NULL;
+    immediate_result = false;
+  } else {
+    /* Read and return */
+    uint32_t read = q->read;
+    memcpy(msg, &q->data[read * q->msg_size], q->msg_size);
+    q->read = queue_next_idx(read, q->n_msgs);
+    immediate_result = true;
   }
 
-  assert(q->read != q->write);
-  uint32_t read = q->read;
-  memcpy(msg, &q->data[read * q->msg_size], q->msg_size);
-
-  q->read = queue_next_idx(read, q->n_msgs);
-
   uak_md_unlock_scheduler(lock);
-  return true;
+  return immediate_result;
 }
 
-bool uak_queue_put(int32_t queue_handle, const void *msg) {
+bool uak_queue_put_from_privileged(int32_t queue_handle, const char *msg) {
   struct queue *q = &executor.queues[queue_handle];
   uint32_t lock = uak_md_lock_scheduler();
 
@@ -217,14 +195,21 @@ bool uak_queue_put(int32_t queue_handle, const void *msg) {
     return false;
   }
 
-  memcpy(&q->data[write * q->msg_size], msg, q->msg_size);
-  q->write = next_write;
-
   if (q->waiter && q->waiter->state == UAK_BLOCK_ON_QUEUE) {
+    assert(q->read == write); /* It shouldn't be possible to be blocked with 
+                                 non-zero entries in the queue */
+
+    /* Copy directly into result */
+    memcpy(q->waiter->blockers.queue_get_dest, msg, q->msg_size);
     uak_make_runnable(q->waiter);
     if (q->waiter->priority < executor.current->priority) {
       uak_md_request_reschedule();
     }
+      
+  } else {
+    /* Copy into the queue */
+    memcpy(&q->data[write * q->msg_size], msg, q->msg_size);
+    q->write = next_write;
   }
 
   uak_md_unlock_scheduler(lock);

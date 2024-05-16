@@ -42,24 +42,17 @@ SYSCALL uint32_t uak_notify_wait(void);
 /* Create a message queue for messages of the given size and count, backed by an
  * array at data. Returns a handle for the queue, or a negative number to
  * indicate an error */
-int32_t uak_queue_create(void *data, uint32_t msg_size, uint32_t msg_count);
+int32_t uak_queue_create(char *data, uint32_t msg_size, uint32_t msg_count);
 
 /* Gets a pending message from the queue. If no messages are available, suspend
  * the fiber until one is ready. Only one fiber can wait on any queue */
-bool uak_queue_get(int32_t queue, void *msg);
-
-/* Gets a pending message from the queue. If no messages are available, returns
- * false */
-bool uak_queue_get_nonblock(int32_t queue, void *msg);
+SYSCALL void uak_queue_get(int32_t queue, const char *msg);
 
 /* Puts a message onto a queue. If no space is available in the queue, returns
  * false */
-bool uak_queue_put(int32_t queue, const void *msg);
+SYSCALL void uak_queue_put(int32_t queue, const char *msg);
 
-/* Puts a message onto a queue. If the queue is full, the oldest message in the
- * queue is replaced */
-bool uak_queue_put_overwrite(int32_t queue, const void *msg);
-
+bool uak_queue_put_from_privileged(int32_t queue, const char *msg);
 
 #include "cortex-m4f-m7.h"
 

@@ -18,7 +18,7 @@ struct engine_pump_update engine_pump_queue_data[2];
 uint32_t before_cycles __attribute__((externally_visible)) = 0;
 
 void publish_trigger_event(const struct trigger_event *ev) {
-  uak_queue_put(decoder_queue, ev);
+  uak_queue_put(decoder_queue, (char *)ev);
 }
 
 __attribute__((externally_visible)) 
@@ -43,7 +43,7 @@ bool do_thing(uint32_t vals) {
 
 
 void publish_raw_adc(const struct adc_update *ev) {
-  uak_queue_put(adc_queue, ev);
+  uak_queue_put(adc_queue, (char *)ev);
 }
 
 
@@ -53,7 +53,7 @@ uint32_t decoder_thread_stack[128];
 static void decoder_loop(void *unused) {
   while (true) {
     struct trigger_event ev;
-    uak_queue_get(decoder_queue, &ev);
+    uak_queue_get(decoder_queue, (const char *)&ev);
 
     set_gpio(2, 1);
     decoder_decode(&ev);
@@ -67,7 +67,7 @@ uint32_t sensor_thread_stack[128];
 static void sensor_loop(void *unused) {
   while (true) {
     struct adc_update ev;
-    uak_queue_get(adc_queue, &ev);
+    uak_queue_get(adc_queue, (const char *)&ev);
     set_gpio(1, 1);
     sensor_update_adc(&ev);
     set_gpio(1, 0);
@@ -78,14 +78,14 @@ int32_t engine_pump_thread;
 uint32_t engine_pump_stack[128];
 
 void trigger_engine_pump(struct engine_pump_update *ev) {
-  uak_queue_put(engine_pump_queue, ev);
+  uak_queue_put(engine_pump_queue, (char *)ev);
 }
 
 static void engine_loop(void *unused) {
 
   while (true) {
     struct engine_pump_update update;
-    uak_queue_get(engine_pump_queue, &update);
+    uak_queue_get(engine_pump_queue, (const char *)&update);
     set_gpio(3, 1);
 
     set_gpio(5, 1);

@@ -11,6 +11,35 @@
  * 2 - fiber stack
  */
 
+/* Trace and debug functions:
+ * Use the ITM to send trace messages. 
+ *
+ * 0 - NOTIFY_SET (f)
+ * 1 - NOTIFY_WAIT (f)
+ * 2 - FIBER_BECOMES_RUNNABLE(f)
+ * 3 - FIBER_SUSPEND(f)
+ *
+ * Prefer single byte ITM payloads:
+ * 0 X X X F F F F
+ * X - Event type
+ * F - First arg (fiber)
+ */
+
+enum trace_id {
+  NOTIFY_SET = 0,
+  NOTIFY_WAIT = 1,
+  FIBER_BECOMES_RUNNABLE = 2,
+  FIBER_SUSPEND = 3,
+};
+
+void emit_trace(enum trace_id _id, uint8_t _arg) {
+  volatile uint8_t *STIM0 = (volatile uint8_t *)0xe0000000;
+  uint8_t id = ((uint8_t)_id) & 0xf;
+  uint8_t arg = ((uint8_t)_arg) & 0xf;
+  *STIM0 = (id << 4) | arg;
+}
+
+
 static void hang_forever() {
   while(1);
 }
@@ -189,14 +218,16 @@ uint64_t cycle_count(void);
 
 void SVC_Handler(uint32_t syscall, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
   switch (syscall) {
-    case 1: {
+    case SYSCALL_NOTIFY_SET: {
       int32_t fiber_id = (int32_t)arg1;;
       uint32_t value = arg2;
+      emit_trace(NOTIFY_SET, fiber_id);
       uak_notify_set_from_privileged(fiber_id, value);
       return;
             }
-    case 2: {
+    case SYSCALL_NOTIFY_WAIT: {
       uint32_t result;
+      emit_trace(NOTIFY_WAIT, 0);
       if (uak_internal_notify_wait(&result)) {
         /* This fiber has already received a notification, return the value
          * immediately */
@@ -209,7 +240,21 @@ void SVC_Handler(uint32_t syscall, uint32_t arg1, uint32_t arg2, uint32_t arg3) 
       /* unreachable */
             break;
             }
-    case 0xf: {
+    case SYSCALL_QUEUE_PUT: {
+      int32_t queue_id = (int32_t)arg1;;
+      const char *msg = (const char *)arg2;
+//      emit_trace(NOTIFY_SET, fiber_id);
+      uak_queue_put_from_privileged(queue_id, msg);
+      return;
+                            }
+    case SYSCALL_QUEUE_GET: {
+      int32_t queue_id = (int32_t)arg1;;
+      char *msg = (char *)arg2;
+//      emit_trace(NOTIFY_WAIT, 0);
+      uak_internal_queue_get(queue_id, msg);
+      break;
+                            }
+    case SYSCALL_GET_CYCLE_COUNT: {
              uint32_t v = cycle_count();
              __asm__(
                  "mrs r0, psp\n"
