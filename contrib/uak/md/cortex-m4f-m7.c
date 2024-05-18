@@ -62,6 +62,11 @@ void uak_md_fiber_create(struct fiber *f) {
   *(sp - 2) = (uint32_t)f->entry; /* pc */
   *(sp - 1) = 0x21000000; /* psr */
   f->_md = sp - 17;
+
+  for (int i = 0; i < 8; i++) {
+    f->_mpu_context.regions[i].rbar = (1 << 4) | i;
+    f->_mpu_context.regions[i].rasr = 0;
+  }
 }
 
 static void uak_md_set_return_value(struct fiber *f, uint32_t value) {
@@ -76,25 +81,72 @@ void uak_md_request_reschedule() {
   *ICSR = ICSR_PENDSVSET;
 }
 
-static uint32_t mpu_asr(bool xn, 
-    uint8_t ap, 
-    uint8_t tex, 
-    bool s,
-    bool c,
-    bool b,
-    uint8_t srd,
-    uint8_t size
-    ) {
-  uint32_t result =
-    ((uint32_t)xn << 28) |
-    ((uint32_t)ap << 24) |
-    ((uint32_t)tex << 19) |
-    ((uint32_t)s << 18) |
-    ((uint32_t)c << 17) |
-    ((uint32_t)b << 16) |
-    ((uint32_t)srd << 8) |
-    ((uint32_t)srd << 8) |
-    ((uint32_t)size << 1) | 1;
+static uint32_t mpu_rasr_size(size_t size) {
+  uint32_t power = 31 - __builtin_clz(size);
+  uint32_t asr_size = power - 1;
+  return asr_size;
+}
+
+struct mpu_rasr_attributes {
+  bool execute_never;
+  uint8_t access;
+  uint8_t tex;
+  bool sharable;
+  bool cachable;
+  bool buffered;
+};
+
+const struct mpu_rasr_attributes rasr_attributes_code = {
+  .execute_never = false,
+  .access = 0x2, 
+  .tex = 0x0,
+  .sharable = true,
+  .cachable = true,
+  .buffered = true,
+};
+
+const struct mpu_rasr_attributes rasr_attributes_data = {
+  .execute_never = true,
+  .access = 0x3, 
+  .tex = 0x1,
+  .sharable = true,
+  .cachable = true,
+  .buffered = true,
+};
+
+static uint32_t mpu_rasr_attributes_bits(const struct mpu_rasr_attributes fields) {
+    uint32_t result =
+      ((uint32_t)fields.execute_never << 28) |
+      ((uint32_t)fields.access << 24) |
+      ((uint32_t)fields.tex << 19) |
+      ((uint32_t)fields.sharable << 18) |
+      ((uint32_t)fields.cachable << 17) |
+      ((uint32_t)fields.buffered << 16);
+    return result;
+}
+
+static uint32_t mpu_rasr(const struct region *r) {
+  uint32_t result = 0;
+  if (r->type == CUSTOM) {
+    result = r->_custom;
+  } else {
+    switch (r->type) {
+      case CODE_REGION:
+        result = mpu_rasr_attributes_bits(rasr_attributes_code);
+        break;
+      case DATA_REGION:
+      case STACK_REGION:
+      case PERIPH_REGION:
+      case UNCACHED_DATA_REGION:
+        result = mpu_rasr_attributes_bits(rasr_attributes_data);
+        break;
+      }
+
+  }
+
+  result |= (mpu_rasr_size(r->size) << 1);
+  result |= 1; /* enable */
+
   return result;
 }
 
@@ -115,71 +167,46 @@ void fiber_md_start() {
   volatile uint32_t *MPU_RBAR = (volatile uint32_t *)0x0E000ED9C;
   volatile uint32_t *MPU_RASR = (volatile uint32_t *)0x0E000EDA0;
   
-#define VALID (1<<4)
   /* Enable memmanage and busfault */
   *((volatile uint32_t *)0xe000ed24) |= (1 << 18) |
                                         (1 << 17) |
                                         (1 << 16);
-  // size 15 (64k)
-  *MPU_RBAR = (uint32_t)&_stext_test_loops | VALID | 0;
-  *MPU_RASR = mpu_asr(false, 2, 0, true, true, true,
-      0, 11);
 
-  // size 11 (4k)
-  *MPU_RBAR = (uint32_t)&_sdata_test_loops | VALID | 1;
-  *MPU_RASR = mpu_asr(true, 3, 1, true, true, true,
-      0, 11);
+  *MPU_RBAR = executor.current->_mpu_context.regions[0].rbar;
+  *MPU_RASR = executor.current->_mpu_context.regions[0].rasr;
+  *MPU_RBAR = executor.current->_mpu_context.regions[1].rbar;
+  *MPU_RASR = executor.current->_mpu_context.regions[1].rasr;
+  *MPU_RBAR = executor.current->_mpu_context.regions[2].rbar;
+  *MPU_RASR = executor.current->_mpu_context.regions[2].rasr;
+  *MPU_RBAR = executor.current->_mpu_context.regions[3].rbar;
+  *MPU_RASR = executor.current->_mpu_context.regions[3].rasr;
 
-  // size 8 (512b)
-  *MPU_RBAR = (uint32_t)t1_stack | VALID | 2;
-  *MPU_RASR = mpu_asr(true, 3, 1, true, true, true,
-      0, 8);
-  //
-  // size 8 (512b)
-  *MPU_RBAR = (uint32_t)t2_stack | VALID | 3;
-  *MPU_RASR = mpu_asr(true, 3, 1, true, true, true,
-      0, 8);
-
-  *MPU_RBAR = VALID | 4;
-  *MPU_RASR = 0;
-  *MPU_RBAR = VALID | 5;
-  *MPU_RASR = 0;
-  *MPU_RBAR = VALID | 6;
-  *MPU_RASR = 0;
-  *MPU_RBAR = VALID | 7;
-  *MPU_RASR = 0;
+  *MPU_RBAR = executor.current->_mpu_context.regions[4].rbar;
+  *MPU_RASR = executor.current->_mpu_context.regions[4].rasr;
+  *MPU_RBAR = executor.current->_mpu_context.regions[5].rbar;
+  *MPU_RASR = executor.current->_mpu_context.regions[5].rasr;
+  *MPU_RBAR = executor.current->_mpu_context.regions[6].rbar;
+  *MPU_RASR = executor.current->_mpu_context.regions[6].rasr;
+  *MPU_RBAR = executor.current->_mpu_context.regions[7].rbar;
+  *MPU_RASR = executor.current->_mpu_context.regions[7].rasr;
 
   *MPU_CTRL = 5;
   
   syscall0(0xff);
-#if 0
-  __asm__(
-      "mov r0, %0\n"
-      "ldmia r0!, {r4-r11, lr}\n"
-      "msr psp, r0\n"
-
-      /* Set CONTROL.SPSEL to use PSP in thread mode */
-      "mrs r0, control\n" 
-      "orr r0, r0, #3\n" /* unprivileged, use PSP */
-      "bic r0, r0, #4\n" /* Clear FP active */
-      "msr control, r0\n"
-      "isb\n"
-
-
-      "ldmia sp!, {r0-r3, r12, lr}\n"
-      "pop {pc}\n" 
-      "nop\n"
-      : : "r" (executor.current->_md));
-#endif
 }
 
 extern struct executor executor;
 
 __attribute__((used))
-static void *platform_fiber_switch_stack(void *old) {
+static void *uak_md_switch_context(void *old) {
   executor.current->_md = old;
   uak_fiber_reschedule();
   return executor.current->_md;
+}
+
+__attribute__((used))
+static void *uak_md_get_mpu_ptrs(void) {
+  return &executor.current->_mpu_context;
 }
 
 /* Pend SV is used to trigger a task change. This is totally written in assembly
@@ -201,14 +228,25 @@ __asm__ (
         "stmdb r0!, {r4-r11, lr}\n"
 
         /* Actually switch current fiber */
-        "bl platform_fiber_switch_stack\n" 
+        "bl uak_md_switch_context\n" 
+        "mov r4, r0\n"
 
-        "ldmia r0!, {r4-r11, lr}\n"
+        /* Load r0 with current mpu context */
+        "bl uak_md_get_mpu_ptrs\n" 
+        "mov r1, r4\n"
+        /* Load 8 MPU regions */
+        "ldr r2, =0xe000ed9c\n" 
+        "ldmia r0!, {r4-r11}\n"
+        "stmia r2, {r4-r11}\n"
+        "ldmia r0!, {r4-r11}\n"
+        "stmia r2, {r4-r11}\n"
+
+        "ldmia r1!, {r4-r11, lr}\n"
         "tst lr, #0x10\n" /* Check for FP usage */
         "it eq\n"
-        "vldmiaeq r0!, {S16-S31}\n"
+        "vldmiaeq r1!, {S16-S31}\n"
 
-        "msr psp, r0\n"
+        "msr psp, r1\n"
         /* We jump to the same LR that was saved to preserve FP state, otherwise
          * hardware will restore frame very wrong */
         "bx lr\n"
@@ -299,5 +337,39 @@ static uint32_t uak_md_lock_scheduler() {
 
 static void uak_md_unlock_scheduler(uint32_t primask) {
   __asm__("msr PRIMASK, %0" : : "r"(primask) : "memory");
+}
+
+static int32_t uak_md_fiber_add_region(struct fiber *f, const struct region *r) {
+
+  /* Ensure region size is power of 2 greater or equal to 32 */
+  if (r->size < 32) {
+    return -1;
+  }
+  if ((r->size & (r->size - 1)) != 0) {
+    return -1;
+  }
+  /* Ensure region is aligned by size */
+  if ((r->start & (r->size - 1)) != 0) {
+    return -1;
+  }
+
+  /* Find a usable region */
+  int32_t region_idx = -1;
+  for (int i = 0; i < 8; i++) {
+    if (f->_mpu_context.regions[i].rasr == 0) {
+      region_idx = i;
+      break;
+    }
+  }
+  if (region_idx < 0) {
+    return -1;
+  }
+  /* region_idx is an unused region */
+
+  f->_mpu_context.regions[region_idx] = (struct mpu_region){
+    .rbar = r->start | (1 << 4) | region_idx,
+    .rasr = mpu_rasr(r),
+  };
+  return region_idx;
 }
 

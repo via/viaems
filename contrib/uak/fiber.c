@@ -74,6 +74,11 @@ int32_t uak_fiber_create(void (*entry)(void *),
   memset(f->stack, 0xae, f->stack_size);
 
   uak_md_fiber_create(f);
+  uak_md_fiber_add_region(f, &(struct region){
+      .start = (uint32_t)stack,
+      .size = stack_size,
+      .type = STACK_REGION,
+      });
 
   return f_handle; 
 }
@@ -213,5 +218,15 @@ bool uak_queue_put_from_privileged(int32_t queue_handle, const void *msg) {
   }
 
   uak_md_unlock_scheduler(lock);
+  return true;
+}
+
+bool uak_fiber_add_regions(int32_t f_handle, const struct region *regions) {
+  struct fiber *f = &executor.fibers[f_handle];
+  for (const struct region *r = regions; r->size != 0; r++) {
+    if (!uak_md_fiber_add_region(f, r)) {
+      return false;
+    }
+  }
   return true;
 }

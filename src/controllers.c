@@ -304,6 +304,28 @@ uint32_t t1_stack[128] __attribute__((aligned(512)));
 uint32_t t2_stack[128] __attribute__((aligned(512)));
 uint32_t q1_data[8];
 
+extern uint32_t	_stext_test_loops,
+                _etext_test_loops,
+                _sdata_test_loops,
+                _edata_test_loops,
+                _size_text_test_loops[],
+                _size_data_test_loops[];
+
+const struct region test_loops_space[] = {
+  {
+    .start = (uint32_t)&_stext_test_loops, 
+    .size = (uint32_t)_size_text_test_loops,
+    .type = CODE_REGION,
+  },
+  {
+    .start = (uint32_t)&_sdata_test_loops,
+    .size = (uint32_t)_size_data_test_loops,
+    .type = DATA_REGION,
+  },
+  { 0 },
+};
+
+
 #include "test_loops.h"
 void start_controllers(void) {
 #if 0
@@ -327,6 +349,10 @@ void start_controllers(void) {
 
   t1 = uak_fiber_create(t1_loop, 0, 2, t1_stack, sizeof(t1_stack));
   t2 = uak_fiber_create(t2_loop, 0, 1, t2_stack, sizeof(t2_stack));
+
+  if (!uak_fiber_add_regions(t1, test_loops_space)) while (1);
+
+  if (!uak_fiber_add_regions(t2, test_loops_space)) while (1);
 #endif
 
   platform_init(0, NULL);

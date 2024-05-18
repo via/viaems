@@ -10,6 +10,17 @@ enum uak_fiber_state {
 };
 
 
+/* TODO These are MD-specific wat do */
+struct mpu_region {
+  uint32_t rbar;
+  uint32_t rasr;
+};
+
+struct mpu_context {
+  struct mpu_region regions[8];
+};
+
+
 struct fiber {
   enum uak_fiber_state state;
   union { /*TODO*/
@@ -26,7 +37,7 @@ struct fiber {
   uint32_t notification_value;
 
   void *_md;
-  void *_md_mpu;
+  struct mpu_context _mpu_context;
   uint32_t *stack;
   uint32_t stack_size;
 };

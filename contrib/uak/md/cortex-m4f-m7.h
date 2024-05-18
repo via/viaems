@@ -58,5 +58,4 @@ static inline void uak_queue_get(int32_t queue, const void *msg) {
   syscall2(SYSCALL_QUEUE_GET, queue, (uint32_t)msg);
 }
 
-
 #endif

@@ -31,20 +31,19 @@ void t2_loop(void *) {
 void t1_loop(void *) {
   while (true) {
     uint32_t c = uak_syscall_get_cycle_count();
+    __asm__("bkpt");
     uak_queue_put(q1, &c);
     uak_notify_wait();
   }
 }
 
 void t2_loop(void *) {
-  volatile uint32_t vars[256];
   while (true) {
     uint32_t value;
     uak_queue_get(q1, &value);
+    __asm__("bkpt");
     duration = uak_syscall_get_cycle_count() - value;
     uak_notify_set(t1, 1);
-    vars[count] = 0x55;
-    count++;
   }
 }
 

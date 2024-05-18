@@ -26,6 +26,7 @@ SECTIONS {
     _etext_test_loops = .;
     . = ALIGN(4096);
   } >rom
+  _size_text_test_loops = SIZEOF(.text.test_loops);
 
   .data.test_loops : ALIGN(4096) {
 		_sdata_test_loops = .;
@@ -36,6 +37,7 @@ SECTIONS {
     . = ALIGN(4096);
   } >ram AT >rom
 	_data_test_loops_romaddr = LOADADDR(.data.test_loops);
+  _size_data_test_loops = SIZEOF(.data.test_loops);
 
 
   .text : {
