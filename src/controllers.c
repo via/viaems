@@ -48,7 +48,7 @@ void publish_raw_adc(const struct adc_update *ev) {
 
 
 int32_t decoder_thread;
-uint32_t decoder_thread_stack[128];
+uint32_t decoder_thread_stack[128] __attribute__((aligned(512)));
 
 static void decoder_loop(void *unused) {
   while (true) {
@@ -62,7 +62,7 @@ static void decoder_loop(void *unused) {
 }
 
 int32_t sensor_thread;
-uint32_t sensor_thread_stack[128];
+uint32_t sensor_thread_stack[128] __attribute__((aligned(512)));
 
 static void sensor_loop(void *unused) {
   while (true) {
@@ -75,7 +75,7 @@ static void sensor_loop(void *unused) {
 }
 
 int32_t engine_pump_thread;
-uint32_t engine_pump_stack[128];
+uint32_t engine_pump_stack[128] __attribute__((aligned(512)));
 
 void trigger_engine_pump(struct engine_pump_update *ev) {
   uak_queue_put(engine_pump_queue, (char *)ev);
@@ -109,7 +109,7 @@ static void engine_loop(void *unused) {
 }
 
 int32_t console_thread;
-uint32_t console_thread_stack[512];
+uint32_t console_thread_stack[512] __attribute__((aligned(2048)));
 
 void trigger_console() {
   uak_notify_set(console_thread, 0x1);
@@ -124,7 +124,7 @@ static void console_loop(void *_unused) {
 }
 
 int32_t sim_thread;
-uint32_t sim_thread_stack[128];
+uint32_t sim_thread_stack[128] __attribute__((aligned(512)));
 
 void trigger_sim(void *_unused) {
   before_cycles = cycle_count();
@@ -294,7 +294,7 @@ void tasks_loop() {
 }
 
 int32_t idle_thread;
-uint32_t idle_loop_stack[32];
+uint32_t idle_loop_stack[32] __attribute__((aligned(128)));
 static void idle_loop(void *unused) {
   while (true) {
   }
@@ -305,9 +305,7 @@ uint32_t t2_stack[128] __attribute__((aligned(512)));
 uint32_t q1_data[8];
 
 extern uint32_t	_stext_test_loops,
-                _etext_test_loops,
                 _sdata_test_loops,
-                _edata_test_loops,
                 _size_text_test_loops[],
                 _size_data_test_loops[];
 
@@ -325,10 +323,89 @@ const struct region test_loops_space[] = {
   { 0 },
 };
 
+extern uint32_t	_stext_engine_mgmt,
+                _sdata_engine_mgmt,
+                _sconfigdata,
+                _size_text_engine_mgmt[],
+                _size_data_engine_mgmt[],
+                _size_configdata[];
+
+const struct region engine_mgmt_space[] = {
+  {
+    .start = (uint32_t)&_stext_engine_mgmt, 
+    .size = (uint32_t)_size_text_engine_mgmt,
+    .type = CODE_REGION,
+  },
+  {
+    .start = (uint32_t)&_sdata_engine_mgmt,
+    .size = (uint32_t)_size_data_engine_mgmt,
+    .type = DATA_REGION,
+  },
+  { /* Config data */
+    .start = (uint32_t)&_sconfigdata,
+    .size = (uint32_t)_size_configdata,
+    .type = DATA_REGION,
+  },
+  { /* Shared (platform) text TODO get rid of*/
+    .start = (uint32_t)0x8000000,
+    .size = (uint32_t)(1024 * 256),
+    .type = CODE_REGION,
+  },
+  { /* Peripherals */
+    .start = (uint32_t)0x40000000,
+    .size = (uint32_t)0x10000,
+    .type = PERIPHERAL_REGION,
+  },
+  { 0 },
+};
+
+const struct region sim_space[] = {
+  { /* Shared (platform) text TODO get rid of*/
+    .start = (uint32_t)0x8000000,
+    .size = (uint32_t)(1024 * 256),
+    .type = CODE_REGION,
+  },
+  { /* full ram TODO get rid of*/
+    .start = (uint32_t)0x20000000,
+    .size = (uint32_t)(1024 * 256),
+    .type = DATA_REGION,
+  },
+  { /* Peripherals */
+    .start = (uint32_t)0x40000000,
+    .size = (uint32_t)0x100000,
+    .type = PERIPHERAL_REGION,
+  },
+  { 0 },
+};
+
+extern uint32_t	_stext_console,
+                _sdata_console,
+                _size_text_console[],
+                _size_data_console[];
+
+const struct region console_space[] = {
+  {
+    .start = (uint32_t)&_stext_console, 
+    .size = (uint32_t)_size_text_console,
+    .type = CODE_REGION,
+  },
+  {
+    .start = (uint32_t)&_sdata_console,
+    .size = (uint32_t)_size_data_console,
+    .type = DATA_REGION,
+  },
+  { /* Config data */
+    .start = (uint32_t)&_sconfigdata,
+    .size = (uint32_t)_size_configdata,
+    .type = DATA_REGION,
+  },
+  { 0 },
+};
+
 
 #include "test_loops.h"
 void start_controllers(void) {
-#if 0
+#if 1
   decoder_queue = uak_queue_create(decoder_queue_data, sizeof(struct trigger_event), 2);
   adc_queue = uak_queue_create(adc_queue_data, sizeof(struct adc_update), 2);
   engine_pump_queue = uak_queue_create(engine_pump_queue_data, sizeof(struct engine_pump_update), 2);
@@ -342,9 +419,15 @@ void start_controllers(void) {
 
   idle_thread = uak_fiber_create(idle_loop, 0, 3, idle_loop_stack, sizeof(idle_loop_stack));
 
+  if (!uak_fiber_add_regions(decoder_thread, engine_mgmt_space)) while (1);
+  if (!uak_fiber_add_regions(sensor_thread, engine_mgmt_space)) while (1);
+  if (!uak_fiber_add_regions(engine_pump_thread, engine_mgmt_space)) while (1);
+
+  if (!uak_fiber_add_regions(console_thread, console_space)) while (1);
+  if (!uak_fiber_add_regions(sim_thread, sim_space)) while (1);
 #endif
 
-#if 1
+#if 0
   q1 = uak_queue_create((char *)q1_data, sizeof(uint32_t), 8);
 
   t1 = uak_fiber_create(t1_loop, 0, 2, t1_stack, sizeof(t1_stack));
@@ -356,7 +439,7 @@ void start_controllers(void) {
 #endif
 
   platform_init(0, NULL);
-//  set_test_trigger_rpm(5000);
+  set_test_trigger_rpm(5000);
 
   void fiber_md_start(void);
   fiber_md_start();

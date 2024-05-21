@@ -225,6 +225,26 @@ void Reset_Handler(void) {
     *dest++ = 0;
   }
 
+  /* Populate address space for engine mgmt */
+  extern uint32_t _data_engine_mgmt_romaddr, _sdata_engine_mgmt, _edata_engine_mgmt,  _ebss_engine_mgmt;
+  for (src = &_data_engine_mgmt_romaddr, dest = &_sdata_engine_mgmt; dest < &_edata_engine_mgmt; src++, dest++) {
+    *dest = *src;
+  }
+
+  while (dest < &_ebss_engine_mgmt) {
+    *dest++ = 0;
+  }
+
+  /* Populate address space for console */
+  extern uint32_t _data_console_romaddr, _sdata_console, _edata_console,  _ebss_console;
+  for (src = &_data_console_romaddr, dest = &_sdata_console; dest < &_edata_console; src++, dest++) {
+    *dest = *src;
+  }
+
+  while (dest < &_ebss_console) {
+    *dest++ = 0;
+  }
+
   SCB->CPACR |=
     ((3UL << (10 * 2)) | (3UL << (11 * 2))); /* set CP10 and CP11 Full Access */
   SCB->CCR |= SCB_CCR_STKALIGN_Msk;
@@ -265,6 +285,41 @@ static void setup_gpios(void) {
   GPIOE->OSPEEDR = 0xffffffff; /* All GPIOE set to High speed*/
 }
 
+static void configure_swo(void) {
+
+  GPIOB->MODER |= _VAL2FLD(GPIO_MODER_MODE3, 2);       /* Pin 8 AF */
+  GPIOB->AFR[0] |= _VAL2FLD(GPIO_AFRL_AFSEL3, 0);      /* AF1 */
+  GPIOB->OSPEEDR |= _VAL2FLD(GPIO_OSPEEDR_OSPEED3, 3);
+
+  DBGMCU->CR |= DBGMCU_CR_TRACE_IOEN;
+  /* Set TPI configuration */
+  TPI->ACPR = 1; /* 192 MHz / (1 + 1) = 96 MHz */
+  TPI->SPPR = 1; /* Manchester encoding */
+  TPI->FFCR = 0x100; /* Disable TPIU Formatter (bit 1 cleared) */
+
+  CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk; // Enable access to registers
+  DWT->CTRL = DWT_CTRL_CYCCNTENA_Msk | /* Enable Cycle Counter */ 
+              DWT_CTRL_POSTPRESET_Msk | /* POSTPRESET = 15 */
+              DWT_CTRL_POSTINIT_Msk | /* POSTINIT = 15 */
+              DWT_CTRL_CYCTAP_Msk | /* CYCTAP bit 10 */
+              DWT_CTRL_EXCTRCENA_Msk; /* Exception trace enabled */
+  DWT->CYCCNT = 0;
+  ITM->LAR = 0xC5ACCE55; /* Unlock ITM */
+  ITM->TPR = 0x0000000F; /* Allow stim port access */
+  ITM->TCR = (1 << ITM_TCR_TraceBusID_Pos) | /* Bus ID 1 */
+             ITM_TCR_DWTENA_Msk |
+             ITM_TCR_SYNCENA_Msk |
+             ITM_TCR_TSENA_Msk |
+             ITM_TCR_ITMENA_Msk;
+  ITM->TER = 0xF; /* Enable bottom 4 stim ports */
+}
+
+void itm_debug(const char *s) {
+  for (; *s != '\0'; s++) {
+    ITM_SendChar(*s);
+  }
+}
+
 extern void stm32f4_configure_scheduler(void);
 extern void stm32f4_configure_usb(void);
 extern void stm32f4_configure_adc(void);
@@ -291,6 +346,10 @@ void platform_init() {
   /* TODO set pendsv appropriately. maybe a helper? */
   *((volatile uint32_t *)0xe000ed1c) |= (255 << 24);
   *((volatile uint32_t *)0xe000ed20) |= (255 << 16);
+
+  configure_swo();
+
+  itm_debug("ViaEMS 99 platform_init() complete\n");
 
 }
 

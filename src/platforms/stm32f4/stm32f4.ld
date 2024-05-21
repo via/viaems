@@ -8,7 +8,7 @@ MEMORY
   /* Store configrom in the first 64K of the second bank.  
    * To support 2MB in dual bank, change to 0x8100000 */
 	configrom(rx) : ORIGIN = 0x08080000, LENGTH = 64K
-	ram (rwx) : ORIGIN = 0x20000000, LENGTH = 128K
+	ram (rwx) : ORIGIN = 0x20000000, LENGTH = 192K
 	ccm (rw) : ORIGIN = 0x10000000, LENGTH = 64K
 }
 
@@ -39,6 +39,53 @@ SECTIONS {
 	_data_test_loops_romaddr = LOADADDR(.data.test_loops);
   _size_data_test_loops = SIZEOF(.data.test_loops);
 
+  .text.engine_mgmt : ALIGN(16384) {
+		_stext_engine_mgmt = .;
+    */engine_mgmt.process.o(.text* .rodata*)
+    _etext_engine_mgmt = .;
+    . = ALIGN(16384);
+  } >rom
+  _size_text_engine_mgmt = SIZEOF(.text.engine_mgmt);
+
+  .data.engine_mgmt  : ALIGN(8192) {
+		_sdata_engine_mgmt = .;
+    KEEP(*/engine_mgmt.process.o(.data*))
+		KEEP(*(.dmadata*))	/* DMA regions, no different from normal data on stm32f4 */
+    _edata_engine_mgmt = .;
+    KEEP(*/engine_mgmt.process.o(.bss*))
+    _ebss_engine_mgmt = .;
+    . = ALIGN(8192);
+  } >ram AT >rom
+	_data_engine_mgmt_romaddr = LOADADDR(.data.engine_mgmt);
+  _size_data_engine_mgmt = SIZEOF(.data.engine_mgmt);
+
+  .text.console : ALIGN(32768) {
+		_stext_console = .;
+    */console.process.o(.text* .rodata*)
+    _etext_console = .;
+    . = ALIGN(32768);
+  } >rom
+  _size_text_console = SIZEOF(.text.console);
+
+  .data.console  : ALIGN(65536) {
+		_sdata_console = .;
+    KEEP(*/console.process.o(.data*))
+    _edata_console = .;
+    KEEP(*/console.process.o(.bss*))
+    _ebss_console = .;
+    . = ALIGN(65536);
+  } >ram AT >rom
+	_data_console_romaddr = LOADADDR(.data.console);
+  _size_data_console = SIZEOF(.data.console);
+
+	.configdata : ALIGN(32768) {
+		_sconfigdata = .;
+		*(.configdata*)
+		. = ALIGN(32768);
+		_econfigdata = .;
+	} >ram AT >configrom
+  _size_configdata = SIZEOF(.configdata);
+	_configdata_loadaddr = LOADADDR(.configdata);
 
   .text : {
     *(*.text* *.rodata*)
@@ -48,19 +95,10 @@ SECTIONS {
 	.data : {
 		_sdata = .;
 		*(.data*)	/* Read-write initialized data */
-		*(.dmadata*)	/* DMA regions, no different from normal data on stm32f4 */
 		. = ALIGN(4);
 		_edata = .;
 	} >ram AT >rom
 	_data_loadaddr = LOADADDR(.data);
-
-	.configdata : {
-		_sconfigdata = .;
-		*(.configdata*)
-		. = ALIGN(4);
-		_econfigdata = .;
-	} >ram AT >configrom
-	_configdata_loadaddr = LOADADDR(.configdata);
 
 	.bss : {
 		_sbss = .;

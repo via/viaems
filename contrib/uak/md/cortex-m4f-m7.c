@@ -3,6 +3,8 @@
 #include "fiber.h"
 #include "fiber-private.h"
 
+#include "stdio.h"
+
 /* Uak implementation for cortex-m4/7.
  *
  * MPU regions:
@@ -114,6 +116,15 @@ const struct mpu_rasr_attributes rasr_attributes_data = {
   .buffered = true,
 };
 
+const struct mpu_rasr_attributes rasr_attributes_peripherals = {
+  .execute_never = true,
+  .access = 0x3, 
+  .tex = 0x0,
+  .sharable = false,
+  .cachable = false,
+  .buffered = true,
+};
+
 static uint32_t mpu_rasr_attributes_bits(const struct mpu_rasr_attributes fields) {
     uint32_t result =
       ((uint32_t)fields.execute_never << 28) |
@@ -136,9 +147,11 @@ static uint32_t mpu_rasr(const struct region *r) {
         break;
       case DATA_REGION:
       case STACK_REGION:
-      case PERIPH_REGION:
       case UNCACHED_DATA_REGION:
         result = mpu_rasr_attributes_bits(rasr_attributes_data);
+        break;
+      case PERIPHERAL_REGION:
+        result = mpu_rasr_attributes_bits(rasr_attributes_peripherals);
         break;
       }
 
@@ -149,16 +162,6 @@ static uint32_t mpu_rasr(const struct region *r) {
 
   return result;
 }
-
-extern uint32_t _stext_test_loops;
-extern uint32_t _etext_test_loops;
-
-extern uint32_t _sdata_test_loops;
-extern uint32_t _edata_test_loops;
-
-extern uint32_t t1_stack[128];
-extern uint32_t t2_stack[128];
-
   
 void fiber_md_start() {
   uak_fiber_reschedule();
@@ -234,13 +237,15 @@ __asm__ (
         /* Load r0 with current mpu context */
         "bl uak_md_get_mpu_ptrs\n" 
         "mov r1, r4\n"
-        /* Load 8 MPU regions */
+
+        /* Load 8 MPU regions using the RBAR/RASR alias registers */
         "ldr r2, =0xe000ed9c\n" 
         "ldmia r0!, {r4-r11}\n"
         "stmia r2, {r4-r11}\n"
         "ldmia r0!, {r4-r11}\n"
         "stmia r2, {r4-r11}\n"
 
+        /* r1 contains new context stack pointer */
         "ldmia r1!, {r4-r11, lr}\n"
         "tst lr, #0x10\n" /* Check for FP usage */
         "it eq\n"
@@ -320,7 +325,43 @@ void SVC_Handler(uint32_t syscall, uint32_t arg1, uint32_t arg2, uint32_t arg3) 
   }
 }
 
+#define MMFSR_MMAR_VALID (1<<7)
+#define MMFSR_MSTKERR (1<<4)
+#define MMFSR_MUNSTKERR (1<<3)
+#define MMFSR_DACCVIOL (1<<1)
+#define MMFSR_IACCVIOL (1<<0)
 void MemManage_Handler(void) {
+  volatile uint8_t *mmfsr_reg = (volatile uint8_t *)0xe000ed28;
+  volatile uint32_t *mmfar_reg = (volatile uint32_t *)0xe000ed34;
+
+  itm_debug("MemManage: ");
+  uint8_t  mmfsr = *mmfsr_reg;
+  if (mmfsr & MMFSR_MMAR_VALID) {
+    itm_debug("MMAR_VALID ");
+  }
+  if (mmfsr & MMFSR_MSTKERR) {
+    itm_debug("MSTKERR ");
+  }
+  if (mmfsr & MMFSR_MUNSTKERR) {
+    itm_debug("MUNSTKERR ");
+  }
+  if (mmfsr & MMFSR_DACCVIOL) {
+    itm_debug("DACCVIOL ");
+  }
+  if (mmfsr & MMFSR_IACCVIOL) {
+    itm_debug("IACCVIOL ");
+  }
+  itm_debug("\n");
+  char buf[32];
+  if (mmfsr & MMFSR_MMAR_VALID) {
+    sprintf(buf, "  MMAR: %x\n", *mmfar_reg);
+    itm_debug(buf);
+  }
+  uint32_t *psp;
+  __asm__("mrs %0, psp\n" : "=r"(psp));
+  sprintf(buf, "  PC: %x\n", psp[6]);
+  itm_debug(buf);
+
   while (true) {
   }
 }

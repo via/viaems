@@ -5,23 +5,27 @@ TINYCBOR_DIR=$(PWD)/contrib/tinycbor
 TINYCBOR_LIB=libtinycbor.a
 
 
-all: $(OBJDIR)/viaems $(OBJDIR)/benchmark
+all: $(OBJDIR)/viaems # $(OBJDIR)/benchmark
 
-OBJS += calculations.o \
-				config.o \
-				console.o \
-				decoder.o \
-				scheduler.o \
-				sensors.o \
-				table.o \
+OBJS += fiber.o \
 				controllers.o \
 				sim.o \
-				util.o \
-				test_loops.process.o
+				console.process.o \
+				test_loops.process.o \
+				engine_mgmt.process.o
+
+
+CONSOLE_OBJS += console.o
 
 TEST_LOOPS_OBJS += test_loops.o
 
-ENGINE_MGMT_OBJS +=
+ENGINE_MGMT_OBJS += calculations.o \
+										config.o \
+										decoder.o \
+										scheduler.o \
+										sensors.o \
+										table.o \
+										util.o
 
 include targets/${PLATFORM}.mk
 
@@ -34,7 +38,7 @@ CFLAGS+=-Isrc/ -Isrc/platforms/common -Wall -Wextra -ggdb -g3 -std=c11 -DGIT_DES
 CFLAGS+=-I${TINYCBOR_DIR}/src -pipe
 LDFLAGS+= -lm -L${OBJDIR} -l:${TINYCBOR_LIB}
 
-VPATH+=src src/platforms src/platforms/common
+VPATH+=contrib/uak contrib/uak/md src src/platforms src/platforms/common
 DESTOBJS = $(addprefix ${OBJDIR}/, ${OBJS})
 
 $(OBJDIR):
@@ -54,7 +58,13 @@ $(OBJDIR)/benchmark: ${OBJDIR} ${DESTOBJS} ${OBJDIR}/${TINYCBOR_LIB} ${OBJDIR}/b
 	${CC} -o $@ ${CFLAGS} ${DESTOBJS} ${OBJDIR}/benchmark.o ${LDFLAGS}
 
 $(OBJDIR)/test_loops.process.o: ${TEST_LOOPS_OBJS}
-	${CC} ${CFLAGS} -r -flinker-output=nolto-rel -o ${OBJDIR}/test_loops.process.o ${TEST_LOOPS_OBJS}
+	${CC} ${CFLAGS} -r -flinker-output=nolto-rel -o $@ ${TEST_LOOPS_OBJS}
+
+$(OBJDIR)/engine_mgmt.process.o: ${ENGINE_MGMT_OBJS}
+	${CC} ${CFLAGS} -r -flinker-output=nolto-rel -o $@ ${ENGINE_MGMT_OBJS}
+
+$(OBJDIR)/console.process.o: ${CONSOLE_OBJS}
+	${CC} ${CFLAGS} -r -flinker-output=nolto-rel -o $@ ${CONSOLE_OBJS}
 
 
 ${OBJDIR}/${TINYCBOR_LIB}:

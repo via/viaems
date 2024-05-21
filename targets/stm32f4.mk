@@ -10,16 +10,11 @@ CMSISDEV=contrib/cmsis_device_f4/
 LIBUSB=contrib/libusb_stm32
 
 VPATH=src/platforms/${PLATFORM} \
-      contrib/libusb_stm32/src \
-			contrib/uak/ \
-      contrib/uak/md
+      contrib/libusb_stm32/src
 
 LIBUSB_OBJS= usbd_core.o \
              usbd_stm32f429_otgfs.o
 
-
-UAK_OBJS = fiber.o 
-#					 cortex-m4f-m7.o
 
 OBJS+= stm32f4.o \
        stm32f4_sched.o \
@@ -28,7 +23,6 @@ OBJS+= stm32f4.o \
        stm32f4_sensors.o \
        stm32f4_pwm.o \
        stm32_sched_buffers.o \
-			 ${UAK_OBJS} \
        ${LIBUSB_OBJS}
 
 
