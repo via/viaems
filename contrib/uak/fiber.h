@@ -18,12 +18,6 @@
  * Return values < 0 indicate error.
  */
 
-int32_t uak_fiber_create(void (*entry)(void *), 
-                         void *argument,
-                         uint8_t priority,
-                         uint32_t *stack,
-                         uint32_t stack_size);
-
 enum region_type {
   CODE_REGION,
   DATA_REGION,
@@ -41,8 +35,14 @@ struct region {
 };
 
 
-bool uak_fiber_add_regions(int32_t fiber, const struct region *regions);
- 
+int32_t uak_fiber_create(void (*entry)(void *), 
+                         void *argument,
+                         uint8_t priority,
+                         uint32_t *stack,
+                         uint32_t stack_size,
+                         const struct region *regions);
+
+
 /* Set a fiber's notification value. If it is currently blocked on a
  * notification, and the value set is non-zero, the fiber will become runnable */
 SYSCALL void uak_notify_set(int32_t fiber, uint32_t value);

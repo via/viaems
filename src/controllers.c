@@ -304,15 +304,15 @@ uint32_t t1_stack[128] __attribute__((aligned(512)));
 uint32_t t2_stack[128] __attribute__((aligned(512)));
 uint32_t q1_data[8];
 
-extern uint32_t	_stext_test_loops,
-                _sdata_test_loops,
-                _size_text_test_loops[],
+extern uint32_t	_stext,
+                _size_text[];
+extern uint32_t _sdata_test_loops,
                 _size_data_test_loops[];
 
 const struct region test_loops_space[] = {
   {
-    .start = (uint32_t)&_stext_test_loops, 
-    .size = (uint32_t)_size_text_test_loops,
+    .start = (uint32_t)&_stext, 
+    .size = (uint32_t)_size_text,
     .type = CODE_REGION,
   },
   {
@@ -323,17 +323,17 @@ const struct region test_loops_space[] = {
   { 0 },
 };
 
-extern uint32_t	_stext_engine_mgmt,
-                _sdata_engine_mgmt,
+extern uint32_t	_sdata_engine_mgmt,
                 _sconfigdata,
-                _size_text_engine_mgmt[],
+                _sdata,
                 _size_data_engine_mgmt[],
-                _size_configdata[];
+                _size_configdata[],
+                _size_data[];
 
 const struct region engine_mgmt_space[] = {
   {
-    .start = (uint32_t)&_stext_engine_mgmt, 
-    .size = (uint32_t)_size_text_engine_mgmt,
+    .start = (uint32_t)&_stext, 
+    .size = (uint32_t)_size_text,
     .type = CODE_REGION,
   },
   {
@@ -346,10 +346,10 @@ const struct region engine_mgmt_space[] = {
     .size = (uint32_t)_size_configdata,
     .type = DATA_REGION,
   },
-  { /* Shared (platform) text TODO get rid of*/
-    .start = (uint32_t)0x8000000,
-    .size = (uint32_t)(1024 * 256),
-    .type = CODE_REGION,
+  { /* Shared data */
+    .start = (uint32_t)&_sdata,
+    .size = (uint32_t)_size_data,
+    .type = DATA_REGION,
   },
   { /* Peripherals */
     .start = (uint32_t)0x40000000,
@@ -360,9 +360,9 @@ const struct region engine_mgmt_space[] = {
 };
 
 const struct region sim_space[] = {
-  { /* Shared (platform) text TODO get rid of*/
-    .start = (uint32_t)0x8000000,
-    .size = (uint32_t)(1024 * 256),
+  {
+    .start = (uint32_t)&_stext, 
+    .size = (uint32_t)_size_text,
     .type = CODE_REGION,
   },
   { /* full ram TODO get rid of*/
@@ -378,15 +378,13 @@ const struct region sim_space[] = {
   { 0 },
 };
 
-extern uint32_t	_stext_console,
-                _sdata_console,
-                _size_text_console[],
+extern uint32_t	_sdata_console,
                 _size_data_console[];
 
 const struct region console_space[] = {
   {
-    .start = (uint32_t)&_stext_console, 
-    .size = (uint32_t)_size_text_console,
+    .start = (uint32_t)&_stext, 
+    .size = (uint32_t)_size_text,
     .type = CODE_REGION,
   },
   {
@@ -397,6 +395,11 @@ const struct region console_space[] = {
   { /* Config data */
     .start = (uint32_t)&_sconfigdata,
     .size = (uint32_t)_size_configdata,
+    .type = DATA_REGION,
+  },
+  { /* Shared data */
+    .start = (uint32_t)&_sdata,
+    .size = (uint32_t)_size_data,
     .type = DATA_REGION,
   },
   { 0 },
@@ -410,23 +413,16 @@ void start_controllers(void) {
   adc_queue = uak_queue_create(adc_queue_data, sizeof(struct adc_update), 2);
   engine_pump_queue = uak_queue_create(engine_pump_queue_data, sizeof(struct engine_pump_update), 2);
 
-  decoder_thread = uak_fiber_create(decoder_loop, 0, 1, decoder_thread_stack, sizeof(decoder_thread_stack));
-  sensor_thread = uak_fiber_create(sensor_loop, 0, 1, sensor_thread_stack, sizeof(sensor_thread_stack));
-  engine_pump_thread = uak_fiber_create(engine_loop, 0, 1, engine_pump_stack, sizeof(engine_pump_stack));
+  decoder_thread = uak_fiber_create(decoder_loop, 0, 1, decoder_thread_stack, sizeof(decoder_thread_stack), engine_mgmt_space);
+  sensor_thread = uak_fiber_create(sensor_loop, 0, 1, sensor_thread_stack, sizeof(sensor_thread_stack), engine_mgmt_space);
+  engine_pump_thread = uak_fiber_create(engine_loop, 0, 1, engine_pump_stack, sizeof(engine_pump_stack), engine_mgmt_space);
 
-  console_thread = uak_fiber_create(console_loop, 0, 2, console_thread_stack, sizeof(console_thread_stack));
-  sim_thread = uak_fiber_create(sim_loop, 0, 0, sim_thread_stack, sizeof(sim_thread_stack));
+  console_thread = uak_fiber_create(console_loop, 0, 2, console_thread_stack, sizeof(console_thread_stack), console_space);
+  sim_thread = uak_fiber_create(sim_loop, 0, 0, sim_thread_stack, sizeof(sim_thread_stack), sim_space);
 
-  idle_thread = uak_fiber_create(idle_loop, 0, 3, idle_loop_stack, sizeof(idle_loop_stack));
+  idle_thread = uak_fiber_create(idle_loop, 0, 3, idle_loop_stack, sizeof(idle_loop_stack), &(struct region){ 0 });
 
-  if (!uak_fiber_add_regions(decoder_thread, engine_mgmt_space)) while (1);
-  if (!uak_fiber_add_regions(sensor_thread, engine_mgmt_space)) while (1);
-  if (!uak_fiber_add_regions(engine_pump_thread, engine_mgmt_space)) while (1);
-
-  if (!uak_fiber_add_regions(console_thread, console_space)) while (1);
-  if (!uak_fiber_add_regions(sim_thread, sim_space)) while (1);
 #endif
-
 #if 0
   q1 = uak_queue_create((char *)q1_data, sizeof(uint32_t), 8);
 

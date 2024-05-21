@@ -52,7 +52,8 @@ int32_t uak_fiber_create(void (*entry)(void *),
                          void *argument,
                          uint8_t priority,
                          uint32_t *stack,
-                         uint32_t stack_size) {
+                         uint32_t stack_size,
+                         const struct region *regions) {
 
   assert(executor.started == false);
 
@@ -80,6 +81,11 @@ int32_t uak_fiber_create(void (*entry)(void *),
       .type = STACK_REGION,
       });
 
+  for (const struct region *r = regions; r->size != 0; r++) {
+    if (!uak_md_fiber_add_region(f, r)) {
+      return -1;
+    }
+  }
   return f_handle; 
 }
 

@@ -20,14 +20,6 @@ SECTIONS {
 		. = ALIGN(4);
   } >rom
 
-  .text.test_loops : ALIGN(4096) {
-		_stext_test_loops = .;
-    */test_loops.process.o(.text* .rodata*)
-    _etext_test_loops = .;
-    . = ALIGN(4096);
-  } >rom
-  _size_text_test_loops = SIZEOF(.text.test_loops);
-
   .data.test_loops : ALIGN(4096) {
 		_sdata_test_loops = .;
     KEEP(*/test_loops.process.o(.data*))
@@ -38,14 +30,6 @@ SECTIONS {
   } >ram AT >rom
 	_data_test_loops_romaddr = LOADADDR(.data.test_loops);
   _size_data_test_loops = SIZEOF(.data.test_loops);
-
-  .text.engine_mgmt : ALIGN(16384) {
-		_stext_engine_mgmt = .;
-    */engine_mgmt.process.o(.text* .rodata*)
-    _etext_engine_mgmt = .;
-    . = ALIGN(16384);
-  } >rom
-  _size_text_engine_mgmt = SIZEOF(.text.engine_mgmt);
 
   .data.engine_mgmt  : ALIGN(8192) {
 		_sdata_engine_mgmt = .;
@@ -58,14 +42,6 @@ SECTIONS {
   } >ram AT >rom
 	_data_engine_mgmt_romaddr = LOADADDR(.data.engine_mgmt);
   _size_data_engine_mgmt = SIZEOF(.data.engine_mgmt);
-
-  .text.console : ALIGN(32768) {
-		_stext_console = .;
-    */console.process.o(.text* .rodata*)
-    _etext_console = .;
-    . = ALIGN(32768);
-  } >rom
-  _size_text_console = SIZEOF(.text.console);
 
   .data.console  : ALIGN(65536) {
 		_sdata_console = .;
@@ -87,17 +63,22 @@ SECTIONS {
   _size_configdata = SIZEOF(.configdata);
 	_configdata_loadaddr = LOADADDR(.configdata);
 
-  .text : {
+  .text : ALIGN(128K) {
+    _stext = .;
     *(*.text* *.rodata*)
+    . = ALIGN(128K);
+    _stext = .;
   } >rom
-
+  _size_text = SIZEOF(.text);
 
 	.data : {
 		_sdata = .;
 		*(.data*)	/* Read-write initialized data */
+    *(.shareddata)
 		. = ALIGN(4);
 		_edata = .;
 	} >ram AT >rom
+  _size_data = SIZEOF(.data);
 	_data_loadaddr = LOADADDR(.data);
 
 	.bss : {

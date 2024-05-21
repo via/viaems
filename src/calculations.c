@@ -3,7 +3,7 @@
 
 #include "calculations.h"
 #include "config.h"
-struct calculated_values calculated_values;
+struct calculated_values calculated_values __attribute__((section(".shareddata")));
 
 static bool fuel_overduty() {
   /* Maximum pulse width */
