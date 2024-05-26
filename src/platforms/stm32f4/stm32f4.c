@@ -287,14 +287,16 @@ static void setup_gpios(void) {
 
 static void configure_swo(void) {
 
+#if SWO
   GPIOB->MODER |= _VAL2FLD(GPIO_MODER_MODE3, 2);       /* Pin 8 AF */
   GPIOB->AFR[0] |= _VAL2FLD(GPIO_AFRL_AFSEL3, 0);      /* AF1 */
   GPIOB->OSPEEDR |= _VAL2FLD(GPIO_OSPEEDR_OSPEED3, 3);
+#endif
 
   DBGMCU->CR |= DBGMCU_CR_TRACE_IOEN;
   /* Set TPI configuration */
-  TPI->ACPR = 1; /* 192 MHz / (1 + 1) = 96 MHz */
-  TPI->SPPR = 1; /* Manchester encoding */
+  TPI->ACPR = 1; /* 168 MHz / (1 + 1) = 84 MHz */
+  TPI->SPPR = 1; /* Manchester mode */
   TPI->FFCR = 0x100; /* Disable TPIU Formatter (bit 1 cleared) */
 
   CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk; // Enable access to registers
@@ -337,9 +339,9 @@ void platform_init() {
 //  setup_watchdog();
   setup_gpios();
 
-//  stm32f4_configure_scheduler();
+  stm32f4_configure_scheduler();
 //  stm32f4_configure_usb();
-//  stm32f4_configure_adc();
+  stm32f4_configure_adc();
 //  stm32f4_configure_pwm();
 
 
@@ -347,7 +349,7 @@ void platform_init() {
   *((volatile uint32_t *)0xe000ed1c) |= (255 << 24);
   *((volatile uint32_t *)0xe000ed20) |= (255 << 16);
 
-  configure_swo();
+  //configure_swo();
 
   itm_debug("ViaEMS 99 platform_init() complete\n");
 

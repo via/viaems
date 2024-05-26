@@ -67,27 +67,25 @@ SECTIONS {
     _stext = .;
     *(*.text* *.rodata*)
     . = ALIGN(128K);
-    _stext = .;
   } >rom
   _size_text = SIZEOF(.text);
 
-	.data : {
+	.data : ALIGN(16K) {
 		_sdata = .;
 		*(.data*)	/* Read-write initialized data */
     *(.shareddata)
-		. = ALIGN(4);
 		_edata = .;
-	} >ram AT >rom
-  _size_data = SIZEOF(.data);
-	_data_loadaddr = LOADADDR(.data);
 
-	.bss : {
+		. = ALIGN(4);
 		_sbss = .;
 		*(.bss*)	/* Read-write zero initialized data */
 		*(COMMON)
 		. = ALIGN(4);
 		_ebss = .;
-	} >ram
+		. = ALIGN(16K);
+	} >ram AT >rom
+  _size_data = SIZEOF(.data);
+	_data_loadaddr = LOADADDR(.data);
 
 	/*
 	 * The .eh_frame section appears to be used for C++ exception handling.

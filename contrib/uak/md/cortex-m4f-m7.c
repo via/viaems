@@ -5,6 +5,7 @@
 
 #include "stdio.h"
 
+void itm_debug(const char *);
 /* Uak implementation for cortex-m4/7.
  *
  * MPU regions:
@@ -30,15 +31,20 @@
 enum trace_id {
   NOTIFY_SET = 0,
   NOTIFY_WAIT = 1,
-  FIBER_BECOMES_RUNNABLE = 2,
-  FIBER_SUSPEND = 3,
+  QUEUE_PUT = 2,
+  QUEUE_GET = 3,
+  FIBER_BECOMES_RUNNABLE = 4,
+  FIBER_SUSPEND = 5,       
+  FIBER_SWITCH = 6,       
 };
 
-void emit_trace(enum trace_id _id, uint8_t _arg) {
-  volatile uint8_t *STIM0 = (volatile uint8_t *)0xe0000000;
-  uint8_t id = ((uint8_t)_id) & 0xf;
-  uint8_t arg = ((uint8_t)_arg) & 0xf;
-  *STIM0 = (id << 4) | arg;
+void emit_trace(enum trace_id _id, uint8_t _arg1, uint8_t _arg2, uint8_t _arg3) {
+  volatile uint32_t *STIM1 = (volatile uint32_t *)0xe0000004;
+  uint8_t id = ((uint8_t)_id) & 0xff;
+  uint8_t arg1 = ((uint8_t)_arg1) & 0xf;
+  uint8_t arg2 = ((uint8_t)_arg2) & 0xf;
+  uint8_t arg3 = ((uint8_t)_arg3) & 0xf;
+  *STIM1 = (arg3 << 24) | (arg2 << 16) | (arg1 << 8) | id;
 }
 
 
@@ -72,6 +78,7 @@ void uak_md_fiber_create(struct fiber *f) {
 }
 
 static void uak_md_set_return_value(struct fiber *f, uint32_t value) {
+  assert(f->state == UAK_BLOCK_ON_NOTIFY);
   uint32_t *sp = f->_md;
   sp[9] = value; /* Set r0 */
 }
@@ -194,7 +201,7 @@ void fiber_md_start() {
   *MPU_RASR = executor.current->_mpu_context.regions[7].rasr;
 
   *MPU_CTRL = 5;
-  
+
   syscall0(0xff);
 }
 
@@ -202,8 +209,11 @@ extern struct executor executor;
 
 __attribute__((used))
 static void *uak_md_switch_context(void *old) {
+  int prior = executor.current - executor.fibers;
   executor.current->_md = old;
   uak_fiber_reschedule();
+  int new = executor.current - executor.fibers;
+  emit_trace(FIBER_SWITCH, prior, new, 0);
   return executor.current->_md;
 }
 
@@ -259,18 +269,42 @@ __asm__ (
 
 uint64_t cycle_count(void);
 
-void SVC_Handler(uint32_t syscall, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
+void SVC_Handler() {
+  if (!executor.started) {
+    executor.started = true;
+    __asm__(
+        /* Set CONTROL.SPSEL to use PSP in thread mode */
+        "mrs r0, control\n" 
+        "orr r0, r0, #3\n" /* unprivileged, use PSP */
+        "bic r0, r0, #4\n" /* Clear FP active */
+        "msr control, r0\n"
+        "mov r0, %0\n"
+        "ldmia r0!, {r4-r11, lr}\n"
+        "msr psp, r0\n"
+        "cpsie i\n"
+        "bx lr\n"
+        : : "r"(executor.current->_md));
+  }
+
+  uint8_t this_fiber_id = executor.current - executor.fibers;
+  uint32_t *PSP;
+  /* process stack */
+  __asm__("mrs %0, PSP" : "=r"(PSP));
+  uint32_t syscall = PSP[0];
+  uint32_t arg1 = PSP[1];
+  uint32_t arg2 = PSP[2];
+  uint32_t arg3 = PSP[3];
   switch (syscall) {
     case SYSCALL_NOTIFY_SET: {
       int32_t fiber_id = (int32_t)arg1;;
       uint32_t value = arg2;
- //     emit_trace(NOTIFY_SET, fiber_id);
+      emit_trace(NOTIFY_SET, this_fiber_id, fiber_id, 0);
       uak_notify_set_from_privileged(fiber_id, value);
       return;
             }
     case SYSCALL_NOTIFY_WAIT: {
       uint32_t result;
-//      emit_trace(NOTIFY_WAIT, 0);
+      emit_trace(NOTIFY_WAIT, this_fiber_id, 0, 0);
       if (uak_internal_notify_wait(&result)) {
         /* This fiber has already received a notification, return the value
          * immediately */
@@ -286,14 +320,14 @@ void SVC_Handler(uint32_t syscall, uint32_t arg1, uint32_t arg2, uint32_t arg3) 
     case SYSCALL_QUEUE_PUT: {
       int32_t queue_id = (int32_t)arg1;;
       const char *msg = (const char *)arg2;
-//      emit_trace(NOTIFY_SET, fiber_id);
+      emit_trace(QUEUE_PUT, this_fiber_id, queue_id, 0);
       uak_queue_put_from_privileged(queue_id, msg);
       return;
                             }
     case SYSCALL_QUEUE_GET: {
       int32_t queue_id = (int32_t)arg1;;
       char *msg = (char *)arg2;
-//      emit_trace(NOTIFY_WAIT, 0);
+      emit_trace(QUEUE_GET, this_fiber_id, queue_id, 0);
       uak_internal_queue_get(queue_id, msg);
       break;
                             }
@@ -305,25 +339,12 @@ void SVC_Handler(uint32_t syscall, uint32_t arg1, uint32_t arg2, uint32_t arg3) 
                  : : "r"(v) : "r0");
               }
               break;
-    case 0xff: { /* Start scheduler */
-      __asm__(
-          /* Set CONTROL.SPSEL to use PSP in thread mode */
-          "mrs r0, control\n" 
-          "orr r0, r0, #3\n" /* unprivileged, use PSP */
-          "bic r0, r0, #4\n" /* Clear FP active */
-          "msr control, r0\n"
-          "mov r0, %0\n"
-          "ldmia r0!, {r4-r11, lr}\n"
-          "msr psp, r0\n"
-          "bx lr\n"
-          : : "r"(executor.current->_md));
-               }
-               break;
-
     default:
       break;
   }
 }
+
+static void uak_suspend(struct fiber *f, enum uak_fiber_state reason);
 
 #define MMFSR_MMAR_VALID (1<<7)
 #define MMFSR_MSTKERR (1<<4)
@@ -362,8 +383,17 @@ void MemManage_Handler(void) {
   sprintf(buf, "  PC: %x\n", psp[6]);
   itm_debug(buf);
 
-  while (true) {
-  }
+  int tid = executor.current - executor.fibers;
+  sprintf(buf, "  TID: %x\n", tid);
+  itm_debug(buf);
+  
+  uak_suspend(executor.current, UAK_KILLED);
+  uak_md_request_reschedule();
+
+//  volatile uint32_t *SHCSR = (volatile uint32_t *)0xE000ED24;  
+ // *SHCSR &= ~1U;
+  *mmfsr_reg = mmfsr;
+
 }
 
 
@@ -384,14 +414,14 @@ static int32_t uak_md_fiber_add_region(struct fiber *f, const struct region *r) 
 
   /* Ensure region size is power of 2 greater or equal to 32 */
   if (r->size < 32) {
-    return -1;
+    return uak_initialization_failure("Region must be > 32 bytes");
   }
   if ((r->size & (r->size - 1)) != 0) {
-    return -1;
+    return uak_initialization_failure("Region size must be power of 2");
   }
   /* Ensure region is aligned by size */
   if ((r->start & (r->size - 1)) != 0) {
-    return -1;
+    return uak_initialization_failure("Region start must be aligned by size");
   }
 
   /* Find a usable region */
@@ -403,7 +433,7 @@ static int32_t uak_md_fiber_add_region(struct fiber *f, const struct region *r) 
     }
   }
   if (region_idx < 0) {
-    return -1;
+    return uak_initialization_failure("No usable region slots");
   }
   /* region_idx is an unused region */
 

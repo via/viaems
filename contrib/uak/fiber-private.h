@@ -7,6 +7,7 @@ enum uak_fiber_state {
   UAK_RUNNABLE,
   UAK_BLOCK_ON_NOTIFY,
   UAK_BLOCK_ON_QUEUE,
+  UAK_KILLED,
 };
 
 

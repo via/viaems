@@ -6,13 +6,15 @@
 
 #include "fiber.h"
 
-int32_t decoder_queue;
+#define SHARED __attribute__((section(".shareddata")))
+
+int32_t decoder_queue SHARED;
 struct trigger_event decoder_queue_data[2];
 
-int32_t adc_queue;
+int32_t adc_queue SHARED;
 struct adc_update adc_queue_data[2];
 
-int32_t engine_pump_queue;
+int32_t engine_pump_queue SHARED;
 struct engine_pump_update engine_pump_queue_data[2];
 
 uint32_t before_cycles __attribute__((externally_visible)) = 0;
@@ -43,7 +45,7 @@ bool do_thing(uint32_t vals) {
 
 
 void publish_raw_adc(const struct adc_update *ev) {
-  uak_queue_put(adc_queue, (char *)ev);
+  uak_queue_put_from_privileged(adc_queue, (char *)ev);
 }
 
 
@@ -78,7 +80,7 @@ int32_t engine_pump_thread;
 uint32_t engine_pump_stack[128] __attribute__((aligned(512)));
 
 void trigger_engine_pump(struct engine_pump_update *ev) {
-  uak_queue_put(engine_pump_queue, (char *)ev);
+  uak_queue_put_from_privileged(engine_pump_queue, (char *)ev);
 }
 
 static void engine_loop(void *unused) {
@@ -127,14 +129,14 @@ int32_t sim_thread;
 uint32_t sim_thread_stack[128] __attribute__((aligned(512)));
 
 void trigger_sim(void *_unused) {
-  before_cycles = cycle_count();
-  uak_notify_set(sim_thread, 0x1);
+//  before_cycles = cycle_count();
+  uak_notify_set_from_privileged(sim_thread, 0x1);
 }
 
 static void sim_loop(void *_unused) {
   (void)_unused;
   while (true) {
-//    uak_wait_for_notify();
+    uak_notify_wait();
     //duration = cycle_count() - before_cycles;
     execute_test_trigger(NULL);
   }
@@ -294,7 +296,7 @@ void tasks_loop() {
 }
 
 int32_t idle_thread;
-uint32_t idle_loop_stack[32] __attribute__((aligned(128)));
+uint32_t idle_loop_stack[128] __attribute__((aligned(512)));
 static void idle_loop(void *unused) {
   while (true) {
   }
@@ -353,7 +355,7 @@ const struct region engine_mgmt_space[] = {
   },
   { /* Peripherals */
     .start = (uint32_t)0x40000000,
-    .size = (uint32_t)0x10000,
+    .size = (uint32_t)0x1000000,
     .type = PERIPHERAL_REGION,
   },
   { 0 },
@@ -372,7 +374,7 @@ const struct region sim_space[] = {
   },
   { /* Peripherals */
     .start = (uint32_t)0x40000000,
-    .size = (uint32_t)0x100000,
+    .size = (uint32_t)0x10000000,
     .type = PERIPHERAL_REGION,
   },
   { 0 },
@@ -402,12 +404,27 @@ const struct region console_space[] = {
     .size = (uint32_t)_size_data,
     .type = DATA_REGION,
   },
+  { /* Peripherals */
+    .start = (uint32_t)0x40000000,
+    .size = (uint32_t)0x1000000,
+    .type = PERIPHERAL_REGION,
+  },
+  { 0 },
+};
+const struct region idle_space[] = {
+  {
+    .start = (uint32_t)&_stext, 
+    .size = (uint32_t)_size_text,
+    .type = CODE_REGION,
+  },
   { 0 },
 };
 
 
 #include "test_loops.h"
 void start_controllers(void) {
+  disable_interrupts();
+  platform_init(0, NULL);
 #if 1
   decoder_queue = uak_queue_create(decoder_queue_data, sizeof(struct trigger_event), 2);
   adc_queue = uak_queue_create(adc_queue_data, sizeof(struct adc_update), 2);
@@ -417,10 +434,10 @@ void start_controllers(void) {
   sensor_thread = uak_fiber_create(sensor_loop, 0, 1, sensor_thread_stack, sizeof(sensor_thread_stack), engine_mgmt_space);
   engine_pump_thread = uak_fiber_create(engine_loop, 0, 1, engine_pump_stack, sizeof(engine_pump_stack), engine_mgmt_space);
 
-  console_thread = uak_fiber_create(console_loop, 0, 2, console_thread_stack, sizeof(console_thread_stack), console_space);
+  //console_thread = uak_fiber_create(console_loop, 0, 2, console_thread_stack, sizeof(console_thread_stack), console_space);
   sim_thread = uak_fiber_create(sim_loop, 0, 0, sim_thread_stack, sizeof(sim_thread_stack), sim_space);
 
-  idle_thread = uak_fiber_create(idle_loop, 0, 3, idle_loop_stack, sizeof(idle_loop_stack), &(struct region){ 0 });
+  idle_thread = uak_fiber_create(idle_loop, 0, 3, idle_loop_stack, sizeof(idle_loop_stack), idle_space);
 
 #endif
 #if 0
@@ -434,7 +451,6 @@ void start_controllers(void) {
   if (!uak_fiber_add_regions(t2, test_loops_space)) while (1);
 #endif
 
-  platform_init(0, NULL);
   set_test_trigger_rpm(5000);
 
   void fiber_md_start(void);

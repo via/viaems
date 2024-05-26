@@ -7,7 +7,23 @@
 
 static struct executor executor = { 0 };
 
+void itm_debug(const char *);
+ __attribute__((weak)) int32_t uak_initialization_failure(const char *msg) {
+   itm_debug("initialization failure: ");
+   itm_debug(msg);
+   itm_debug("\n");
+   while (1);
+}
+
+ __attribute__((weak)) int32_t uak_runtime_failure(const char *msg) {
+   itm_debug("runtime failure: ");
+   itm_debug(msg);
+   itm_debug("\n");
+   while (1);
+}
+
 #include "md/cortex-m4f-m7.c"
+
 
 static uint32_t queue_next_idx(uint32_t current, uint32_t max) {
   if (current == max - 1) {

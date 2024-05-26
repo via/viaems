@@ -5,8 +5,6 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-#include "sensors.h"
-
 /* Functions that must pass through a system call interface must be directly
  * included and inlined to ensure that they are linked in the same code segment
  * that they are used from.  The actual system calls are defiend in the
