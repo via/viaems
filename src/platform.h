@@ -1,24 +1,14 @@
 #ifndef _PLATFORM_H
 #define _PLATFORM_H
+
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
-#ifndef NULL
-#define NULL 0
-#endif
-
-struct decoder;
-#ifdef TIMER64
-typedef uint64_t timeval_t;
-#else
 typedef uint32_t timeval_t;
-#endif
-typedef float degrees_t;
 /* timeval_t is gauranteed to be 32 bits */
 
-timeval_t current_time(void);
-uint64_t cycle_count(void);
+/* Move to platform-specific header defines */
 uint64_t cycles_to_ns(uint64_t cycles);
 
 /* Set event timer to fire at given time. Timer will immediately be scheduled to
@@ -28,46 +18,14 @@ uint64_t cycles_to_ns(uint64_t cycles);
  * 2) Set the event timer and enable it
  * 3) Check if the event is now in the past, and if so set it pending
  */
-void schedule_event_timer(timeval_t);
-
-/* Clear any pending timer */
-void clear_event_timer(void);
 
 void platform_init();
 /* Benchmark init is minimum necessary to use platform for benchmark */
 void platform_benchmark_init(void);
 
-void disable_interrupts(void);
-void enable_interrupts(void);
-bool interrupts_enabled(void);
-
-void set_output(int output, char value);
-int get_output(int output);
-void set_gpio(int output, char value);
-int get_gpio(int output);
-void set_pwm(int output, float percent);
-
-size_t console_read(void *buf, size_t max);
-size_t console_write(const void *buf, size_t count);
-
-void platform_load_config(void);
-void platform_save_config(void);
-
-void platform_enable_event_logging(void);
-void platform_disable_event_logging(void);
-void platform_reset_into_bootloader(void);
-
+/* Move to platform-specific header defines */
 uint32_t platform_adc_samplerate(void);
 uint32_t platform_knock_samplerate(void);
-
-/* Returns the earliest time that may still be scheduled.  This can only change
- * when buffers are swapped, so it is safe to use this value to schedule events
- * if interrupts are disabled */
-timeval_t platform_output_earliest_schedulable_time(void);
-void platform_retire_schedule(timeval_t start, timeval_t len);
-void platform_submit_schedule(timeval_t start, timeval_t len);
-void itm_event(uint32_t val);
-void itm_debug(const char *);
 
 #ifdef UNITTEST
 #include <check.h>
@@ -77,3 +35,6 @@ void set_current_time(timeval_t);
 #endif
 
 #endif
+
+
+

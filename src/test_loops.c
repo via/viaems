@@ -28,7 +28,7 @@ void t2_loop(void *) {
 
 #else
 
-void t1_loop(void *) {
+void t1_loop(void *_unused) {
   while (true) {
     uint32_t c = uak_syscall_get_cycle_count();
     __asm__("bkpt");
@@ -37,7 +37,7 @@ void t1_loop(void *) {
   }
 }
 
-void t2_loop(void *) {
+void t2_loop(void *_unused) {
   while (true) {
     uint32_t value;
     uak_queue_get(q1, &value);

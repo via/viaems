@@ -5,25 +5,8 @@
 #include "fiber.h"
 #include "fiber-private.h"
 
+/* TODO move to codegen */
 static struct executor executor = { 0 };
-
-void itm_debug(const char *);
- __attribute__((weak)) int32_t uak_initialization_failure(const char *msg) {
-   itm_debug("initialization failure: ");
-   itm_debug(msg);
-   itm_debug("\n");
-   while (1);
-}
-
- __attribute__((weak)) int32_t uak_runtime_failure(const char *msg) {
-   itm_debug("runtime failure: ");
-   itm_debug(msg);
-   itm_debug("\n");
-   while (1);
-}
-
-#include "md/cortex-m4f-m7.c"
-
 
 static uint32_t queue_next_idx(uint32_t current, uint32_t max) {
   if (current == max - 1) {
@@ -37,30 +20,25 @@ static void uak_suspend(struct fiber *f, enum uak_fiber_state reason) {
   assert(f->state == UAK_RUNNABLE);
 
   f->state = reason;
-  struct priority *pri_level = &executor.priorities[f->priority];
 
-  uint32_t next_latest = queue_next_idx(pri_level->latest, N_FIBERS_PER_PRIO);
-  pri_level->latest = next_latest;
-
+  fiber_queue *pri_level = &executor.priorities[f->priority];
+  STAILQ_REMOVE_HEAD(pri_level, entries);
   /* Make sure to mark whole level unrunnable if needed */
-  if (pri_level->oldest == pri_level->latest) {
-    executor.priority_readiness &= ~(0x80000000UL >> f->priority);
+  if (STAILQ_EMPTY(pri_level)) {
+    const uint32_t priority_bit = 0x80000000UL >> f->priority
+    executor.priority_readiness &= ~priority_bit;
   }
-  //emit_trace(FIBER_SUSPEND, 0);
 }
 
 static void uak_make_runnable(struct fiber *f) {
   f->state = UAK_RUNNABLE;
 
-  struct priority *pri_level = &executor.priorities[f->priority];
-
-  pri_level->run_queue[pri_level->oldest] = f;
-  uint32_t next_oldest = queue_next_idx(pri_level->oldest, N_FIBERS_PER_PRIO);
-  pri_level->oldest = next_oldest;
+  fiber_queue *pri_level = &executor.priorities[f->priority];
+  STAILQ_INSERT_TAIL(pri_level, f, entries);
 
   /* Mark priority level as runnable */
-  executor.priority_readiness |= (0x80000000UL >> f->priority);
-  //emit_trace(FIBER_BECOMES_RUNNABLE, 0);
+  const uint32_t priority_bit = 0x80000000UL >> f->priority
+  executor.priority_readiness |= priority_level;
 }
 
 /* Initializes fiber scheduler with an array of fibers `f` with length `n`. */

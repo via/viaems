@@ -1,0 +1,38 @@
+*** Kernel *** (syscalls)
+
+set_output
+get_output
+set_gpio
+get_gpio
+set_pwm
+
+void platform_reset_into_bootloader(void);
+void platform_load_config(void);
+void platform_save_config(void);
+
+
+size_t console_read(void *buf, size_t max);
+size_t console_write(const void *buf, size_t count);
+
+void schedule_event_timer(timeval_t);
+
+timeval_t current_time(void);
+uint64_t cycle_count(void);
+
+
+*** User ***
+
+/* Returns the earliest time that may still be scheduled.  This can only change
+ * when buffers are swapped, so it is safe to use this value to schedule events
+ * if interrupts are disabled */
+timeval_t platform_output_earliest_schedulable_time(void);
+void platform_retire_schedule(timeval_t start, timeval_t len);
+void platform_submit_schedule(timeval_t start, timeval_t len);
+
+
+
+
+void itm_event(uint32_t val);
+void itm_debug(const char *);
+
+
