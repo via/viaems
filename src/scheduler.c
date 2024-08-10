@@ -14,13 +14,14 @@ static int n_callbacks = 0;
 
 /* Returns true if both the start and stop entry have been confirmed to fire */
 static bool event_has_fired(struct output_event *ev) {
-  return (ev->start.state == SCHED_FIRED) && (ev->stop.state == SCHED_FIRED);
+  return (sched_entry_get_state(&ev->start) == SCHED_FIRED) &&
+         (sched_entry_get_state(&ev->stop) == SCHED_FIRED);
 }
 
 /* Returns true if both the start and stop entry are unscheduled */
 static bool event_is_unscheduled(struct output_event *ev) {
-  return (ev->start.state == SCHED_UNSCHEDULED) &&
-         (ev->stop.state == SCHED_UNSCHEDULED);
+  return (sched_entry_get_state(&ev->start) == SCHED_UNSCHEDULED) &&
+         (sched_entry_get_state(&ev->stop) == SCHED_UNSCHEDULED);
 }
 
 /* Disables a scheduled entry if it is possible.
@@ -30,11 +31,11 @@ static bool sched_entry_disable(struct sched_entry *en) {
 
   assert(!interrupts_enabled());
   assert(en->state != SCHED_UNSCHEDULED);
-  if (en->state != SCHED_SCHEDULED) {
+  if (sched_entry_get_state(en) != SCHED_SCHEDULED) {
     return false;
   }
 
-  en->state = SCHED_UNSCHEDULED;
+  sched_entry_set_state(en, SCHED_UNSCHEDULED);
   return true;
 }
 
@@ -46,7 +47,8 @@ static bool sched_entry_disable(struct sched_entry *en) {
 static bool sched_entry_enable(struct sched_entry *en, timeval_t time) {
 
   assert(!interrupts_enabled());
-  if ((en->state == SCHED_SUBMITTED) || (en->state == SCHED_FIRED)) {
+  if ((sched_entry_get_state(en) == SCHED_SUBMITTED) ||
+      (sched_entry_get_state(en) == SCHED_FIRED)) {
     return false;
   }
 
@@ -55,7 +57,7 @@ static bool sched_entry_enable(struct sched_entry *en, timeval_t time) {
   }
 
   en->time = time;
-  en->state = SCHED_SCHEDULED;
+  sched_entry_set_state(en, SCHED_SCHEDULED);
   return true;
 }
 
@@ -63,8 +65,8 @@ static bool sched_entry_enable(struct sched_entry *en, timeval_t time) {
 static void reset_fired_event(struct output_event *ev) {
   assert(ev->start.state == SCHED_FIRED);
   assert(ev->stop.state == SCHED_FIRED);
-  ev->start.state = SCHED_UNSCHEDULED;
-  ev->stop.state = SCHED_UNSCHEDULED;
+  sched_entry_set_state(&ev->start, SCHED_UNSCHEDULED);
+  sched_entry_set_state(&ev->stop, SCHED_UNSCHEDULED);
 }
 
 /* Attempt to deschedule an output event. If the start event can't be disabled,
@@ -162,7 +164,7 @@ static int schedule_ignition_event(struct output_event *ev,
 
   /* Don't let the stop time move more than 180*
    * forward once it is scheduled */
-  if (ev->stop.state == SCHED_SCHEDULED &&
+  if (sched_entry_get_state(&ev->stop) == SCHED_SCHEDULED &&
       time_before(ev->stop.time, stop_time) &&
       ((time_diff(stop_time, ev->stop.time) >
         time_from_rpm_diff(d->rpm, 180)))) {
@@ -213,7 +215,7 @@ static int schedule_fuel_event(struct output_event *ev,
    * forward once it is scheduled
    * TODO evaluate if this is necessary for fueling */
 
-  if (ev->stop.state == SCHED_SCHEDULED &&
+  if (sched_entry_get_state(&ev->stop) == SCHED_SCHEDULED &&
       time_before(ev->stop.time, stop_time) &&
       ((time_diff(stop_time, ev->stop.time) >
         time_from_rpm_diff(d->rpm, 180)))) {
@@ -226,7 +228,7 @@ static int schedule_fuel_event(struct output_event *ev,
    * time for the event, lets also schedule a callback to reschedule it when it
    * fires immediately.  This allows fuel events to use close to 100% duty cycle
    * without having to wait until the next trigger for rescheduling */
-  if (ev->stop.state == SCHED_SCHEDULED &&
+  if (sched_entry_get_state(&ev->stop) == SCHED_SCHEDULED &&
       !time_before(ev->stop.time, current_time())) {
     ev->callback.callback = (void (*)(void *))schedule_event;
     ev->callback.data = ev;
