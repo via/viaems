@@ -91,7 +91,7 @@ static void even_tooth_trigger_update_rpm(struct decoder *d) {
   }
 
   /* If we pass 150% of a inter-tooth delay, lose sync */
-  d->expiration = d->times[0] + (timeval_t)(diff * 1.5);
+  d->expiration = d->times[0] + (timeval_t)(diff * 1.5f);
   set_expire_event(d->expiration);
 }
 
