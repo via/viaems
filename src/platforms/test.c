@@ -20,10 +20,6 @@ static int int_disables = 0;
 static int output_states[16] = { 0 };
 static int gpio_states[16] = { 0 };
 
-void platform_enable_event_logging() {}
-
-void platform_disable_event_logging() {}
-
 void platform_reset_into_bootloader() {}
 
 void set_pwm(int pin, float val) {
@@ -136,7 +132,10 @@ size_t console_write(const void *ptr, size_t max) {
 }
 void platform_benchmark_init() {}
 
-void platform_init() {
+void platform_init(int argc, char *argv[]) {
+  (void)argc;
+  (void)argv;
+
   Suite *viaems_suite = suite_create("ViaEMS");
 
   suite_add_tcase(viaems_suite, setup_util_tests());

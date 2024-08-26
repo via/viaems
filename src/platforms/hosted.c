@@ -21,16 +21,7 @@ static _Atomic timeval_t event_timer_time = 0;
 static _Atomic bool event_timer_enabled = false;
 static _Atomic bool event_timer_pending = false;
 
-static int event_logging_enabled = 1;
 static uint16_t cur_outputs = 0;
-
-void platform_enable_event_logging() {
-  event_logging_enabled = 1;
-}
-
-void platform_disable_event_logging() {
-  event_logging_enabled = 0;
-}
 
 void platform_reset_into_bootloader() {}
 
@@ -197,16 +188,11 @@ void *platform_interrupt_thread(void *_interrupt_fd) {
       exit(1);
     }
 
-    char output[64];
     switch (msg.type) {
     case TRIGGER0:
-      sprintf(output, "# TRIGGER0 %lu\n", (unsigned long)msg.time);
-      write(STDERR_FILENO, output, strlen(output));
       decoder_update_scheduling(0, msg.time);
       break;
     case TRIGGER1:
-      sprintf(output, "# TRIGGER1 %lu\n", (unsigned long)msg.time);
-      write(STDERR_FILENO, output, strlen(output));
       decoder_update_scheduling(1, msg.time);
       break;
     case SCHEDULED_EVENT:
@@ -366,7 +352,168 @@ static int interrupt_pipes[2];
 
 void platform_benchmark_init() {}
 
-void platform_init() {
+struct hosted_args {
+  const char *read_config_file;
+  const char *write_config_file;
+  bool use_realtime;
+  const char *read_replay_file;
+};
+
+static void parse_args(struct hosted_args *args, int argc, char *argv[]) {
+  *args = (struct hosted_args){ 0 };
+  int opt;
+  while ((opt = getopt(argc, argv, "c:o:ri:")) != -1) {
+    switch (opt) {
+    case 'r':
+      args->use_realtime = true;
+      break;
+    case 'c':
+      args->read_config_file = strdup(optarg);
+      break;
+    case 'o':
+      args->write_config_file = strdup(optarg);
+      break;
+    case 'i':
+      args->read_replay_file = strdup(optarg);
+      break;
+    default:
+      fprintf(
+        stderr,
+        "usage: viaems [-c config] [-o outconfig] [-r] [-i replayfile]\n");
+      exit(EXIT_FAILURE);
+    }
+  }
+}
+
+struct replay_event {
+  enum {
+    NO_EVENT,
+    TRIGGER_EVENT,
+    ADC_EVENT,
+    END_EVENT,
+  } type;
+
+  uint32_t trigger;
+  struct adc_update adc;
+};
+
+static FILE *replay_file;
+static struct timer_callback replay_timer;
+static struct replay_event replay_event = { .type = NO_EVENT };
+;
+
+static void replay_callback(void *ptr) {
+  (void)ptr;
+
+  do {
+    switch (replay_event.type) {
+    case END_EVENT:
+      exit(EXIT_SUCCESS);
+      break;
+    case TRIGGER_EVENT:
+      decoder_update_scheduling(replay_event.trigger, replay_timer.time);
+      break;
+    case NO_EVENT:
+      break;
+    case ADC_EVENT:
+      sensor_update_adc(&replay_event.adc);
+      break;
+    }
+
+    /* Fetch next line */
+    static char *linebuf = NULL;
+    static size_t linebuf_size = 0;
+
+    if (getline(&linebuf, &linebuf_size, replay_file) < 0) {
+      if (linebuf != NULL) {
+        free(linebuf);
+      }
+      exit(EXIT_SUCCESS);
+    }
+
+    switch (linebuf[0]) {
+    case 't': {
+      int delay;
+      int trigger;
+      sscanf(linebuf, "t %d %d", &delay, &trigger);
+
+      /* Schedule a trigger */
+      timeval_t next = replay_timer.time + delay;
+
+      replay_event.trigger = trigger;
+      replay_event.type = TRIGGER_EVENT;
+
+      replay_timer.data = &replay_event;
+      schedule_callback(&replay_timer, next);
+      return;
+    }
+    case 'e': {
+      int delay;
+      sscanf(linebuf, "e %d", &delay);
+
+      /* Schedule an end event */
+      timeval_t next = replay_timer.time + delay;
+
+      replay_event.type = END_EVENT;
+
+      replay_timer.data = &replay_event;
+      schedule_callback(&replay_timer, next);
+      return;
+    }
+    case 'a': {
+      int delay;
+
+      sscanf(linebuf,
+             "a %d %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f",
+             &delay,
+             &replay_event.adc.values[0],
+             &replay_event.adc.values[1],
+             &replay_event.adc.values[2],
+             &replay_event.adc.values[3],
+             &replay_event.adc.values[4],
+             &replay_event.adc.values[5],
+             &replay_event.adc.values[6],
+             &replay_event.adc.values[7],
+             &replay_event.adc.values[8],
+             &replay_event.adc.values[9],
+             &replay_event.adc.values[10],
+             &replay_event.adc.values[11],
+             &replay_event.adc.values[12],
+             &replay_event.adc.values[13],
+             &replay_event.adc.values[14],
+             &replay_event.adc.values[15]);
+
+      /* Schedule an end event */
+      timeval_t next = replay_timer.time + delay;
+      replay_event.adc.valid = true;
+      replay_event.adc.time = next;
+      replay_event.type = ADC_EVENT;
+
+      replay_timer.data = &replay_event;
+      schedule_callback(&replay_timer, next);
+      return;
+    }
+    default:
+      return;
+    }
+  } while (true);
+}
+
+static void configure_replay(const char *path) {
+  replay_file = fopen(path, "r");
+  replay_timer.callback = replay_callback;
+  replay_timer.data = NULL;
+
+  replay_callback(NULL);
+}
+
+void platform_init(int argc, char *argv[]) {
+  struct hosted_args args;
+  parse_args(&args, argc, argv);
+
+  if (args.read_replay_file) {
+    configure_replay(args.read_replay_file);
+  }
 
   /* Initalize mutexes */
   pthread_mutexattr_t im_attr;
@@ -387,44 +534,39 @@ void platform_init() {
   pthread_t timebase;
   pthread_attr_t timebase_attr;
   pthread_attr_init(&timebase_attr);
+
   pthread_attr_setinheritsched(&timebase_attr, PTHREAD_EXPLICIT_SCHED);
   pthread_attr_setschedpolicy(&timebase_attr, SCHED_RR);
   struct sched_param timebase_param = {
     .sched_priority = 1,
   };
   pthread_attr_setschedparam(&timebase_attr, &timebase_param);
+
   if (pthread_create(&timebase,
-                     &timebase_attr,
+                     args.use_realtime ? &timebase_attr : NULL,
                      platform_timebase_thread,
                      &interrupt_pipes[1])) {
     perror("pthread_create");
-    /* Try without realtime sched */
-    if (pthread_create(
-          &timebase, NULL, platform_timebase_thread, &interrupt_pipes[1])) {
-      perror("pthread_create");
-      exit(EXIT_FAILURE);
-    }
+    exit(EXIT_FAILURE);
   }
 
   pthread_t interrupts;
   pthread_attr_t interrupts_attr;
   pthread_attr_init(&interrupts_attr);
+
   pthread_attr_setinheritsched(&interrupts_attr, PTHREAD_EXPLICIT_SCHED);
   pthread_attr_setschedpolicy(&interrupts_attr, SCHED_RR);
   struct sched_param interrupts_param = {
     .sched_priority = 2,
   };
   pthread_attr_setschedparam(&interrupts_attr, &interrupts_param);
+
   if (pthread_create(&interrupts,
-                     &interrupts_attr,
+                     args.use_realtime ? &interrupts_attr : NULL,
                      platform_interrupt_thread,
                      &interrupt_pipes[0])) {
     perror("pthread_create");
     /* Try without realtime sched */
-    if (pthread_create(
-          &interrupts, NULL, platform_interrupt_thread, &interrupt_pipes[0])) {
-      perror("pthread_create");
-      exit(EXIT_FAILURE);
-    }
+    exit(EXIT_FAILURE);
   }
 }

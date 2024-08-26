@@ -656,7 +656,9 @@ void platform_benchmark_init() {
   platform_init_usb();
 }
 
-void platform_init() {
+void platform_init(int argc, char *argv[]) {
+  (void)argc;
+  (void)argv;
 
   /* 168 Mhz clock */
   rcc_clock_setup_pll(&rcc_hse_8mhz_3v3[RCC_CLOCK_3V3_168MHZ]);

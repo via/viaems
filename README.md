@@ -237,19 +237,30 @@ that will load the binary.
 # Simulation
 The platform interface is also implemented for a Linux host machine.
 ```
-make PLATFORM=hosted run
+make PLATFORM=hosted
 ``` 
 This will build `viaems` as a Linux executable that will use stdin/stdout as
-the console, and event/trigger updates will be sent to stderr .  The test
-trigger that is enabled by default will provide enough inputs to verify some
-basic functionality.  Full integration testing using this simulation mode is
-planned.
+the consoled. The executable can take a "replay" file with the -r option that
+takes a file used to simulate specific scenarios.  Each line in the provided
+file carries a type, delay, and extra fields. Currently a trigger and adc
+command are implemented. For example, the line
+```
+t 622 0
+```
+indicates that, after 622 delay ticks, a trigger input on pin 0 should be
+simulated. Likewise, the line
+```
+a 800 0.0 0.0 1.8 0.8 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+```
+indicates that after 800 ticks, the 16 values after (in volts) should be
+simulated as an ADC input.
 
-The hosted implementation uses threads to simulate interrupt handling and the
-timers/DMA.  It attempts to schedule these two threads with realtime priority.
-If you experience difficulty keeping sync due to expired triggers (due to
-scheduling latency), make sure the threads have permissions to be realtime, or
-otherwise constrain it to a single cpu.
+The hosted-mode simulator can be used with flviaems directly to help verify
+communications, but it is also used for the integration tests to validate
+various scenarios.  These tests can be found in the `py/integration-tests`
+directory.  The tested scenarios produce a VCD dump for all the inputs and
+outputs from the simulation, allowing easy visualization with a tool like
+GTKWave for debugging purposes .
 
 # Hardware
 The current primary hardware platform is an ST Micro STM32F407VGT

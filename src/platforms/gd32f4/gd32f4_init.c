@@ -250,7 +250,10 @@ extern void gd32f4xx_console_init(void);
 extern void gd32f4xx_configure_adc(void);
 extern void gd32f4xx_configure_pwm(void);
 
-void platform_init() {
+void platform_init(int argc, char **argv) {
+  (void)argc;
+  (void)argv;
+
   NVIC_SetPriorityGrouping(3); /* 16 priority preemption levels */
 
   gd32f4xx_configure_scheduler();

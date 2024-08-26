@@ -233,9 +233,12 @@ static size_t console_feed_line_keys(uint8_t *dest, size_t bsize) {
   cbor_encoder_init(&encoder, dest, bsize, 0);
 
   CborEncoder top_encoder;
-  cbor_encoder_create_map(&encoder, &top_encoder, 2);
+  cbor_encoder_create_map(&encoder, &top_encoder, 3);
   cbor_encode_text_stringz(&top_encoder, "type");
   cbor_encode_text_stringz(&top_encoder, "description");
+
+  cbor_encode_text_stringz(&top_encoder, "time");
+  cbor_encode_int(&top_encoder, current_time());
 
   cbor_encode_text_stringz(&top_encoder, "keys");
   CborEncoder key_list_encoder;
@@ -257,9 +260,12 @@ static size_t console_feed_line(uint8_t *dest, size_t bsize) {
   cbor_encoder_init(&encoder, dest, bsize, 0);
 
   CborEncoder top_encoder;
-  cbor_encoder_create_map(&encoder, &top_encoder, 2);
+  cbor_encoder_create_map(&encoder, &top_encoder, 3);
   cbor_encode_text_stringz(&top_encoder, "type");
   cbor_encode_text_stringz(&top_encoder, "feed");
+
+  cbor_encode_text_stringz(&top_encoder, "time");
+  cbor_encode_int(&top_encoder, current_time());
 
   cbor_encode_text_stringz(&top_encoder, "values");
   CborEncoder value_list_encoder;

@@ -33,7 +33,7 @@ void schedule_event_timer(timeval_t);
 /* Clear any pending timer */
 void clear_event_timer(void);
 
-void platform_init();
+void platform_init(int argc, char *argv[]);
 /* Benchmark init is minimum necessary to use platform for benchmark */
 void platform_benchmark_init(void);
 
@@ -53,8 +53,6 @@ size_t console_write(const void *buf, size_t count);
 void platform_load_config(void);
 void platform_save_config(void);
 
-void platform_enable_event_logging(void);
-void platform_disable_event_logging(void);
 void platform_reset_into_bootloader(void);
 
 uint32_t platform_adc_samplerate(void);
