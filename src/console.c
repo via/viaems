@@ -76,7 +76,7 @@ static struct {
   _Atomic uint32_t write;
   _Atomic uint32_t seq;
   struct logged_event events[EVENT_LOG_SIZE];
-} event_log = { .enabled = false };
+} event_log = { .enabled = true };
 
 static uint32_t event_log_next_idx(uint32_t idx) {
   idx += 1;

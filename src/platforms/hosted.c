@@ -23,6 +23,12 @@ static _Atomic bool event_timer_pending = false;
 
 static uint16_t cur_outputs = 0;
 
+/* Disable leak detection in asan. There are several convenience allocations,
+ * but they should be single ones for the lifetime of the program */
+const char *__asan_default_options(void) {
+  return "detect_leaks=0";
+}
+
 void platform_reset_into_bootloader() {}
 
 timeval_t current_time() {

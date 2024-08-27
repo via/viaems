@@ -1,10 +1,10 @@
-from viaems import ViaemsWrapper
+from viaems.connector import ViaemsWrapper
 import json
 
 conn = ViaemsWrapper("obj/hosted/viaems")
 conn.start()
 
-structure = conn.structure()
+structure = conn.get(path=[])
 print(json.dumps(structure, indent=2))
 
 conn.kill()

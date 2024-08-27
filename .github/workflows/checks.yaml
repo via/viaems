@@ -13,15 +13,19 @@ jobs:
         uses: actions/checkout@v3
         with:
           submodules: recursive
-      - name: install pip deps
-        run: pip install -r integration/requirements.txt
-
       - name: run unit tests
         run: make PLATFORM=test check
       - name: build hosted platform
         run: make PLATFORM=hosted
+      - name: install pip deps
+        run: ( cd py; python3 -m pip install --upgrade pip; python3 -m pip install -r requirements.txt )
       - name: run hosted integration checks
         run: make PLATFORM=hosted integration
+      - name: upload scenario data
+        uses: actions/upload-artifact@v4
+        with: 
+          name: integration-test-results
+          path: scenario_*.*
       - name: run lint
         run: make PLATFORM=hosted lint
       - name: build stm32f4 platform

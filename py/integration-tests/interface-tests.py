@@ -1,11 +1,7 @@
 #!/usr/bin/env python3
 import unittest
-import cbor
-import subprocess
-import random
-import os
 
-from viaems import ViaemsWrapper
+from viaems.connector import ViaemsWrapper
 
 def _leaves_have_types(obj):
     if type(obj) == dict:
