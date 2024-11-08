@@ -4,7 +4,6 @@ OBJDIR=obj/${PLATFORM}
 TINYCBOR_DIR=$(PWD)/contrib/tinycbor
 TINYCBOR_LIB=libtinycbor.a
 
-
 all: $(OBJDIR)/viaems $(OBJDIR)/benchmark
 
 OBJS += calculations.o \
@@ -19,6 +18,7 @@ OBJS += calculations.o \
 				util.o
 
 include targets/${PLATFORM}.mk
+include interface/rules.mk
 
 DEPS = $(wildcard ${OBJDIR}/*.d)
 -include $(DEPS)
@@ -32,7 +32,7 @@ LDFLAGS+= -lm -L${OBJDIR} -l:${TINYCBOR_LIB}
 OPENCM3_DIR=$(PWD)/contrib/libopencm3
 
 VPATH+=src src/platforms src/platforms/common
-DESTOBJS = $(addprefix ${OBJDIR}/, ${OBJS})
+DESTOBJS += $(addprefix ${OBJDIR}/, ${OBJS})
 
 $(OBJDIR):
 	mkdir -p ${OBJDIR}
@@ -60,7 +60,8 @@ lint:
 benchmark: $(OBJDIR)/benchmark
 
 clean:
-	-rm ${OBJDIR}/*
+	-rm -r ${OBJDIR}/*
+	-rm -r obj/interface/*
 
 
 .PHONY: clean lint format integration benchmark

@@ -10,6 +10,8 @@
 #include <assert.h>
 #include <stdio.h>
 
+#include "interface/types.pb.h"
+
 int main(int argc, char *argv[]) {
   platform_load_config();
   decoder_init(&config.decoder);

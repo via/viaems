@@ -12,6 +12,9 @@
 #include "platform.h"
 #include "sensors.h"
 
+#include "pb_encode.h"
+#include "interface/types.pb.h"
+
 static uint32_t render_loss_reason() {
   return (uint32_t)config.decoder.loss;
 };
@@ -255,6 +258,36 @@ static size_t console_feed_line_keys(uint8_t *dest, size_t bsize) {
 }
 
 static size_t console_feed_line(uint8_t *dest, size_t bsize) {
+  SensorsUpdate update;
+  update.header.seq = 0;
+  update.header.timestamp = current_time();
+  update.ManifoldPressure = config.sensors[SENSOR_MAP].value;
+  update.IntakeTemperature = config.sensors[SENSOR_IAT].value;
+  update.CoolantTemperature = config.sensors[SENSOR_CLT].value;
+  update.BatteryVoltage = config.sensors[SENSOR_BRV].value;
+  update.ThrottlePosition = config.sensors[SENSOR_TPS].value;
+  update.AmbientPressure = config.sensors[SENSOR_AAP].value;
+  update.FuelRailTemperature = config.sensors[SENSOR_FRT].value;
+  update.ExhaustGasOxygen = config.sensors[SENSOR_EGO].value;
+  update.FuelRailPressure = config.sensors[SENSOR_FRP].value;
+  update.EthanolContent = config.sensors[SENSOR_EGO].value;
+
+  update.ManifoldPressureFault = SensorFault_NoFault;
+  update.IntakeTemperatureFault = SensorFault_NoFault;
+  update.CoolantTemperatureFault = SensorFault_NoFault;
+  update.BatteryVoltageFault = SensorFault_NoFault;
+  update.ThrottlePositionFault = SensorFault_NoFault;
+  update.AmbientPressureFault = SensorFault_NoFault;
+  update.FuelRailTemperatureFault = SensorFault_NoFault;
+  update.ExhaustGasOxygenFault = SensorFault_NoFault;
+  update.FuelRailPressureFault = SensorFault_NoFault;
+  update.EthanolContentFault = SensorFault_NoFault;
+
+  pb_ostream_t stream = pb_ostream_from_buffer(dest, bsize);
+  pb_encode(&stream, SensorsUpdate_fields, &update);
+  return stream.bytes_written;
+
+#if 0
   CborEncoder encoder;
 
   cbor_encoder_init(&encoder, dest, bsize, 0);
@@ -289,6 +322,7 @@ static size_t console_feed_line(uint8_t *dest, size_t bsize) {
   cbor_encoder_close_container(&top_encoder, &value_list_encoder);
   cbor_encoder_close_container(&encoder, &top_encoder);
   return cbor_encoder_get_buffer_size(&encoder, dest);
+#endif
 }
 
 static int console_write_full(const uint8_t *buf, size_t len) {
@@ -1608,17 +1642,41 @@ void console_process() {
   }
 
   /* Has it been 100ms since the last description? */
+#if 0
   if (time_diff(current_time(), last_desc_time) > time_from_us(100000)) {
     /* If so, print a description message */
     size_t write_size = console_feed_line_keys(txbuffer, sizeof(txbuffer));
     console_write_full(txbuffer, write_size);
     last_desc_time = current_time();
   } else {
+#endif 
     /* Otherwise a feed message */
-    size_t write_size = console_feed_line(txbuffer, sizeof(txbuffer));
-    console_write_full(txbuffer, write_size);
-  }
+  size_t write_size = console_feed_line(txbuffer, sizeof(txbuffer));
+  console_write_full(txbuffer, write_size);
 }
+
+#if 0
+
+static void encode_cobs(int bufsize, uint8_t buffer[bufsize], uint32_t datasize) {
+
+  int src_idx = 1;
+  uint32_t current_value = buffer[0];
+  int last_zero_idx = 0;
+
+  while (src_idx <= datasize)  {
+    if (current_value == 0) {
+      buffer[last_zero_idx] = src_idx - last_zero_idx;
+      last_zero_idx = src_idx;
+    } else {
+    }
+    uint8_t next_value = buffer[src_idx];
+    buffer[src_idx] = current_value;
+    src_idx += 1;
+    current_value = next_value;
+  }
+  buffer[last_zero_idx] = src_idx - last_zero_idx;
+}
+#endif
 
 #ifdef UNITTEST
 #include <check.h>
@@ -1875,6 +1933,48 @@ START_TEST(test_console_event_log) {
 }
 END_TEST
 
+static bool memeql(size_t len, const uint8_t src[len], const uint8_t dst[len]) {
+  for (int i = 0; i < len; i++) {
+    if (src[i] != dst[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+static void dump(size_t len, const uint8_t src[len]) {
+  for (int i = 0; i < len; i++) {
+    fprintf(stderr, "%d\n", src[i]);
+  }
+
+}
+
+#if 0
+START_TEST(test_encode_cobs) {
+
+  const uint8_t case1[] = {1, 2, 3, 4};
+
+  uint8_t buffer[256];
+  memcpy(buffer, case1, sizeof(case1));
+  encode_cobs(256, buffer, 4);
+
+  dump(5, buffer);
+  ck_assert(memeql(sizeof(case1) + 1, buffer,
+      (uint8_t[]){5, 1, 2, 3, 4}));
+
+
+  const uint8_t case2[] = {1, 2, 0, 3, 4};
+
+  memcpy(buffer, case2, sizeof(case2));
+  encode_cobs(256, buffer, 5);
+
+  dump(6, buffer);
+  ck_assert(memeql(sizeof(case2) + 1, buffer,
+      (uint8_t[]){3, 1, 2, 3, 3, 4}));
+
+} END_TEST
+#endif
+
 TCase *setup_console_tests() {
   TCase *console_tests = tcase_create("console");
   tcase_add_checked_fixture(
@@ -1891,6 +1991,7 @@ TCase *setup_console_tests() {
   tcase_add_test(console_tests, test_smoke_console_request_get_full);
 
   tcase_add_test(console_tests, test_console_event_log);
+  tcase_add_test(console_tests, test_encode_cobs);
   return console_tests;
 }
 

@@ -8,3 +8,6 @@
 	path = contrib/CMSIS_5
 	url = https://github.com/ARM-software/CMSIS_5.git
 	shallow = true
+[submodule "contrib/nanopb"]
+	path = contrib/nanopb
+	url = https://github.com/nanopb/nanopb
