@@ -23,6 +23,7 @@ OBJS += calculations.o \
 
 
 include targets/${PLATFORM}.mk
+include interface/rules.mk
 
 DEPS = $(wildcard ${OBJDIR}/*.d)
 -include $(DEPS)
@@ -36,7 +37,7 @@ LDFLAGS+= -lm -L${OBJDIR}
 OPENCM3_DIR=$(PWD)/contrib/libopencm3
 
 VPATH+=src src/platforms src/platforms/common contrib/tinycbor/src
-DESTOBJS = $(addprefix ${OBJDIR}/, ${OBJS})
+DESTOBJS += $(addprefix ${OBJDIR}/, ${OBJS})
 
 $(OBJDIR):
 	mkdir -p ${OBJDIR}
@@ -59,7 +60,8 @@ lint:
 benchmark: $(OBJDIR)/benchmark
 
 clean:
-	-rm ${OBJDIR}/*
+	-rm -r ${OBJDIR}/*
+	-rm -r obj/interface/*
 
 
 .PHONY: clean lint format integration benchmark
