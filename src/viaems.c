@@ -18,6 +18,7 @@ int main(int argc, char *argv[]) {
   platform_init(argc, argv);
 
   assert(config_valid());
+  set_test_trigger_rpm(3000);
 
   while (1) {
     console_process();
