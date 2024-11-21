@@ -259,25 +259,26 @@ static size_t console_feed_line_keys(uint8_t *dest, size_t bsize) {
 
 static size_t console_feed_line(uint8_t *dest, size_t bsize) {
   SensorsUpdate update;
+  update.has_header = true;
   update.header.seq = 0;
   update.header.timestamp = current_time();
-  update.ManifoldPressure = config.sensors[SENSOR_MAP].value;
-  update.IntakeTemperature = config.sensors[SENSOR_IAT].value;
-  update.CoolantTemperature = config.sensors[SENSOR_CLT].value;
-  update.BatteryVoltage = config.sensors[SENSOR_BRV].value;
-  update.ThrottlePosition = config.sensors[SENSOR_TPS].value;
-  update.AmbientPressure = config.sensors[SENSOR_AAP].value;
-  update.FuelRailTemperature = config.sensors[SENSOR_FRT].value;
-  update.ExhaustGasOxygen = config.sensors[SENSOR_EGO].value;
-  update.FuelRailPressure = config.sensors[SENSOR_FRP].value;
-  update.EthanolContent = config.sensors[SENSOR_EGO].value;
+  update.ManifoldPressure = 23.0f; //config.sensors[SENSOR_MAP].value;
+  update.IntakeTemperature = 28.0f; //config.sensors[SENSOR_IAT].value;
+  update.CoolantTemperature = 32.0f; //config.sensors[SENSOR_CLT].value;
+  update.BatteryVoltage = 19.0f; //config.sensors[SENSOR_BRV].value;
+  update.ThrottlePosition = 888.0f; //config.sensors[SENSOR_TPS].value;
+  update.AmbientPressure = 101111.2f;// config.sensors[SENSOR_AAP].value;
+  update.FuelRailTemperature = 19.122f; //config.sensors[SENSOR_FRT].value;
+  update.ExhaustGasOxygen = 44.0f; //config.sensors[SENSOR_EGO].value;
+  update.FuelRailPressure = 1111.2f; //config.sensors[SENSOR_FRP].value;
+  update.EthanolContent = 1919.1f; //config.sensors[SENSOR_EGO].value;
 
   update.ManifoldPressureFault = SensorFault_NoFault;
   update.IntakeTemperatureFault = SensorFault_NoFault;
   update.CoolantTemperatureFault = SensorFault_NoFault;
   update.BatteryVoltageFault = SensorFault_NoFault;
   update.ThrottlePositionFault = SensorFault_NoFault;
-  update.AmbientPressureFault = SensorFault_NoFault;
+  update.AmbientPressureFault = SensorFault_RangeFault;
   update.FuelRailTemperatureFault = SensorFault_NoFault;
   update.ExhaustGasOxygenFault = SensorFault_NoFault;
   update.FuelRailPressureFault = SensorFault_NoFault;
@@ -1633,6 +1634,7 @@ void console_process() {
     console_shift_rx_buffer(read_size);
   }
 
+#if 0
   /* Process any outstanding event messages */
   struct logged_event ev = get_logged_event();
   while (ev.type != EVENT_NONE) {
@@ -1640,6 +1642,7 @@ void console_process() {
     console_write_full(txbuffer, write_size);
     ev = get_logged_event();
   }
+#endif
 
   /* Has it been 100ms since the last description? */
 #if 0
@@ -1651,8 +1654,11 @@ void console_process() {
   } else {
 #endif 
     /* Otherwise a feed message */
-  size_t write_size = console_feed_line(txbuffer, sizeof(txbuffer));
-  console_write_full(txbuffer, write_size);
+  if (current_time > 4000000) {
+    size_t write_size = console_feed_line(txbuffer+4, sizeof(txbuffer)-4);
+    memcpy(txbuffer, &write_size, 4);
+    console_write_full(txbuffer, write_size+4);
+  }
 }
 
 #if 0
