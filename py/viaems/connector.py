@@ -132,8 +132,7 @@ class HilConnector(ViaemsInterface):
         self.device = viaems_device
         self.read_buffer = b''
 
-    def start(self, replay=None):
-        pass
+
 
     def kill(self):
         self.device.reset()
@@ -158,6 +157,87 @@ class HilConnector(ViaemsInterface):
                 else:
                     self.read_buffer += self.device.read(0x81, 512)
 
+    def reconcile_logs(self, viaems_log, tb_outputs):
+        # First find the timing offset between the ems logs and the test bench
+        # by comparing the first trigger rising edge
+        first_tb_trigger0 = None
+        first_viaems_trigger0 = None
+
+        for tbo in tb_outputs:
+            time = int(tbo.rstrip().split()[2])
+            value = int(tbo.rstrip().split()[3], 16)
+            if value & (1 << 22):
+                first_tb_trigger0 = time
+                break
+        if first_tb_trigger0 is None:
+            raise ValueError("TB contains no trigger!")
+
+        for ev in viaems_log:
+            if ev["type"] == "event" and \
+               ev["event"]["type"] == "trigger" and \
+               ev["event"]["pin"] == 0:
+                first_viaems_trigger0 = ev["time"]
+        if first_viaems_trigger0 is None:
+            raise ValueError("TB contains no trigger!")
+
+        print(first_tb_trigger0)
+        print(first_viaems_trigger0)
+
+        changes = []
+        
+        prev_value = 0
+        for tbo in tb_outputs:
+            time = int(tbo.rstrip().split()[2])
+            value = int(tbo.rstrip().split()[3], 16)
+            if value & 0x3fffff != prev_value:
+                converted_time = (time - first_tb_trigger0) / (60 / 4.0) + first_viaems_trigger0
+                prev_value = value & 0x3fffff
+                changes.append({
+                    "type": "event", 
+                    "time": converted_time,
+                    "event": {"type": "output", "outputs": prev_value}
+                    })
+        viaems_log += changes
+        return viaems_log
 
     def execute_scenario(self, scenario):
-        pass
+        self.set(["test", "event-logging"], True)
+        tf = open(f"scenario_{scenario.name}.inputs", "w")
+        for ev in scenario.events:
+            tf.write(ev.render())
+        tf.close()
+
+        # Start test bench
+        tb_process = subprocess.Popen(
+                [
+                    "viaems-fpga-tb",
+                    f"scenario_{scenario.name}.inputs",
+                    f"scenario_{scenario.name}.outputs",
+                    ], 
+                )
+
+        results = []
+        while tb_process.poll() is None:
+            try:
+                msg = self.recv()
+                results.append(msg)
+            except EOFError:
+                break
+
+        tb_process.communicate()
+        self.kill()
+
+        open(f"scenario_{scenario.name}.trace", "w").write("\n".join([str(e) for e
+                                                                      in results]))
+        tb_trace = open(f"scenario_{scenario.name}.outputs").readlines()
+
+        combined = self.reconcile_logs(results, tb_trace)
+        combined.sort(key=lambda x: x["time"])
+        dump_vcd(combined, f"scenario_{scenario.name}.vcd")
+
+        enriched_log = enrich_log(scenario.events, combined)
+        return enriched_log
+
+
+
+

@@ -16,7 +16,5 @@ class TestCase(unittest.TestCase):
         else:
             self.conn = SimConnector("obj/hosted/viaems")
 
-        self.conn.start()
-
     def tearDown(self):
         self.conn.kill()
