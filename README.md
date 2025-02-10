@@ -32,6 +32,7 @@ Features:
 4. [Compiling](#compiling)
 5. [Programming](#programming)
 6. [Simulation](#simulation)
+    1. [Hardware in the loop](#hardware-in-the-loop)
 7. [Hardware](#hardware)
     1. [STM32F4](#stm32f4)
     2. [GD32F470](src/platforms/gd32f470/README.md).
@@ -261,6 +262,29 @@ various scenarios.  These tests can be found in the `py/integration-tests`
 directory.  The tested scenarios produce a VCD dump for all the inputs and
 outputs from the simulation, allowing easy visualization with a tool like
 GTKWave for debugging purposes .
+
+## Hardware-in-the-loop
+The same tests described above can be run against a real hardware target.  This
+is achieved by using custom test bench hardware using an FTDI interface and FPGA
+to replay the scenario files and collect the outputs.  More information on that
+hardware/gateware is available: https://github.com/via/viaems-fpga-tb
+
+There is currently no automation for preparing/configuring the devices for this,
+but that work is planned. In the meantime:
+1) Connect a ViaEMS target via USB, ensure it is flashed with image to test
+2) Connect the test bench hardware via USB
+4) Connect the trigger inputs, GPIOs, outputs, and SPI ADC connections to the
+test bench.
+4) Load the bitstream onto the test bench (it is only stored in ram)
+5) Run the python integration tests as above, but as root and with the --hil flag:
+```
+sudo python py/integration-tests/smoke-tests.py --hil
+```
+
+For each scenario, the console feed from the target will be collected into a
+trace file, and the hardware events collected by test bench hardware will be
+merged and validated just as with a hosted simulation, with a viewable waveform
+dumped into a VCD file.
 
 # Hardware
 The current supported microcontrollers are the STMicro STM32F427 and GigaDevice

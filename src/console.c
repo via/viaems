@@ -1602,10 +1602,19 @@ void console_process() {
 
   /* Process any outstanding event messages */
   struct logged_event ev = get_logged_event();
-  while (ev.type != EVENT_NONE) {
-    size_t write_size = console_event_message(txbuffer, sizeof(txbuffer), &ev);
-    console_write_full(txbuffer, write_size);
-    ev = get_logged_event();
+  if (ev.type != EVENT_NONE) {
+    uint8_t *txptr = txbuffer;
+    size_t txsize = 0;
+
+    do {
+      size_t txremaining = sizeof(txbuffer) - txsize;
+      size_t write_size = console_event_message(txptr, txremaining, &ev);
+      txsize += write_size;
+      txptr += write_size;
+      ev = get_logged_event();
+    } while(ev.type != EVENT_NONE);
+
+    console_write_full(txbuffer, txsize);
   }
 
   /* Try to maintain:

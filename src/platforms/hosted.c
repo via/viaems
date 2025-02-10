@@ -525,6 +525,9 @@ void platform_init(int argc, char *argv[]) {
   struct hosted_args args;
   parse_args(&args, argc, argv);
 
+  // Make sure sensors are initialized before console starts
+  sensor_update_adc(&current_adc);
+
   if (args.read_replay_file) {
     configure_replay(args.read_replay_file);
   }

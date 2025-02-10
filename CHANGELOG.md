@@ -5,6 +5,7 @@ Major breaking changes are introduced in this release
    - Support for STM32F407 is dropped, and now STM32F427 is required, which
      breaks support for the original ViaEMS PCB.
    - stm32f4 now defaults to using a TLV2553 on SPI1 (see hardware README.md)
+ - Integration tests expanded to support hardware-in-the-loop testing
 
 ### 1.6.0 (2025 March 1)
 This introduces breaking changes for sensors and table configuration
