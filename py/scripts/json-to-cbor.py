@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import cbor
+import cbor2 as cbor
 import json
 import sys
 

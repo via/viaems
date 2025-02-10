@@ -1,53 +1,27 @@
 from typing import Union
+import bisect
 
 from viaems.util import degrees_for_tick_rpm, clamp_angle
+from viaems.events import *
 
+# Validation
+# 
+# Scenario Events in Scenario Time 
+#
+# Console Messages -> Event Log in Target Time
+#
+# Capture Events -> Event Log in Capture Time
+#
+# First, all three event logs are correlated using the trigger. This produces
+# a combination log converted to Scenario Time
+#
+# Second, higher level output events are added to the log
+#
+# Lastly, the high level output events are validated with an expected config and
+# surrounding feed update events
+#
+#
 
-class EnrichedLog:
-    def __init__(self, log):
-        self.log = log
-
-    def filter_feeds(self):
-        return EnrichedLog(filter(lambda i: type(i).__name__ == "FeedEvent", self.log))
-
-    def filter_outputs(self):
-        return EnrichedLog(
-            filter(lambda i: type(i).__name__ == "OutputEvent", self.log)
-        )
-
-    def filter_after(self, time):
-        return EnrichedLog(filter(lambda i: i.time >= time, self.log))
-
-    def filter_between(self, start, end):
-        return EnrichedLog(
-            filter(lambda i: i.time >= start and i.time <= end, self.log)
-        )
-
-    def __next__(self):
-        return next(self.log)
-
-    def __iter__(self):
-        return self
-
-
-class OutputConfig:
-    FUEL = 1
-    IGN = 2
-
-    def __init__(self, pin, typ, angle):
-        self.pin = pin
-        self.typ = typ
-        self.angle = angle
-
-    def _offset(self, angle):
-        adv = angle - self.angle
-
-        # normalize to (-360, 360) for easy comparison with bounds
-        if adv >= 360:
-            adv -= 720
-        if adv <= -360:
-            adv += 720
-        return adv
 
 
 class Config:
@@ -93,26 +67,8 @@ class Config:
 config = Config()
 
 
-class OutputEvent:
-    def __init__(self, time, pin, duration_us, end_angle, cycle):
-        self.time = time
-        self.pin = pin
-        self.duration_us = duration_us
-        self.end_angle = end_angle
-        self.cycle = cycle
-        self.oc = config.lookup(pin, end_angle)
-        if self.oc:
-            self.advance = -self.oc._offset(end_angle)
 
-
-class FeedEvent:
-
-    def __init__(self, time, keys, values):
-        self.time = time
-        self.values = dict(zip(keys, values))
-
-
-def enrich_log(inputs, log) -> EnrichedLog:
+def enrich_log(log) -> Log:
     # Iterate through the log:
     #   - For each trigger event, match with next input trigger event. Keep the
     #   current time delta, keep the current rpm/angle/time
@@ -123,57 +79,51 @@ def enrich_log(inputs, log) -> EnrichedLog:
     #   - For each feed event, use the last kept description event to produce a
     #   FeedEvent
 
-    triggers = filter(lambda i: type(i).__name__ == "ToothEvent", inputs)
-
-    desc_fields = []
-    last_trigger_input = None
-    input_to_log_time_offset = 0
     rise_times = [None] * 16
     previous_outputs = [False] * 16
+    last_trigger_input = None
 
     result = []
 
     for entry in log:
-        if entry["type"] == "event" and entry["event"]["type"] == "trigger":
+        result.append(entry)
+        match entry:
+            case SimToothEvent():
+                last_trigger_input = entry
 
-            # Get next input trigger
-            last_trigger_input = next(triggers)
-            input_to_log_time_offset = entry["time"] - last_trigger_input.time
+            case TargetOutputEvent() | CaptureOutputEvent():
+                if last_trigger_input is None:
+                    raise ValueError("Output event before first trigger")
 
-        if entry["type"] == "event" and entry["event"]["type"] == "output":
-            outputs = [
-                (entry["event"]["outputs"] & (1 << bit)) > 0 for bit in range(0, 16)
-            ]
-            for pin, (old, new) in enumerate(list(zip(previous_outputs, outputs))):
-                if old == False and new == True:
-                    rise_times[pin] = entry["time"]
-                if new == False and old == True:
-                    trigger_delta = entry["time"] - last_trigger_input.time
-                    degs = degrees_for_tick_rpm(trigger_delta, last_trigger_input.rpm)
-                    angle = clamp_angle(last_trigger_input.angle + degs)
-                    oe = OutputEvent(
-                        time=entry["time"] - input_to_log_time_offset,
-                        pin=pin,
-                        duration_us=(entry["time"] - rise_times[pin]) / 4,
-                        end_angle=angle,
-                        cycle=last_trigger_input.cycle,
-                    )
-                    result.append(oe)
+                outputs = [ (entry.values & (1 << bit)) > 0 for bit in range(0, 16) ]
+                for pin, (old, new) in enumerate(list(zip(previous_outputs, outputs))):
+                    if old == False and new == True:
+                        rise_times[pin] = entry.time
+                    if new == False and old == True:
+                        trigger_delta = entry.time - last_trigger_input.time
+                        degs = degrees_for_tick_rpm(trigger_delta, last_trigger_input.rpm)
+                        angle = clamp_angle(last_trigger_input.angle + degs)
 
-            previous_outputs = outputs
+                        oc = config.lookup(pin, angle)
+                        advance = None if oc is None else -oc._offset(angle)
 
-        if entry["type"] == "description":
-            desc_fields = entry["keys"]
+                        oe = EnrichedOutputEvent(
+                            time=entry.time,
+                            pin=pin,
+                            duration_us=(entry.time - rise_times[pin]) / 4,
+                            end_angle=angle,
+                            advance=advance,
+                            cycle=last_trigger_input.cycle,
+                            config=oc,
+                        )
+                        result.append(oe)
 
-        if entry["type"] == "feed":
-            if len(entry["values"]) == len(desc_fields):
-                # FeedEvent
-                result.append(FeedEvent(entry["time"], desc_fields, entry["values"]))
+                previous_outputs = outputs
 
-    return EnrichedLog(result)
+    return Log(result)
 
 
-def validate_outputs(log):
+def validate_outputs(log: Log) -> (bool, str):
     """Validate that all outputs are associated with a configured output,
     and that there are no gaps or missing outputs.  Each cycle should have
     the full count of configured outputs, except for the first and last."""
@@ -186,57 +136,61 @@ def validate_outputs(log):
     current_fuel_pw = None
     current_ign_pw = None
     current_ign_adv = None
+    current_cputime = None
 
     for o in log:
-        if type(o).__name__ == "FeedEvent":
-            current_fuel_pw = o.values["fuel_pulsewidth_us"]
-            current_ign_pw = o.values["dwell"]
-            current_ign_adv = o.values["advance"]
-            continue
+        match o:
+            case TargetFeedEvent(values=values):
+                current_fuel_pw = values["fuel_pulsewidth_us"]
+                current_ign_pw = values["dwell"]
+                current_ign_adv = values["advance"]
+                current_cputime = values["cputime"]
 
-        if o.oc is None:
-            return False, "Output not associated with configuration"
+            case EnrichedOutputEvent():
+                if o.config is None:
+                    return False, f"Output not associated with configuration: {o}"
 
-        if is_first_cycle:
-            is_first_cycle = False
-            current_cycle = o.cycle
-        if o.cycle != current_cycle:
-            if o.cycle > current_cycle + 1:
-                # We skipped a cycle
-                return False, "full cycle occured without outputs"
-            cycles.append(current_cycle_outputs)
-            current_cycle_outputs = 0
-            current_cycle = o.cycle
+                if is_first_cycle:
+                    is_first_cycle = False
+                    current_cycle = o.cycle
 
-        if o.oc.typ == OutputConfig.FUEL and current_fuel_pw is not None:
-            if abs(o.duration_us - current_fuel_pw) > 5:
-                return (
-                    False,
-                    f"Fuel output at time {o.time} is duration "
-                    + f"{o.duration_us}, expected {current_fuel_pw}",
-                )
-        if o.oc.typ == OutputConfig.IGN and current_ign_pw is not None:
-            if abs(o.duration_us - current_ign_pw) > 500:
-                return (
-                    False,
-                    f"Ignition output at time {o.time} is duration "
-                    + f"{o.duration_us}, expected {current_ign_pw}",
-                )
-            if abs(o.advance - current_ign_adv) > 2:
-                return (
-                    False,
-                    f"Ignition output at time {o.time} is at advance "
-                    + f"{o.advance}, expected {current_ign_adv}",
-                )
+                if o.cycle != current_cycle:
+                    if o.cycle > current_cycle + 1:
+                        # We skipped a cycle
+                        return False, "full cycle occured without outputs"
+                    cycles.append(current_cycle_outputs)
+                    current_cycle_outputs = 0
+                    current_cycle = o.cycle
 
-        current_cycle_outputs += 1
+                if o.config.typ == OutputConfig.FUEL and current_fuel_pw is not None:
+                    if abs(o.duration_us - current_fuel_pw) > 5:
+                        return (
+                            False,
+                            f"Fuel output {o.pin} at time {o.time} is duration "
+                            + f"{o.duration_us}, expected {current_fuel_pw}",
+                        )
+                if o.config.typ == OutputConfig.IGN and current_ign_pw is not None:
+                    if abs(o.duration_us - current_ign_pw) > 500:
+                        return (
+                            False,
+                            f"Ignition output {o.pin} at time {o.time} is duration "
+                            + f"{o.duration_us}, expected {current_ign_pw}",
+                        )
+                    if abs(o.advance - current_ign_adv) > 2:
+                        return (
+                            False,
+                            f"Ignition output at time {o.time} ({current_cputime}) is at advance "
+                            + f"{o.advance}, expected {current_ign_adv}",
+                        )
+
+                current_cycle_outputs += 1
 
     expected_count = len(config.outputs)
 
     if len(cycles) < 3:
         return False, "fewer than 3 cycles of outputs to validate"
     if cycles[0] == 0 or cycles[0] > expected_count:
-        return False, "cycle 0 bad event count"
+        return False, f"cycle 0 bad event count: {cycles[0]}"
     if cycles[-1] == 0 or cycles[-1] > expected_count:
         return False, f"cycle {len(cycles) - 1} bad event count"
     for idx, val in enumerate(cycles[1:-1]):

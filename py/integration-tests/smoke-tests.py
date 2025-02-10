@@ -1,8 +1,6 @@
 import unittest
 import sys
-import cbor
 
-from viaems.connector import ViaemsWrapper
 from viaems.decoder import CrankNMinus1PlusCam_Wheel
 from viaems.scenario import Scenario
 from viaems.testcase import TestCase
@@ -18,7 +16,7 @@ class NMinus1DecoderTests(TestCase):
       scenario.set_brv(12.5)
       scenario.set_map(102);
       scenario.wait_milliseconds(1000)
-      t1 = scenario.now()
+      t1 = scenario.mark()
 
       # simulate a crank condition
       scenario.set_rpm(300);
@@ -27,25 +25,25 @@ class NMinus1DecoderTests(TestCase):
       scenario.wait_milliseconds(1000)
 
       # engine catch ramp-up
-      t2 = scenario.now()
-      for rpm in range(300, 800, 100):
+      t2 = scenario.mark("rampup start")
+      for rpm in range(300, 800, 10):
           scenario.set_rpm(rpm)
-          scenario.wait_milliseconds(100)
+          scenario.wait_milliseconds(10)
 
-      t3 = scenario.now()
+      t3 = scenario.mark()
 
       scenario.set_map(35)
       scenario.set_brv(14.4)
       scenario.wait_milliseconds(1000)
 
-      t4 = scenario.now()
+      t4 = scenario.mark()
 
       scenario.set_rpm(0);
       scenario.set_map(102)
       scenario.set_brv(12)
-      scenario.wait_milliseconds(5000)
+      scenario.wait_milliseconds(1000)
 
-      t5 = scenario.now()
+      t5 = scenario.mark()
       scenario.end()
 
       results = self.conn.execute_scenario(scenario)
@@ -65,9 +63,9 @@ class NMinus1DecoderTests(TestCase):
           # start looking 10 ms later, since actual calculations race with decoder
           self.assertWithin(f.values['advance'], 10, 20)
           self.assertEqual(f.values['sync'], 1)
-          self.assertWithin(f.values['fuel_pulsewidth_us'], 4400, 4500)
+          self.assertWithin(f.values['fuel_pulsewidth_us'], 4400, 4500, f"{f}")
 
-      first_output = next(results.filter_between(t1, t2).filter_outputs())
+      first_output = results.filter_between(t1, t2).filter_enriched_outputs()[0]
       self.assertEqual(first_output.cycle, 1)
 
       
@@ -88,7 +86,7 @@ class NMinus1DecoderTests(TestCase):
                                results.filter_between(last_sync.time, t5).filter_feeds())
       self.assertEqual(len(list(remaining_syncs)), 0)
 
-      outputs = list(results.filter_between(t4, t5).filter_outputs())
+      outputs = list(results.filter_between(t4, t5).filter_enriched_outputs())
       if len(outputs) > 0:
           self.assertWithin(outputs[-1].time, ms_ticks(1), ms_ticks(100))
 
@@ -98,5 +96,47 @@ class NMinus1DecoderTests(TestCase):
       self.assertTrue(is_valid, msg)
 
 
+
+    def test_rpm_limit_test(self):
+      settings = [
+          (["decoder", "rpm-limit-start"], 9000),
+          (["decoder", "rpm-limit-stop"], 10000),
+          ]
+
+      scenario = Scenario("rpm_limit_test", CrankNMinus1PlusCam_Wheel(36))
+      scenario.set_brv(14.0)
+      scenario.set_map(90);
+      scenario.wait_milliseconds(1000)
+      t1 = scenario.mark()
+
+      scenario.set_rpm(500)
+      scenario.wait_milliseconds(1000)
+      t2 = scenario.mark()
+
+      # engine ramp to past redline
+      for rpm in range(500, 8000, 10):
+          scenario.set_rpm(rpm)
+          scenario.wait_milliseconds(10)
+
+      t3 = scenario.mark()
+      scenario.wait_milliseconds(100)
+
+      scenario.set_rpm(0)
+      scenario.wait_milliseconds(1000)
+
+      t4 = scenario.mark()
+      scenario.end()
+
+      results = self.conn.execute_scenario(scenario, settings)
+
+      for f in results.filter_between(t2 + 4000000, t3).filter_feeds():
+          self.assertEqual(f.values['sync'], 1)
+
+      is_valid, msg = validate_outputs(results.filter_between(t1, t4))
+      self.assertTrue(is_valid, msg)
+
+
 if __name__ == "__main__":
-    unittest.main()
+    if len(sys.argv) > 1:
+        sys.argv = sys.argv[1:] # Pass commandline options to test
+    unittest.main(argv=sys.argv)

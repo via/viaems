@@ -1,6 +1,5 @@
 pip
-cbor
+cbor2
 pyvcd
-intelhex
-
+pyusb
 .
