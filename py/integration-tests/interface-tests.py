@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 import unittest
+import sys
 
-from viaems.connector import ViaemsWrapper
+from viaems.testcase import TestCase
 
 def _leaves_have_types(obj):
     if type(obj) == dict:
@@ -24,14 +25,7 @@ def _leaves_have_descriptions(obj):
         return False
 
 
-class ViaemsInterfaceTests(unittest.TestCase):
-
-    def setUp(self):
-        self.conn = ViaemsWrapper("obj/hosted/viaems")
-        self.conn.start()
-
-    def tearDown(self):
-        self.conn.kill()
+class ViaemsInterfaceTests(TestCase):
 
     def test_structure_full(self):
         result = self.conn.structure()
@@ -199,4 +193,6 @@ class ViaemsInterfaceTests(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        sys.argv = sys.argv[1:]
     unittest.main()

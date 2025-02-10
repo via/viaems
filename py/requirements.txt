@@ -1,5 +1,5 @@
 pip
-cbor
+cbor2
 pyvcd
-
+pyusb
 .

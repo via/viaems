@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 import sys
-import cbor
+import cbor2 as cbor
 import json
 
 while True:

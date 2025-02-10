@@ -37,6 +37,7 @@ class Scenario:
         self.time = 0
         self.rpm = 0
         self.adc = [0.0] * 16
+        self.adc[11] = 2.5
         self.adc_sample_rate = 5000
         self.adc_delay = 4000000 / self.adc_sample_rate
 

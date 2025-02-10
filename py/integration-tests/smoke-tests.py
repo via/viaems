@@ -1,8 +1,6 @@
 import unittest
 import sys
-import cbor
 
-from viaems.connector import ViaemsWrapper
 from viaems.decoder import CrankNMinus1PlusCam_Wheel
 from viaems.scenario import Scenario
 from viaems.testcase import TestCase
@@ -99,4 +97,6 @@ class NMinus1DecoderTests(TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    if len(sys.argv) > 1:
+        sys.argv = sys.argv[1:] # Pass commandline options to test
+    unittest.main(argv=sys.argv)
