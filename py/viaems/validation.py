@@ -127,34 +127,45 @@ def enrich_log(inputs, log) -> EnrichedLog:
 
     desc_fields = []
     last_trigger_input = None
-    input_to_log_time_offset = 0
+    input_to_log_time_offset = None
     rise_times = [None] * 16
     previous_outputs = [False] * 16
 
     result = []
 
+    first_log_trigger = next(filter(lambda i: i["type"] == "event" and i["event"]["type"] == "trigger", log))
+    first_scenario_trigger = next(filter(lambda i: type(i).__name__ == "ToothEvent", inputs) )
+    input_to_log_time_offset = first_log_trigger["time"] - first_scenario_trigger.time
+
+    print(first_log_trigger)
+    print(first_scenario_trigger.__dict__)
+    print(input_to_log_time_offset)
+
     for entry in log:
+        corrected_time = entry["time"] - input_to_log_time_offset
         if entry["type"] == "event" and entry["event"]["type"] == "trigger":
 
             # Get next input trigger
             last_trigger_input = next(triggers)
-            input_to_log_time_offset = entry["time"] - last_trigger_input.time
 
         if entry["type"] == "event" and entry["event"]["type"] == "output":
+            if last_trigger_input is None:
+                continue
+
             outputs = [
                 (entry["event"]["outputs"] & (1 << bit)) > 0 for bit in range(0, 16)
             ]
             for pin, (old, new) in enumerate(list(zip(previous_outputs, outputs))):
                 if old == False and new == True:
-                    rise_times[pin] = entry["time"]
+                    rise_times[pin] = corrected_time
                 if new == False and old == True:
-                    trigger_delta = entry["time"] - last_trigger_input.time
+                    trigger_delta = corrected_time - last_trigger_input.time
                     degs = degrees_for_tick_rpm(trigger_delta, last_trigger_input.rpm)
                     angle = clamp_angle(last_trigger_input.angle + degs)
                     oe = OutputEvent(
-                        time=entry["time"] - input_to_log_time_offset,
+                        time=corrected_time,
                         pin=pin,
-                        duration_us=(entry["time"] - rise_times[pin]) / 4,
+                        duration_us=(corrected_time - rise_times[pin]) / 4,
                         end_angle=angle,
                         cycle=last_trigger_input.cycle,
                     )
@@ -168,7 +179,7 @@ def enrich_log(inputs, log) -> EnrichedLog:
         if entry["type"] == "feed":
             if len(entry["values"]) == len(desc_fields):
                 # FeedEvent
-                result.append(FeedEvent(entry["time"], desc_fields, entry["values"]))
+                result.append(FeedEvent(corrected_time, desc_fields, entry["values"]))
 
     return EnrichedLog(result)
 
@@ -195,7 +206,7 @@ def validate_outputs(log):
             continue
 
         if o.oc is None:
-            return False, "Output not associated with configuration"
+            return False, f"Output not associated with configuration: {o.__dict__}"
 
         if is_first_cycle:
             is_first_cycle = False
@@ -212,14 +223,14 @@ def validate_outputs(log):
             if abs(o.duration_us - current_fuel_pw) > 5:
                 return (
                     False,
-                    f"Fuel output at time {o.time} is duration "
+                    f"Fuel output {o.pin} at time {o.time} is duration "
                     + f"{o.duration_us}, expected {current_fuel_pw}",
                 )
         if o.oc.typ == OutputConfig.IGN and current_ign_pw is not None:
             if abs(o.duration_us - current_ign_pw) > 500:
                 return (
                     False,
-                    f"Ignition output at time {o.time} is duration "
+                    f"Ignition output {o.pin} at time {o.time} is duration "
                     + f"{o.duration_us}, expected {current_ign_pw}",
                 )
             if abs(o.advance - current_ign_adv) > 2:
