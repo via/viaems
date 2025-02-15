@@ -1,10 +1,13 @@
-import cbor2 as cbor
 import json
 import subprocess
 import tempfile
+import time
 import random
 import os
 from io import BytesIO
+
+import cbor2 as cbor
+import usb.core
 
 from viaems.vcd import dump_vcd
 from viaems.validation import enrich_log
@@ -118,9 +121,25 @@ class SimConnector(ViaemsInterface):
         enriched_log = enrich_log(scenario.events, results)
         return enriched_log
 
-import usb.core
 class HilConnector(ViaemsInterface):
     def __init__(self):
+        # Issue device reset
+        subprocess.run(
+                [
+                    "viaems-fpga-tb",
+                    "--cmd-outputs", 
+                    "00"
+                ])
+        time.sleep(0.1)
+        subprocess.run(
+                [
+                    "viaems-fpga-tb",
+                    "--cmd-outputs", 
+                    "80"
+                ])
+        time.sleep(1)
+
+
         # find the ECU device via USB
         viaems_device = usb.core.find(idVendor=0x1209, idProduct=0x2041)
         if not viaems_device:
@@ -212,8 +231,8 @@ class HilConnector(ViaemsInterface):
         tb_process = subprocess.Popen(
                 [
                     "viaems-fpga-tb",
-                    f"scenario_{scenario.name}.inputs",
-                    f"scenario_{scenario.name}.outputs",
+                    "--scenario", f"scenario_{scenario.name}.inputs",
+                    "--output", f"scenario_{scenario.name}.outputs",
                     ], 
                 )
 
