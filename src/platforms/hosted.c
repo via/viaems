@@ -148,11 +148,11 @@ void platform_load_config() {}
 void platform_save_config() {}
 
 uint32_t platform_adc_samplerate(void) {
-  return 1000;
+  return 5000;
 }
 
 uint32_t platform_knock_samplerate(void) {
-  return 1000;
+  return 5000;
 }
 
 static struct timespec add_times(struct timespec a, struct timespec b) {
@@ -310,6 +310,8 @@ static void do_output_slots(timeval_t from, timeval_t to) {
  * responsible for triggering event timer, buffer swap, and trigger events
  */
 
+static struct adc_update current_adc = { 0 };
+
 void *platform_timebase_thread(void *_interrupt_fd) {
   int *interrupt_fd = (int *)_interrupt_fd;
   timeval_t last_tasks_run = 0;
@@ -317,6 +319,8 @@ void *platform_timebase_thread(void *_interrupt_fd) {
   struct timespec tick_increment = {
     .tv_nsec = 32000,
   };
+  
+  timeval_t last_adc_update = 0;
 
   if (clock_gettime(CLOCK_MONOTONIC, &current_time)) {
     perror("clock_gettime");
@@ -333,6 +337,14 @@ void *platform_timebase_thread(void *_interrupt_fd) {
     curtime = after;
 
     do_output_slots(after, after + MAX_SLOTS - 1);
+
+    /* Ensure adc update occurs */
+    timeval_t next_adc_update = last_adc_update + (TICKRATE / platform_adc_samplerate());
+    if ((next_adc_update >= before) && (next_adc_update < after)) {
+      current_adc.time = next_adc_update;
+      sensor_update_adc(&current_adc);
+      last_adc_update = next_adc_update;
+    }
 
     /* Ensure tasks are run once per 10 ms */
     if (curtime - last_tasks_run > time_from_us(10000)) {
@@ -422,7 +434,7 @@ static void replay_callback(void *ptr) {
     case NO_EVENT:
       break;
     case ADC_EVENT:
-      sensor_update_adc(&replay_event.adc);
+      current_adc = replay_event.adc;
       break;
     }
 
