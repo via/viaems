@@ -27,6 +27,10 @@ def _leaves_have_descriptions(obj):
 
 class ViaemsInterfaceTests(TestCase):
 
+    def setUp(self):
+        super().setUp()
+        self.conn.start()
+
     def test_structure_full(self):
         result = self.conn.structure()
         assert(result['success'])
@@ -72,7 +76,7 @@ class ViaemsInterfaceTests(TestCase):
 
         def compare_subpaths(master, current_path=[]):
             current = self.conn.get(path=current_path)['response']
-            assert(master == current)
+            self.assertEqual(master, current)
             if type(current) == dict:
                 for k, v in current.items():
                     compare_subpaths(v, current_path + [k])

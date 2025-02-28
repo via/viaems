@@ -320,7 +320,8 @@ void *platform_timebase_thread(void *_interrupt_fd) {
     .tv_nsec = 32000,
   };
   
-  timeval_t last_adc_update = 0;
+  // Ensure we have an adc update immediately on startup
+  timeval_t last_adc_update = 0 - (4000000 / platform_adc_samplerate());
 
   if (clock_gettime(CLOCK_MONOTONIC, &current_time)) {
     perror("clock_gettime");

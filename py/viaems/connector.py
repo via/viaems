@@ -11,6 +11,7 @@ import usb.core
 
 from viaems.vcd import dump_vcd
 from viaems.validation import enrich_log
+from viaems.events import *
 
 class ViaemsInterface:
     def recv_until_id(self, id, max_messages=1000):
@@ -98,10 +99,25 @@ class SimConnector(ViaemsInterface):
         result = cbor.load(self.process.stdout)
         return result
 
+    def _render_target_inputs(self, scenario, file):
+        render_time = 0
+        for event in scenario.events:
+            delay = event.time - render_time;
+            match event:
+                case SimToothEvent(trigger=trigger):
+                    file.write(f"t {delay} {trigger}\n")
+                    render_time = event.time
+                case SimADCEvent(values=values):
+                    adcvals = " ".join([str(v) for v in values])
+                    file.write(f"a {delay} {adcvals}\n")
+                    render_time = event.time
+                case SimEndEvent():
+                    file.write(f"e {delay}\n")
+
+
     def execute_scenario(self, scenario):
         tf = open(f"scenario_{scenario.name}.inputs", "w")
-        for ev in scenario.events:
-            tf.write(ev.render())
+        self._render_target_inputs(scenario, tf)
         tf.close()
 
         self.start(replay=tf.name)
@@ -117,9 +133,15 @@ class SimConnector(ViaemsInterface):
             print(line)
 
         results.sort(key=lambda x: x["time"])
-        dump_vcd(results, f"scenario_{scenario.name}.vcd")
-        enriched_log = enrich_log(scenario.events, results)
-        return enriched_log
+        open(f"scenario_{scenario.name}.trace", "w").write("\n".join([str(e) for e
+                                                                      in results]))
+        slog = scenario.events
+        tlog = log_from_target_messages(results)
+        tlog = align_triggers_to_sim(slog, tlog)
+        combined = sorted(slog + tlog, key=lambda x: x.time)
+        enriched_log = enrich_log(combined)
+        dump_vcd(enriched_log, f"scenario_{scenario.name}.vcd")
+        return Log(enriched_log)
 
 class HilConnector(ViaemsInterface):
     def __init__(self):
@@ -222,6 +244,8 @@ class HilConnector(ViaemsInterface):
 
     def execute_scenario(self, scenario):
         self.set(["test", "event-logging"], True)
+        self.set(["decoder", "rpm-limit-start"], 20000)
+        self.set(["decoder", "rpm-limit-stop"], 20000)
         tf = open(f"scenario_{scenario.name}.inputs", "w")
         for ev in scenario.events:
             tf.write(ev.render())
@@ -253,9 +277,9 @@ class HilConnector(ViaemsInterface):
         combined.sort(key=lambda x: x["time"])
         open(f"scenario_{scenario.name}.trace", "w").write("\n".join([str(e) for e
                                                                       in combined]))
-        dump_vcd(combined, f"scenario_{scenario.name}.vcd")
 
         enriched_log = enrich_log(scenario.events, combined)
+        dump_vcd(enriched_log, f"scenario_{scenario.name}.vcd")
         return enriched_log
 
 
