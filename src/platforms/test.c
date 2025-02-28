@@ -20,6 +20,12 @@ static int int_disables = 0;
 static int output_states[16] = { 0 };
 static int gpio_states[16] = { 0 };
 
+/* Disable leak detection in asan. There are several convenience allocations,
+ * but they should be single ones for the lifetime of the program */
+const char *__asan_default_options(void) {
+  return "detect_leaks=0";
+}
+
 void platform_reset_into_bootloader() {}
 
 void set_pwm(int pin, float val) {
