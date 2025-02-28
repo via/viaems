@@ -320,8 +320,7 @@ void *platform_timebase_thread(void *_interrupt_fd) {
     .tv_nsec = 32000,
   };
   
-  // Ensure we have an adc update immediately on startup
-  timeval_t last_adc_update = 0 - (4000000 / platform_adc_samplerate());
+  timeval_t last_adc_update = 0;
 
   if (clock_gettime(CLOCK_MONOTONIC, &current_time)) {
     perror("clock_gettime");
@@ -529,6 +528,9 @@ static void configure_replay(const char *path) {
 void platform_init(int argc, char *argv[]) {
   struct hosted_args args;
   parse_args(&args, argc, argv);
+
+  // Make sure sensors are initialized before console starts
+  sensor_update_adc(&current_adc);
 
   if (args.read_replay_file) {
     configure_replay(args.read_replay_file);
