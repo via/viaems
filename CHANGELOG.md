@@ -1,9 +1,14 @@
-### master (unreleased)
+### 1.6.0 (2025 March 1)
+This introduces breaking changes for sensors and table configuration
+
  - Make gd32f4 default platform
+   - This is likely temporary, but is currently the most tested platform
  - Implement knock inputs
  - Sensor api refactor, **breaking change for range values**
  - Implement pulsewidth and frequency input
  - Add fuel pulsewidth offset table for nonlinear corrections
+ - Table config types split into 1d and 2d types
+ - Implement simulation-based integration tests
 
 ### 1.5.0 (2023 April 20)
 
