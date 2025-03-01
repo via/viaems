@@ -1590,6 +1590,7 @@ static void console_process_request_raw(int len) {
 
 void console_process() {
   static timeval_t last_desc_time = 0;
+  static timeval_t last_feed_time = 0;
   uint8_t txbuffer[16384];
 
   size_t read_size;
@@ -1607,16 +1608,20 @@ void console_process() {
     ev = get_logged_event();
   }
 
-  /* Has it been 100ms since the last description? */
-  if (time_diff(current_time(), last_desc_time) > time_from_us(100000)) {
-    /* If so, print a description message */
+  /* Try to maintain:
+   * - 100 Hz description messages
+   * - 10 kHz feed messages
+   */
+
+  timeval_t now = current_time();
+  if (time_diff(now, last_desc_time) > time_from_us(100000)) {
     size_t write_size = console_feed_line_keys(txbuffer, sizeof(txbuffer));
     console_write_full(txbuffer, write_size);
-    last_desc_time = current_time();
-  } else {
-    /* Otherwise a feed message */
+    last_desc_time = now;
+  } else if (time_diff(now, last_feed_time) > time_from_us(100)) {
     size_t write_size = console_feed_line(txbuffer, sizeof(txbuffer));
     console_write_full(txbuffer, write_size);
+    last_feed_time = now;
   }
 }
 
