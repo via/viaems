@@ -120,10 +120,6 @@ void adc_gather() {}
 
 timeval_t last_tx = 0;
 size_t console_write(const void *buf, size_t len) {
-  struct timespec wait = {
-    .tv_nsec = 100000,
-  };
-  nanosleep(&wait, NULL);
   ssize_t written = -1;
   while ((written = write(STDOUT_FILENO, buf, len)) < 0)
     ;
