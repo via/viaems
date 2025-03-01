@@ -81,6 +81,7 @@ class SimConnector(ViaemsInterface):
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
+            pipesize=1 * 1024 * 1024,
         )
 
     def kill(self):
@@ -115,12 +116,14 @@ class SimConnector(ViaemsInterface):
                     file.write(f"e {delay}\n")
 
 
-    def execute_scenario(self, scenario):
+    def execute_scenario(self, scenario, settings=[]):
         tf = open(f"scenario_{scenario.name}.inputs", "w")
         self._render_target_inputs(scenario, tf)
         tf.close()
 
         self.start(replay=tf.name)
+        for path, value in settings:
+            self.set(path, value)
         results = []
         while True:
             try:
@@ -132,9 +135,10 @@ class SimConnector(ViaemsInterface):
         for line in self.process.stderr:
             print(line)
 
-        results.sort(key=lambda x: x["time"])
-        open(f"scenario_{scenario.name}.trace", "w").write("\n".join([str(e) for e
-                                                                      in results]))
+        with open(f"scenario_{scenario.name}.trace", "w") as trace:
+            for line in results:
+                trace.write(str(line) + "\n")
+
         slog = scenario.events
         tlog = log_from_target_messages(results)
         tlog = align_triggers_to_sim(slog, tlog)
@@ -244,8 +248,6 @@ class HilConnector(ViaemsInterface):
 
     def execute_scenario(self, scenario):
         self.set(["test", "event-logging"], True)
-        self.set(["decoder", "rpm-limit-start"], 20000)
-        self.set(["decoder", "rpm-limit-stop"], 20000)
         tf = open(f"scenario_{scenario.name}.inputs", "w")
         for ev in scenario.events:
             tf.write(ev.render())

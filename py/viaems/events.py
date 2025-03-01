@@ -111,9 +111,21 @@ def log_from_target_messages(msgs: List[Dict]) -> List[TargetEvent]:
     desc_msg = next(filter(lambda m: m["type"] == "description", msgs))
     desc_keys = desc_msg["keys"]
 
+    event_seq = None
+    def check_seq(msg):
+        nonlocal event_seq
+        if event_seq is not None:
+            if msg['seq'] != event_seq + 1:
+                print(event_seq, " ", msg)
+                raise ValueError("Skipped target event sequence number")
+        event_seq = msg['seq']
+
     result : List[TargetEvent] = []
     for msg in msgs:
         time = int(msg["time"])
+        if msg["type"] == "event":
+            check_seq(msg)
+
         if msg["type"] == "feed":
             values = dict(zip(desc_keys, msg["values"]))
             result.append(TargetFeedEvent(time=TargetTime(time), values=values))

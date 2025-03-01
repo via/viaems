@@ -97,42 +97,43 @@ class NMinus1DecoderTests(TestCase):
 
 
 
-#class RpmLimitTest(TestCase):
-#
-#    def test_start_stop_start(self):
-#      scenario = Scenario("rpm_limit_test", CrankNMinus1PlusCam_Wheel(36))
-#      scenario.set_brv(14.0)
-#      scenario.set_map(90);
-#      scenario.wait_milliseconds(1000)
-#      t1 = scenario.mark()
-#
-#      scenario.set_rpm(500)
-#      scenario.wait_milliseconds(1000)
-#      t2 = scenario.mark()
-#
-#      # engine ramp to past redline
-#      for rpm in range(500, 15000, 10):
-#          scenario.set_rpm(rpm)
-#          scenario.wait_milliseconds(10)
-#
-#      t3 = scenario.mark()
-#      scenario.wait_milliseconds(100)
-#
-#      scenario.set_rpm(0)
-#      scenario.wait_milliseconds(1000)
-#
-#      t4 = scenario.mark()
-#      scenario.end()
-#
-#      results = self.conn.execute_scenario(scenario)
-#
-#      for f in results.filter_between(t2 + 4000000, t3).filter_feeds():
-#          if f.values['sync'] != 1:
-#              print(f.values)
-#          self.assertEqual(f.values['sync'], 1)
-#
-#      is_valid, msg = validate_outputs(results.filter_between(t1, t4))
-#      self.assertTrue(is_valid, msg)
+    def test_rpm_limit_test(self):
+      settings = [
+          (["decoder", "rpm-limit-start"], 20000),
+          (["decoder", "rpm-limit-stop"], 20000),
+          ]
+
+      scenario = Scenario("rpm_limit_test", CrankNMinus1PlusCam_Wheel(36))
+      scenario.set_brv(14.0)
+      scenario.set_map(90);
+      scenario.wait_milliseconds(1000)
+      t1 = scenario.mark()
+
+      scenario.set_rpm(500)
+      scenario.wait_milliseconds(1000)
+      t2 = scenario.mark()
+
+      # engine ramp to past redline
+      for rpm in range(500, 15000, 10):
+          scenario.set_rpm(rpm)
+          scenario.wait_milliseconds(10)
+
+      t3 = scenario.mark()
+      scenario.wait_milliseconds(100)
+
+      scenario.set_rpm(0)
+      scenario.wait_milliseconds(1000)
+
+      t4 = scenario.mark()
+      scenario.end()
+
+      results = self.conn.execute_scenario(scenario, settings)
+
+      for f in results.filter_between(t2 + 4000000, t3).filter_feeds():
+          self.assertEqual(f.values['sync'], 1)
+
+      is_valid, msg = validate_outputs(results.filter_between(t1, t4))
+      self.assertTrue(is_valid, msg)
 
 
 if __name__ == "__main__":
