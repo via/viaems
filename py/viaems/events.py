@@ -74,7 +74,7 @@ class TargetOutputEvent(TargetEvent):
 
 @dataclass
 class CaptureTriggerEvent(TargetEvent):
-    values = Dict[str, float]
+    trigger: int
 
 @dataclass
 class CaptureOutputEvent(CaptureEvent):
@@ -148,7 +148,10 @@ def align_triggers_to_sim(simlog: List[SimEvent], other: List[TargetEvent]):
             t.time - s.time
             for s, t in zip(sim_triggers, other_triggers)]
 
-    if max(differences) - min(differences) > 1:
+    # TODO: hacky
+    coeff = (float(differences[-1]) - differences[0]) / (sim_triggers[-1].time -
+                                                  sim_triggers[0].time)
+    if max(differences) - min(differences) > 10000:
         raise ValueError("Trigger time offsets vary")
 
     delta = differences[0]
@@ -157,7 +160,7 @@ def align_triggers_to_sim(simlog: List[SimEvent], other: List[TargetEvent]):
          changed_ev = copy(e)
          match changed_ev.time:
              case TargetTime(time):
-                 changed_ev.time = ScenarioTime(time - delta)
+                 changed_ev.time = ScenarioTime((time - delta) * (1.0-coeff))
              case CaptureTime(time):
                  changed_ev.time = ScenarioTime(time - delta)
          result.append(changed_ev)

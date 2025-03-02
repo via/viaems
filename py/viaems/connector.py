@@ -61,7 +61,7 @@ class ViaemsInterface:
         )
         result = self.recv_until_id(id)
         return result
-    
+
 
 
 class SimConnector(ViaemsInterface):
@@ -115,6 +115,7 @@ class SimConnector(ViaemsInterface):
                 case SimEndEvent():
                     file.write(f"e {delay}\n")
 
+    
 
     def execute_scenario(self, scenario, settings=[]):
         tf = open(f"scenario_{scenario.name}.inputs", "w")
@@ -124,11 +125,11 @@ class SimConnector(ViaemsInterface):
         self.start(replay=tf.name)
         for path, value in settings:
             self.set(path, value)
-        results = []
+        target_msgs = []
         while True:
             try:
                 msg = self.recv()
-                results.append(msg)
+                target_msgs.append(msg)
             except EOFError:
                 break
 
@@ -136,15 +137,17 @@ class SimConnector(ViaemsInterface):
             print(line)
 
         with open(f"scenario_{scenario.name}.trace", "w") as trace:
-            for line in results:
+            for line in target_msgs:
                 trace.write(str(line) + "\n")
 
-        slog = scenario.events
-        tlog = log_from_target_messages(results)
-        tlog = align_triggers_to_sim(slog, tlog)
-        combined = sorted(slog + tlog, key=lambda x: x.time)
-        enriched_log = enrich_log(combined)
+        target_events = log_from_target_messages(target_msgs)
+        target_events_aligned = align_triggers_to_sim(scenario.events, target_events)
+        combined_events = sorted(scenario.events + target_events_aligned, 
+                                 key=lambda x: x.time)
+
+        enriched_log = enrich_log(combined_events)
         dump_vcd(enriched_log, f"scenario_{scenario.name}.vcd")
+
         return Log(enriched_log)
 
 class HilConnector(ViaemsInterface):
@@ -202,55 +205,91 @@ class HilConnector(ViaemsInterface):
                 else:
                     self.read_buffer += self.device.read(0x81, 4096)
 
-    def reconcile_logs(self, viaems_log, tb_outputs):
-        # First find the timing offset between the ems logs and the test bench
-        # by comparing the first trigger rising edge
-        first_tb_trigger0 = None
-        first_viaems_trigger0 = None
 
-        for tbo in tb_outputs:
-            time = int(tbo.rstrip().split()[2])
-            value = int(tbo.rstrip().split()[3], 16)
-            if value & (1 << 22):
-                first_tb_trigger0 = time
-                break
-        if first_tb_trigger0 is None:
-            raise ValueError("TB contains no trigger!")
+    def log_from_capture(self, msgs: List[str]) -> List[CaptureEvent]:
+        last_raw_value = 0
 
-        for ev in viaems_log:
-            if ev["type"] == "event" and \
-               ev["event"]["type"] == "trigger" and \
-               ev["event"]["pin"] == 0:
-                first_viaems_trigger0 = ev["time"]
-                break
-        if first_viaems_trigger0 is None:
-            raise ValueError("TB contains no trigger!")
+        result : List[CaptureEvent] = []
+        for msg in msgs:
+            # Capture time is 60 MHz, convert to 4 Mhz
+            time = int(float(msg.rstrip().split()[2]) / 15)
 
-        print(first_tb_trigger0)
-        print(first_viaems_trigger0)
+            raw_value = int(msg.rstrip().split()[3], 16)
 
-        changes = []
-        
-        prev_value = 0
-        for tbo in tb_outputs:
-            time = int(tbo.rstrip().split()[2])
-            value = int(tbo.rstrip().split()[3], 16)
-            if value & 0xffff != prev_value:
-                converted_time = (time - first_tb_trigger0) / (60 / 4.0) + first_viaems_trigger0
-                prev_value = value & 0xffff
-                changes.append({
-                    "type": "event", 
-                    "time": int(converted_time),
-                    "event": {"type": "output", "outputs": prev_value}
-                    })
-        viaems_log += changes
-        return viaems_log
+            # Trigger 1 low->high transition
+            if (raw_value & (1 << 23)) and not (last_raw_value & (1 << 23)):
+                result.append(CaptureTriggerEvent(time=time, trigger=1))
 
-    def execute_scenario(self, scenario):
+            # Trigger 0 low->high transition
+            if (raw_value & (1 << 22)) and not (last_raw_value & (1 << 22)):
+                result.append(CaptureTriggerEvent(time=time, trigger=0))
+
+            # Values change
+            if (raw_value & 0xffff) != (last_raw_value & 0xffff):
+                result.append(CaptureOutputEvent(time=time, values=raw_value & 0xfff))
+                last_raw_value = raw_value
+
+        return result
+
+    def _render_target_inputs(self, scenario, file):
+        adc_values = [0.0] * 16
+        current_time = 0
+
+        # Render into commands for the fpga test bench
+        # Time counter is 15 MHz instead of the 4 MHz we are provided
+
+        def _advance_to_time(time):
+            nonlocal current_time
+            MAX_DELAY = (2**25) - 1
+            while time > current_time:
+                delay = time - current_time - 1 # Delay takes one cycle
+                delay = min(delay, MAX_DELAY)
+                file.write(f"d {delay}\n")
+                current_time += delay + 1
+
+        def _check_time(evtime):
+            nonlocal current_time
+            if abs(evtime - current_time) > 4:
+                raise Exception(f"Unable to render target commands without excessive error: {evtime} (vs actual {current_time})")
+
+
+        for event in scenario.events:
+            event_time = int((15.0 / 4.0) * event.time)
+
+            match event:
+                case SimToothEvent(trigger=trigger):
+                    _advance_to_time(event_time)
+                    pins = 0x81 if trigger == 0 else 0x82
+                    # Create a high pulse of length 1 
+                    _check_time(event_time)
+                    file.write(f"o 0 {pins}\n")
+                    file.write(f"o 0 {0x80}\n")
+                    current_time += 2
+
+                case SimADCEvent(values=values):
+                    _advance_to_time(event_time)
+                    for sel in range(8):
+                        idx1 = sel * 2
+                        idx2 = sel * 2 + 1
+                        if (values[idx1] != adc_values[idx1]) or \
+                           (values[idx2] != adc_values[idx2]):
+                            _check_time(event_time)
+                            val1 = int(values[idx1] / 5.0 * 4095)
+                            val2 = int(values[idx2] / 5.0 * 4095)
+                            file.write(f"a {sel} {val1} {val2}\n")
+                            current_time += 1
+
+                    adc_values = values
+
+    
+
+    def execute_scenario(self, scenario, settings=[]):
         self.set(["test", "event-logging"], True)
+        for path, value in settings:
+            self.set(path, value)
+
         tf = open(f"scenario_{scenario.name}.inputs", "w")
-        for ev in scenario.events:
-            tf.write(ev.render())
+        self._render_target_inputs(scenario, tf)
         tf.close()
 
         # Start test bench
@@ -262,28 +301,37 @@ class HilConnector(ViaemsInterface):
                     ], 
                 )
 
-        results = []
+        target_msgs = []
         while tb_process.poll() is None:
             try:
                 msg = self.recv()
-                results.append(msg)
+                target_msgs.append(msg)
             except EOFError:
                 break
 
         tb_process.communicate()
         self.kill()
 
-        tb_trace = open(f"scenario_{scenario.name}.outputs").readlines()
+        tb_msgs = open(f"scenario_{scenario.name}.outputs").readlines()
+        tb_events = self.log_from_capture(tb_msgs)
+        target_events = log_from_target_messages(target_msgs)
 
-        combined = self.reconcile_logs(results, tb_trace)
-        combined.sort(key=lambda x: x["time"])
-        open(f"scenario_{scenario.name}.trace", "w").write("\n".join([str(e) for e
-                                                                      in combined]))
+        tb_events_aligned = align_triggers_to_sim(scenario.events, tb_events)
 
-        enriched_log = enrich_log(scenario.events, combined)
+        target_events_aligned = align_triggers_to_sim(scenario.events, target_events)
+
+
+        combined_events = sorted(scenario.events + \
+                                 target_events_aligned + \
+                                 tb_events_aligned, 
+                                 key=lambda x: x.time)
+
+        combined_events = filter(lambda x: x.time >= 0, combined_events)
+
+        enriched_log = enrich_log(combined_events)
         dump_vcd(enriched_log, f"scenario_{scenario.name}.vcd")
-        return enriched_log
 
+        return Log(enriched_log)
 
 
 

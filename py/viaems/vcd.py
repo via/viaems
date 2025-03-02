@@ -31,6 +31,9 @@ def dump_vcd(log, file):
                     case TargetOutputEvent(time, values):
                         writer.change(outputs, time * 250, values)
 
+                    case CaptureOutputEvent(time, values):
+                        writer.change(outputs, time * 250, values)
+
                     case TargetFeedEvent(time, values):
                         for idx, name in enumerate(values.keys()):
                             writer.change(
