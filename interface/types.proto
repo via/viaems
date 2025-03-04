@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+message Header {
+  fixed32 seq = 1;
+  fixed32 timestamp = 2;
+}
+
+enum SensorFault {
+  NoFault = 0;
+  RangeFault = 1;
+  ConnectionFault = 2;
+}
+
+message SensorUpdate {
+  float value = 1;
+  SensorFault fault = 2;
+}
+message SensorsUpdate {
+  Header header = 1;
+  optional SensorUpdate ManifoldPressure = 2;
+  optional SensorUpdate IntakeTemperature = 3;
+  optional SensorUpdate CoolantTemperature = 4;
+  optional SensorUpdate BatteryVoltage = 5;
+  optional SensorUpdate ThrottlePosition = 6;
+  optional SensorUpdate AmbientPressure = 7;
+  optional SensorUpdate FuelRailTemperature = 8;
+  optional SensorUpdate ExhaustGasOxygen = 9;
+  optional SensorUpdate FuelRailPressure = 10;
+  optional SensorUpdate EthanolContent = 11;
+}
+
+message TriggerUpdate {
+  Header header = 1;
+  int32 trigger = 2;
+}
+
+
+message DecoderUpdate {
+  Header header = 1;
+  float last_angle = 2;
+  float instantaneous_rpm = 3;
+  float average_rpm = 4;
+  fixed32 valid_before = 5; 
+}

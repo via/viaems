@@ -262,27 +262,36 @@ static size_t console_feed_line(uint8_t *dest, size_t bsize) {
   update.has_header = true;
   update.header.seq = 0;
   update.header.timestamp = current_time();
-  update.ManifoldPressure = 23.0f; //config.sensors[SENSOR_MAP].value;
-  update.IntakeTemperature = 28.0f; //config.sensors[SENSOR_IAT].value;
-  update.CoolantTemperature = 32.0f; //config.sensors[SENSOR_CLT].value;
-  update.BatteryVoltage = 19.0f; //config.sensors[SENSOR_BRV].value;
-  update.ThrottlePosition = 888.0f; //config.sensors[SENSOR_TPS].value;
-  update.AmbientPressure = 101111.2f;// config.sensors[SENSOR_AAP].value;
-  update.FuelRailTemperature = 19.122f; //config.sensors[SENSOR_FRT].value;
-  update.ExhaustGasOxygen = 44.0f; //config.sensors[SENSOR_EGO].value;
-  update.FuelRailPressure = 1111.2f; //config.sensors[SENSOR_FRP].value;
-  update.EthanolContent = 1919.1f; //config.sensors[SENSOR_EGO].value;
+  update.ManifoldPressure = (SensorUpdate){ .fault = SensorFault_NoFault, .value = 23.0f };
+  update.has_ManifoldPressure = true;
 
-  update.ManifoldPressureFault = SensorFault_NoFault;
-  update.IntakeTemperatureFault = SensorFault_NoFault;
-  update.CoolantTemperatureFault = SensorFault_NoFault;
-  update.BatteryVoltageFault = SensorFault_NoFault;
-  update.ThrottlePositionFault = SensorFault_NoFault;
-  update.AmbientPressureFault = SensorFault_RangeFault;
-  update.FuelRailTemperatureFault = SensorFault_NoFault;
-  update.ExhaustGasOxygenFault = SensorFault_NoFault;
-  update.FuelRailPressureFault = SensorFault_NoFault;
-  update.EthanolContentFault = SensorFault_NoFault;
+  update.IntakeTemperature = (SensorUpdate){ .fault = SensorFault_NoFault, .value = 24.0f }; 
+  update.has_IntakeTemperature = true;
+
+  update.CoolantTemperature = (SensorUpdate){ .fault = SensorFault_NoFault, .value = 25.0f }; 
+  update.has_CoolantTemperature = true;
+
+  update.BatteryVoltage = (SensorUpdate){ .fault = SensorFault_NoFault, .value = 26.0f }; 
+  update.has_BatteryVoltage = true;
+
+  update.ThrottlePosition = (SensorUpdate){ .fault = SensorFault_NoFault, .value = 27.0f }; 
+  update.has_ThrottlePosition = true;
+
+  update.AmbientPressure = (SensorUpdate){ .fault = SensorFault_RangeFault};
+  update.has_AmbientPressure = true;
+//
+//  update.FuelRailTemperature = (SensorUpdate){ .fault = SensorFault_NoFault, .value = 29.0f }; 
+//  update.has_FuelRailTemperature = true;
+//
+//  update.ExhaustGasOxygen = (SensorUpdate){ .fault = SensorFault_NoFault, .value = 30.0f }; 
+//  update.has_ExhaustGasOxygen = true;
+//  
+//  update.FuelRailPressure = (SensorUpdate){ .fault = SensorFault_NoFault, .value = 31.0f }; 
+//  update.has_FuelRailPressure = true;
+//
+//  update.EthanolContent = (SensorUpdate){ .fault = SensorFault_NoFault, .value = 32.0f }; 
+//  update.has_EthanolContent = true;
+
 
   pb_ostream_t stream = pb_ostream_from_buffer(dest, bsize);
   pb_encode(&stream, SensorsUpdate_fields, &update);
