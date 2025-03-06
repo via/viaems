@@ -103,11 +103,7 @@ void set_gpio(int output, char value) {
   }
 
   if (old_gpios != gpios) {
-    console_record_event((struct logged_event){
-      .time = current_time(),
-      .value = gpios,
-      .type = EVENT_GPIO,
-    });
+    // TODO record event
   }
 }
 
@@ -276,11 +272,7 @@ timeval_t platform_output_earliest_schedulable_time() {
 }
 
 static void report_output_event(timeval_t time, uint16_t outputs) {
-  console_record_event((struct logged_event){
-    .time = time,
-    .value = outputs,
-    .type = EVENT_OUTPUT,
-  });
+  // TODO record event
 }
 
 static void do_output_slots(timeval_t from, timeval_t to) {

@@ -4,7 +4,10 @@
 #include <cbor.h>
 
 #include "platform.h"
+#include "decoder.h"
 #include "sim.h"
+
+#include "interface/types.pb.h"
 
 struct logged_event {
   timeval_t time;
@@ -115,21 +118,12 @@ bool descend_array_field(struct console_request_context *ctx,
                          struct console_request_context *deeper,
                          int index);
 
-struct console_feed_node {
-  const char *id;
-  const char *description;
-  const uint32_t *uint32_ptr;
-  uint32_t (*uint32_fptr)();
-  const float *float_ptr;
-  float (*float_fptr)();
-};
-
-void render_description_field(CborEncoder *, const char *desc);
 void render_type_field(CborEncoder *, const char *type);
 
 void console_process(void);
-
 void console_record_event(struct logged_event);
+void console_publish_trigger_update(const struct decoder_event *ev);
+void console_publish_sensors_update(const SensorsUpdate *update);
 
 #ifdef UNITTEST
 #include <check.h>

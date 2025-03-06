@@ -411,11 +411,8 @@ static void decode(struct decoder *d, struct decoder_event *ev) {
 void decoder_update_scheduling(int trigger, uint32_t time) {
   struct decoder_event ev = { .trigger = trigger, .time = time };
 
-  console_record_event((struct logged_event){
-    .type = EVENT_TRIGGER,
-    .value = trigger,
-    .time = time,
-  });
+  console_publish_trigger_update(&ev);
+  
   if (trigger == 0) {
     config.decoder.t0_count++;
   } else if (trigger == 1) {

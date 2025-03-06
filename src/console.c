@@ -11,177 +11,53 @@
 #include "decoder.h"
 #include "platform.h"
 #include "sensors.h"
+#include "spsc.h"
 
 #include "pb_encode.h"
 #include "interface/types.pb.h"
 
+TriggerUpdate trigger_update_queue_data[32];
+struct spsc_queue trigger_update_queue = { .size = 32 };
+
+SensorsUpdate sensors_update_queue_data[32];
+struct spsc_queue sensors_update_queue = { .size = 32 };
+
+void console_publish_trigger_update(const struct decoder_event *ev) {
+  static uint32_t seq = 0;
+
+  int32_t idx = spsc_allocate(&trigger_update_queue);
+  if (idx < 0) {
+    return;
+  }
+  TriggerUpdate *msg = &trigger_update_queue_data[idx];
+  msg->has_header = true;
+  msg->header.seq = seq;
+  msg->header.timestamp = ev->time;
+  msg->trigger = ev->trigger;
+  seq += 1;
+
+  spsc_push(&trigger_update_queue);
+}
+
+void console_publish_sensors_update(const SensorsUpdate *update) {
+  static uint32_t seq = 0;
+
+  int32_t idx = spsc_allocate(&sensors_update_queue);
+  if (idx < 0) {
+    return;
+  }
+  SensorsUpdate *msg = &sensors_update_queue_data[idx];
+  msg->has_header = true;
+  msg->header.seq = seq;
+  seq += 1;
+
+  spsc_push(&sensors_update_queue);
+}
+
+
 static uint32_t render_loss_reason() {
   return (uint32_t)config.decoder.loss;
 };
-
-const struct console_feed_node console_feed_nodes[] = {
-  { .id = "cputime", .uint32_fptr = current_time },
-
-  /* Fueling */
-  { .id = "ve", .float_ptr = &calculated_values.ve },
-  { .id = "lambda", .float_ptr = &calculated_values.lambda },
-  { .id = "fuel_pulsewidth_us", .uint32_ptr = &calculated_values.fueling_us },
-  { .id = "temp_enrich_percent", .float_ptr = &calculated_values.ete },
-  { .id = "injector_dead_time", .float_ptr = &calculated_values.idt },
-  { .id = "injector_pw_correction", .float_ptr = &calculated_values.pwc },
-  { .id = "accel_enrich_percent", .float_ptr = &calculated_values.tipin },
-  { .id = "airmass_per_cycle",
-    .float_ptr = &calculated_values.airmass_per_cycle },
-
-  /* Ignition */
-  { .id = "advance", .float_ptr = &calculated_values.timing_advance },
-  { .id = "dwell", .uint32_ptr = &calculated_values.dwell_us },
-  { .id = "rpm_cut", .uint32_ptr = &calculated_values.rpm_limit_cut },
-  { .id = "boost_cut", .uint32_ptr = &calculated_values.boost_cut },
-  { .id = "fuel_overduty_cut",
-    .uint32_ptr = &calculated_values.fuel_overduty_cut },
-
-  { .id = "sensor.map", .float_ptr = &config.sensors[SENSOR_MAP].value },
-  { .id = "sensor.iat", .float_ptr = &config.sensors[SENSOR_IAT].value },
-  { .id = "sensor.clt", .float_ptr = &config.sensors[SENSOR_CLT].value },
-  { .id = "sensor.brv", .float_ptr = &config.sensors[SENSOR_BRV].value },
-  { .id = "sensor.tps", .float_ptr = &config.sensors[SENSOR_TPS].value },
-  { .id = "sensor.tps.rate",
-    .float_ptr = &config.sensors[SENSOR_TPS].derivative },
-  { .id = "sensor.aap", .float_ptr = &config.sensors[SENSOR_AAP].value },
-  { .id = "sensor.frt", .float_ptr = &config.sensors[SENSOR_FRT].value },
-  { .id = "sensor.ego", .float_ptr = &config.sensors[SENSOR_EGO].value },
-  { .id = "sensor.frp", .float_ptr = &config.sensors[SENSOR_FRP].value },
-  { .id = "knock1.value", .float_ptr = &config.knock_inputs[0].value },
-  { .id = "knock2.value", .float_ptr = &config.knock_inputs[1].value },
-  { .id = "sensor.eth", .float_ptr = &config.sensors[SENSOR_ETH].value },
-
-  { .id = "sensor_faults", .uint32_fptr = sensor_fault_status },
-
-  /* Decoder */
-  { .id = "rpm", .uint32_ptr = &config.decoder.rpm },
-  { .id = "tooth_rpm", .uint32_ptr = &config.decoder.tooth_rpm },
-  { .id = "sync", .uint32_ptr = &config.decoder.valid },
-  { .id = "loss", .uint32_fptr = render_loss_reason },
-  { .id = "rpm_variance", .float_ptr = &config.decoder.trigger_cur_rpm_change },
-  { .id = "last_trigger_angle",
-    .float_ptr = &config.decoder.last_trigger_angle },
-  { .id = "t0_count", .uint32_ptr = &config.decoder.t0_count },
-  { .id = "t1_count", .uint32_ptr = &config.decoder.t1_count },
-  { 0 },
-};
-
-#define EVENT_LOG_SIZE 32
-
-static struct {
-  bool enabled;
-  _Atomic uint32_t read;
-  _Atomic uint32_t write;
-  _Atomic uint32_t seq;
-  struct logged_event events[EVENT_LOG_SIZE];
-} event_log = { .enabled = true };
-
-static uint32_t event_log_next_idx(uint32_t idx) {
-  idx += 1;
-  if (idx >= EVENT_LOG_SIZE) {
-    return 0;
-  } else {
-    return idx;
-  }
-}
-
-static struct logged_event get_logged_event() {
-  uint32_t read_pos = event_log.read;
-  uint32_t write_pos = event_log.write;
-
-  if (!event_log.enabled) {
-    return (struct logged_event){ .type = EVENT_NONE };
-  }
-
-  if (read_pos == write_pos) {
-    return (struct logged_event){ .type = EVENT_NONE };
-  }
-
-  struct logged_event ret = event_log.events[read_pos];
-  event_log.read = event_log_next_idx(read_pos);
-  return ret;
-}
-
-void console_record_event(struct logged_event ev) {
-  if (!event_log.enabled) {
-    return;
-  }
-
-  disable_interrupts(); /* Necessary due to writes from multiple interrupt
-                           contexts that may preempt each other */
-
-  uint32_t seq = atomic_fetch_add(&event_log.seq, 1);
-  uint32_t read_pos = event_log.read;
-  uint32_t write_pos = event_log.write;
-  uint32_t next_write_pos = event_log_next_idx(write_pos);
-
-  if (next_write_pos != read_pos) {
-    event_log.events[write_pos] = ev;
-    event_log.events[write_pos].seq = seq;
-    event_log.write = next_write_pos;
-  }
-
-  enable_interrupts();
-}
-
-static size_t console_event_message(uint8_t *dest,
-                                    size_t bsize,
-                                    struct logged_event *ev) {
-  CborEncoder encoder;
-
-  cbor_encoder_init(&encoder, dest, bsize, 0);
-
-  CborEncoder top_encoder;
-  cbor_encoder_create_map(&encoder, &top_encoder, 4);
-  cbor_encode_text_stringz(&top_encoder, "type");
-  cbor_encode_text_stringz(&top_encoder, "event");
-
-  cbor_encode_text_stringz(&top_encoder, "time");
-  cbor_encode_int(&top_encoder, ev->time);
-
-  cbor_encode_text_stringz(&top_encoder, "seq");
-  cbor_encode_int(&top_encoder, ev->seq);
-
-  cbor_encode_text_stringz(&top_encoder, "event");
-
-  CborEncoder event_encoder;
-
-  switch (ev->type) {
-  case EVENT_OUTPUT:
-    cbor_encoder_create_map(&top_encoder, &event_encoder, 2);
-    cbor_encode_text_stringz(&event_encoder, "type");
-    cbor_encode_text_stringz(&event_encoder, "output");
-    cbor_encode_text_stringz(&event_encoder, "outputs");
-    cbor_encode_int(&event_encoder, ev->value);
-    cbor_encoder_close_container(&top_encoder, &event_encoder);
-    break;
-  case EVENT_GPIO:
-    cbor_encoder_create_map(&top_encoder, &event_encoder, 2);
-    cbor_encode_text_stringz(&event_encoder, "type");
-    cbor_encode_text_stringz(&event_encoder, "gpio");
-    cbor_encode_text_stringz(&event_encoder, "outputs");
-    cbor_encode_int(&event_encoder, ev->value);
-    cbor_encoder_close_container(&top_encoder, &event_encoder);
-    break;
-  case EVENT_TRIGGER:
-    cbor_encoder_create_map(&top_encoder, &event_encoder, 2);
-    cbor_encode_text_stringz(&event_encoder, "type");
-    cbor_encode_text_stringz(&event_encoder, "trigger");
-    cbor_encode_text_stringz(&event_encoder, "pin");
-    cbor_encode_int(&event_encoder, ev->value);
-    cbor_encoder_close_container(&top_encoder, &event_encoder);
-    break;
-  default:
-    break;
-  }
-  cbor_encoder_close_container(&encoder, &top_encoder);
-  return cbor_encoder_get_buffer_size(&encoder, dest);
-}
 
 void render_type_field(CborEncoder *enc, const char *type) {
   cbor_encode_text_stringz(enc, "_type");
@@ -229,32 +105,6 @@ static bool console_string_matches(CborValue *val, const char *str) {
     return false;
   }
   return match;
-}
-
-static size_t console_feed_line_keys(uint8_t *dest, size_t bsize) {
-  CborEncoder encoder;
-  cbor_encoder_init(&encoder, dest, bsize, 0);
-
-  CborEncoder top_encoder;
-  cbor_encoder_create_map(&encoder, &top_encoder, 3);
-  cbor_encode_text_stringz(&top_encoder, "type");
-  cbor_encode_text_stringz(&top_encoder, "description");
-
-  cbor_encode_text_stringz(&top_encoder, "time");
-  cbor_encode_int(&top_encoder, current_time());
-
-  cbor_encode_text_stringz(&top_encoder, "keys");
-  CborEncoder key_list_encoder;
-  cbor_encoder_create_array(
-    &top_encoder, &key_list_encoder, CborIndefiniteLength);
-  for (const struct console_feed_node *node = &console_feed_nodes[0];
-       node->id != NULL;
-       node++) {
-    cbor_encode_text_stringz(&key_list_encoder, node->id);
-  }
-  cbor_encoder_close_container(&top_encoder, &key_list_encoder);
-  cbor_encoder_close_container(&encoder, &top_encoder);
-  return cbor_encoder_get_buffer_size(&encoder, dest);
 }
 
 static size_t console_feed_line(uint8_t *dest, size_t bsize) {
@@ -1397,9 +1247,6 @@ static void render_freq_list(struct console_request_context *ctx, void *ptr) {
 
 static void render_test(struct console_request_context *ctx, void *ptr) {
   (void)ptr;
-  render_bool_map_field(
-    ctx, "event-logging", "Enable event logging", &event_log.enabled);
-
   /* Workaround to support the getter/setters */
   uint32_t old_rpm = get_test_trigger_rpm();
   uint32_t rpm = old_rpm;
@@ -1643,31 +1490,42 @@ void console_process() {
     console_shift_rx_buffer(read_size);
   }
 
-#if 0
-  /* Process any outstanding event messages */
-  struct logged_event ev = get_logged_event();
-  while (ev.type != EVENT_NONE) {
-    size_t write_size = console_event_message(txbuffer, sizeof(txbuffer), &ev);
-    console_write_full(txbuffer, write_size);
-    ev = get_logged_event();
-  }
-#endif
+  Response response_msg = { 0 };
+  pb_ostream_t stream = pb_ostream_from_buffer(txbuffer + 4, sizeof(txbuffer) - 4);
 
-  /* Has it been 100ms since the last description? */
+  if (!spsc_is_empty(&trigger_update_queue)) {
+    int32_t idx = spsc_next(&trigger_update_queue);
+    TriggerUpdate *msg = &trigger_update_queue_data[idx];
+
+    response_msg.which_response = Response_trigger_update_tag;
+    response_msg.response.trigger_update = msg;
+
+    pb_encode(&stream, Response_fields, &response_msg);
+    spsc_release(&trigger_update_queue);
+  } else if (!spsc_is_empty(&sensors_update_queue)) {
+    int32_t idx = spsc_next(&sensors_update_queue);
+    SensorsUpdate *msg = &sensors_update_queue_data[idx];
+
+    response_msg.which_response = Response_sensors_update_tag;
+    response_msg.response.sensors_update = msg;
+
+    pb_encode(&stream, Response_fields, &response_msg);
+    spsc_release(&trigger_update_queue);
+  }
+
+  uint32_t write_size = stream.bytes_written;
+  if (write_size > 0) {
+    memcpy(txbuffer, &write_size, 4);
+    console_write_full(txbuffer, write_size + 4);
+  }
 #if 0
-  if (time_diff(current_time(), last_desc_time) > time_from_us(100000)) {
-    /* If so, print a description message */
-    size_t write_size = console_feed_line_keys(txbuffer, sizeof(txbuffer));
-    console_write_full(txbuffer, write_size);
-    last_desc_time = current_time();
-  } else {
-#endif 
-    /* Otherwise a feed message */
+/* Otherwise a feed message */
   if (current_time > 4000000) {
     size_t write_size = console_feed_line(txbuffer+4, sizeof(txbuffer)-4);
     memcpy(txbuffer, &write_size, 4);
     console_write_full(txbuffer, write_size+4);
   }
+#endif
 }
 
 #if 0
@@ -1878,75 +1736,6 @@ START_TEST(test_smoke_console_request_get_full) {
 }
 END_TEST
 
-START_TEST(test_console_event_log) {
-  event_log.enabled = true;
-
-  ck_assert(event_log.read == 0);
-  ck_assert(event_log.write == 0);
-
-  /* Empty queue should return none */
-  ck_assert(get_logged_event().type == EVENT_NONE);
-  ck_assert(get_logged_event().type == EVENT_NONE);
-
-  uint32_t seq = 0;
-  /* Push and pop single event, confirm empty after */
-  console_record_event((struct logged_event){
-    .type = EVENT_TRIGGER,
-    .time = 1,
-  });
-  struct logged_event ret = get_logged_event();
-  ck_assert(ret.type == EVENT_TRIGGER);
-  ck_assert(ret.time == 1);
-  ck_assert(ret.seq == seq);
-  ck_assert(get_logged_event().type == EVENT_NONE);
-  seq += 1;
-
-  /* Push 16 and pop 16 */
-  for (int i = 0; i < 16; i++) {
-    console_record_event((struct logged_event){
-      .type = EVENT_TRIGGER,
-      .time = i,
-    });
-  }
-  for (int i = 0; i < 16; i++) {
-    ret = get_logged_event();
-    ck_assert(ret.type == EVENT_TRIGGER);
-    ck_assert(ret.time == (uint32_t)i);
-    ck_assert(ret.seq == (uint32_t)i + seq);
-  }
-  seq += 16;
-
-  ck_assert(get_logged_event().type == EVENT_NONE);
-
-  /* Push 64 to trigger overflow behavior */
-  for (int i = 0; i < 64; i++) {
-    console_record_event((struct logged_event){
-      .type = EVENT_TRIGGER,
-      .time = i,
-    });
-  }
-  for (int i = 0; i < EVENT_LOG_SIZE - 1; i++) {
-    ret = get_logged_event();
-    ck_assert(ret.type == EVENT_TRIGGER);
-    ck_assert(ret.time == (uint32_t)i);
-    ck_assert(ret.seq == (uint32_t)i + seq);
-  }
-  ck_assert(get_logged_event().type == EVENT_NONE);
-  seq += 64;
-
-  console_record_event((struct logged_event){
-    .type = EVENT_TRIGGER,
-    .time = 99,
-  });
-
-  ret = get_logged_event();
-  ck_assert(ret.type == EVENT_TRIGGER);
-  ck_assert(ret.time == 99);
-  ck_assert(ret.seq == seq);
-  ck_assert(get_logged_event().type == EVENT_NONE);
-  seq += 1;
-}
-END_TEST
 
 static bool memeql(size_t len, const uint8_t src[len], const uint8_t dst[len]) {
   for (int i = 0; i < len; i++) {

@@ -7,7 +7,8 @@ while True:
     count = struct.unpack("I", readlen)[0]
     print(count)
     readdata = sys.stdin.buffer.read(count)
-    msg = types_pb2.SensorsUpdate()
+#    msg = types_pb2.SensorsUpdate()
+    msg = types_pb2.Response()
     msg.ParseFromString(readdata)
     print(msg)
 

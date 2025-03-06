@@ -5,6 +5,8 @@
 #include "platform.h"
 #include "sensors.h"
 
+#include "interface/types.pb.h"
+
 static float sensor_convert_linear(const struct sensor_input *in) {
   if (in->raw_max == in->raw_min) {
     return 0.0f;
@@ -160,6 +162,23 @@ void sensor_update_freq(const struct freq_update *u) {
   }
 }
 
+static SensorUpdate render_sensor_update(const struct sensor_input *si) {
+  SensorUpdate update = { 0 };
+  update.value = si->value;
+  switch (si->fault) {
+    case FAULT_NONE:
+      update.fault = SensorFault_NoFault;
+      break;
+    case FAULT_RANGE:
+      update.fault = SensorFault_RangeFault;
+      break;
+    case FAULT_CONN:
+      update.fault = SensorFault_ConnectionFault;
+      break;
+  }
+  return update;
+}
+
 void sensor_update_adc(const struct adc_update *update) {
   for (int i = 0; i < NUM_SENSORS; ++i) {
     struct sensor_input *in = &config.sensors[i];
@@ -172,6 +191,18 @@ void sensor_update_adc(const struct adc_update *update) {
     in->fault = update->valid ? FAULT_NONE : FAULT_CONN;
     sensor_convert(in, update->values[in->pin], update->time);
   }
+
+  SensorsUpdate message = (SensorsUpdate){
+    .has_header = true,
+    .header = {
+      .timestamp = update->time,
+    },
+  };
+  if (config.sensors[SENSOR_MAP].source == SENSOR_ADC) {
+    message.has_ManifoldPressure = true;
+    message.ManifoldPressure = render_sensor_update(&config.sensors[SENSOR_MAP]);
+  }
+  console_publish_sensors_update(&message);
 }
 
 uint32_t sensor_fault_status() {

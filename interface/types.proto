@@ -34,11 +34,41 @@ message TriggerUpdate {
   int32 trigger = 2;
 }
 
-
 message DecoderUpdate {
   Header header = 1;
   float last_angle = 2;
   float instantaneous_rpm = 3;
   float average_rpm = 4;
   fixed32 valid_before = 5; 
+}
+
+message EngineUpdate {
+  Header header = 1;
+
+  float advance = 2;
+  int32 dwell_us = 3;
+  int32 fuel_us = 4;
+
+  float airmass_per_cycle = 5;
+  float fuelvol_per_cycle = 6;
+
+  float tipin_percent = 7;
+  float injector_dead_time = 8;
+  float pulse_width_correction = 9;
+  float lambda = 10;
+  float ve = 11;
+  float engine_temp_enrichment = 12;
+
+  bool rpm_limit_cut = 13;
+  bool boost_cut = 14;
+  bool fuel_overduty_cut = 15;
+}
+
+message Response {
+  oneof response {
+    TriggerUpdate trigger_update = 1;
+    DecoderUpdate decoder_update = 2;
+    SensorsUpdate sensors_update = 3;
+    EngineUpdate engine_update = 4;
+  }
 }
