@@ -428,6 +428,7 @@ void decoder_update_scheduling(int trigger, uint32_t time) {
       schedule_event(&config.events[e]);
     }
   }
+  console_publish_engine_update();
 }
 
 degrees_t current_angle() {

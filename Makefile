@@ -11,6 +11,7 @@ TINYCBOR_CFLAGS= -Icontrib/tinycbor/src
 
 OBJS += calculations.o \
 				config.o \
+				stream.o \
 				console.o \
 				decoder.o \
 				scheduler.o \

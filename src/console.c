@@ -19,8 +19,8 @@
 TriggerUpdate trigger_update_queue_data[32];
 struct spsc_queue trigger_update_queue = { .size = 32 };
 
-SensorsUpdate sensors_update_queue_data[32];
-struct spsc_queue sensors_update_queue = { .size = 32 };
+EngineUpdate engine_update_queue_data[8];
+struct spsc_queue engine_update_queue = { .size = 8 };
 
 void console_publish_trigger_update(const struct decoder_event *ev) {
   static uint32_t seq = 0;
@@ -39,19 +39,111 @@ void console_publish_trigger_update(const struct decoder_event *ev) {
   spsc_push(&trigger_update_queue);
 }
 
-void console_publish_sensors_update(const SensorsUpdate *update) {
+static void populate_engine_position(DecoderUpdate *u) {
+  u->has_header = true;
+  u->header.timestamp = config.decoder.last_trigger_time;
+  u->header.seq = 0;
+  u->valid_before_timestamp = config.decoder.expiration;
+  switch (config.decoder.state) {
+    case DECODER_NOSYNC:
+      u->state = DecoderState_NoSync;
+      break;
+    case DECODER_RPM:
+      u->state = DecoderState_RpmOnly;
+      break;
+    case DECODER_SYNC:
+      u->state = DecoderState_Sync;
+      break;
+  }
+  switch (config.decoder.loss) {
+    case DECODER_NO_LOSS:
+      u->state_cause = DecoderLossReason_NoLoss;
+      break;
+    case DECODER_VARIATION:
+      u->state_cause = DecoderLossReason_ToothVariation;
+      break;
+    case DECODER_TRIGGERCOUNT_HIGH:
+      u->state_cause = DecoderLossReason_TriggerCountTooHigh;
+      break;
+    case DECODER_TRIGGERCOUNT_LOW:
+      u->state_cause = DecoderLossReason_TriggerCountTooLow;
+      break;
+    case DECODER_EXPIRED:
+      u->state_cause = DecoderLossReason_Expired;
+      break;
+    case DECODER_OVERFLOW:
+      u->state_cause = DecoderLossReason_Overflowed;
+      break;
+  }
+  u->last_angle = config.decoder.last_trigger_angle;
+  u->instantaneous_rpm = config.decoder.tooth_rpm;
+  u->average_rpm = config.decoder.rpm;
+}
+
+static SensorUpdate render_sensor_update(const struct sensor_input *si) {
+  SensorUpdate update = { 0 };
+  update.value = si->value;
+  switch (si->fault) {
+    case FAULT_NONE:
+      update.fault = SensorFault_NoFault;
+      break;
+    case FAULT_RANGE:
+      update.fault = SensorFault_RangeFault;
+      break;
+    case FAULT_CONN:
+      update.fault = SensorFault_ConnectionFault;
+      break;
+  }
+  return update;
+}
+
+static void populate_sensors_update(SensorsUpdate *u) {
+  *u = (SensorsUpdate){ 0 };
+  u->has_header = true,
+  u->header.timestamp = config.sensors[SENSOR_MAP].time;
+  u->header.seq = 0;
+  u->has_ManifoldPressure = true;
+  u->ManifoldPressure = render_sensor_update(&config.sensors[SENSOR_MAP]);
+  u->has_IntakeTemperature = true;
+  u->IntakeTemperature = render_sensor_update(&config.sensors[SENSOR_IAT]);
+  u->has_CoolantTemperature = true;
+  u->CoolantTemperature = render_sensor_update(&config.sensors[SENSOR_CLT]);
+  u->has_BatteryVoltage = true;
+  u->BatteryVoltage = render_sensor_update(&config.sensors[SENSOR_BRV]);
+  u->has_ThrottlePosition = true;
+  u->ThrottlePosition = render_sensor_update(&config.sensors[SENSOR_TPS]);
+  u->has_AmbientPressure = true;
+  u->AmbientPressure = render_sensor_update(&config.sensors[SENSOR_AAP]);
+  u->has_FuelRailTemperature = true;
+  u->FuelRailTemperature = render_sensor_update(&config.sensors[SENSOR_FRP]);
+  u->has_ExhaustGasOxygen = true;
+  u->ExhaustGasOxygen = render_sensor_update(&config.sensors[SENSOR_EGO]);
+  u->has_FuelRailPressure = true;
+  u->FuelRailPressure = render_sensor_update(&config.sensors[SENSOR_FRP]);
+  u->has_EthanolContent = true;
+  u->EthanolContent = render_sensor_update(&config.sensors[SENSOR_ETH]);
+}
+
+void console_publish_engine_update() {
   static uint32_t seq = 0;
 
-  int32_t idx = spsc_allocate(&sensors_update_queue);
+  int32_t idx = spsc_allocate(&engine_update_queue);
   if (idx < 0) {
     return;
   }
-  SensorsUpdate *msg = &sensors_update_queue_data[idx];
+  EngineUpdate *msg = &engine_update_queue_data[idx];
   msg->has_header = true;
   msg->header.seq = seq;
-  seq += 1;
+  msg->header.timestamp = current_time();
 
-  spsc_push(&sensors_update_queue);
+  msg->has_position = true;
+  populate_engine_position(&msg->position);
+
+  msg->has_sensors = true;
+  populate_sensors_update(&msg->sensors);
+
+  seq += 1;
+  spsc_push(&engine_update_queue);
 }
 
 
@@ -107,84 +199,6 @@ static bool console_string_matches(CborValue *val, const char *str) {
   return match;
 }
 
-static size_t console_feed_line(uint8_t *dest, size_t bsize) {
-  SensorsUpdate update;
-  update.has_header = true;
-  update.header.seq = 0;
-  update.header.timestamp = current_time();
-  update.ManifoldPressure = (SensorUpdate){ .fault = SensorFault_NoFault, .value = 23.0f };
-  update.has_ManifoldPressure = true;
-
-  update.IntakeTemperature = (SensorUpdate){ .fault = SensorFault_NoFault, .value = 24.0f }; 
-  update.has_IntakeTemperature = true;
-
-  update.CoolantTemperature = (SensorUpdate){ .fault = SensorFault_NoFault, .value = 25.0f }; 
-  update.has_CoolantTemperature = true;
-
-  update.BatteryVoltage = (SensorUpdate){ .fault = SensorFault_NoFault, .value = 26.0f }; 
-  update.has_BatteryVoltage = true;
-
-  update.ThrottlePosition = (SensorUpdate){ .fault = SensorFault_NoFault, .value = 27.0f }; 
-  update.has_ThrottlePosition = true;
-
-  update.AmbientPressure = (SensorUpdate){ .fault = SensorFault_RangeFault};
-  update.has_AmbientPressure = true;
-//
-//  update.FuelRailTemperature = (SensorUpdate){ .fault = SensorFault_NoFault, .value = 29.0f }; 
-//  update.has_FuelRailTemperature = true;
-//
-//  update.ExhaustGasOxygen = (SensorUpdate){ .fault = SensorFault_NoFault, .value = 30.0f }; 
-//  update.has_ExhaustGasOxygen = true;
-//  
-//  update.FuelRailPressure = (SensorUpdate){ .fault = SensorFault_NoFault, .value = 31.0f }; 
-//  update.has_FuelRailPressure = true;
-//
-//  update.EthanolContent = (SensorUpdate){ .fault = SensorFault_NoFault, .value = 32.0f }; 
-//  update.has_EthanolContent = true;
-
-
-  pb_ostream_t stream = pb_ostream_from_buffer(dest, bsize);
-  pb_encode(&stream, SensorsUpdate_fields, &update);
-  return stream.bytes_written;
-
-#if 0
-  CborEncoder encoder;
-
-  cbor_encoder_init(&encoder, dest, bsize, 0);
-
-  CborEncoder top_encoder;
-  cbor_encoder_create_map(&encoder, &top_encoder, 3);
-  cbor_encode_text_stringz(&top_encoder, "type");
-  cbor_encode_text_stringz(&top_encoder, "feed");
-
-  cbor_encode_text_stringz(&top_encoder, "time");
-  cbor_encode_int(&top_encoder, current_time());
-
-  cbor_encode_text_stringz(&top_encoder, "values");
-  CborEncoder value_list_encoder;
-  cbor_encoder_create_array(
-    &top_encoder, &value_list_encoder, CborIndefiniteLength);
-  for (const struct console_feed_node *node = &console_feed_nodes[0];
-       node->id != NULL;
-       node++) {
-    if (node->uint32_ptr) {
-      cbor_encode_uint(&value_list_encoder, *node->uint32_ptr);
-    } else if (node->float_ptr) {
-      cbor_encode_float(&value_list_encoder, *node->float_ptr);
-    } else if (node->uint32_fptr) {
-      cbor_encode_uint(&value_list_encoder, node->uint32_fptr());
-    } else if (node->float_fptr) {
-      cbor_encode_float(&value_list_encoder, node->float_fptr());
-    } else {
-      cbor_encode_text_stringz(&value_list_encoder, "invalid");
-    }
-  }
-  cbor_encoder_close_container(&top_encoder, &value_list_encoder);
-  cbor_encoder_close_container(&encoder, &top_encoder);
-  return cbor_encoder_get_buffer_size(&encoder, dest);
-#endif
-}
-
 static int console_write_full(const uint8_t *buf, size_t len) {
   size_t remaining = len;
   const uint8_t *ptr = buf;
@@ -196,83 +210,6 @@ static int console_write_full(const uint8_t *buf, size_t len) {
     }
   }
   return 1;
-}
-
-static uint8_t rx_buffer[16384];
-static size_t rx_buffer_size = 0;
-static timeval_t rx_start_time = 0;
-
-static void console_shift_rx_buffer(size_t amt) {
-  assert(amt <= rx_buffer_size);
-  memmove(&rx_buffer[0], &rx_buffer[amt], (rx_buffer_size - amt));
-  rx_buffer_size -= amt;
-}
-
-static size_t console_try_read() {
-  size_t remaining = sizeof(rx_buffer) - rx_buffer_size;
-
-  if (rx_buffer_size == 0) {
-    rx_start_time = current_time();
-  }
-
-  size_t read_amt = console_read(&rx_buffer[rx_buffer_size], remaining);
-  rx_buffer_size += read_amt;
-
-  if (rx_buffer_size == 0) {
-    return 0;
-  }
-
-  CborParser parser;
-  CborValue value;
-
-  /* We want to determine if we have a valid cbor object in buffer.  If the
-   * buffer doesn't start with a map, it is not valid, and we want to advance
-   * byte-by-byte until we find a start of map */
-  do {
-    if (cbor_parser_init(rx_buffer, rx_buffer_size, 0, &parser, &value) ==
-        CborNoError) {
-      if (cbor_value_is_map(&value)) {
-        break;
-      }
-    }
-    /* Reset timer since we have a new start */
-    console_shift_rx_buffer(1);
-    rx_start_time = current_time();
-
-    /* We've exhausted the buffer */
-    if (!rx_buffer_size) {
-      return 0;
-    }
-  } while (1);
-
-  switch (cbor_value_validate_basic(&value)) {
-    /* If we have a valid object, return its length */
-  case CborNoError:
-  case CborErrorGarbageAtEnd: {
-    cbor_value_advance(&value);
-    const uint8_t *next = cbor_value_get_next_byte(&value);
-    return (next - rx_buffer);
-  }
-  /* If we have the start of a valid object (as per the cbor_value_is_map check
-   * above, but not enough to decode the whole object, return but do not reset
-   * unless 5s has passed. This is a balance between allowing time for messages
-   * to arrive but not locking up communications due to some garbage */
-  case CborErrorAdvancePastEOF:
-  case CborErrorUnexpectedEOF:
-    if (current_time() - rx_start_time > time_from_us(5000000)) {
-      rx_buffer_size = 0;
-    }
-    /* Alternatively, if we've filled up, waiting longer will not work, reset */
-    if (rx_buffer_size == sizeof(rx_buffer)) {
-      rx_buffer_size = 0;
-    }
-    break;
-  /* Assume garbage input, reset */
-  default:
-    rx_buffer_size = 0;
-    break;
-  }
-  return 0;
 }
 
 static void console_request_ping(CborEncoder *enc) {
@@ -1448,47 +1385,9 @@ static void console_process_request(CborValue *request, CborEncoder *response) {
   }
 }
 
-static void console_process_request_raw(int len) {
-  CborParser parser;
-  CborValue value;
-  CborError err;
-
-  uint8_t response[16384];
-  CborEncoder encoder;
-
-  cbor_encoder_init(&encoder, response, sizeof(response), 0);
-
-  err = cbor_parser_init(rx_buffer, len, 0, &parser, &value);
-  if (err) {
-    return;
-  }
-
-  CborEncoder response_map;
-  if (cbor_encoder_create_map(&encoder, &response_map, CborIndefiniteLength) !=
-      CborNoError) {
-    return;
-  }
-
-  console_process_request(&value, &response_map);
-
-  if (cbor_encoder_close_container(&encoder, &response_map)) {
-    return;
-  }
-
-  size_t write_size = cbor_encoder_get_buffer_size(&encoder, response);
-  console_write_full(response, write_size);
-}
 
 void console_process() {
-  static timeval_t last_desc_time = 0;
-  uint8_t txbuffer[16384];
-
-  size_t read_size;
-  if ((read_size = console_try_read())) {
-    /* Parse a request from the client */
-    console_process_request_raw(read_size);
-    console_shift_rx_buffer(read_size);
-  }
+  uint8_t txbuffer[4096];
 
   Response response_msg = { 0 };
   pb_ostream_t stream = pb_ostream_from_buffer(txbuffer + 4, sizeof(txbuffer) - 4);
@@ -1502,15 +1401,15 @@ void console_process() {
 
     pb_encode(&stream, Response_fields, &response_msg);
     spsc_release(&trigger_update_queue);
-  } else if (!spsc_is_empty(&sensors_update_queue)) {
-    int32_t idx = spsc_next(&sensors_update_queue);
-    SensorsUpdate *msg = &sensors_update_queue_data[idx];
+  } else if (!spsc_is_empty(&engine_update_queue)) {
+    int32_t idx = spsc_next(&engine_update_queue);
+    EngineUpdate *msg = &engine_update_queue_data[idx];
 
-    response_msg.which_response = Response_sensors_update_tag;
-    response_msg.response.sensors_update = msg;
+    response_msg.which_response = Response_engine_update_tag;
+    response_msg.response.engine_update = msg;
 
     pb_encode(&stream, Response_fields, &response_msg);
-    spsc_release(&trigger_update_queue);
+    spsc_release(&engine_update_queue);
   }
 
   uint32_t write_size = stream.bytes_written;
@@ -1794,8 +1693,6 @@ TCase *setup_console_tests() {
   tcase_add_test(console_tests, test_smoke_console_request_structure);
   tcase_add_test(console_tests, test_smoke_console_request_get_full);
 
-  tcase_add_test(console_tests, test_console_event_log);
-  tcase_add_test(console_tests, test_encode_cobs);
   return console_tests;
 }
 

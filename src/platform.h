@@ -47,8 +47,8 @@ void set_gpio(int output, char value);
 int get_gpio(int output);
 void set_pwm(int output, float percent);
 
-size_t console_read(void *buf, size_t max);
-size_t console_write(const void *buf, size_t count);
+//size_t platform_read_fragment(uint8_t fragment[CONSOLE_MAX_FRAGMENT_SIZE]);
+//size_t platform_write_fragment(uint8_t *fragment, size_t size);
 
 void platform_load_config(void);
 void platform_save_config(void);

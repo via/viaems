@@ -123,7 +123,7 @@ void render_type_field(CborEncoder *, const char *type);
 void console_process(void);
 void console_record_event(struct logged_event);
 void console_publish_trigger_update(const struct decoder_event *ev);
-void console_publish_sensors_update(const SensorsUpdate *update);
+void console_publish_engine_update();
 
 #ifdef UNITTEST
 #include <check.h>

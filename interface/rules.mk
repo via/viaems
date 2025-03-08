@@ -2,13 +2,16 @@ OBJS+= pb_encode.o \
 			 pb_common.o
 
 DESTOBJS+= \
-  $(OBJDIR)/types.pb.o 
+  $(OBJDIR)/types.pb.o \
+  $(OBJDIR)/configs.pb.o 
 
 INTOBJDIR=obj/interface
 
 GENSRCS += \
 					 $(INTOBJDIR)/types.pb.c \
-					 $(INTOBJDIR)/types.pb.h
+					 $(INTOBJDIR)/types.pb.h \
+					 $(INTOBJDIR)/configs.pb.c \
+					 $(INTOBJDIR)/configs.pb.h
 
 $(INTOBJDIR):
 	mkdir -p $(INTOBJDIR)
@@ -21,8 +24,6 @@ CFLAGS+=-Icontrib/nanopb/ -I $(INTOBJDIR)
 
 $(OBJDIR)/%.pb.o: %.pb.c
 	${CC} -DBLEH ${CFLAGS} -MMD -c -o $@ $(INTOBJDIR)/interface/$<
-
-%.c: obj/interfaces/types.pb.c
 
 %.pb.c %.pb.h: %.proto %.options $(INTOBJDIR)
 	contrib/nanopb/generator/nanopb_generator $(PROTOC_OPTS)  $<

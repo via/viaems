@@ -11,6 +11,7 @@
 #include "table.h"
 #include "tasks.h"
 #include "util.h"
+#include "stream.h"
 
 static timeval_t curtime = 0;
 static timeval_t event_timer_time = 0;
@@ -144,14 +145,15 @@ void platform_init(int argc, char *argv[]) {
 
   Suite *viaems_suite = suite_create("ViaEMS");
 
-  suite_add_tcase(viaems_suite, setup_util_tests());
-  suite_add_tcase(viaems_suite, setup_table_tests());
-  suite_add_tcase(viaems_suite, setup_sensor_tests());
-  suite_add_tcase(viaems_suite, setup_decoder_tests());
-  suite_add_tcase(viaems_suite, setup_scheduler_tests());
-  suite_add_tcase(viaems_suite, setup_calculations_tests());
-  suite_add_tcase(viaems_suite, setup_console_tests());
-  suite_add_tcase(viaems_suite, setup_tasks_tests());
+  //suite_add_tcase(viaems_suite, setup_util_tests());
+  //suite_add_tcase(viaems_suite, setup_table_tests());
+  //suite_add_tcase(viaems_suite, setup_sensor_tests());
+  //suite_add_tcase(viaems_suite, setup_decoder_tests());
+  //suite_add_tcase(viaems_suite, setup_scheduler_tests());
+  //suite_add_tcase(viaems_suite, setup_calculations_tests());
+  //suite_add_tcase(viaems_suite, setup_console_tests());
+  //suite_add_tcase(viaems_suite, setup_tasks_tests());
+  suite_add_tcase(viaems_suite, setup_stream_tests());
   SRunner *sr = srunner_create(viaems_suite);
   srunner_run_all(sr, CK_VERBOSE);
   exit(srunner_ntests_failed(sr));

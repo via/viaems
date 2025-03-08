@@ -1,0 +1,148 @@
+syntax = "proto3";
+
+message TableRow {
+  repeated float values = 1;
+}
+
+message TableAxis {
+  string name = 1;
+  repeated float values = 2;
+}
+
+message Table1d {
+  string name = 1;
+  TableAxis cols = 2;
+  TableRow data = 3;
+}
+
+message Table2d {
+  string name = 1;
+  TableAxis cols = 2;
+  TableAxis rows = 3;
+  repeated TableRow data = 4;
+}
+
+message Output {
+  enum OutputType {
+    Disabled = 0;
+    Fuel = 1;
+    Ignition = 2;
+  }
+
+  uint32 pin = 1;
+  OutputType type = 2;
+  bool inverted = 3;
+  float angle = 4;
+}
+
+enum SensorSource {
+  None = 0;
+  Adc = 1;
+  Frequency = 2;
+  Pulsewidth = 3;
+  Const = 4;
+}
+
+enum SensorMethod {
+  Linear = 0;
+  LinearWindowed = 1;
+  Thermistor = 2;
+}
+
+message Sensor {
+  SensorSource source = 1;
+  SensorMethod method = 2;
+
+  uint32 pin = 3;
+
+  message LinearConfig {
+    float range_min = 1;
+    float range_max = 2;
+    float raw_min = 3;
+    float raw_max = 4;
+  }
+
+  message ConstConfig {
+    float fixed_value = 1;
+  }
+
+  message ThermistorConfig {
+    float A = 1;
+    float B = 2;
+    float C = 3;
+    float bias = 4;
+  }
+
+  message FaultConfig {
+    float fault_min = 1;
+    float fault_max = 2;
+    float fault_value = 3;
+  }
+
+  message WindowConfig {
+    float window_capture_width = 1 ;
+    float window_total_width = 2;
+    float window_offset = 3;
+  }
+
+  optional LinearConfig linear_config = 4;
+  optional ConstConfig const_config = 5;
+  optional ThermistorConfig thermistor_config = 6;
+
+  optional FaultConfig fault_config = 7;
+  optional WindowConfig window_config = 8;
+
+}
+
+message Sensors {
+  Sensor AbsoluteAirPressure = 1;
+  Sensor BatteryReferenceVoltage = 2;
+  Sensor CoolantTemperature = 3;
+  Sensor ExhaustGasOxygen = 4;
+  Sensor FuelRailTempermature = 5;
+  Sensor IntakeAirTemperature = 6;
+  Sensor ManifoldPressure = 7;
+  Sensor ThrottlePosition = 8;
+}
+
+message Decoder {
+}
+
+message Fueling {
+  uint32 fuel_pump_pin = 1;
+
+  Table1d PulseWidthCompensation = 2;
+  Table1d EngineTempEnrichment = 3;
+  Table1d CrankingEnrichment = 4;
+
+  Table2d commanded_lambda = 5;
+  Table2d ve = 6;
+
+  Table2d tipin_enrich_amount = 7;
+  Table1d tipin_enrich_duration = 8;
+}
+
+message Ignition {
+  enum DwellType {
+    FixedDwellTime = 0;
+    BatteryVoltage = 1;
+  }
+  DwellType type = 1;
+  float fixed_dwell = 2;
+  Table1d dwell = 3;
+  Table2d timing = 4;
+}
+
+message BoostControl {
+}
+
+
+message Configuration {
+  
+  repeated Output outputs = 1;
+  Sensors sensors = 2;
+  Ignition ignition = 3;
+  Fueling fueling = 4;
+  Decoder decoder = 5;
+}
+

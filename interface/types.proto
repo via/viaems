@@ -1,8 +1,21 @@
 syntax = "proto3";
 
+import "interface/configs.proto";
+
 message Header {
   fixed32 seq = 1;
   fixed32 timestamp = 2;
+}
+
+message RawAdcUpdate {
+  Header header = 1;
+  bool valid = 2;
+  repeated float values = 3;
+}
+
+message TriggerUpdate {
+  Header header = 1;
+  int32 trigger = 2;
 }
 
 enum SensorFault {
@@ -15,6 +28,7 @@ message SensorUpdate {
   float value = 1;
   SensorFault fault = 2;
 }
+
 message SensorsUpdate {
   Header header = 1;
   optional SensorUpdate ManifoldPressure = 2;
@@ -29,39 +43,55 @@ message SensorsUpdate {
   optional SensorUpdate EthanolContent = 11;
 }
 
-message TriggerUpdate {
-  Header header = 1;
-  int32 trigger = 2;
+enum DecoderState {
+  NoSync = 0;
+  RpmOnly = 1;
+  Sync = 2;
+}
+
+enum DecoderLossReason {
+  NoLoss = 0;
+  ToothVariation = 1;
+  TriggerCountTooHigh = 2;
+  TriggerCountTooLow = 3;
+  Expired = 4;
+  Overflowed = 5;
 }
 
 message DecoderUpdate {
   Header header = 1;
-  float last_angle = 2;
-  float instantaneous_rpm = 3;
-  float average_rpm = 4;
-  fixed32 valid_before = 5; 
+  fixed32 valid_before_timestamp = 2; 
+
+  DecoderState state = 3;
+  DecoderLossReason state_cause = 4;
+
+  float last_angle = 5;
+  float instantaneous_rpm = 6;
+  float average_rpm = 7;
 }
 
 message EngineUpdate {
   Header header = 1;
+  DecoderUpdate position = 2;
+  SensorsUpdate sensors = 3;
 
-  float advance = 2;
-  int32 dwell_us = 3;
-  int32 fuel_us = 4;
+  float advance = 4;
+  float dwell_us = 5;
+  float fuel_us = 6;
 
-  float airmass_per_cycle = 5;
-  float fuelvol_per_cycle = 6;
+  float airmass_per_cycle = 7;
+  float fuelvol_per_cycle = 8;
 
-  float tipin_percent = 7;
-  float injector_dead_time = 8;
-  float pulse_width_correction = 9;
-  float lambda = 10;
-  float ve = 11;
-  float engine_temp_enrichment = 12;
+  float tipin_percent = 9;
+  float injector_dead_time = 10;
+  float pulse_width_correction = 11;
+  float lambda = 12;
+  float ve = 13;
+  float engine_temp_enrichment = 14;
 
-  bool rpm_limit_cut = 13;
-  bool boost_cut = 14;
-  bool fuel_overduty_cut = 15;
+  bool rpm_limit_cut = 15;
+  bool boost_cut = 16;
+  bool fuel_overduty_cut = 17;
 }
 
 message Response {
@@ -70,5 +100,13 @@ message Response {
     DecoderUpdate decoder_update = 2;
     SensorsUpdate sensors_update = 3;
     EngineUpdate engine_update = 4;
+  }
+}
+
+
+message Request {
+  fixed32 seq = 1;
+  oneof type {
+    Configuration set_configuration = 2;
   }
 }
