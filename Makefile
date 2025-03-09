@@ -3,15 +3,10 @@ OBJDIR=obj/${PLATFORM}
 
 all: $(OBJDIR)/viaems $(OBJDIR)/benchmark
 
-TINYCBOR_OBJS= cborerrorstrings.o \
-               cborencoder.o \
-               cborparser.o
-
-TINYCBOR_CFLAGS= -Icontrib/tinycbor/src
-
 OBJS += calculations.o \
 				config.o \
 				stream.o \
+				crc.o \
 				console.o \
 				decoder.o \
 				scheduler.o \
@@ -19,8 +14,7 @@ OBJS += calculations.o \
 				table.o \
 				tasks.o \
 				sim.o \
-				util.o \
-				${TINYCBOR_OBJS}
+				util.o
 
 
 include targets/${PLATFORM}.mk
@@ -32,12 +26,11 @@ DEPS = $(wildcard ${OBJDIR}/*.d)
 
 GITDESC=$(shell git describe --tags --dirty)
 CFLAGS+=-Isrc/ -Isrc/platforms/common -Wall -Wextra -ggdb -g3 -std=c11 -DGIT_DESCRIBE=\"${GITDESC}\"
-CFLAGS+=${TINYCBOR_CFLAGS}
 LDFLAGS+= -lm -L${OBJDIR}
 
 OPENCM3_DIR=$(PWD)/contrib/libopencm3
 
-VPATH+=src src/platforms src/platforms/common contrib/tinycbor/src
+VPATH+=src src/platforms src/platforms/common
 DESTOBJS += $(addprefix ${OBJDIR}/, ${OBJS})
 
 $(OBJDIR):
@@ -46,10 +39,10 @@ $(OBJDIR):
 $(OBJDIR)/%.o: %.c
 	${CC} ${CFLAGS} -MMD -c -o $@ $<
 
-$(OBJDIR)/viaems: ${OBJDIR} ${DESTOBJS} ${OBJDIR}/${TINYCBOR_LIB} ${OBJDIR}/viaems.o
+$(OBJDIR)/viaems: ${OBJDIR} ${DESTOBJS} ${OBJDIR}/viaems.o
 	${CC} -o $@ ${CFLAGS} ${DESTOBJS} ${OBJDIR}/viaems.o ${LDFLAGS}
 
-$(OBJDIR)/benchmark: ${OBJDIR} ${DESTOBJS} ${OBJDIR}/${TINYCBOR_LIB} ${OBJDIR}/benchmark.o
+$(OBJDIR)/benchmark: ${OBJDIR} ${DESTOBJS} ${OBJDIR}/benchmark.o
 	${CC} -o $@ ${CFLAGS} ${DESTOBJS} ${OBJDIR}/benchmark.o ${LDFLAGS}
 
 format:

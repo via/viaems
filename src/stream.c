@@ -3,24 +3,6 @@
 
 #include "stream.h"
 
-/* Compute CRC-16-CCITT/KERMIT incrementally from bytes */
-uint16_t crc16_add_byte(uint16_t *crc, uint8_t byte) {
-  const uint16_t crc16_poly_rev = 0x8408;
-
-  uint16_t current = *crc;
-
-  current = current ^ (uint16_t)byte;
-  for (int i = 0; i < 8; i++) {
-    if (current & 1) {
-      current = (current >> 1) ^ crc16_poly_rev;
-    } else {
-      current = current >> 1;
-    }
-  }
-  *crc = current;
-  return current;
-}
-
 
 /* Decodes and validates a fragment from a stream oriented console.
  * The fragment is expected to end with the COBS null byte. After COBS
@@ -83,6 +65,54 @@ stream_result_t decode_cobs_fragment_in_place(
   }
 
   *size = header_frag_length;
+  return STREAM_SUCCESS;
+}
+
+/* Encodes a fragment in a way suitable for an unreliably byte oriented
+ * transport. A stream header is prepended that contains a length and CRC, and
+ * the result is COBS-encoded to contain no zeros. This payload is suitable for
+ * sending with nulls as a frame delimiter.
+ */
+stream_result_t encode_cobs_fragment(
+    uint16_t in_size, 
+    const uint8_t fragment[in_size],
+    uint16_t *out_size,
+    uint8_t encoded_fragment[MAX_ENCODED_FRAGMENT_SIZE]) {
+
+  /* Is there sufficient remaining space for a  */
+  if (in_size > CONSOLE_MAX_FRAGMENT_SIZE) {
+    return STREAM_BAD_SIZE;
+  }
+
+  *out_size = in_size + STREAM_HEADER_SIZE + 1;
+
+  /* Copy the payload into place while computing the CRC */
+  uint16_t pdu_crc = CRC16_INIT;
+  for (int src_idx = 0; src_idx < in_size; src_idx++) {
+    const int dst_idx = src_idx + STREAM_HEADER_SIZE + 1;
+    const uint8_t byte = fragment[src_idx];
+    encoded_fragment[dst_idx] = byte;
+    crc16_add_byte(&pdu_crc, byte);
+  }
+
+  /* Encode PDU CRC */
+  encoded_fragment[3] = pdu_crc & 0xFF;
+  encoded_fragment[4] = (pdu_crc >> 8) & 0xFF;
+
+  /* Encode PDU Length */
+  encoded_fragment[1] = in_size & 0xFF;
+  encoded_fragment[2] = (in_size >> 8) & 0xFF;
+
+  /* Encode COBS in place starting at the end */
+  uint8_t cobs_pos = *out_size;
+  for (int i = cobs_pos - 1; i > 0; i--) {
+    if (encoded_fragment[i] == 0) {
+      /* Replace this zero with the distance from here to the cobs position */
+      encoded_fragment[i] = cobs_pos - i;
+      cobs_pos = i;
+    } 
+  }
+  encoded_fragment[0] = cobs_pos;
   return STREAM_SUCCESS;
 }
 
@@ -172,23 +202,35 @@ START_TEST(test_decode_cobs_fragment_in_place) {
 
 } END_TEST
 
-START_TEST(test_crc16_add_byte) {
-  uint16_t crc = CRC16_INIT;
-  crc16_add_byte(&crc, 1);
-  crc16_add_byte(&crc, 2);
-  crc16_add_byte(&crc, 3);
-  crc16_add_byte(&crc, 4);
+START_TEST(test_encode_decode) {
 
-  ck_assert_uint_eq(crc, 0xC54F);
+  const uint8_t payload[] = { 0x05, 0x06, 0x00, 0x08,
+                            0xA1, 0xA2, 0xA3, 0xA4,
+                            0x00, 0x01, 0x02, 0x03 };
 
+  uint8_t encoded[MAX_ENCODED_FRAGMENT_SIZE];
+  uint16_t encoded_size;
+  ck_assert_int_eq(encode_cobs_fragment(sizeof(payload),
+                                        payload,
+                                        &encoded_size,
+                                        encoded), STREAM_SUCCESS);
 
+  ck_assert_int_eq(encoded_size, sizeof(payload) + 5);
+
+  ck_assert_int_eq(decode_cobs_fragment_in_place(&encoded_size,
+                                                 encoded), STREAM_SUCCESS);
+
+  ck_assert_int_eq(encoded_size, sizeof(payload));
+  ck_assert_mem_eq(encoded, payload, encoded_size);
 } END_TEST
+
 
 TCase *setup_stream_tests() {
   TCase *stream_tests = tcase_create("stream");
   tcase_add_test(stream_tests, test_decode_cobs_fragment_in_place_failure_checking);
   tcase_add_test(stream_tests, test_decode_cobs_fragment_in_place);
-  tcase_add_test(stream_tests, test_crc16_add_byte);
+  tcase_add_test(stream_tests, test_encode_decode);
+
   return stream_tests;
 }
 #endif

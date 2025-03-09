@@ -647,6 +647,7 @@ static void setup_task_handler() {
 void platform_benchmark_init() {
   rcc_clock_setup_pll(&rcc_hse_8mhz_3v3[RCC_CLOCK_3V3_168MHZ]);
   rcc_wait_for_osc_ready(RCC_HSE);
+  flash_prefetch_enable();
   rcc_periph_clock_enable(RCC_SYSCFG);
   rcc_periph_clock_enable(RCC_GPIOA);
   rcc_periph_clock_enable(RCC_GPIOE);

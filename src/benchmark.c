@@ -1,3 +1,4 @@
+#include "stream.h"
 #define BENCHMARK
 #include <assert.h>
 #include <stdio.h>
@@ -107,8 +108,67 @@ static void do_sensor_single_therm() {
          (int)cycles_to_ns(end - start));
 }
 
+uint8_t crc_payload[] = {
+  0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+  0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+  0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+  0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+  0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+  0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+  0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+  0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+  0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+  0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+  0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+  0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+  0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+  0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+};
+
+static void do_crc16() {
+  /* Calculate a CRC for the 240 byte payload above */
+  uint64_t start = cycle_count();
+  uint16_t crc = CRC16_INIT;
+  for (unsigned int i = 0; i < sizeof(crc_payload); i++) {
+    crc16_add_byte(&crc, crc_payload[i]);
+  }
+  uint64_t end = cycle_count();
+  printf("crc16: %d ns  (%x)\r\n", (int)cycles_to_ns(end - start), crc);
+}
+
+static void do_crc32() {
+  /* Calculate a CRC for the 240 byte payload above */
+  uint64_t start = cycle_count();
+  uint32_t crc = CRC32_INIT;
+  for (unsigned int i = 0; i < sizeof(crc_payload); i++) {
+    crc32_add_byte(&crc, crc_payload[i]);
+  }
+  uint64_t end = cycle_count();
+  printf("crc32: %d ns  (%x)\r\n", (int)cycles_to_ns(end - start), crc);
+}
+
+static void do_encode_decode() {
+  static uint8_t buffer[MAX_ENCODED_FRAGMENT_SIZE];
+  uint16_t encoded_size;
+
+  uint64_t start = cycle_count();
+  encode_cobs_fragment(sizeof(crc_payload), crc_payload,
+                       &encoded_size, buffer);
+  uint64_t end = cycle_count();
+
+  printf("encode_fragment: %d ns\r\n", (int)cycles_to_ns(end - start));
+
+  start = cycle_count();
+  decode_cobs_fragment_in_place(&encoded_size, buffer);
+  end = cycle_count();
+  printf("decode_fragment: %d ns\r\n", (int)cycles_to_ns(end - start));
+}
+
+
 int main() {
   /* Preparations for all benchmarks */
+  platform_benchmark_init();
+
   config.sensors[SENSOR_IAT].value = 15.0f;
   config.sensors[SENSOR_BRV].value = 14.8f;
   config.sensors[SENSOR_MAP].value = 100.0f;
@@ -120,6 +180,9 @@ int main() {
     do_schedule_ignition_event_bench();
     do_sensor_adc_calcs();
     do_sensor_single_therm();
+    do_crc16();
+    do_crc32();
+    do_encode_decode();
   } while (1);
   return 0;
 }

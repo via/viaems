@@ -47,8 +47,14 @@ void set_gpio(int output, char value);
 int get_gpio(int output);
 void set_pwm(int output, float percent);
 
-//size_t platform_read_fragment(uint8_t fragment[CONSOLE_MAX_FRAGMENT_SIZE]);
-//size_t platform_write_fragment(uint8_t *fragment, size_t size);
+typedef enum {
+  STREAM_OK,
+  STREAM_TIMEOUT,
+  STREAM_ERROR,
+} platform_stream_result;
+
+platform_stream_result platform_stream_read_byte(uint8_t *b, timeval_t timeout);
+platform_stream_result platform_stream_write_byte(uint8_t *b, timeval_t timeout);
 
 void platform_load_config(void);
 void platform_save_config(void);

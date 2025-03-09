@@ -20,12 +20,7 @@ int main(int argc, char *argv[]) {
   platform_init(argc, argv);
 
   assert(config_valid());
-  uint16_t bleh = CRC16_INIT;
-  crc16_add_byte(&bleh, 1);
-  crc16_add_byte(&bleh, 2);
-  crc16_add_byte(&bleh, 3);
-  crc16_add_byte(&bleh, 4);
-  set_test_trigger_rpm(bleh);
+  set_test_trigger_rpm(3000);
 
   while (1) {
     console_process();
