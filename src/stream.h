@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "platform.h"
 #include "crc.h"
 
 #define CONSOLE_MAX_FRAGMENT_SIZE 244
@@ -14,9 +15,11 @@
 
 typedef enum {
   STREAM_SUCCESS = 0,
-  STREAM_BAD_SIZE = 1,
-  STREAM_BAD_CRC = 2,
+  STREAM_TIMEOUT = 1,
+  STREAM_BAD_SIZE = 2,
+  STREAM_BAD_CRC = 3,
 } stream_result_t;
+
 
 stream_result_t decode_cobs_fragment_in_place(
     uint16_t *size, 

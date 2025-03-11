@@ -47,14 +47,11 @@ void set_gpio(int output, char value);
 int get_gpio(int output);
 void set_pwm(int output, float percent);
 
-typedef enum {
-  STREAM_OK,
-  STREAM_TIMEOUT,
-  STREAM_ERROR,
-} platform_stream_result;
+/* Non-blocking read from stream console */
+size_t platform_stream_read(size_t size, uint8_t buffer[size]);
 
-platform_stream_result platform_stream_read_byte(uint8_t *b, timeval_t timeout);
-platform_stream_result platform_stream_write_byte(uint8_t *b, timeval_t timeout);
+/* Non-blocking write to stream console */
+size_t platform_stream_write(size_t size, const uint8_t buffer[size]);
 
 void platform_load_config(void);
 void platform_save_config(void);

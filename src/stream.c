@@ -1,7 +1,75 @@
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "stream.h"
+
+typedef bool (*write_fn)(size_t n, uint8_t data[n], void *arg);
+
+struct cobs_encoder {
+  uint8_t scratchpad[256];
+  size_t n_bytes;
+};
+
+static bool cobs_encode(
+    struct cobs_encoder *enc,
+    size_t in_size,
+    uint8_t in_buffer[in_size],
+    write_fn write,
+    void *arg) {
+
+  for (int i = 0; i < in_size; i++) {
+    if (enc->n_bytes == 254) {
+      const size_t wr_size = enc->n_bytes + 1;
+      enc->scratchpad[0] = wr_size;
+      if (!write(wr_size, enc->scratchpad, arg)) {
+        return false;
+      }
+      enc->n_bytes = 0;
+    }
+
+    if (in_buffer[i] == 0) {
+      const size_t wr_size = enc->n_bytes + 1;
+      enc->scratchpad[0] = wr_size;
+      if (!write(wr_size, enc->scratchpad, arg)) {
+        return false;
+      }
+      enc->n_bytes = 0;
+    } else {
+      enc->n_bytes += 1;
+      enc->scratchpad[enc->n_bytes] = in_buffer[i];
+    }
+  }
+  return true;
+}
+
+struct stream_message {
+  struct cobs_encoder cobs;
+  uint32_t length;
+  uint32_t crc;
+  timeval_t timeout;
+};
+
+bool stream_message_new(
+    struct stream_message *msg,
+    timeval_t timeout,
+    uint32_t length,
+    uint32_t crc) {
+  msg->cobs.n_bytes = 0;
+  msg->length = length;
+  msg->crc = crc;
+  msg->timeout = timeout;
+  
+}
+
+bool stream_message_write(
+    struct stream_message *msg,
+    size_t size,
+    uint8_t buffer[size]) {
+
+  return false;
+}
+
 
 
 /* Decodes and validates a fragment from a stream oriented console.
@@ -224,12 +292,79 @@ START_TEST(test_encode_decode) {
   ck_assert_mem_eq(encoded, payload, encoded_size);
 } END_TEST
 
+static uint8_t outbuffer[1024];
+static size_t outbuffer_size = 0;
+static inline bool test_write_fn(size_t n, uint8_t buffer[n], void *arg) {
+  memcpy(outbuffer + outbuffer_size, buffer, n);
+  outbuffer_size += n;
+  return true;
+}
+
+
+START_TEST(test_cobs_encode) {
+
+  {
+    uint8_t nozeros[] = {1, 2, 3, 4, 5, 0};
+    struct cobs_encoder enc = { 0 };
+
+    outbuffer_size = 0;
+    cobs_encode(&enc, sizeof(nozeros), nozeros, test_write_fn, NULL);
+    const uint8_t expected[] = {6, 1, 2, 3, 4, 5};
+    ck_assert_int_eq(outbuffer_size, 6);
+    ck_assert_mem_eq(expected, outbuffer, outbuffer_size);
+
+  }
+
+  {
+    uint8_t somezeros[] = {0, 1, 2, 0, 3, 4, 0, 0};
+    struct cobs_encoder enc = { 0 };
+
+    outbuffer_size = 0;
+    cobs_encode(&enc, sizeof(somezeros), somezeros, test_write_fn, NULL);
+    const uint8_t expected[] = {1, 3, 1, 2, 3, 3, 4, 1};
+    ck_assert_int_eq(outbuffer_size, 8);
+    ck_assert_mem_eq(expected, outbuffer, outbuffer_size);
+
+  }
+
+  {
+    uint8_t zero1[] = {0, 1, 2, 0};
+    uint8_t zero2[] = {3, 4, 0, 0};
+    struct cobs_encoder enc = { 0 };
+
+    outbuffer_size = 0;
+    cobs_encode(&enc, sizeof(zero1), zero1, test_write_fn, NULL);
+    cobs_encode(&enc, sizeof(zero2), zero2, test_write_fn, NULL);
+    const uint8_t expected[] = {1, 3, 1, 2, 3, 3, 4, 1};
+    ck_assert_int_eq(outbuffer_size, 8);
+    ck_assert_mem_eq(expected, outbuffer, outbuffer_size);
+
+  }
+  {
+    uint8_t large[260]; // 259 1s and then a null terminator
+    for (int i = 0; i < sizeof(large) - 1; i++) {
+      large[i] = 1;
+    }
+    large[259] = 0;
+
+    struct cobs_encoder enc = { 0 };
+    outbuffer_size = 0;
+    cobs_encode(&enc, sizeof(large), large, test_write_fn, NULL);
+    ck_assert_int_eq(outbuffer_size, 261);
+
+  }
+
+} END_TEST
+
+
 
 TCase *setup_stream_tests() {
   TCase *stream_tests = tcase_create("stream");
   tcase_add_test(stream_tests, test_decode_cobs_fragment_in_place_failure_checking);
   tcase_add_test(stream_tests, test_decode_cobs_fragment_in_place);
   tcase_add_test(stream_tests, test_encode_decode);
+
+  tcase_add_test(stream_tests, test_cobs_encode);
 
   return stream_tests;
 }

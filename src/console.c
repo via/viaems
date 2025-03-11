@@ -173,6 +173,38 @@ static const char *sensor_name_from_type(sensor_input_type t) {
   }
 }
 
+typedef enum {
+  MESSAGE_PENDING,
+  MESSAGE_COMPLETE,
+  MESSAGE_TIMEOUT,
+  MESSAGE_BAD_SIZE,
+  MESSAGE_BAD_CRC,
+} console_message_status;
+
+struct console_message {
+  console_message_status status;
+  timeval_t time;
+  uint32_t length;
+  uint32_t crc;
+};
+
+/* Determine is a new message is ready to read. If so, returns true and
+ * populates the provided pointer to a message */
+bool console_message_read_ready(struct console_message *msg);
+
+/* Read size bytes for the provided message into buffer. If able to fulfill the
+ * requested size, returns true.  Otherwise returns false, and the reason is
+ * available in the status field.  */
+bool platform_message_read(struct console_message *msg, timeval_t timeout, uint8_t *buffer, size_t size);
+
+/* Start a new message. Any message currently being written will be aborted, any
+ * underlying frame will end a new one will start.  Length and CRC must be
+ * provided up front */
+bool platform_message_new(struct console_message *msg, uint32_t length, uint32_t crc);
+
+bool platform_message_write(struct console_message *msg, timeval_t timeout, uint8_t *buffer, size_t size);
+
+
 static int console_write_full(const uint8_t *buf, size_t len) {
   size_t remaining = len;
   const uint8_t *ptr = buf;
