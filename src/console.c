@@ -209,7 +209,7 @@ static int console_write_full(const uint8_t *buf, size_t len) {
   size_t remaining = len;
   const uint8_t *ptr = buf;
   while (remaining) {
-    size_t written = console_write(ptr, remaining);
+    size_t written = platform_stream_write(remaining, ptr);
     if (written > 0) {
       remaining -= written;
       ptr += written;

@@ -115,7 +115,7 @@ void set_pwm(int output, float value) {
 void adc_gather() {}
 
 timeval_t last_tx = 0;
-size_t console_write(const void *buf, size_t len) {
+size_t platform_stream_write(size_t len, const uint8_t buf[len]) {
   struct timespec wait = {
     .tv_nsec = 100000,
   };

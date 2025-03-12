@@ -133,9 +133,9 @@ size_t console_read(void *ptr, size_t max) {
   return 0;
 }
 
-size_t console_write(const void *ptr, size_t max) {
+size_t platform_stream_write(size_t length, const uint8_t ptr[length]) {
   (void)ptr;
-  (void)max;
+  (void)length;
   return 0;
 }
 void platform_benchmark_init() {}
