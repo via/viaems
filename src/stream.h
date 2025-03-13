@@ -6,30 +6,36 @@
 #include <stdbool.h>
 
 #include "platform.h"
-#include "crc.h"
 
-#define CONSOLE_MAX_FRAGMENT_SIZE 244
+typedef bool (*stream_read_fn)(size_t n, uint8_t data[n], void *arg);
+typedef bool (*stream_write_fn)(size_t n, const uint8_t data[n], void *arg);
 
-#define STREAM_HEADER_SIZE 4
-#define MAX_ENCODED_FRAGMENT_SIZE (CONSOLE_MAX_FRAGMENT_SIZE + STREAM_HEADER_SIZE + 1)
+struct cobs_encoder {
+  uint8_t scratchpad[256];
+  size_t n_bytes;
+};
 
-typedef enum {
-  STREAM_SUCCESS = 0,
-  STREAM_TIMEOUT = 1,
-  STREAM_BAD_SIZE = 2,
-  STREAM_BAD_CRC = 3,
-} stream_result_t;
+struct stream_message {
+  struct cobs_encoder cobs;
+  stream_write_fn write;
+  void *arg;
+  uint32_t length;
+  uint32_t consumed;
+  uint32_t crc;
+  timeval_t timeout;
+};
 
+bool stream_message_new(
+    struct stream_message *msg,
+    stream_write_fn write,
+    void *arg,
+    uint32_t length,
+    uint32_t crc);
 
-stream_result_t decode_cobs_fragment_in_place(
-    uint16_t *size, 
-    uint8_t fragment[MAX_ENCODED_FRAGMENT_SIZE]);
-
-stream_result_t encode_cobs_fragment(
-    uint16_t in_size, 
-    const uint8_t fragment[in_size],
-    uint16_t *out_size, 
-    uint8_t encoded_fragment[MAX_ENCODED_FRAGMENT_SIZE]);
+bool stream_message_write(
+    struct stream_message *msg,
+    size_t size,
+    const uint8_t buffer[size]);
 
 #ifdef UNITTEST
 #include <check.h>

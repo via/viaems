@@ -6,18 +6,11 @@
 #include "stream.h"
 #include "util.h"
 
-typedef bool (*write_fn)(size_t n, const uint8_t data[n], void *arg);
-
-struct cobs_encoder {
-  uint8_t scratchpad[256];
-  size_t n_bytes;
-};
-
 static bool cobs_encode(
     struct cobs_encoder *enc,
     size_t in_size,
     const uint8_t in_buffer[in_size],
-    write_fn write,
+    stream_write_fn write,
     void *arg) {
 
   for (int i = 0; i < in_size; i++) {
@@ -45,31 +38,53 @@ static bool cobs_encode(
   return true;
 }
 
-typedef bool (*read_fn)(size_t n, uint8_t data[n], void *arg);
-
 struct cobs_decoder {
   size_t n_bytes;
+  bool zero_current_block;
 };
 
 static bool cobs_decode(
     struct cobs_decoder *dec,
     size_t in_size,
     uint8_t in_buffer[in_size],
-    read_fn read,
+    stream_read_fn read,
     void *arg) {
-  return false;
+  
+  size_t remaining = in_size;
+  uint8_t *ptr = in_buffer;
+  while (remaining > 0) {
+
+    if (dec->n_bytes == 0) {
+      if (dec->zero_current_block) {
+        ptr[0] = '\0';
+        ptr++;
+        remaining--;
+      }
+
+      uint8_t first_byte;
+      if (!read(1, &first_byte, arg)) {
+        return false;
+      }
+      if (first_byte == 0) {
+        return false;
+      }
+      dec->n_bytes = first_byte - 1;
+      dec->zero_current_block = (first_byte != 255);
+    }
+
+
+    uint8_t amt_to_read = dec->n_bytes < remaining ? dec->n_bytes : remaining;
+    if (!read(amt_to_read, ptr, arg)) {
+      return false;
+    }
+
+    remaining -= amt_to_read;
+    ptr += amt_to_read;
+    dec->n_bytes -= amt_to_read;
+  }
+  return true;
 }
 
-
-struct stream_message {
-  struct cobs_encoder cobs;
-  write_fn write;
-  void *arg;
-  uint32_t length;
-  uint32_t consumed;
-  uint32_t crc;
-  timeval_t timeout;
-};
 
 static bool platform_stream_write_timeout(size_t n, const uint8_t data[n], void *arg) {
 
@@ -111,7 +126,7 @@ static bool platform_stream_read_timeout(size_t n, const uint8_t data[n], void *
 
 bool stream_message_new(
     struct stream_message *msg,
-    write_fn write,
+    stream_write_fn write,
     void *arg,
     uint32_t length,
     uint32_t crc) {
@@ -163,15 +178,28 @@ bool stream_message_write(
 #ifdef UNITTEST
 #include <check.h>
 
-struct test_stream_ctx {
+struct test_write_ctx {
   uint8_t buffer[1024];
   size_t size;
 };
 
+struct test_read_ctx {
+  const uint8_t *buffer;
+  size_t size;
+  size_t position;
+};
+
 static inline bool test_write_fn(size_t n, const uint8_t buffer[n], void *arg) {
-  struct test_stream_ctx *ctx = (struct test_stream_ctx *)arg;
+  struct test_write_ctx *ctx = (struct test_write_ctx *)arg;
   memcpy(ctx->buffer + ctx->size, buffer, n);
   ctx->size += n;
+  return true;
+}
+
+static inline bool test_read_fn(size_t n, uint8_t buffer[n], void *arg) {
+  struct test_read_ctx *ctx = (struct test_read_ctx *)arg;
+  memcpy(buffer, ctx->buffer + ctx->position, n);
+  ctx->position += n;
   return true;
 }
 
@@ -180,7 +208,7 @@ START_TEST(test_cobs_encode) {
   {
     uint8_t nozeros[] = {1, 2, 3, 4, 5, 0};
     struct cobs_encoder enc = { 0 };
-    struct test_stream_ctx ctx = { 0 };
+    struct test_write_ctx ctx = { 0 };
 
     cobs_encode(&enc, sizeof(nozeros), nozeros, test_write_fn, &ctx);
     const uint8_t expected[] = {6, 1, 2, 3, 4, 5};
@@ -192,7 +220,7 @@ START_TEST(test_cobs_encode) {
   {
     uint8_t somezeros[] = {0, 1, 2, 0, 3, 4, 0, 0};
     struct cobs_encoder enc = { 0 };
-    struct test_stream_ctx ctx = { 0 };
+    struct test_write_ctx ctx = { 0 };
 
     cobs_encode(&enc, sizeof(somezeros), somezeros, test_write_fn, &ctx);
     const uint8_t expected[] = {1, 3, 1, 2, 3, 3, 4, 1};
@@ -205,7 +233,7 @@ START_TEST(test_cobs_encode) {
     uint8_t zero1[] = {0, 1, 2, 0};
     uint8_t zero2[] = {3, 4, 0, 0};
     struct cobs_encoder enc = { 0 };
-    struct test_stream_ctx ctx = { 0 };
+    struct test_write_ctx ctx = { 0 };
 
     cobs_encode(&enc, sizeof(zero1), zero1, test_write_fn, &ctx);
     cobs_encode(&enc, sizeof(zero2), zero2, test_write_fn, &ctx);
@@ -215,7 +243,7 @@ START_TEST(test_cobs_encode) {
 
   }
   {
-    struct test_stream_ctx ctx = { 0 };
+    struct test_write_ctx ctx = { 0 };
     uint8_t large[260]; // 259 1s and then a null terminator
     for (int i = 0; i < sizeof(large) - 1; i++) {
       large[i] = 1;
@@ -240,7 +268,7 @@ START_TEST(test_stream_message_end_to_end_small) {
 } END_TEST
 
 START_TEST(test_stream_message_write) {
-  struct test_stream_ctx ctx = {0};
+  struct test_write_ctx ctx = {0};
   const uint8_t msg_text[] = "Hello, World!\n";
 
   uint32_t size = sizeof(msg_text);
@@ -268,11 +296,49 @@ START_TEST(test_stream_message_write) {
 
 } END_TEST;
 
+START_TEST(test_cobs_decode) {
+
+  const uint8_t expected[] = {
+    2,                 /* Distance to first zero */
+    15, 1, 1, 19,       /* Encoded 15, little endian with zeroes encoded */
+    0xFF, 0xFF, 0x5A, 0x5A, /* CRC little endian, encoded */
+    'H', 'e', 'l', 'l', 'o', ',', ' ', /* Hello, */
+    'W', 'o', 'r', 'l', 'd', '!',      /* World! */
+    '\n', 1,                          /* Newline and encoded terminator */
+    '\0' /* Frame delimiter */
+  };
+
+  struct cobs_decoder dec = { 0 };
+  struct test_read_ctx ctx = { .buffer = expected, .size = sizeof(expected) };
+
+  uint8_t buffer[3];
+  bool res = cobs_decode(&dec, sizeof(buffer), buffer, test_read_fn, &ctx);
+  ck_assert(res);
+  ck_assert_mem_eq(buffer, &((uint8_t[]){15, 0, 0}), 3);
+
+  res = cobs_decode(&dec, sizeof(buffer), buffer, test_read_fn, &ctx);
+  ck_assert(res);
+  ck_assert_mem_eq(buffer, &((uint8_t[]){0, 0xff, 0xff}), 3);
+
+  res = cobs_decode(&dec, sizeof(buffer), buffer, test_read_fn, &ctx);
+  ck_assert(res);
+  ck_assert_mem_eq(buffer, &((uint8_t[]){0x5a, 0x5a, 'H'}), 3);
+
+  uint8_t rest_of_text[] = "ello, World!\n";
+  uint8_t biggerbuffer[sizeof(rest_of_text)];
+  res = cobs_decode(&dec, sizeof(biggerbuffer), biggerbuffer, test_read_fn, &ctx);
+  ck_assert(res);
+  ck_assert_mem_eq(biggerbuffer, rest_of_text, sizeof(rest_of_text));
+
+  res = cobs_decode(&dec, 1, buffer, test_read_fn, &ctx);
+  ck_assert(!res);
+}
 
 TCase *setup_stream_tests() {
   TCase *stream_tests = tcase_create("stream");
 
   tcase_add_test(stream_tests, test_cobs_encode);
+  tcase_add_test(stream_tests, test_cobs_decode);
 //  tcase_add_test(stream_tests, test_stream_message_end_to_end_small);
   tcase_add_test(stream_tests, test_stream_message_write);
 
