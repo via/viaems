@@ -90,44 +90,6 @@ static bool cobs_decode(
 }
 
 
-static bool platform_stream_write_timeout(size_t n, const uint8_t data[n], void *arg) {
-
-  timeval_t continue_before_time = ((struct stream_message *)arg)->timeout;
-  const uint8_t *ptr = data;
-  size_t remaining = n;
-
-  while (remaining > 0) {
-    bool timed_out = time_before(continue_before_time, current_time());
-    if (timed_out) {
-      return false;
-    }
-    size_t written = platform_stream_write(remaining, ptr);
-    ptr += written;
-    remaining -= written;
-  }
-
-  return true;
-}
-
-static bool platform_stream_read_timeout(size_t n, const uint8_t data[n], void *arg) {
-
-  timeval_t continue_before_time = ((struct stream_message *)arg)->timeout;
-  const uint8_t *ptr = data;
-  size_t remaining = n;
-
-  while (remaining > 0) {
-    bool timed_out = time_before(continue_before_time, current_time());
-    if (timed_out) {
-      return false;
-    }
-    size_t amt_read = platform_stream_read(remaining, ptr);
-    ptr += amt_read;
-    remaining -= amt_read;
-  }
-
-  return true;
-}
-
 bool stream_message_new(
     struct stream_message *msg,
     stream_write_fn write,
@@ -178,7 +140,6 @@ bool stream_message_write(
 }
 
 
-#define UNITTEST
 #ifdef UNITTEST
 #include <check.h>
 
@@ -368,44 +329,6 @@ START_TEST(test_cobs_encode) {
 
 } END_TEST
 
-START_TEST(test_stream_message_end_to_end_small) {
-
-  const uint8_t payload[] = { 0x05, 0x06, 0x00, 0x08,
-                            0xA1, 0xA2, 0xA3, 0xA4,
-                            0x00, 0x01, 0x02, 0x03 };
-
-  ck_assert(false);
-} END_TEST
-
-START_TEST(test_stream_message_write) {
-  struct test_write_ctx ctx = {0};
-  const uint8_t msg_text[] = "Hello, World!\n";
-
-  uint32_t size = sizeof(msg_text);
-  uint32_t crc = 0x5A5AFFFF;
-
-  struct stream_message msg;
-  bool result = stream_message_new(&msg, test_write_fn, &ctx, sizeof(msg_text), crc);
-  ck_assert(result);
-
-  result = stream_message_write(&msg, sizeof(msg_text), msg_text);
-  ck_assert(result);
-
-  const uint8_t expected[] = {
-    2,                 /* Distance to first zero */
-    15, 1, 1, 19,       /* Encoded 15, little endian with zeroes encoded */
-    0xFF, 0xFF, 0x5A, 0x5A, /* CRC little endian, encoded */
-    'H', 'e', 'l', 'l', 'o', ',', ' ', /* Hello, */
-    'W', 'o', 'r', 'l', 'd', '!',      /* World! */
-    '\n', 1,                          /* Newline and encoded terminator */
-    '\0' /* Frame delimiter */
-  };
-
-  ck_assert_int_eq(ctx.size, sizeof(expected));
-  ck_assert_mem_eq(ctx.buffer, expected, sizeof(expected));
-
-} END_TEST;
-
 START_TEST(test_cobs_decode) {
 
   const uint8_t expected[] = {
@@ -468,6 +391,44 @@ START_TEST(test_cobs_encode_large) {
   ck_assert_int_eq(ctx.size, sizeof(large_array_encoded));
   ck_assert_mem_eq(ctx.buffer, large_array_encoded, sizeof(large_array_encoded));
 }
+
+START_TEST(test_stream_message_end_to_end_small) {
+
+  const uint8_t payload[] = { 0x05, 0x06, 0x00, 0x08,
+                            0xA1, 0xA2, 0xA3, 0xA4,
+                            0x00, 0x01, 0x02, 0x03 };
+
+  ck_assert(false);
+} END_TEST
+
+START_TEST(test_stream_message_write) {
+  struct test_write_ctx ctx = {0};
+  const uint8_t msg_text[] = "Hello, World!\n";
+
+  uint32_t size = sizeof(msg_text);
+  uint32_t crc = 0x5A5AFFFF;
+
+  struct stream_message msg;
+  bool result = stream_message_new(&msg, test_write_fn, &ctx, sizeof(msg_text), crc);
+  ck_assert(result);
+
+  result = stream_message_write(&msg, sizeof(msg_text), msg_text);
+  ck_assert(result);
+
+  const uint8_t expected[] = {
+    2,                 /* Distance to first zero */
+    15, 1, 1, 19,       /* Encoded 15, little endian with zeroes encoded */
+    0xFF, 0xFF, 0x5A, 0x5A, /* CRC little endian, encoded */
+    'H', 'e', 'l', 'l', 'o', ',', ' ', /* Hello, */
+    'W', 'o', 'r', 'l', 'd', '!',      /* World! */
+    '\n', 1,                          /* Newline and encoded terminator */
+    '\0' /* Frame delimiter */
+  };
+
+  ck_assert_int_eq(ctx.size, sizeof(expected));
+  ck_assert_mem_eq(ctx.buffer, expected, sizeof(expected));
+
+} END_TEST;
 
 TCase *setup_stream_tests() {
   TCase *stream_tests = tcase_create("stream");

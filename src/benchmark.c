@@ -13,6 +13,7 @@
 #include "table.h"
 #include "tasks.h"
 #include "util.h"
+#include "crc.h"
 
 static void do_fuel_calculation_bench() {
   platform_load_config();
@@ -147,6 +148,7 @@ static void do_crc32() {
   printf("crc32: %d ns  (%x)\r\n", (int)cycles_to_ns(end - start), crc);
 }
 
+#if 0
 static void do_encode_decode() {
   static uint8_t buffer[MAX_ENCODED_FRAGMENT_SIZE];
   uint16_t encoded_size;
@@ -163,6 +165,7 @@ static void do_encode_decode() {
   end = cycle_count();
   printf("decode_fragment: %d ns\r\n", (int)cycles_to_ns(end - start));
 }
+#endif
 
 
 int main() {
@@ -182,7 +185,6 @@ int main() {
     do_sensor_single_therm();
     do_crc16();
     do_crc32();
-    do_encode_decode();
   } while (1);
   return 0;
 }

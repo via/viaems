@@ -940,7 +940,7 @@ void platform_save_config() {
   reset_handler();
 }
 
-size_t console_read(void *buf, size_t max) {
+size_t platform_stream_read(size_t max, uint8_t buf[max]) {
   disable_interrupts();
   size_t amt = usb_rx_len > max ? max : usb_rx_len;
   memcpy(buf, usb_rx_buf, amt);
@@ -950,7 +950,7 @@ size_t console_read(void *buf, size_t max) {
   return amt;
 }
 
-size_t console_write(const void *buf, size_t count) {
+size_t platform_stream_write(size_t count, const uint8_t buf[count]) {
   size_t rem = count > 64 ? 64 : count;
   /* https://github.com/libopencm3/libopencm3/issues/531
    * We can't let the usb irq be called while writing */
@@ -969,8 +969,9 @@ ssize_t __attribute__((externally_visible))
 _write(int fd, const char *buf, size_t count) {
   (void)fd;
   size_t pos = 0;
+
   while (pos < count) {
-    pos += console_write(buf + pos, count - pos);
+    pos += platform_stream_write(count - pos, (const uint8_t *)(buf + pos));
     usbd_poll(usbd_dev);
   }
   return count;

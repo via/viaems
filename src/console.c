@@ -13,6 +13,8 @@
 #include "sensors.h"
 #include "spsc.h"
 
+#include "stream.h"
+#include "crc.h"
 #include "pb_encode.h"
 #include "interface/types.pb.h"
 
@@ -173,21 +175,6 @@ static const char *sensor_name_from_type(sensor_input_type t) {
   }
 }
 
-typedef enum {
-  MESSAGE_PENDING,
-  MESSAGE_COMPLETE,
-  MESSAGE_TIMEOUT,
-  MESSAGE_BAD_SIZE,
-  MESSAGE_BAD_CRC,
-} console_message_status;
-
-struct console_message {
-  console_message_status status;
-  timeval_t time;
-  uint32_t length;
-  uint32_t crc;
-};
-
 /* Determine is a new message is ready to read. If so, returns true and
  * populates the provided pointer to a message */
 bool console_message_read_ready(struct console_message *msg);
@@ -204,83 +191,116 @@ bool platform_message_new(struct console_message *msg, uint32_t length, uint32_t
 
 bool platform_message_write(struct console_message *msg, timeval_t timeout, uint8_t *buffer, size_t size);
 
+static bool platform_stream_write_timeout(size_t n, const uint8_t data[n], void *arg) {
 
-static int console_write_full(const uint8_t *buf, size_t len) {
-  size_t remaining = len;
-  const uint8_t *ptr = buf;
-  while (remaining) {
-    size_t written = platform_stream_write(remaining, ptr);
-    if (written > 0) {
-      remaining -= written;
-      ptr += written;
+  timeval_t continue_before_time = *((uint32_t *)arg);
+  const uint8_t *ptr = data;
+  size_t remaining = n;
+
+  while (remaining > 0) {
+    bool timed_out = time_before(continue_before_time, current_time());
+    if (timed_out) {
+      return false;
     }
+    size_t written = platform_stream_write(remaining, ptr);
+    ptr += written;
+    remaining -= written;
   }
-  return 1;
+
+  return true;
 }
 
-void console_process() {
-  uint8_t txbuffer[4096];
+static bool platform_stream_read_timeout(size_t n, const uint8_t data[n], void *arg) {
 
-  Response response_msg = { 0 };
-  pb_ostream_t stream = pb_ostream_from_buffer(txbuffer + 4, sizeof(txbuffer) - 4);
+  timeval_t continue_before_time = *((uint32_t*)arg);
+  const uint8_t *ptr = data;
+  size_t remaining = n;
+
+  while (remaining > 0) {
+    bool timed_out = time_before(continue_before_time, current_time());
+    if (timed_out) {
+      return false;
+    }
+    size_t amt_read = platform_stream_read(remaining, ptr);
+    ptr += amt_read;
+    remaining -= amt_read;
+  }
+
+  return true;
+}
+
+bool pb_ostream_write_callback(pb_ostream_t *stream, 
+    const uint8_t *buf, size_t count) {
+  struct stream_message *msg = (struct stream_message *)stream->state;
+  return stream_message_write(msg, count, buf);
+}
+
+bool pb_ostream_crc_callback(pb_ostream_t *stream,
+    const uint8_t *buf, size_t count) {
+  uint32_t *crc = (uint32_t *)stream->state;
+  for (int i = 0; i < count; i++) {
+    crc32_add_byte(crc, buf[i]);
+  }
+  return true;
+}
+
+static void calculate_msg_length_and_crc(Response *r, uint32_t *length, uint32_t *crc) {
+
+  *crc = CRC32_INIT;
+  pb_ostream_t ostream = {
+    .callback = pb_ostream_crc_callback,
+    .max_size = SIZE_MAX,
+    .state = crc,
+  };
+  pb_encode(&ostream, Response_fields, r);
+  crc32_finish(crc);
+  *length = ostream.bytes_written;
+}
+
+static Response response_msg = { 0 };
+
+void console_process() {
+
+  bool has_message = false;
 
   if (!spsc_is_empty(&trigger_update_queue)) {
+    has_message = true;
     int32_t idx = spsc_next(&trigger_update_queue);
     TriggerUpdate *msg = &trigger_update_queue_data[idx];
 
     response_msg.which_response = Response_trigger_update_tag;
-    response_msg.response.trigger_update = msg;
+    response_msg.response.trigger_update = *msg;
 
-    pb_encode(&stream, Response_fields, &response_msg);
     spsc_release(&trigger_update_queue);
   } else if (!spsc_is_empty(&engine_update_queue)) {
+    has_message = true;
     int32_t idx = spsc_next(&engine_update_queue);
     EngineUpdate *msg = &engine_update_queue_data[idx];
 
     response_msg.which_response = Response_engine_update_tag;
-    response_msg.response.engine_update = msg;
+    response_msg.response.engine_update = *msg;
 
-    pb_encode(&stream, Response_fields, &response_msg);
     spsc_release(&engine_update_queue);
   }
 
-  uint32_t write_size = stream.bytes_written;
-  if (write_size > 0) {
-    memcpy(txbuffer, &write_size, 4);
-    console_write_full(txbuffer, write_size + 4);
+  if (has_message) {
+    uint32_t length;
+    uint32_t crc;
+    calculate_msg_length_and_crc(&response_msg, &length, &crc);
+
+    struct stream_message msg;
+    pb_ostream_t ostream = {
+      .state = &msg,
+      .callback = pb_ostream_write_callback,
+      .max_size = SIZE_MAX,
+    };
+
+    uint32_t timeout = current_time() + time_from_us(10000000);
+    stream_message_new(&msg, platform_stream_write_timeout, &timeout, length, crc);
+    pb_encode(&ostream, Response_fields, &response_msg);
   }
-#if 0
-/* Otherwise a feed message */
-  if (current_time > 4000000) {
-    size_t write_size = console_feed_line(txbuffer+4, sizeof(txbuffer)-4);
-    memcpy(txbuffer, &write_size, 4);
-    console_write_full(txbuffer, write_size+4);
-  }
-#endif
+
 }
-
-#if 0
-
-static void encode_cobs(int bufsize, uint8_t buffer[bufsize], uint32_t datasize) {
-
-  int src_idx = 1;
-  uint32_t current_value = buffer[0];
-  int last_zero_idx = 0;
-
-  while (src_idx <= datasize)  {
-    if (current_value == 0) {
-      buffer[last_zero_idx] = src_idx - last_zero_idx;
-      last_zero_idx = src_idx;
-    } else {
-    }
-    uint8_t next_value = buffer[src_idx];
-    buffer[src_idx] = current_value;
-    src_idx += 1;
-    current_value = next_value;
-  }
-  buffer[last_zero_idx] = src_idx - last_zero_idx;
-}
-#endif
 
 #ifdef UNITTEST
 #include <check.h>

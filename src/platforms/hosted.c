@@ -116,10 +116,6 @@ void adc_gather() {}
 
 timeval_t last_tx = 0;
 size_t platform_stream_write(size_t len, const uint8_t buf[len]) {
-  struct timespec wait = {
-    .tv_nsec = 100000,
-  };
-  nanosleep(&wait, NULL);
   ssize_t written = -1;
   while ((written = write(STDOUT_FILENO, buf, len)) < 0)
     ;

@@ -8,14 +8,6 @@ Table1d.name        max_size:24
 Table2d.name        max_size:24
 Table2d.data        max_count:24
 
-//Fueling.PulseWidthCompensation type:FT_CALLBACK
-//Fueling.EngineTempEnrichment   type:FT_CALLBACK
-//Fueling.CrankingEnrichment     type:FT_CALLBACK
-//Fueling.ve                     type:FT_CALLBACK
-//Fueling.commanded_lambda       type:FT_CALLBACK
-//Ignition.dwell                 type:FT_CALLBACK
-//Ignition.timing                type:FT_CALLBACK
-
 
 Configuration.outputs max_count:16
 
