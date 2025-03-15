@@ -1,10 +1,10 @@
 #include <assert.h>
 #include <math.h>
 #include <stdatomic.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include <stdio.h>
 
 #include "calculations.h"
 #include "config.h"
@@ -14,11 +14,11 @@
 #include "sensors.h"
 #include "spsc.h"
 
-#include "stream.h"
 #include "crc.h"
-#include "pb_encode.h"
-#include "pb_decode.h"
 #include "interface/types.pb.h"
+#include "pb_decode.h"
+#include "pb_encode.h"
+#include "stream.h"
 
 TriggerUpdate trigger_update_queue_data[32];
 struct spsc_queue trigger_update_queue = { .size = 32 };
@@ -49,35 +49,35 @@ static void populate_engine_position(DecoderUpdate *u) {
   u->header.seq = 0;
   u->valid_before_timestamp = config.decoder.expiration;
   switch (config.decoder.state) {
-    case DECODER_NOSYNC:
-      u->state = DecoderState_NoSync;
-      break;
-    case DECODER_RPM:
-      u->state = DecoderState_RpmOnly;
-      break;
-    case DECODER_SYNC:
-      u->state = DecoderState_Sync;
-      break;
+  case DECODER_NOSYNC:
+    u->state = DecoderState_NoSync;
+    break;
+  case DECODER_RPM:
+    u->state = DecoderState_RpmOnly;
+    break;
+  case DECODER_SYNC:
+    u->state = DecoderState_Sync;
+    break;
   }
   switch (config.decoder.loss) {
-    case DECODER_NO_LOSS:
-      u->state_cause = DecoderLossReason_NoLoss;
-      break;
-    case DECODER_VARIATION:
-      u->state_cause = DecoderLossReason_ToothVariation;
-      break;
-    case DECODER_TRIGGERCOUNT_HIGH:
-      u->state_cause = DecoderLossReason_TriggerCountTooHigh;
-      break;
-    case DECODER_TRIGGERCOUNT_LOW:
-      u->state_cause = DecoderLossReason_TriggerCountTooLow;
-      break;
-    case DECODER_EXPIRED:
-      u->state_cause = DecoderLossReason_Expired;
-      break;
-    case DECODER_OVERFLOW:
-      u->state_cause = DecoderLossReason_Overflowed;
-      break;
+  case DECODER_NO_LOSS:
+    u->state_cause = DecoderLossReason_NoLoss;
+    break;
+  case DECODER_VARIATION:
+    u->state_cause = DecoderLossReason_ToothVariation;
+    break;
+  case DECODER_TRIGGERCOUNT_HIGH:
+    u->state_cause = DecoderLossReason_TriggerCountTooHigh;
+    break;
+  case DECODER_TRIGGERCOUNT_LOW:
+    u->state_cause = DecoderLossReason_TriggerCountTooLow;
+    break;
+  case DECODER_EXPIRED:
+    u->state_cause = DecoderLossReason_Expired;
+    break;
+  case DECODER_OVERFLOW:
+    u->state_cause = DecoderLossReason_Overflowed;
+    break;
   }
   u->last_angle = config.decoder.last_trigger_angle;
   u->instantaneous_rpm = config.decoder.tooth_rpm;
@@ -88,23 +88,22 @@ static SensorUpdate render_sensor_update(const struct sensor_input *si) {
   SensorUpdate update = { 0 };
   update.value = si->value;
   switch (si->fault) {
-    case FAULT_NONE:
-      update.fault = SensorFault_NoFault;
-      break;
-    case FAULT_RANGE:
-      update.fault = SensorFault_RangeFault;
-      break;
-    case FAULT_CONN:
-      update.fault = SensorFault_ConnectionFault;
-      break;
+  case FAULT_NONE:
+    update.fault = SensorFault_NoFault;
+    break;
+  case FAULT_RANGE:
+    update.fault = SensorFault_RangeFault;
+    break;
+  case FAULT_CONN:
+    update.fault = SensorFault_ConnectionFault;
+    break;
   }
   return update;
 }
 
 static void populate_sensors_update(SensorsUpdate *u) {
   *u = (SensorsUpdate){ 0 };
-  u->has_header = true,
-  u->header.timestamp = config.sensors[SENSOR_MAP].time;
+  u->has_header = true, u->header.timestamp = config.sensors[SENSOR_MAP].time;
   u->header.seq = 0;
   u->has_ManifoldPressure = true;
   u->ManifoldPressure = render_sensor_update(&config.sensors[SENSOR_MAP]);
@@ -152,9 +151,11 @@ void console_publish_engine_update() {
 
 /* Attempt to write n bytes from data using platform_stream_write.
  * arg is expected to be a pointer to a uin32_t representing a deadline, after
- * which the function will return false. 
+ * which the function will return false.
  */
-static bool platform_stream_write_timeout(size_t n, const uint8_t data[n], void *arg) {
+static bool platform_stream_write_timeout(size_t n,
+                                          const uint8_t data[n],
+                                          void *arg) {
 
   timeval_t continue_before_time = *((uint32_t *)arg);
   const uint8_t *ptr = data;
@@ -173,14 +174,13 @@ static bool platform_stream_write_timeout(size_t n, const uint8_t data[n], void 
   return true;
 }
 
-
 /* Attempt to read n bytes into data using plattform_stream_read.
  * arg is expected to be a pointer to a uin32_t representing a deadline, after
- * which the function will return false. 
+ * which the function will return false.
  */
 static bool platform_stream_read_timeout(size_t n, uint8_t data[n], void *arg) {
 
-  timeval_t continue_before_time = *((uint32_t*)arg);
+  timeval_t continue_before_time = *((uint32_t *)arg);
   uint8_t *ptr = data;
   size_t remaining = n;
 
@@ -200,11 +200,11 @@ static bool platform_stream_read_timeout(size_t n, uint8_t data[n], void *arg) {
 /* write callback for pb_ostream_t implemented using stream_message_write.
  * The stream state must be a pointer to a stream_message_writer.
  */
-static bool pb_ostream_write_callback(
-    pb_ostream_t *stream, 
-    const uint8_t *buf, 
-    size_t count) {
-  struct stream_message_writer *msg = (struct stream_message_writer *)stream->state;
+static bool pb_ostream_write_callback(pb_ostream_t *stream,
+                                      const uint8_t *buf,
+                                      size_t count) {
+  struct stream_message_writer *msg =
+    (struct stream_message_writer *)stream->state;
   return stream_message_write(msg, count, buf);
 }
 
@@ -213,7 +213,8 @@ static bool pb_ostream_write_callback(
  * pointer to a uint32_t for the current CRC
  */
 bool pb_ostream_crc_callback(pb_ostream_t *stream,
-    const uint8_t *buf, size_t count) {
+                             const uint8_t *buf,
+                             size_t count) {
   uint32_t *crc = (uint32_t *)stream->state;
   for (unsigned int i = 0; i < count; i++) {
     crc32_add_byte(crc, buf[i]);
@@ -225,7 +226,9 @@ bool pb_ostream_crc_callback(pb_ostream_t *stream,
  * This necessarily encodes the full target message to get these values, but
  * does not write the payload anywhere.
  */
-static void calculate_msg_length_and_crc(TargetMessage *r, uint32_t *length, uint32_t *crc) {
+static void calculate_msg_length_and_crc(TargetMessage *r,
+                                         uint32_t *length,
+                                         uint32_t *crc) {
 
   *crc = CRC32_INIT;
   pb_ostream_t ostream = {
@@ -238,8 +241,8 @@ static void calculate_msg_length_and_crc(TargetMessage *r, uint32_t *length, uin
   *length = ostream.bytes_written;
 }
 
-/* State structure for the pb_istream_t read callback for storing the accumulated
- * CRC of the read. 
+/* State structure for the pb_istream_t read callback for storing the
+ * accumulated CRC of the read.
  */
 struct pb_istream_state {
   struct stream_message_reader *reader;
@@ -250,10 +253,9 @@ struct pb_istream_state {
  * The stream state must be a pointer to a pb_istream_state, which itself must
  * contain a pointer to the stream_message_reader.
  */
-static bool pb_istream_read_callback(
-    pb_istream_t *stream, 
-    uint8_t *buf, 
-    size_t count) {
+static bool pb_istream_read_callback(pb_istream_t *stream,
+                                     uint8_t *buf,
+                                     size_t count) {
   struct pb_istream_state *state = (struct pb_istream_state *)stream->state;
   if (!stream_message_read(state->reader, count, buf)) {
     return false;
@@ -264,8 +266,7 @@ static bool pb_istream_read_callback(
   return true;
 }
 
-
-/* Attempt to read a full request message via platform_stream_read. 
+/* Attempt to read a full request message via platform_stream_read.
  * This function blocks, so in order to not halt target messages being sent out
  * in the event of a slow or failed incoming request, we use an overall timeout
  * of 100 mS.  If the read times out, the decoding fails, or the CRC check
@@ -274,11 +275,13 @@ static bool pb_istream_read_callback(
 static bool read_request(Request *req) {
   uint32_t timeout = current_time() + time_from_us(100000);
   struct stream_message_reader reader;
-  if (!stream_message_reader_new(&reader, platform_stream_read_timeout, &timeout)) {
+  if (!stream_message_reader_new(
+        &reader, platform_stream_read_timeout, &timeout)) {
     return false;
   }
 
-  struct pb_istream_state state = { .reader = &reader, .actual_crc = CRC32_INIT };
+  struct pb_istream_state state = { .reader = &reader,
+                                    .actual_crc = CRC32_INIT };
   pb_istream_t istream = {
     .state = &state,
     .bytes_left = reader.length,
@@ -302,12 +305,12 @@ static bool read_request(Request *req) {
 static bool process_request(Request *req, Response *resp) {
   *resp = (Response)Response_init_default;
   switch (req->which_type) {
-    case Request_ping_tag:
-      resp->has_header = true;
-      resp->header.seq = req->seq;
-      resp->header.timestamp = current_time();
-      resp->which_type = Response_ping_tag;
-      return true;
+  case Request_ping_tag:
+    resp->has_header = true;
+    resp->header.seq = req->seq;
+    resp->header.timestamp = current_time();
+    resp->which_type = Response_ping_tag;
+    return true;
   }
   return false;
 }
@@ -367,10 +370,10 @@ void console_process() {
 
     /* Send target message with a 100 ms timeout */
     uint32_t timeout = current_time() + time_from_us(100000);
-    stream_message_writer_new(&msg, platform_stream_write_timeout, &timeout, length, crc);
+    stream_message_writer_new(
+      &msg, platform_stream_write_timeout, &timeout, length, crc);
     pb_encode(&ostream, TargetMessage_fields, &target_message);
   }
-
 }
 
 #ifdef UNITTEST

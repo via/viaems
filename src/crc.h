@@ -16,6 +16,4 @@ void crc32_finish(uint32_t *crc);
 TCase *setup_crc_tests(void);
 #endif
 
-
 #endif
-

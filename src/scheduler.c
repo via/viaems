@@ -196,7 +196,8 @@ static int schedule_fuel_event(struct output_event *ev,
   firing_angle =
     clamp_angle(ev->angle - d->last_trigger_angle + d->offset, 720);
 
-  stop_time = d->last_trigger_time + time_from_rpm_diff(d->tooth_rpm, firing_angle);
+  stop_time =
+    d->last_trigger_time + time_from_rpm_diff(d->tooth_rpm, firing_angle);
   start_time = stop_time - (TICKRATE / 1000000) * usecs_pw;
 
   if (event_has_fired(ev)) {

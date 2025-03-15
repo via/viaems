@@ -45,7 +45,6 @@ void crc32_finish(uint32_t *crc) {
   *crc ^= 0xffffffff;
 }
 
-
 #ifdef UNITTEST
 START_TEST(test_crc16_add_byte) {
   uint16_t crc = CRC16_INIT;
@@ -56,7 +55,8 @@ START_TEST(test_crc16_add_byte) {
   crc16_finish(&crc);
 
   ck_assert_uint_eq(crc, 0xC54F);
-} END_TEST
+}
+END_TEST
 
 START_TEST(test_crc32_add_byte) {
   {
@@ -79,7 +79,8 @@ START_TEST(test_crc32_add_byte) {
     crc32_finish(&crc);
     ck_assert_uint_eq(crc, 0x6c8fe360);
   }
-} END_TEST
+}
+END_TEST
 
 TCase *setup_crc_tests() {
   TCase *crc_tests = tcase_create("crc");

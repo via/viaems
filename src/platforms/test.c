@@ -4,15 +4,15 @@
 #include "calculations.h"
 #include "config.h"
 #include "console.h"
+#include "crc.h"
 #include "decoder.h"
 #include "platform.h"
 #include "scheduler.h"
 #include "sensors.h"
+#include "stream.h"
 #include "table.h"
 #include "tasks.h"
 #include "util.h"
-#include "stream.h"
-#include "crc.h"
 
 static timeval_t curtime = 0;
 static timeval_t event_timer_time = 0;

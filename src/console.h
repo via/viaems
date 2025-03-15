@@ -1,8 +1,8 @@
 #ifndef _CONSOLE_H
 #define _CONSOLE_H
 
-#include "platform.h"
 #include "decoder.h"
+#include "platform.h"
 #include "sim.h"
 
 #include "interface/types.pb.h"

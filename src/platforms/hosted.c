@@ -307,7 +307,7 @@ void *platform_timebase_thread(void *_interrupt_fd) {
   struct timespec tick_increment = {
     .tv_nsec = 32000,
   };
-  
+
   timeval_t last_adc_update = 0;
 
   if (clock_gettime(CLOCK_MONOTONIC, &current_time)) {
@@ -327,7 +327,8 @@ void *platform_timebase_thread(void *_interrupt_fd) {
     do_output_slots(after, after + MAX_SLOTS - 1);
 
     /* Ensure adc update occurs */
-    timeval_t next_adc_update = last_adc_update + (TICKRATE / platform_adc_samplerate());
+    timeval_t next_adc_update =
+      last_adc_update + (TICKRATE / platform_adc_samplerate());
     if ((next_adc_update >= before) && (next_adc_update < after)) {
       current_adc.time = next_adc_update;
       sensor_update_adc(&current_adc);

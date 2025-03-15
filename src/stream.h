@@ -2,8 +2,8 @@
 #ifndef STREAM_H
 #define STREAM_H
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "platform.h"
 
@@ -16,8 +16,8 @@ struct cobs_encoder {
 };
 
 struct cobs_decoder {
-  size_t n_bytes;           /* Number of bytes remaining in current block */
-  bool zero_current_block;  /* Whether this block should be null-terminated */
+  size_t n_bytes;          /* Number of bytes remaining in current block */
+  bool zero_current_block; /* Whether this block should be null-terminated */
 };
 
 struct stream_message_writer {
@@ -35,20 +35,18 @@ struct stream_message_writer {
  * length and crc are used to populate the header.
  * Returns true if succeeded.
  */
-bool stream_message_writer_new(
-    struct stream_message_writer *msg,
-    stream_write_fn write,
-    void *arg,
-    uint32_t length,
-    uint32_t crc);
+bool stream_message_writer_new(struct stream_message_writer *msg,
+                               stream_write_fn write,
+                               void *arg,
+                               uint32_t length,
+                               uint32_t crc);
 
 /* Serialize size bytes from buffer into the underlying write stream.
  * Returns true if succeeded.
  */
-bool stream_message_write(
-    struct stream_message_writer *msg,
-    size_t size,
-    const uint8_t buffer[size]);
+bool stream_message_write(struct stream_message_writer *msg,
+                          size_t size,
+                          const uint8_t buffer[size]);
 
 struct stream_message_reader {
   struct cobs_decoder cobs;
@@ -64,18 +62,16 @@ struct stream_message_reader {
  * read and arg are used as the underlying stream.
  * Returns true if succeeded.
  */
-bool stream_message_reader_new(
-    struct stream_message_reader *msg,
-    stream_read_fn read,
-    void *arg);
+bool stream_message_reader_new(struct stream_message_reader *msg,
+                               stream_read_fn read,
+                               void *arg);
 
 /* Attempt to deserialize size bytes from the underlying stream into buffer.
  * Returns true if succeeded.
  */
-bool stream_message_read(
-    struct stream_message_reader *msg,
-    size_t size,
-    uint8_t buffer[size]);
+bool stream_message_read(struct stream_message_reader *msg,
+                         size_t size,
+                         uint8_t buffer[size]);
 
 #ifdef UNITTEST
 #include <check.h>
