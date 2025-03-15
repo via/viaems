@@ -2,5 +2,6 @@ pip
 cbor
 pyvcd
 intelhex
+protobuf
 
 .

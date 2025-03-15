@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: install apt deps
-        run: sudo apt update && sudo apt install -y check gcc-arm-none-eabi clang-tidy
+        run: sudo apt update && sudo apt install -y check gcc-arm-none-eabi clang-tidy protobuf-compiler
       - name: checkout
         uses: actions/checkout@v3
         with:
