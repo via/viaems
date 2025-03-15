@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-import "interface/configs.proto";
+import "configs.proto";
 
 message Header {
   fixed32 seq = 1;

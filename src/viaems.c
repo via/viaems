@@ -8,11 +8,6 @@
 #include "tasks.h"
 #include "util.h"
 #include <assert.h>
-#include <stdio.h>
-
-#include "interface/types.pb.h"
-
-#include "stream.h"
 
 int main(int argc, char *argv[]) {
   platform_load_config();

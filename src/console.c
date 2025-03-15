@@ -15,7 +15,7 @@
 #include "spsc.h"
 
 #include "crc.h"
-#include "interface/types.pb.h"
+#include "types.pb.h"
 #include "pb_decode.h"
 #include "pb_encode.h"
 #include "stream.h"

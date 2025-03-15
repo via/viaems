@@ -5,8 +5,6 @@
 #include "platform.h"
 #include "sim.h"
 
-#include "interface/types.pb.h"
-
 struct logged_event {
   timeval_t time;
   uint32_t seq;

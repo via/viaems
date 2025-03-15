@@ -5,8 +5,6 @@
 #include "platform.h"
 #include "sensors.h"
 
-#include "interface/types.pb.h"
-
 static float sensor_convert_linear(const struct sensor_input *in) {
   if (in->raw_max == in->raw_min) {
     return 0.0f;
