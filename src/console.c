@@ -150,6 +150,10 @@ void console_publish_engine_update() {
   spsc_push(&engine_update_queue);
 }
 
+/* Attempt to write n bytes from data using platform_stream_write.
+ * arg is expected to be a pointer to a uin32_t representing a deadline, after
+ * which the function will return false. 
+ */
 static bool platform_stream_write_timeout(size_t n, const uint8_t data[n], void *arg) {
 
   timeval_t continue_before_time = *((uint32_t *)arg);
@@ -169,6 +173,11 @@ static bool platform_stream_write_timeout(size_t n, const uint8_t data[n], void 
   return true;
 }
 
+
+/* Attempt to read n bytes into data using plattform_stream_read.
+ * arg is expected to be a pointer to a uin32_t representing a deadline, after
+ * which the function will return false. 
+ */
 static bool platform_stream_read_timeout(size_t n, uint8_t data[n], void *arg) {
 
   timeval_t continue_before_time = *((uint32_t*)arg);
@@ -188,6 +197,9 @@ static bool platform_stream_read_timeout(size_t n, uint8_t data[n], void *arg) {
   return true;
 }
 
+/* write callback for pb_ostream_t implemented using stream_message_write.
+ * The stream state must be a pointer to a stream_message_writer.
+ */
 static bool pb_ostream_write_callback(
     pb_ostream_t *stream, 
     const uint8_t *buf, 
@@ -196,24 +208,24 @@ static bool pb_ostream_write_callback(
   return stream_message_write(msg, count, buf);
 }
 
-static bool pb_istream_read_callback(
-    pb_istream_t *stream, 
-    uint8_t *buf, 
-    size_t count) {
-  struct stream_message_reader *msg = (struct stream_message_reader *)stream->state;
-  return stream_message_read(msg, count, buf);
-}
-
+/* write callback for pb_ostream_t that is used to calculate a length and CRC.
+ * It does not write the payload anywhere, and the stream state must be a
+ * pointer to a uint32_t for the current CRC
+ */
 bool pb_ostream_crc_callback(pb_ostream_t *stream,
     const uint8_t *buf, size_t count) {
   uint32_t *crc = (uint32_t *)stream->state;
-  for (int i = 0; i < count; i++) {
+  for (unsigned int i = 0; i < count; i++) {
     crc32_add_byte(crc, buf[i]);
   }
   return true;
 }
 
-static void calculate_msg_length_and_crc(Response *r, uint32_t *length, uint32_t *crc) {
+/* Calculate a length and crc for a target message.
+ * This necessarily encodes the full target message to get these values, but
+ * does not write the payload anywhere.
+ */
+static void calculate_msg_length_and_crc(TargetMessage *r, uint32_t *length, uint32_t *crc) {
 
   *crc = CRC32_INIT;
   pb_ostream_t ostream = {
@@ -221,14 +233,88 @@ static void calculate_msg_length_and_crc(Response *r, uint32_t *length, uint32_t
     .max_size = SIZE_MAX,
     .state = crc,
   };
-  pb_encode(&ostream, Response_fields, r);
+  pb_encode(&ostream, TargetMessage_fields, r);
   crc32_finish(crc);
   *length = ostream.bytes_written;
 }
 
+/* State structure for the pb_istream_t read callback for storing the accumulated
+ * CRC of the read. 
+ */
+struct pb_istream_state {
+  struct stream_message_reader *reader;
+  uint32_t actual_crc;
+};
+
+/* read callback for pb_istream_t implemented using stream_message_read.
+ * The stream state must be a pointer to a pb_istream_state, which itself must
+ * contain a pointer to the stream_message_reader.
+ */
+static bool pb_istream_read_callback(
+    pb_istream_t *stream, 
+    uint8_t *buf, 
+    size_t count) {
+  struct pb_istream_state *state = (struct pb_istream_state *)stream->state;
+  if (!stream_message_read(state->reader, count, buf)) {
+    return false;
+  }
+  for (unsigned int i = 0; i < count; i++) {
+    crc32_add_byte(&state->actual_crc, buf[i]);
+  }
+  return true;
+}
+
+
+/* Attempt to read a full request message via platform_stream_read. 
+ * This function blocks, so in order to not halt target messages being sent out
+ * in the event of a slow or failed incoming request, we use an overall timeout
+ * of 100 mS.  If the read times out, the decoding fails, or the CRC check
+ * fails, false is returned.
+ */
+static bool read_request(Request *req) {
+  uint32_t timeout = current_time() + time_from_us(100000);
+  struct stream_message_reader reader;
+  if (!stream_message_reader_new(&reader, platform_stream_read_timeout, &timeout)) {
+    return false;
+  }
+
+  struct pb_istream_state state = { .reader = &reader, .actual_crc = CRC32_INIT };
+  pb_istream_t istream = {
+    .state = &state,
+    .bytes_left = reader.length,
+    .callback = pb_istream_read_callback,
+  };
+
+  if (!pb_decode(&istream, Request_fields, req)) {
+    return false;
+  }
+
+  crc32_finish(&state.actual_crc);
+  if (state.actual_crc != reader.crc) {
+    return false;
+  }
+  return true;
+}
+
+/* Act on a request message, and optionally provide a response.
+ * Returns true if a response is set
+ */
+static bool process_request(Request *req, Response *resp) {
+  *resp = (Response)Response_init_default;
+  switch (req->which_type) {
+    case Request_ping_tag:
+      resp->has_header = true;
+      resp->header.seq = req->seq;
+      resp->header.timestamp = current_time();
+      resp->which_type = Response_ping_tag;
+      return true;
+  }
+  return false;
+}
+
 void console_process() {
   static Request request_msg;
-  static Response response_msg;
+  static TargetMessage target_message;
 
   bool has_message_to_send = false;
 
@@ -236,56 +322,41 @@ void console_process() {
   uint8_t rx_byte;
   size_t resp = platform_stream_read(1, &rx_byte);
   if ((resp == 1) && (rx_byte == 0)) {
-    uint32_t timeout = current_time() + time_from_us(100000);
-    struct stream_message_reader msg;
-    if (stream_message_reader_new(&msg, platform_stream_read_timeout, &timeout)) {
-
-      pb_istream_t istream = {
-        .state = &msg,
-        .bytes_left = msg.length,
-        .callback = pb_istream_read_callback,
-      };
-
-      if (pb_decode(&istream, Request_fields, &request_msg)) {
-        /* Do something ! */
-        fprintf(stderr, "Got a valid message!\n");
-        if (request_msg.which_type == Request_ping_tag) {
-          response_msg = (Response)Response_init_default;
-          response_msg.which_response = Response_request_response_tag;
-          response_msg.response.request_response.has_header = true;
-          response_msg.response.request_response.header.seq = request_msg.seq;
-          response_msg.response.request_response.header.timestamp = current_time();
-          response_msg.response.request_response.which_type = RequestResponse_ping_tag;
-          has_message_to_send = true;
-        }
+    /* If it was a COBS delimiter, now try to read an entire request message */
+    if (read_request(&request_msg)) {
+      if (process_request(&request_msg, &target_message.msg.request_response)) {
+        target_message.which_msg = TargetMessage_request_response_tag;
+        has_message_to_send = true;
       }
     }
   }
 
-  if (!has_message_to_send && !spsc_is_empty(&trigger_update_queue)) {
-    has_message_to_send = true;
-    int32_t idx = spsc_next(&trigger_update_queue);
-    TriggerUpdate *msg = &trigger_update_queue_data[idx];
+  if (!has_message_to_send) {
+    if (!spsc_is_empty(&trigger_update_queue)) {
+      has_message_to_send = true;
+      int32_t idx = spsc_next(&trigger_update_queue);
+      TriggerUpdate *msg = &trigger_update_queue_data[idx];
 
-    response_msg.which_response = Response_trigger_update_tag;
-    response_msg.response.trigger_update = *msg;
+      target_message.which_msg = TargetMessage_trigger_update_tag;
+      target_message.msg.trigger_update = *msg;
 
-    spsc_release(&trigger_update_queue);
-  } else if (!has_message_to_send && !spsc_is_empty(&engine_update_queue)) {
-    has_message_to_send = true;
-    int32_t idx = spsc_next(&engine_update_queue);
-    EngineUpdate *msg = &engine_update_queue_data[idx];
+      spsc_release(&trigger_update_queue);
+    } else if (!spsc_is_empty(&engine_update_queue)) {
+      has_message_to_send = true;
+      int32_t idx = spsc_next(&engine_update_queue);
+      EngineUpdate *msg = &engine_update_queue_data[idx];
 
-    response_msg.which_response = Response_engine_update_tag;
-    response_msg.response.engine_update = *msg;
+      target_message.which_msg = TargetMessage_engine_update_tag;
+      target_message.msg.engine_update = *msg;
 
-    spsc_release(&engine_update_queue);
+      spsc_release(&engine_update_queue);
+    }
   }
 
   if (has_message_to_send) {
     uint32_t length;
     uint32_t crc;
-    calculate_msg_length_and_crc(&response_msg, &length, &crc);
+    calculate_msg_length_and_crc(&target_message, &length, &crc);
 
     struct stream_message_writer msg;
     pb_ostream_t ostream = {
@@ -294,9 +365,10 @@ void console_process() {
       .max_size = SIZE_MAX,
     };
 
+    /* Send target message with a 100 ms timeout */
     uint32_t timeout = current_time() + time_from_us(100000);
     stream_message_writer_new(&msg, platform_stream_write_timeout, &timeout, length, crc);
-    pb_encode(&ostream, Response_fields, &response_msg);
+    pb_encode(&ostream, TargetMessage_fields, &target_message);
   }
 
 }

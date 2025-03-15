@@ -97,7 +97,7 @@ message EngineUpdate {
 message PingResponse {
 }
 
-message RequestResponse {
+message Response {
   Header header = 1;
   oneof type {
     PingResponse ping = 2;
@@ -105,13 +105,13 @@ message RequestResponse {
   }
 }
 
-message Response {
-  oneof response {
+message TargetMessage {
+  oneof msg {
     TriggerUpdate trigger_update = 1;
     DecoderUpdate decoder_update = 2;
     SensorsUpdate sensors_update = 3;
     EngineUpdate engine_update = 4;
-    RequestResponse request_response = 15;
+    Response request_response = 15;
   }
 }
 

@@ -13,7 +13,7 @@ static bool cobs_encode(
     stream_write_fn write,
     void *arg) {
 
-  for (int i = 0; i < in_size; i++) {
+  for (size_t i = 0; i < in_size; i++) {
     if (enc->n_bytes == 254) {
       const size_t wr_size = enc->n_bytes + 1;
       enc->scratchpad[0] = wr_size;
@@ -358,7 +358,7 @@ START_TEST(test_cobs_encode) {
   {
     struct test_write_ctx ctx = { 0 };
     uint8_t large[260]; // 259 1s and then a null terminator
-    for (int i = 0; i < sizeof(large) - 1; i++) {
+    for (size_t i = 0; i < sizeof(large) - 1; i++) {
       large[i] = 1;
     }
     large[259] = 0;
@@ -438,7 +438,6 @@ START_TEST(test_stream_message_write) {
   struct test_write_ctx ctx = {0};
   const uint8_t msg_text[] = "Hello, World!\n";
 
-  uint32_t size = sizeof(msg_text);
   uint32_t crc = 0x5A5AFFFF;
 
   struct stream_message_writer msg;
