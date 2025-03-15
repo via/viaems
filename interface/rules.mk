@@ -1,4 +1,5 @@
 OBJS+= pb_encode.o \
+			 pb_decode.o \
 			 pb_common.o
 
 DESTOBJS+= \

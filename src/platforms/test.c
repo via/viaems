@@ -127,7 +127,7 @@ void platform_save_config() {}
 
 void platform_load_config() {}
 
-size_t console_read(void *ptr, size_t max) {
+size_t platform_stream_read(size_t max, uint8_t ptr[max]) {
   (void)ptr;
   (void)max;
   return 0;

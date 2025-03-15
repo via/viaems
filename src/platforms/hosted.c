@@ -126,7 +126,7 @@ size_t platform_stream_write(size_t len, const uint8_t buf[len]) {
   return 0;
 }
 
-size_t console_read(void *buf, size_t len) {
+size_t platform_stream_read(size_t len, uint8_t buf[len]) {
   int s = len > 64 ? 64 : len;
   ssize_t res = read(STDIN_FILENO, buf, s);
   if (res < 0) {

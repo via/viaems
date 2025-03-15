@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <stdio.h>
 
 #include "calculations.h"
 #include "config.h"
@@ -16,6 +17,7 @@
 #include "stream.h"
 #include "crc.h"
 #include "pb_encode.h"
+#include "pb_decode.h"
 #include "interface/types.pb.h"
 
 TriggerUpdate trigger_update_queue_data[32];
@@ -148,49 +150,6 @@ void console_publish_engine_update() {
   spsc_push(&engine_update_queue);
 }
 
-static const char *sensor_name_from_type(sensor_input_type t) {
-  switch (t) {
-  case SENSOR_MAP:
-    return "map";
-  case SENSOR_IAT:
-    return "iat";
-  case SENSOR_CLT:
-    return "clt";
-  case SENSOR_BRV:
-    return "brv";
-  case SENSOR_TPS:
-    return "tps";
-  case SENSOR_AAP:
-    return "aap";
-  case SENSOR_FRT:
-    return "frt";
-  case SENSOR_EGO:
-    return "ego";
-  case SENSOR_FRP:
-    return "frp";
-  case SENSOR_ETH:
-    return "eth";
-  default:
-    return "invalid";
-  }
-}
-
-/* Determine is a new message is ready to read. If so, returns true and
- * populates the provided pointer to a message */
-bool console_message_read_ready(struct console_message *msg);
-
-/* Read size bytes for the provided message into buffer. If able to fulfill the
- * requested size, returns true.  Otherwise returns false, and the reason is
- * available in the status field.  */
-bool platform_message_read(struct console_message *msg, timeval_t timeout, uint8_t *buffer, size_t size);
-
-/* Start a new message. Any message currently being written will be aborted, any
- * underlying frame will end a new one will start.  Length and CRC must be
- * provided up front */
-bool platform_message_new(struct console_message *msg, uint32_t length, uint32_t crc);
-
-bool platform_message_write(struct console_message *msg, timeval_t timeout, uint8_t *buffer, size_t size);
-
 static bool platform_stream_write_timeout(size_t n, const uint8_t data[n], void *arg) {
 
   timeval_t continue_before_time = *((uint32_t *)arg);
@@ -210,10 +169,10 @@ static bool platform_stream_write_timeout(size_t n, const uint8_t data[n], void 
   return true;
 }
 
-static bool platform_stream_read_timeout(size_t n, const uint8_t data[n], void *arg) {
+static bool platform_stream_read_timeout(size_t n, uint8_t data[n], void *arg) {
 
   timeval_t continue_before_time = *((uint32_t*)arg);
-  const uint8_t *ptr = data;
+  uint8_t *ptr = data;
   size_t remaining = n;
 
   while (remaining > 0) {
@@ -229,10 +188,20 @@ static bool platform_stream_read_timeout(size_t n, const uint8_t data[n], void *
   return true;
 }
 
-bool pb_ostream_write_callback(pb_ostream_t *stream, 
-    const uint8_t *buf, size_t count) {
-  struct stream_message *msg = (struct stream_message *)stream->state;
+static bool pb_ostream_write_callback(
+    pb_ostream_t *stream, 
+    const uint8_t *buf, 
+    size_t count) {
+  struct stream_message_writer *msg = (struct stream_message_writer *)stream->state;
   return stream_message_write(msg, count, buf);
+}
+
+static bool pb_istream_read_callback(
+    pb_istream_t *stream, 
+    uint8_t *buf, 
+    size_t count) {
+  struct stream_message_reader *msg = (struct stream_message_reader *)stream->state;
+  return stream_message_read(msg, count, buf);
 }
 
 bool pb_ostream_crc_callback(pb_ostream_t *stream,
@@ -257,14 +226,35 @@ static void calculate_msg_length_and_crc(Response *r, uint32_t *length, uint32_t
   *length = ostream.bytes_written;
 }
 
-static Response response_msg = { 0 };
-
 void console_process() {
+  static Request request_msg;
+  static Response response_msg;
 
-  bool has_message = false;
+  /* Try to receive a byte */
+  uint8_t rx_byte;
+  size_t resp = platform_stream_read(1, &rx_byte);
+  if ((resp == 1) && (rx_byte == 0)) {
+    uint32_t timeout = current_time() + time_from_us(100000);
+    struct stream_message_reader msg;
+    if (stream_message_reader_new(&msg, platform_stream_read_timeout, &timeout)) {
+
+      pb_istream_t istream = {
+        .state = &msg,
+        .bytes_left = msg.length,
+        .callback = pb_istream_read_callback,
+      };
+
+      if (pb_decode(&istream, Request_fields, &request_msg)) {
+        /* Do something ! */
+        fprintf(stderr, "Got a valid message!\n");
+      }
+    }
+  }
+
+  bool has_message_to_send = false;
 
   if (!spsc_is_empty(&trigger_update_queue)) {
-    has_message = true;
+    has_message_to_send = true;
     int32_t idx = spsc_next(&trigger_update_queue);
     TriggerUpdate *msg = &trigger_update_queue_data[idx];
 
@@ -273,7 +263,7 @@ void console_process() {
 
     spsc_release(&trigger_update_queue);
   } else if (!spsc_is_empty(&engine_update_queue)) {
-    has_message = true;
+    has_message_to_send = true;
     int32_t idx = spsc_next(&engine_update_queue);
     EngineUpdate *msg = &engine_update_queue_data[idx];
 
@@ -283,20 +273,20 @@ void console_process() {
     spsc_release(&engine_update_queue);
   }
 
-  if (has_message) {
+  if (has_message_to_send) {
     uint32_t length;
     uint32_t crc;
     calculate_msg_length_and_crc(&response_msg, &length, &crc);
 
-    struct stream_message msg;
+    struct stream_message_writer msg;
     pb_ostream_t ostream = {
       .state = &msg,
       .callback = pb_ostream_write_callback,
       .max_size = SIZE_MAX,
     };
 
-    uint32_t timeout = current_time() + time_from_us(10000000);
-    stream_message_new(&msg, platform_stream_write_timeout, &timeout, length, crc);
+    uint32_t timeout = current_time() + time_from_us(100000);
+    stream_message_writer_new(&msg, platform_stream_write_timeout, &timeout, length, crc);
     pb_encode(&ostream, Response_fields, &response_msg);
   }
 

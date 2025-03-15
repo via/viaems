@@ -38,11 +38,6 @@ static bool cobs_encode(
   return true;
 }
 
-struct cobs_decoder {
-  size_t n_bytes;           /* Number of bytes remaining in current block */
-  bool zero_current_block;  /* Whether this block should be null-terminated */
-};
-
 static bool cobs_decode(
     struct cobs_decoder *dec,
     size_t in_size,
@@ -90,8 +85,8 @@ static bool cobs_decode(
 }
 
 
-bool stream_message_new(
-    struct stream_message *msg,
+bool stream_message_writer_new(
+    struct stream_message_writer *msg,
     stream_write_fn write,
     void *arg,
     uint32_t length,
@@ -118,7 +113,7 @@ bool stream_message_new(
 }
 
 bool stream_message_write(
-    struct stream_message *msg,
+    struct stream_message_writer *msg,
     size_t size,
     const uint8_t buffer[size]) {
 
@@ -134,6 +129,53 @@ bool stream_message_write(
       return false;
     }
     return msg->write(1, &nullbyte, msg->arg);
+  }
+
+  return true;
+}
+
+bool stream_message_reader_new(
+    struct stream_message_reader *msg,
+    stream_read_fn read,
+    void *arg) {
+  msg->cobs = (struct cobs_decoder){ 0 };
+  msg->read = read;
+  msg->arg = arg;
+
+  {
+    /* Read length */
+    uint8_t received_length[4];
+    if (!cobs_decode(&msg->cobs, sizeof(received_length), received_length, msg->read, arg)) {
+      return false;
+    }
+    msg->length =  (uint32_t)received_length[0] |
+                  ((uint32_t)received_length[1] << 8) |
+                  ((uint32_t)received_length[2] << 16) |
+                  ((uint32_t)received_length[3] << 24);
+  }
+
+  {
+    /* Read CRC */
+    uint8_t received_crc[4];
+    if (!cobs_decode(&msg->cobs, sizeof(received_crc), received_crc, msg->read, arg)) {
+      return false;
+    }
+    msg->crc =  (uint32_t)received_crc[0] |
+               ((uint32_t)received_crc[1] << 8) |
+               ((uint32_t)received_crc[2] << 16) |
+               ((uint32_t)received_crc[3] << 24);
+  }
+
+  return true;
+}
+
+bool stream_message_read(
+    struct stream_message_reader *msg,
+    size_t size,
+    uint8_t buffer[size]) {
+
+  if (!cobs_decode(&msg->cobs, size, buffer, msg->read, msg->arg)) {
+    return false;
   }
 
   return true;
@@ -392,15 +434,6 @@ START_TEST(test_cobs_encode_large) {
   ck_assert_mem_eq(ctx.buffer, large_array_encoded, sizeof(large_array_encoded));
 }
 
-START_TEST(test_stream_message_end_to_end_small) {
-
-  const uint8_t payload[] = { 0x05, 0x06, 0x00, 0x08,
-                            0xA1, 0xA2, 0xA3, 0xA4,
-                            0x00, 0x01, 0x02, 0x03 };
-
-  ck_assert(false);
-} END_TEST
-
 START_TEST(test_stream_message_write) {
   struct test_write_ctx ctx = {0};
   const uint8_t msg_text[] = "Hello, World!\n";
@@ -408,8 +441,8 @@ START_TEST(test_stream_message_write) {
   uint32_t size = sizeof(msg_text);
   uint32_t crc = 0x5A5AFFFF;
 
-  struct stream_message msg;
-  bool result = stream_message_new(&msg, test_write_fn, &ctx, sizeof(msg_text), crc);
+  struct stream_message_writer msg;
+  bool result = stream_message_writer_new(&msg, test_write_fn, &ctx, sizeof(msg_text), crc);
   ck_assert(result);
 
   result = stream_message_write(&msg, sizeof(msg_text), msg_text);
@@ -430,6 +463,40 @@ START_TEST(test_stream_message_write) {
 
 } END_TEST;
 
+START_TEST(test_stream_message_read) {
+  const uint8_t msg_text[] = "Hello, World!\n";
+
+  uint32_t size = sizeof(msg_text);
+  uint32_t crc = 0x5A5AFFFF;
+
+  const uint8_t encoded[] = {
+    2,                 /* Distance to first zero */
+    15, 1, 1, 19,       /* Encoded 15, little endian with zeroes encoded */
+    0xFF, 0xFF, 0x5A, 0x5A, /* CRC little endian, encoded */
+    'H', 'e', 'l', 'l', 'o', ',', ' ', /* Hello, */
+    'W', 'o', 'r', 'l', 'd', '!',      /* World! */
+    '\n', 1,                          /* Newline and encoded terminator */
+    '\0' /* Frame delimiter */
+  };
+
+  struct test_read_ctx ctx = { .buffer = encoded, .size = sizeof(encoded) };
+
+  struct stream_message_reader msg;
+  bool result = stream_message_reader_new(&msg, test_read_fn, &ctx);
+  ck_assert(result);
+
+  ck_assert_int_eq(size, msg.length);
+  ck_assert_int_eq(crc, msg.crc);
+
+  uint8_t dest[sizeof(msg_text)];
+  result = stream_message_read(&msg, sizeof(dest), dest);
+  ck_assert(result);
+
+
+  ck_assert_mem_eq(dest, msg_text, size);
+
+} END_TEST;
+
 TCase *setup_stream_tests() {
   TCase *stream_tests = tcase_create("stream");
 
@@ -439,8 +506,8 @@ TCase *setup_stream_tests() {
   tcase_add_test(stream_tests, test_cobs_decode);
   tcase_add_test(stream_tests, test_cobs_decode_large);
 
-//  tcase_add_test(stream_tests, test_stream_message_end_to_end_small);
   tcase_add_test(stream_tests, test_stream_message_write);
+  tcase_add_test(stream_tests, test_stream_message_read);
 
   return stream_tests;
 }

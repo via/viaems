@@ -15,27 +15,49 @@ struct cobs_encoder {
   size_t n_bytes;
 };
 
-struct stream_message {
+struct cobs_decoder {
+  size_t n_bytes;           /* Number of bytes remaining in current block */
+  bool zero_current_block;  /* Whether this block should be null-terminated */
+};
+
+struct stream_message_writer {
   struct cobs_encoder cobs;
   stream_write_fn write;
   void *arg;
   uint32_t length;
-  uint32_t consumed;
   uint32_t crc;
-  timeval_t timeout;
+  uint32_t consumed;
 };
 
-bool stream_message_new(
-    struct stream_message *msg,
+bool stream_message_writer_new(
+    struct stream_message_writer *msg,
     stream_write_fn write,
     void *arg,
     uint32_t length,
     uint32_t crc);
 
 bool stream_message_write(
-    struct stream_message *msg,
+    struct stream_message_writer *msg,
     size_t size,
     const uint8_t buffer[size]);
+
+struct stream_message_reader {
+  struct cobs_decoder cobs;
+  stream_read_fn read;
+  void *arg;
+  uint32_t length;
+  uint32_t crc;
+};
+
+bool stream_message_reader_new(
+    struct stream_message_reader *msg,
+    stream_read_fn read,
+    void *arg);
+
+bool stream_message_read(
+    struct stream_message_reader *msg,
+    size_t size,
+    uint8_t buffer[size]);
 
 #ifdef UNITTEST
 #include <check.h>
