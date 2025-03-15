@@ -230,6 +230,8 @@ void console_process() {
   static Request request_msg;
   static Response response_msg;
 
+  bool has_message_to_send = false;
+
   /* Try to receive a byte */
   uint8_t rx_byte;
   size_t resp = platform_stream_read(1, &rx_byte);
@@ -247,13 +249,20 @@ void console_process() {
       if (pb_decode(&istream, Request_fields, &request_msg)) {
         /* Do something ! */
         fprintf(stderr, "Got a valid message!\n");
+        if (request_msg.which_type == Request_ping_tag) {
+          response_msg = (Response)Response_init_default;
+          response_msg.which_response = Response_request_response_tag;
+          response_msg.response.request_response.has_header = true;
+          response_msg.response.request_response.header.seq = request_msg.seq;
+          response_msg.response.request_response.header.timestamp = current_time();
+          response_msg.response.request_response.which_type = RequestResponse_ping_tag;
+          has_message_to_send = true;
+        }
       }
     }
   }
 
-  bool has_message_to_send = false;
-
-  if (!spsc_is_empty(&trigger_update_queue)) {
+  if (!has_message_to_send && !spsc_is_empty(&trigger_update_queue)) {
     has_message_to_send = true;
     int32_t idx = spsc_next(&trigger_update_queue);
     TriggerUpdate *msg = &trigger_update_queue_data[idx];
@@ -262,7 +271,7 @@ void console_process() {
     response_msg.response.trigger_update = *msg;
 
     spsc_release(&trigger_update_queue);
-  } else if (!spsc_is_empty(&engine_update_queue)) {
+  } else if (!has_message_to_send && !spsc_is_empty(&engine_update_queue)) {
     has_message_to_send = true;
     int32_t idx = spsc_next(&engine_update_queue);
     EngineUpdate *msg = &engine_update_queue_data[idx];

@@ -94,19 +94,34 @@ message EngineUpdate {
   bool fuel_overduty_cut = 17;
 }
 
+message PingResponse {
+}
+
+message RequestResponse {
+  Header header = 1;
+  oneof type {
+    PingResponse ping = 2;
+    Configuration configuration = 3;
+  }
+}
+
 message Response {
   oneof response {
     TriggerUpdate trigger_update = 1;
     DecoderUpdate decoder_update = 2;
     SensorsUpdate sensors_update = 3;
     EngineUpdate engine_update = 4;
+    RequestResponse request_response = 15;
   }
 }
 
+message Ping {
+}
 
 message Request {
   fixed32 seq = 1;
   oneof type {
-    Configuration set_configuration = 2;
+    Ping ping = 2;
+    Configuration set_configuration = 3;
   }
 }
