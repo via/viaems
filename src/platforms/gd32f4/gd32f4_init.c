@@ -59,7 +59,7 @@ _write(int fd, const char *buf, size_t count) {
   (void)fd;
   size_t pos = 0;
   while (pos < count) {
-    pos += console_write(buf + pos, count - pos);
+    pos += platform_stream_write(count - pos, (uint8_t *)buf + pos);
   }
   return count;
 }

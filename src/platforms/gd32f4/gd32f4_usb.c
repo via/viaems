@@ -449,7 +449,7 @@ static uint8_t cdc_acm_out(usb_dev *udev, uint8_t ep_num) {
   return USBD_OK;
 }
 
-size_t console_read(void *ptr, size_t max) {
+size_t platform_stream_read(size_t max, uint8_t ptr[max]) {
 
   if (state.pending_read) {
     disable_interrupts();
@@ -466,7 +466,7 @@ size_t console_read(void *ptr, size_t max) {
   return 0;
 }
 
-size_t console_write(const void *ptr, size_t max) {
+size_t platform_stream_write(size_t max, const uint8_t ptr[max]) {
   if (state.pending_write) {
     return 0;
   }
@@ -475,10 +475,6 @@ size_t console_write(const void *ptr, size_t max) {
   state.pending_write = true;
   usbd_ep_send(&cdc_acm, CDC_DATA_IN_EP, ptr, max);
   enable_interrupts();
-
-  /* Block until sent */
-  while (state.pending_write)
-    ;
 
   return max;
 }
