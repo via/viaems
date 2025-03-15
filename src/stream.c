@@ -6,6 +6,11 @@
 #include "stream.h"
 #include "util.h"
 
+/* Encode in_size bytes from in_buffer with COBS, using write and arg as the
+ * underlying stream. To ensure a stream is flushed and finalized, a trailing
+ * NULL should be provided, but will not be serialized.
+ * Returns true if succeeded. 
+ */
 static bool cobs_encode(
     struct cobs_encoder *enc,
     size_t in_size,
@@ -38,6 +43,9 @@ static bool cobs_encode(
   return true;
 }
 
+/* Decode in_size bytes into in_buffer using read and arg as the underlying
+ * stream. Returns true if succeeded.
+ */
 static bool cobs_decode(
     struct cobs_decoder *dec,
     size_t in_size,
