@@ -3,5 +3,6 @@ cbor
 pyvcd
 intelhex
 protobuf
+grpcio-tools
 
 .
