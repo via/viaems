@@ -7,10 +7,12 @@
 #include <strings.h>
 
 #include "calculations.h"
+#include "table.h"
 #include "config.h"
 #include "console.h"
 #include "decoder.h"
 #include "platform.h"
+#include "scheduler.h"
 #include "sensors.h"
 #include "spsc.h"
 
@@ -147,6 +149,243 @@ void console_publish_engine_update() {
 
   seq += 1;
   spsc_push(&engine_update_queue);
+}
+
+static void load_table_axis_from_config(const struct table_axis *config, TableAxis *axis) {
+  strcpy(axis->name, config->name);
+  axis->values_count = config->num;
+  memcpy(axis->values, config->values, sizeof(axis->values));
+}
+
+static void load_table_1d_from_config(const struct table_1d *config, Table1d *table) {
+  strcpy(table->name, config->title);
+  table->has_cols = true;
+  load_table_axis_from_config(&config->cols, &table->cols);
+  table->has_data = true;
+  table->data.values_count = config->cols.num;
+  memcpy(table->data.values, config->data, sizeof(config->data));
+}
+
+static void load_table_2d_from_config(const struct table_2d *config, Table2d *table) {
+  strcpy(table->name, config->title);
+  table->has_cols = true;
+  load_table_axis_from_config(&config->cols, &table->cols);
+  table->has_rows = true;
+  load_table_axis_from_config(&config->rows, &table->rows);
+  table->data_count = config->rows.num;
+  for (int row = 0; row < config->rows.num; row++) {
+    table->data[row].values_count = config->cols.num;
+    memcpy(table->data[row].values, config->data[row], sizeof(config->data[row]));
+  }
+}
+
+static void save_outputs_to_config(size_t count, const Output outputs[count]) {
+  for (size_t i = 0; (i < MAX_EVENTS) && (i < count); i++) {
+    config.events[i].angle = outputs[i].angle;
+    config.events[i].inverted = outputs[i].inverted;
+    config.events[i].pin = outputs[i].pin;
+    switch (outputs[i].type) {
+      case Output_OutputType_OutputDisabled:
+        config.events[i].type = DISABLED_EVENT;
+        break;
+      case Output_OutputType_Fuel:
+        config.events[i].type = FUEL_EVENT;
+        break;
+      case Output_OutputType_Ignition:
+        config.events[i].type = IGNITION_EVENT;
+        break;
+    }
+  }
+}
+
+static void load_outputs_from_config(Output outputs[MAX_EVENTS]) {
+  for (size_t i = 0; i < MAX_EVENTS; i++) {
+    outputs[i].angle = config.events[i].angle;
+    outputs[i].inverted = config.events[i].inverted;
+    outputs[i].pin = config.events[i].pin;
+    switch (config.events[i].type) {
+      case DISABLED_EVENT:
+        outputs[i].type = Output_OutputType_OutputDisabled;
+        break;
+      case FUEL_EVENT:
+        outputs[i].type = Output_OutputType_Fuel;
+        break;
+      case IGNITION_EVENT:
+        outputs[i].type = Output_OutputType_Ignition;
+        break;
+    }
+  }
+}
+
+static void load_freq_inputs_from_config(FreqInput inputs[4]) {
+  for (size_t i = 0; i < 4; i++) {
+    switch (config.freq_inputs[i].edge) {
+      case RISING_EDGE:
+        inputs[i].edge = InputEdge_Rising;
+        break;
+      case FALLING_EDGE:
+        inputs[i].edge = InputEdge_Falling;
+        break;
+      case BOTH_EDGES:
+        inputs[i].edge = InputEdge_Both;
+        break;
+    }
+    switch (config.freq_inputs[i].type) {
+      case NONE:
+        inputs[i].type = InputType_InputDisabled;
+        break;
+      case FREQ:
+        inputs[i].type = InputType_Freq;
+        break;
+      case TRIGGER:
+        inputs[i].type = InputType_Trigger;
+        break;
+    }
+  }
+}
+
+static void load_sensor_from_config(const struct sensor_input *c, Sensor *sensor) {
+  *sensor = (Sensor)Sensor_init_default;
+  sensor->pin = c->pin;
+  sensor->lag = c->lag;
+  switch (c->source) {
+    default:
+    case SENSOR_NONE:
+      sensor->source = SensorSource_None;
+      break;
+    case SENSOR_ADC:
+      sensor->source = SensorSource_Adc;
+      break;
+    case SENSOR_FREQ:
+      sensor->source = SensorSource_Frequency;
+      break;
+    case SENSOR_PULSEWIDTH:
+      sensor->source = SensorSource_Pulsewidth;
+      break;
+    case SENSOR_CONST:
+      sensor->source = SensorSource_Const;
+      break;
+  }
+  switch (c->method) {
+    default:
+    case METHOD_LINEAR:
+      sensor->method = SensorMethod_Linear;
+      break;
+    case METHOD_LINEAR_WINDOWED:
+      sensor->method = SensorMethod_LinearWindowed;
+      break;
+    case METHOD_THERM:
+      sensor->method = SensorMethod_Thermistor;
+      break;
+  }
+
+  if (sensor->method == SensorMethod_Thermistor) {
+    sensor->has_thermistor_config = true;
+    sensor->thermistor_config = (Sensor_ThermistorConfig){
+      .A = c->therm.a,
+      .B = c->therm.b,
+      .C = c->therm.c,
+      .bias = c->therm.bias
+    };
+  }
+
+  if (sensor->method == SensorMethod_LinearWindowed) {
+    sensor->has_window_config = true;
+    sensor->window_config = (Sensor_WindowConfig){
+      .capture_width = c->window.capture_width,
+      .total_width = c->window.total_width,
+      .offset = c->window.offset,
+    };
+  }
+
+  if (sensor->source == SensorSource_Const) {
+    sensor->has_const_config = true;
+    sensor->const_config = (Sensor_ConstConfig){
+      .fixed_value = c->value,
+    };
+  }
+        
+  if ((sensor->method == SensorMethod_Linear) ||
+      (sensor->method == SensorMethod_LinearWindowed)) {
+    sensor->has_linear_config = true;
+    sensor->linear_config = (Sensor_LinearConfig){
+      .output_min = c->range.min,
+      .output_max = c->range.max,
+      .input_min = c->raw_min,
+      .input_max = c->raw_max
+    };
+  }
+
+  if ((c->fault_config.min != 0.0f) && (c->fault_config.max != 0.0f)) {
+    sensor->has_fault_config = true;
+    sensor->fault_config = (Sensor_FaultConfig){
+      .min = c->fault_config.min,
+      .max = c->fault_config.max,
+      .value = c->fault_config.fault_value
+    };
+  }
+}
+
+static void load_fueling_from_config(Fueling *fueling) {
+  *fueling = (Fueling)Fueling_init_default;
+  fueling->fuel_pump_pin = config.fueling.fuel_pump_pin;
+  fueling->cylinder_cc = config.fueling.cylinder_cc;
+  fueling->fuel_density = config.fueling.density_of_fuel;
+  fueling->fuel_stoich_ratio = config.fueling.fuel_stoich_ratio;
+  fueling->injector_cc = config.fueling.injector_cc_per_minute;
+
+
+  fueling->has_ve = true;
+  load_table_2d_from_config(config.ve, &fueling->ve);
+}
+
+/* Reconfigure the ECU with a new configuration message */
+static bool set_configuration(const Configuration *new_config) {
+  save_outputs_to_config(new_config->outputs_count, new_config->outputs);
+
+  return false;
+}
+
+/* Populate a configuration message with the ECU config */
+static void get_configuration(Configuration *dest) {
+  dest->outputs_count = MAX_EVENTS;
+  load_outputs_from_config(dest->outputs);
+
+  dest->freq_count = 4;
+  load_freq_inputs_from_config(dest->freq);
+
+  dest->has_sensors = true;
+  dest->sensors.has_AbsoluteAirPressure = true;
+  load_sensor_from_config(&config.sensors[SENSOR_AAP], &dest->sensors.AbsoluteAirPressure);
+  dest->sensors.has_BatteryReferenceVoltage = true;
+  load_sensor_from_config(&config.sensors[SENSOR_BRV], &dest->sensors.BatteryReferenceVoltage);
+  dest->sensors.has_CoolantTemperature = true;
+  load_sensor_from_config(&config.sensors[SENSOR_CLT], &dest->sensors.CoolantTemperature);
+  dest->sensors.has_ExhaustGasOxygen = true;
+  load_sensor_from_config(&config.sensors[SENSOR_EGO], &dest->sensors.ExhaustGasOxygen);
+  dest->sensors.has_FuelRailTemperature = true;
+  load_sensor_from_config(&config.sensors[SENSOR_FRT], &dest->sensors.FuelRailTemperature);
+  dest->sensors.has_IntakeAirTemperature = true;
+  load_sensor_from_config(&config.sensors[SENSOR_IAT], &dest->sensors.IntakeAirTemperature);
+  dest->sensors.has_ManifoldPressure = true;
+  load_sensor_from_config(&config.sensors[SENSOR_MAP], &dest->sensors.ManifoldPressure);
+  dest->sensors.has_ThrottlePosition = true;
+  load_sensor_from_config(&config.sensors[SENSOR_TPS], &dest->sensors.ThrottlePosition);
+  dest->sensors.has_ThrottlePosition = true;
+  load_sensor_from_config(&config.sensors[SENSOR_TPS], &dest->sensors.ThrottlePosition);
+
+  dest->sensors.has_knock1 = true;
+  dest->sensors.knock1.enabled = (config.knock_inputs[0].frequency != 0.0);
+  dest->sensors.knock1.frequency = config.knock_inputs[0].frequency;
+  dest->sensors.knock1.threshold = config.knock_inputs[0].threshold;
+
+  dest->sensors.has_knock2 = true;
+  dest->sensors.knock2.enabled = (config.knock_inputs[1].frequency != 0.0);
+  dest->sensors.knock2.frequency = config.knock_inputs[1].frequency;
+  dest->sensors.knock2.threshold = config.knock_inputs[1].threshold;
+
+  dest->has_fueling = true;
+  load_fueling_from_config(&dest->fueling);
 }
 
 /* Attempt to write n bytes from data using platform_stream_write.
@@ -304,12 +543,16 @@ static bool read_request(Request *req) {
  */
 static bool process_request(Request *req, Response *resp) {
   *resp = (Response)Response_init_default;
+  resp->has_header = true;
+  resp->header.seq = req->seq;
+  resp->header.timestamp = current_time();
   switch (req->which_type) {
   case Request_ping_tag:
-    resp->has_header = true;
-    resp->header.seq = req->seq;
-    resp->header.timestamp = current_time();
     resp->which_type = Response_ping_tag;
+    return true;
+  case Request_get_configuration_tag:
+    resp->which_type = Response_configuration_tag;
+    get_configuration(&resp->type.configuration);
     return true;
   }
   return false;

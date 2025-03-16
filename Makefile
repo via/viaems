@@ -25,7 +25,7 @@ DEPS = $(wildcard ${OBJDIR}/*.d)
 
 
 GITDESC=$(shell git describe --tags --dirty)
-CFLAGS+=-Isrc/ -Isrc/platforms/common -Wall -Wextra -ggdb -g3 -std=c11 -DGIT_DESCRIBE=\"${GITDESC}\"
+CFLAGS+=-Isrc/ -Isrc/platforms/common -Wall -Wextra -ggdb -g3 -std=c11 -DGIT_DESCRIBE=\"${GITDESC}\" -fstack-usage
 LDFLAGS+= -lm -L${OBJDIR}
 
 OPENCM3_DIR=$(PWD)/contrib/libopencm3

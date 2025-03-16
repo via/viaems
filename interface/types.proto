@@ -118,10 +118,14 @@ message TargetMessage {
 message Ping {
 }
 
+message GetConfiguration {
+}
+
 message Request {
   fixed32 seq = 1;
   oneof type {
     Ping ping = 2;
     Configuration set_configuration = 3;
+    GetConfiguration get_configuration = 4;
   }
 }

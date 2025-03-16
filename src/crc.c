@@ -38,7 +38,6 @@ void crc32_add_byte(uint32_t *crc, uint8_t byte) {
     }
   }
   *crc = current;
-  return current;
 }
 
 void crc32_finish(uint32_t *crc) {

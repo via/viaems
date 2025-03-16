@@ -10,4 +10,5 @@ Table2d.data        max_count:24
 
 
 Configuration.outputs max_count:16
+Configuration.freq max_count:4
 
