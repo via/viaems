@@ -1,0 +1,2 @@
+Request.set_configuration type:FT_POINTER descriptorsize:DS_4
+Response.configuration type:FT_POINTER descriptorsize:DS_4

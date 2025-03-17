@@ -165,14 +165,15 @@ message Fueling {
   CrankEnrichment crank_enrich = 7;
 
   Table1d PulseWidthCompensation = 8;
-  Table1d EngineTempEnrichment = 9;
-  Table1d CrankingEnrichment = 10;
+  Table1d InjectorDeadTime = 9;
+  Table2d EngineTempEnrichment = 10;
+  Table1d CrankingEnrichment = 11;
 
-  Table2d commanded_lambda = 11;
-  Table2d ve = 12;
+  Table2d commanded_lambda = 12;
+  Table2d ve = 13;
 
-  Table2d tipin_enrich_amount = 13;
-  Table1d tipin_enrich_duration = 14;
+  Table2d tipin_enrich_amount = 14;
+  Table1d tipin_enrich_duration = 15;
 }
 
 message Ignition {

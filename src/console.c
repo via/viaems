@@ -334,9 +334,33 @@ static void load_fueling_from_config(Fueling *fueling) {
   fueling->fuel_stoich_ratio = config.fueling.fuel_stoich_ratio;
   fueling->injector_cc = config.fueling.injector_cc_per_minute;
 
+  fueling->has_crank_enrich = true;
+  fueling->crank_enrich.cranking_rpm = config.fueling.crank_enrich_config.crank_rpm;
+  fueling->crank_enrich.cranking_temp = config.fueling.crank_enrich_config.cutoff_temperature;
+  fueling->crank_enrich.enrich_amt = config.fueling.crank_enrich_config.enrich_amt;
 
+  fueling->has_PulseWidthCompensation = true;
+  load_table_1d_from_config(config.injector_pw_correction, &fueling->PulseWidthCompensation);
+
+  fueling->has_InjectorDeadTime = true;
+  load_table_1d_from_config(config.injector_deadtime_offset, &fueling->InjectorDeadTime);
+
+  fueling->has_EngineTempEnrichment = true;
+  load_table_2d_from_config(config.engine_temp_enrich, &fueling->EngineTempEnrichment);
+
+  fueling->has_CrankingEnrichment = false;  // TODO
+                                            
+  fueling->has_commanded_lambda = true;
+  load_table_2d_from_config(config.commanded_lambda, &fueling->commanded_lambda);
   fueling->has_ve = true;
   load_table_2d_from_config(config.ve, &fueling->ve);
+
+  fueling->has_tipin_enrich_amount = true;
+  load_table_2d_from_config(config.tipin_enrich_amount, &fueling->tipin_enrich_amount);
+
+  fueling->has_tipin_enrich_duration = true;
+  load_table_1d_from_config(config.tipin_enrich_duration, &fueling->tipin_enrich_duration);
+
 }
 
 /* Reconfigure the ECU with a new configuration message */
@@ -505,6 +529,10 @@ static bool pb_istream_read_callback(pb_istream_t *stream,
   return true;
 }
 
+static Configuration configuration;
+static Request request_msg;
+static TargetMessage target_message;
+
 /* Attempt to read a full request message via platform_stream_read.
  * This function blocks, so in order to not halt target messages being sent out
  * in the event of a slow or failed incoming request, we use an overall timeout
@@ -527,6 +555,7 @@ static bool read_request(Request *req) {
     .callback = pb_istream_read_callback,
   };
 
+  req->type.set_configuration = &configuration;
   if (!pb_decode(&istream, Request_fields, req)) {
     return false;
   }
@@ -552,15 +581,14 @@ static bool process_request(Request *req, Response *resp) {
     return true;
   case Request_get_configuration_tag:
     resp->which_type = Response_configuration_tag;
-    get_configuration(&resp->type.configuration);
+    resp->type.configuration = &configuration;
+    get_configuration(resp->type.configuration);
     return true;
   }
   return false;
 }
 
 void console_process() {
-  static Request request_msg;
-  static TargetMessage target_message;
 
   bool has_message_to_send = false;
 
