@@ -47,7 +47,90 @@ static void handle_boost_control() {
   set_pwm(config.boost_control.pin, duty);
 }
 
-static void handle_idle_control() {}
+enum stepper_state {
+  STEPPER_UNINIT,   /* Default state on start */
+  STEPPER_INIT,     /* Position unknown, travelling to the low (0) extreme */
+  STEPPER_ACTIVE,   /* Position known, tracking target */
+};
+
+struct unipolar_stepper_state {
+  enum stepper_state state;
+  uint32_t current_step;
+};
+
+static struct unipolar_stepper_state uni_stepper_state = {
+  .state = STEPPER_UNINIT,
+  .current_step = 0,
+};
+
+/* Unipolar stepper idle control via bitbang of gpio pins */
+static void handle_unipolar_stepper_idle_control(float target) {
+
+ switch (uni_stepper_state.state) {
+    case STEPPER_UNINIT:
+      /* Travel `stepper_steps` (plus a few in case we're on the wrong phase)
+       * in down to get us into a position we know */
+      uni_stepper_state.current_step = config.idle_control.stepper_steps + 4;
+      uni_stepper_state.state = STEPPER_INIT;
+      break;
+    case STEPPER_INIT:
+      if (uni_stepper_state.current_step == 0) {
+        uni_stepper_state.current_step = config.idle_control.stepper_steps;
+        uni_stepper_state.state = STEPPER_ACTIVE;
+      } else {
+        uni_stepper_state.current_step -= 1;
+      }
+      break;
+    case STEPPER_ACTIVE: {
+      if (target > config.idle_control.stepper_steps) {
+        target = config.idle_control.stepper_steps;
+      }
+      if (target > uni_stepper_state.current_step) {
+        uni_stepper_state.current_step += 1;
+      } else if (target < uni_stepper_state.current_step) {
+        uni_stepper_state.current_step -= 1;
+      } else {
+        /* No holding torque, just turn everything off */
+        set_gpio(config.idle_control.pin_phase_a, 0);
+        set_gpio(config.idle_control.pin_phase_b, 0);
+        set_gpio(config.idle_control.pin_phase_c, 0);
+        set_gpio(config.idle_control.pin_phase_d, 0);
+        return;
+      }
+    }
+    break;
+  }
+
+
+  unsigned int phase = uni_stepper_state.current_step % 4;
+  set_gpio(config.idle_control.pin_phase_a, (phase == 0));
+  set_gpio(config.idle_control.pin_phase_b, (phase == 1));
+  set_gpio(config.idle_control.pin_phase_c, (phase == 2));
+  set_gpio(config.idle_control.pin_phase_d, (phase == 3));
+}
+
+static void handle_idle_control() {
+  float target = 0.0f;
+  switch (config.idle_control.method) {
+    case IDLE_METHOD_DISABED:
+      target = 0.0f;
+      break;
+    case IDLE_METHOD_FIXED:
+      target = config.idle_control.fixed_value;
+      break;
+    case IDLE_METHOD_OPEN_LOOP_CLT:
+      break;
+  }
+
+  switch (config.idle_control.interface_type) {
+    case IDLE_INTERFACE_NONE:
+      break;
+    case IDLE_INTERFACE_UNIPOLAR_STEPPER:
+      handle_unipolar_stepper_idle_control(target);
+      break;
+  }
+
+}
 
 /* Checks for a variety of failure conditions, and produces a check engine
  * output:

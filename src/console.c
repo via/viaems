@@ -1317,6 +1317,27 @@ static void render_cel(struct console_request_context *ctx, void *ptr) {
                          &config.cel.lean_boost_ego);
 }
 
+static void render_idle_control(struct console_request_context *ctx, void *ptr) {
+  (void)ptr;
+  render_uint32_map_field(
+    ctx, "pin_phase_a", "GPIO pin for phase-a output", &config.idle_control.pin_phase_a);
+  render_uint32_map_field(
+    ctx, "pin_phase_b", "GPIO pin for phase-b output", &config.idle_control.pin_phase_b);
+  render_uint32_map_field(
+    ctx, "pin_phase_c", "GPIO pin for phase-c output", &config.idle_control.pin_phase_c);
+  render_uint32_map_field(
+    ctx, "pin_phase_d", "GPIO pin for phase-d output", &config.idle_control.pin_phase_d);
+
+  render_float_map_field(ctx,
+                         "fixed-value",
+                         "Stepper value to use when fixed",
+                         &config.idle_control.fixed_value);
+  render_uint32_map_field(ctx,
+                         "stepper-steps",
+                         "Number of steps for a stepper motor",
+                         &config.idle_control.stepper_steps);
+}
+
 static void render_freq_object(struct console_request_context *ctx, void *ptr) {
   struct freq_input *f = ptr;
 
@@ -1408,6 +1429,7 @@ static void console_toplevel_request(struct console_request_context *ctx,
   render_map_map_field(ctx, "tables", render_tables, NULL);
   render_map_map_field(ctx, "boost-control", render_boost_control, NULL);
   render_map_map_field(ctx, "check-engine-light", render_cel, NULL);
+  render_map_map_field(ctx, "idle-control", render_idle_control, NULL);
   render_array_map_field(ctx, "freq", render_freq_list, NULL);
   render_map_map_field(ctx, "test", render_test, NULL);
   render_map_map_field(ctx, "info", render_info, NULL);

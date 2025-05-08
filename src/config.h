@@ -45,6 +45,7 @@ struct config {
   struct ignition_config ignition;
   struct boost_control_config boost_control;
   struct cel_config cel;
+  struct idle_control_config idle_control;
 
   /* Cutoffs */
   uint32_t rpm_stop;

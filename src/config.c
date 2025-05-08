@@ -1,5 +1,6 @@
 #include "config.h"
 #include "sensors.h"
+#include "tasks.h"
 
 struct table_2d enrich_vs_temp_and_map __attribute__((section(".configdata"))) = {
   .title = "temp_enrich",
@@ -298,6 +299,16 @@ struct config config __attribute__((section(".configdata"))) = {
     .pin = 2,
     .lean_boost_kpa = 140.0,
     .lean_boost_ego = .91,
+  },
+  .idle_control = {
+    .method = IDLE_METHOD_FIXED,
+    .interface_type = IDLE_INTERFACE_UNIPOLAR_STEPPER,
+    .fixed_value = 25,
+    .stepper_steps = 120,
+    .pin_phase_a = 4,
+    .pin_phase_b = 5,
+    .pin_phase_c = 6,
+    .pin_phase_d = 7,
   },
 };
 
