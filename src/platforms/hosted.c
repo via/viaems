@@ -10,9 +10,10 @@
 #include <sys/stat.h> /* For mode constants */
 #include <time.h>
 #include <unistd.h>
+
 #include <sys/types.h>
-#include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 
 #include "config.h"
 #include "console.h"
@@ -547,14 +548,14 @@ void platform_init(int argc, char *argv[]) {
   sock_addr.sin_port = htons(5555);
   if (bind(console_sock, &sock_addr, sizeof(sock_addr)) < 0) {
     perror("bind");
-    return 0;
+    exit(EXIT_FAILURE);
   }
 
   sock_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
   sock_addr.sin_port = htons(5556);
   if (connect(console_sock, &sock_addr, sizeof(sock_addr)) < 0) {
     perror("connect");
-    return 0;
+    exit(EXIT_FAILURE);
   }
 
   pipe(interrupt_pipes);
