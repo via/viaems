@@ -86,8 +86,9 @@ class Scenario:
     def wait_milliseconds(self, ms):
         targettime = self.time + 4000 * ms
 
-        while self.time <= targettime:
-            self._advance(4000 * ms)
+        while self.time < targettime:
+            remaining = targettime - self.time
+            self._advance(remaining)
 
     def end(self, delay=1):
         self.time += 4000000 * delay;

@@ -97,13 +97,13 @@ class NMinus1DecoderTests(TestCase):
 
 
 
-    def test_rpm_limit_test(self):
+    def test_high_rpm_ramp(self):
       settings = [
           (["decoder", "rpm-limit-start"], 9000),
           (["decoder", "rpm-limit-stop"], 10000),
           ]
 
-      scenario = Scenario("rpm_limit_test", CrankNMinus1PlusCam_Wheel(36))
+      scenario = Scenario("high_rpm_ramp", CrankNMinus1PlusCam_Wheel(36))
       scenario.set_brv(14.0)
       scenario.set_map(90);
       scenario.wait_milliseconds(1000)
@@ -113,7 +113,6 @@ class NMinus1DecoderTests(TestCase):
       scenario.wait_milliseconds(1000)
       t2 = scenario.mark()
 
-      # engine ramp to past redline
       for rpm in range(500, 8000, 10):
           scenario.set_rpm(rpm)
           scenario.wait_milliseconds(10)

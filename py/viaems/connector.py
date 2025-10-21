@@ -227,7 +227,12 @@ class HilConnector(ViaemsInterface):
 
             # Values change
             if (raw_value & 0xffff) != (last_raw_value & 0xffff):
-                result.append(CaptureOutputEvent(time=time, values=raw_value & 0xfff))
+                result.append(CaptureOutputEvent(time=time, values=raw_value & 0xffff))
+
+            # Gpios
+            if (raw_value & 0x3f0000) != (last_raw_value & 0x3f0000):
+                result.append(CaptureGpioEvent(time=time, values=(raw_value & 0x3f0000) >> 16))
+
             last_raw_value = raw_value
 
         return result
@@ -281,6 +286,9 @@ class HilConnector(ViaemsInterface):
                             current_time += 1
 
                     adc_values = values
+
+                case SimEndEvent():
+                    _advance_to_time(event_time)
 
     
 

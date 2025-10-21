@@ -123,6 +123,16 @@ def enrich_log(log) -> Log:
     return Log(result)
 
 
+def _keep_range(values, new, count):
+    values.append(new)
+    if len(values) > count:
+        del values[0]
+
+def _in_range(values, value, max_error):
+    lowest = min(values)
+    highest = max(values)
+    return (value >= lowest - max_error) and (value <= highest + max_error)
+
 def validate_outputs(log: Log) -> (bool, str):
     """Validate that all outputs are associated with a configured output,
     and that there are no gaps or missing outputs.  Each cycle should have
@@ -133,18 +143,20 @@ def validate_outputs(log: Log) -> (bool, str):
     current_cycle_outputs = 0
     cycles = []
 
-    current_fuel_pw = None
-    current_ign_pw = None
-    current_ign_adv = None
-    current_cputime = None
+    current_fuel_pw : List[float] = []
+    current_ign_pw : List[float] = []
+    current_ign_adv : List[float] = []
+    current_cputime : List[float] = []
 
     for o in log:
         match o:
             case TargetFeedEvent(values=values):
-                current_fuel_pw = values["fuel_pulsewidth_us"]
-                current_ign_pw = values["dwell"]
-                current_ign_adv = values["advance"]
-                current_cputime = values["cputime"]
+                # Use large time range for ignition dwells, since in-flight
+                # dwells can't change their durations (they target a specific
+                # angle)
+                _keep_range(current_fuel_pw, values["fuel_pulsewidth_us"], 5)
+                _keep_range(current_ign_pw, values["dwell"], 50)
+                _keep_range(current_ign_adv, values["advance"], 5)
 
             case EnrichedOutputEvent():
                 if o.config is None:
@@ -163,20 +175,20 @@ def validate_outputs(log: Log) -> (bool, str):
                     current_cycle = o.cycle
 
                 if o.config.typ == OutputConfig.FUEL and current_fuel_pw is not None:
-                    if abs(o.duration_us - current_fuel_pw) > 5:
+                    if not _in_range(current_fuel_pw, o.duration_us, 5):
                         return (
                             False,
                             f"Fuel output {o.pin} at time {o.time} is duration "
                             + f"{o.duration_us}, expected {current_fuel_pw}",
                         )
                 if o.config.typ == OutputConfig.IGN and current_ign_pw is not None:
-                    if abs(o.duration_us - current_ign_pw) > 500:
+                    if not _in_range(current_ign_pw, o.duration_us, 500):
                         return (
                             False,
                             f"Ignition output {o.pin} at time {o.time} is duration "
                             + f"{o.duration_us}, expected {current_ign_pw}",
                         )
-                    if abs(o.advance - current_ign_adv) > 2:
+                    if not _in_range(current_ign_adv, o.advance, 2):
                         return (
                             False,
                             f"Ignition output at time {o.time} ({current_cputime}) is at advance "

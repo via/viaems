@@ -73,12 +73,24 @@ class TargetOutputEvent(TargetEvent):
     values: int
 
 @dataclass
+class TargetGpioEvent(TargetEvent):
+    values: int
+    def pin(self, pin):
+        return (self.values & (1 << pin)) > 0
+
+@dataclass
 class CaptureTriggerEvent(TargetEvent):
     trigger: int
 
 @dataclass
 class CaptureOutputEvent(CaptureEvent):
     values: int
+
+@dataclass
+class CaptureGpioEvent(CaptureEvent):
+    values: int
+    def pin(self, pin):
+        return (self.values & (1 << pin)) > 0
 
 @dataclass
 class EnrichedOutputEvent(Event):
@@ -107,6 +119,13 @@ class Log(List[Event]):
             filter(lambda i: i.time >= start and i.time <= end, self)
         )
 
+    def filter_gpios(self):
+        return Log(filter(lambda i: isinstance(i, TargetGpioEvent) or isinstance(i, CaptureGpioEvent), self))
+
+    def filter_latest_gpio_at(self, time) -> TargetGpioEvent | CaptureGpioEvent:
+        gpio_events = self.filter_between(0, time).filter_gpios()
+        return gpio_events[-1]
+
 def log_from_target_messages(msgs: List[Dict]) -> List[TargetEvent]:
     desc_msg = next(filter(lambda m: m["type"] == "description", msgs))
     desc_keys = desc_msg["keys"]
@@ -134,6 +153,9 @@ def log_from_target_messages(msgs: List[Dict]) -> List[TargetEvent]:
                                              trigger=msg["event"]["pin"]))
         elif msg["type"] == "event" and msg["event"]["type"] == "output":
             result.append(TargetOutputEvent(time=TargetTime(time),
+                                            values=msg["event"]["outputs"]))
+        elif msg["type"] == "event" and msg["event"]["type"] == "gpio":
+            result.append(TargetGpioEvent(time=TargetTime(time),
                                             values=msg["event"]["outputs"]))
 
     return result
