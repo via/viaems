@@ -34,10 +34,19 @@ def dump_vcd(log, file):
                     case CaptureOutputEvent(time, values):
                         writer.change(outputs, time * 250, values)
 
+                    case TargetGpioEvent(time, values):
+                        writer.change(gpios, time * 250, values)
+
+                    case CaptureGpioEvent(time, values):
+                        writer.change(gpios, time * 250, values)
+
                     case TargetFeedEvent(time, values):
                         for idx, name in enumerate(values.keys()):
                             writer.change(
                                     sensors[idx], time * 250,
                                     float(values[name])
                                     )
+
+                    case SimMarkEvent(time, name):
+                        writer.change(marks, time * 250, True)
 

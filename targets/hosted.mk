@@ -13,3 +13,4 @@ run: ${OBJDIR}/viaems
 integration: ${OBJDIR}/viaems
 	python3 py/integration-tests/interface-tests.py
 	python3 py/integration-tests/smoke-tests.py
+	python3 py/integration-tests/safety-tests.py
