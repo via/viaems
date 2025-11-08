@@ -433,7 +433,7 @@ void decoder_update_scheduling(int trigger, uint32_t time) {
   }
 }
 
-degrees_t current_angle() {
+degrees_t current_angle(timeval_t at_time) {
   if (!config.decoder.rpm) {
     return config.decoder.last_trigger_angle;
   }
@@ -443,7 +443,13 @@ degrees_t current_angle() {
   enable_interrupts();
 
   degrees_t angle_since_last_tooth =
-    degrees_from_time_diff(current_time() - last_time, config.decoder.rpm);
+    degrees_from_time_diff(at_time - last_time, config.decoder.rpm);
+
+  if ((angle_since_last_tooth < 0) || (angle_since_last_tooth > config.decoder.degrees_per_trigger)) {
+    /* This should never happen unless something is wrong with the input time,
+     * but let's protect the inputs to clamp_angle regardless */ 
+    angle_since_last_tooth = last_angle;
+  }
 
   return clamp_angle(last_angle + angle_since_last_tooth, 720);
 }
