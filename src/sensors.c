@@ -120,7 +120,7 @@ static void sensor_convert(struct sensor_input *in, float raw, timeval_t time) {
       new_value = sensor_convert_linear(in);
       break;
     case METHOD_LINEAR_WINDOWED:
-      new_value = sensor_convert_linear_windowed(in, current_angle());
+      new_value = sensor_convert_linear_windowed(in, current_angle(time));
       break;
     case METHOD_THERM:
       new_value = sensor_convert_thermistor(in);
