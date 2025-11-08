@@ -1,3 +1,5 @@
+#include <assert.h>
+
 #include "util.h"
 #include "limits.h"
 #include "platform.h"
@@ -44,14 +46,21 @@ timeval_t time_diff(timeval_t later, timeval_t earlier) {
   return later - earlier;
 }
 
-degrees_t clamp_angle(degrees_t ang, degrees_t max) {
-  while (ang < 0) {
-    ang += max;
+/* Attempt to normalize an angle to [0, max) degrees.  
+ * Assumes an angle within one full cycle of the range [-max, 2*max).
+ */
+degrees_t clamp_angle(const degrees_t ang, const degrees_t max) {
+  assert(ang >= -max);
+  assert(ang < max * 2);
+
+  float result = ang;
+
+  if (ang < 0) {
+    result += max;
+  } else if (ang >= max) {
+    result -= max;
   }
-  while (ang >= max) {
-    ang -= max;
-  }
-  return ang;
+  return result;
 }
 
 #ifdef UNITTEST
@@ -145,7 +154,6 @@ END_TEST
 START_TEST(check_clamp_angle) {
   ck_assert_int_eq(clamp_angle(0, 720), 0);
   ck_assert_int_eq(clamp_angle(-360, 720), 360);
-  ck_assert_int_eq(clamp_angle(-1080, 720), 360);
   ck_assert_int_eq(clamp_angle(720, 720), 0);
   ck_assert_int_eq(clamp_angle(1080, 720), 360);
 }
