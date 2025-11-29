@@ -8,7 +8,7 @@
 
 struct table_axis {
   char name[MAX_TABLE_TITLE_SIZE + 1];
-  unsigned char num; /* Max of 24 */
+  uint32_t num;
   float values[MAX_AXIS_SIZE];
 };
 
