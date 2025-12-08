@@ -16,15 +16,19 @@ struct schedule_entry;
 struct viaems;
 struct config;
 
-
 timeval_t current_time(void);
 uint64_t cycle_count(void);
 uint64_t cycles_to_ns(uint64_t cycles);
 
-void platform_init(struct viaems *state, int argc, char *argv[]);
-
-size_t console_read(void *buf, size_t max);
-size_t console_write(const void *buf, size_t count);
+#ifdef PLATFORM_HAS_NATIVE_MESSAGE_IO
+struct console_buffer;
+bool platform_read_message(struct console_buffer **buffer);
+void platform_read_message_release(struct console_buffer **buffer);
+void platform_write_message(struct console_buffer *buffer);
+#else
+size_t platform_read(uint8_t *buffer, size_t max);
+size_t platform_write(const uint8_t *buffer, size_t length);
+#endif
 
 void platform_save_config(void);
 

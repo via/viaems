@@ -72,7 +72,7 @@ void set_gpio(uint16_t new_gpios, timeval_t when) {
   gpios = new_gpios;
 }
 
-size_t console_write(const void *buf, size_t len) {
+size_t platform_write(const uint8_t *buf, size_t len) {
   ssize_t written = -1;
   while ((written = write(STDOUT_FILENO, buf, len)) < 0)
     ;
@@ -82,7 +82,7 @@ size_t console_write(const void *buf, size_t len) {
   return 0;
 }
 
-size_t console_read(void *buf, size_t len) {
+size_t platform_read(uint8_t *buf, size_t len) {
   int s = len > 64 ? 64 : len;
   ssize_t res = read(STDIN_FILENO, buf, s);
   if (res < 0) {

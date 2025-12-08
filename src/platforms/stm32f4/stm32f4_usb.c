@@ -297,7 +297,7 @@ void OTG_FS_IRQHandler(void) {
   usbd_poll(&udev);
 }
 
-size_t console_read(void *ptr, size_t max) {
+size_t platform_read(uint8_t *ptr, size_t max) {
   NVIC_DisableIRQ(OTG_FS_IRQn);
   size_t amt = usb_rx_len > max ? max : usb_rx_len;
   memcpy(ptr, usb_rx_buf, amt);
@@ -309,7 +309,7 @@ size_t console_read(void *ptr, size_t max) {
 
 static uint8_t txbuffer[64];
 static size_t txlen = 0;
-size_t console_write(const void *ptr, size_t max) {
+size_t platform_write(const uint8_t *ptr, size_t max) {
   size_t remaining = sizeof(txbuffer) - txlen;
   size_t amt = max > remaining ? remaining : max;
   memcpy(txbuffer + txlen, ptr, amt);

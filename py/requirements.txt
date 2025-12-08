@@ -3,4 +3,5 @@ cbor2
 pyvcd
 intelhex
 pyusb
+cobs
 .

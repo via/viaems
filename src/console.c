@@ -15,6 +15,7 @@
 #include "util.h"
 #include "sim.h"
 #include "spsc.h"
+#include "crc.h"
 
 typedef enum {
   CONSOLE_GET,
@@ -209,12 +210,11 @@ void console_record_event(struct logged_event ev) {
 
 }
 
-static size_t console_event_message(uint8_t *dest,
-                                    size_t bsize,
+static void console_event_message(struct console_buffer *buffer,
                                     struct logged_event *ev) {
   CborEncoder encoder;
 
-  cbor_encoder_init(&encoder, dest, bsize, 0);
+  cbor_encoder_init(&encoder, buffer->data, sizeof(buffer->data), 0);
 
   CborEncoder top_encoder;
   cbor_encoder_create_map(&encoder, &top_encoder, 4);
@@ -260,7 +260,7 @@ static size_t console_event_message(uint8_t *dest,
     break;
   }
   cbor_encoder_close_container(&encoder, &top_encoder);
-  return cbor_encoder_get_buffer_size(&encoder, dest);
+  buffer->length = cbor_encoder_get_buffer_size(&encoder, buffer->data);
 }
 
 static void render_type_field(CborEncoder *enc, const char *type) {
@@ -311,9 +311,9 @@ static bool console_string_matches(CborValue *val, const char *str) {
   return match;
 }
 
-static size_t console_feed_line_keys(uint8_t *dest, size_t bsize) {
+static void console_feed_line_keys(struct console_buffer *buffer) {
   CborEncoder encoder;
-  cbor_encoder_init(&encoder, dest, bsize, 0);
+  cbor_encoder_init(&encoder, buffer->data, sizeof(buffer->data), 0);
 
   CborEncoder top_encoder;
   cbor_encoder_create_map(&encoder, &top_encoder, 3);
@@ -334,7 +334,7 @@ static size_t console_feed_line_keys(uint8_t *dest, size_t bsize) {
   }
   cbor_encoder_close_container(&top_encoder, &key_list_encoder);
   cbor_encoder_close_container(&encoder, &top_encoder);
-  return cbor_encoder_get_buffer_size(&encoder, dest);
+  buffer->length = cbor_encoder_get_buffer_size(&encoder, buffer->data);
 }
 
 struct spsc_queue engine_update_queue = { .size = 4, };
@@ -413,10 +413,10 @@ void record_engine_update(const struct viaems *viaems,
   spsc_push(&engine_update_queue);
 }
 
-static size_t console_feed_line(const struct console_feed_update *update, uint8_t *dest, size_t bsize) {
+static void console_feed_line(struct console_buffer *buf, const struct console_feed_update *update) {
   CborEncoder encoder;
 
-  cbor_encoder_init(&encoder, dest, bsize, 0);
+  cbor_encoder_init(&encoder, buf->data, sizeof(buf->data), 0);
 
   CborEncoder top_encoder;
   cbor_encoder_create_map(&encoder, &top_encoder, 3);
@@ -469,98 +469,201 @@ static size_t console_feed_line(const struct console_feed_update *update, uint8_
 
   cbor_encoder_close_container(&top_encoder, &value_list_encoder);
   cbor_encoder_close_container(&encoder, &top_encoder);
-  return cbor_encoder_get_buffer_size(&encoder, dest);
+  buf->length = cbor_encoder_get_buffer_size(&encoder, buf->data);
 }
 
-static int console_write_full(const uint8_t *buf, size_t len) {
+#ifdef PLATFORM_HAS_NATIVE_MESSAGE_IO
+static bool console_read_message(struct console_buffer **msg) {
+  return platform_read_message(msg);
+}
+
+static void console_read_message_release(struct console_buffer **msg) {
+  platform_read_message_release(msg);
+}
+
+static void console_write_message(struct console_buffer *msg) {
+  platform_write_message(msg);
+}
+
+#else // !PLATFORM_HAS_NATIVE_MESSAGE_IO
+static struct console_buffer rxmsg;
+static struct console_buffer *active_rxmsg = &rxmsg;
+
+static bool decobs_message(struct console_buffer *d) {
+  const uint16_t buflen = d->length;
+  if (buflen < 2) {
+    return false;
+  }
+
+  uint16_t dst_i = 0;
+  uint16_t src_i = 0;
+  do {
+    uint8_t ohbyte = d->data[src_i];
+    if (ohbyte == 0) {
+      break;
+    }
+    uint16_t next_oh_i = ohbyte + src_i;
+
+    if (next_oh_i >= buflen) {
+      return false;
+    }
+
+    if ((src_i != 0) && (ohbyte != 255)) {
+      d->data[dst_i] = 0;
+      dst_i += 1;
+    }
+
+    src_i += 1;
+    while (src_i < next_oh_i) {
+      d->data[dst_i] = d->data[src_i];
+      dst_i += 1;
+      src_i += 1;
+    }
+    
+  } while (src_i < buflen);
+
+  d->length = dst_i;
+  return true;
+}
+
+/* Read NUL-terminated COBS-encoded messages using platform-provided buffered
+ * reads. Upon reaching a NUL terminator, the frame is COBS decoded.  The
+ * decoded frame ends in a CRC32 (little-endian), which the rest of the frame is
+ * validated against.  If successful, *dest is set to a buffer containing the
+ * PDU (without frame terminators or CRC bytes) and true is returned. Otherwise,
+ * false.
+ */
+static bool console_read_message(struct console_buffer **dest) {
+  if (!active_rxmsg) {
+    return false;
+  }
+  struct console_buffer *m = active_rxmsg;
+
+  /* Read into buffer one byte at a time until we have a nul byte */
+  while ((m->length == 0) ||
+         ((m->length > 0) && (m->data[m->length - 1] != '\0'))) {
+
+    if (m->length >= sizeof(m->data)) {
+      goto fail;
+    }
+
+    if (platform_read(&m->data[m->length], 1) == 0) {
+      return false;
+    }
+    m->length += 1;
+  } 
+
+  if (!decobs_message(m)) {
+    goto fail;
+  }
+
+  if (m->length <= 4) {
+    goto fail;
+  }
+
+  struct crc32 crc;
+  crc32_init(&crc);
+  for (size_t i = 0; i < m->length - 4; i++) {
+    crc32_add_byte(&crc, m->data[i]);
+  }
+
+  uint32_t pdu_crc32 = crc32_finish(&crc);
+  uint32_t frame_crc = ((uint32_t)m->data[m->length - 1] << 24) |
+                       ((uint32_t)m->data[m->length - 2] << 16) |
+                       ((uint32_t)m->data[m->length - 3] << 8)  |
+                       ((uint32_t)m->data[m->length - 4] << 0);
+
+  if (pdu_crc32 != frame_crc) {
+    goto fail;
+  }
+
+  m->length -= 4;
+
+  *dest = m;
+  active_rxmsg = NULL;
+  return true;
+
+fail:
+  m->length = 0;
+  return false;
+}
+
+static void console_read_message_release(struct console_buffer **msg) {
+  active_rxmsg = *msg;
+  *msg = NULL;
+  active_rxmsg->length = 0;
+}
+
+static void console_write_blocking(const uint8_t *buf, size_t len) {
   size_t remaining = len;
   const uint8_t *ptr = buf;
   while (remaining) {
-    size_t written = console_write(ptr, remaining);
+    size_t written = platform_write(ptr, remaining);
     if (written > 0) {
       remaining -= written;
       ptr += written;
     }
   }
-  return 1;
 }
 
-static uint8_t rx_buffer[16384];
-static size_t rx_buffer_size = 0;
-static timeval_t rx_start_time = 0;
+static void append_checksum(struct console_buffer *msg) {
+  if (msg->length > sizeof(msg->data) - 4) {
+    return;
+  }
 
-static void console_shift_rx_buffer(size_t amt) {
-  assert(amt <= rx_buffer_size);
-  memmove(&rx_buffer[0], &rx_buffer[amt], (rx_buffer_size - amt));
-  rx_buffer_size -= amt;
+  struct crc32 crc;
+  crc32_init(&crc);
+  for (size_t i = 0; i < msg->length; i++) {
+    crc32_add_byte(&crc, msg->data[i]);
+  }
+
+  uint32_t result = crc32_finish(&crc);
+  msg->data[msg->length + 3] = (result >> 24) & 0xFF;
+  msg->data[msg->length + 2] = (result >> 16) & 0xFF;
+  msg->data[msg->length + 1] = (result >> 8) & 0xFF;
+  msg->data[msg->length + 0] = (result >> 0) & 0xFF;
+  msg->length += 4;
 }
 
-static size_t console_try_read() {
-  size_t remaining = sizeof(rx_buffer) - rx_buffer_size;
+static void console_write_message(struct console_buffer *msg) {
 
-  if (rx_buffer_size == 0) {
-    rx_start_time = current_time();
-  }
+  append_checksum(msg);
 
-  size_t read_amt = console_read(&rx_buffer[rx_buffer_size], remaining);
-  rx_buffer_size += read_amt;
-
-  if (rx_buffer_size == 0) {
-    return 0;
-  }
-
-  CborParser parser;
-  CborValue value;
-
-  /* We want to determine if we have a valid cbor object in buffer.  If the
-   * buffer doesn't start with a map, it is not valid, and we want to advance
-   * byte-by-byte until we find a start of map */
+  uint16_t src_i = 0;
   do {
-    if (cbor_parser_init(rx_buffer, rx_buffer_size, 0, &parser, &value) ==
-        CborNoError) {
-      if (cbor_value_is_map(&value)) {
-        break;
-      }
+    uint16_t next_i = src_i;
+    while ((next_i != msg->length) && 
+           (msg->data[next_i] != '\0') &&
+           (next_i - src_i < 254)) {
+      next_i++;
     }
-    /* Reset timer since we have a new start */
-    console_shift_rx_buffer(1);
-    rx_start_time = current_time();
+    uint8_t oh_byte;
 
-    /* We've exhausted the buffer */
-    if (!rx_buffer_size) {
-      return 0;
+    if (next_i == msg->length) {
+      oh_byte = next_i - src_i + 1;
+    } else if (msg->data[next_i] == '\0') {
+      oh_byte = next_i - src_i + 1;
+    } else {
+      oh_byte = 255;
     }
-  } while (1);
 
-  switch (cbor_value_validate_basic(&value)) {
-    /* If we have a valid object, return its length */
-  case CborNoError:
-  case CborErrorGarbageAtEnd: {
-    cbor_value_advance(&value);
-    const uint8_t *next = cbor_value_get_next_byte(&value);
-    return (next - rx_buffer);
-  }
-  /* If we have the start of a valid object (as per the cbor_value_is_map check
-   * above, but not enough to decode the whole object, return but do not reset
-   * unless 5s has passed. This is a balance between allowing time for messages
-   * to arrive but not locking up communications due to some garbage */
-  case CborErrorAdvancePastEOF:
-  case CborErrorUnexpectedEOF:
-    if (current_time() - rx_start_time > time_from_us(5000000)) {
-      rx_buffer_size = 0;
+    console_write_blocking(&oh_byte, 1);
+    console_write_blocking(&msg->data[src_i], next_i - src_i);
+
+
+    if (oh_byte == 255) {
+      src_i += 254;
+    } else {
+      src_i += oh_byte;
     }
-    /* Alternatively, if we've filled up, waiting longer will not work, reset */
-    if (rx_buffer_size == sizeof(rx_buffer)) {
-      rx_buffer_size = 0;
-    }
-    break;
-  /* Assume garbage input, reset */
-  default:
-    rx_buffer_size = 0;
-    break;
-  }
-  return 0;
+  } while (src_i <= msg->length);
+  uint8_t nul = '\0';
+  console_write_blocking(&nul, 1);
+
+  msg->length = 0;
 }
+#endif // PLATFORM_HAS_NATIVE_MESSAGE_IO
+
 
 static void console_request_ping(CborEncoder *enc) {
   cbor_encode_text_stringz(enc, "response");
@@ -1711,16 +1814,16 @@ static void console_process_request(CborValue *request, CborEncoder *response, s
   }
 }
 
-static void console_process_request_raw(uint8_t respbuffer[], size_t resplen, int len, struct config *config) {
+static void console_process_request_raw(const struct console_buffer *rx, struct console_buffer *tx, struct config *config) {
   CborParser parser;
   CborValue value;
   CborError err;
 
   CborEncoder encoder;
 
-  cbor_encoder_init(&encoder, respbuffer, resplen, 0);
+  cbor_encoder_init(&encoder, tx->data, sizeof(tx->data), 0);
 
-  err = cbor_parser_init(rx_buffer, len, 0, &parser, &value);
+  err = cbor_parser_init(rx->data, rx->length, 0, &parser, &value);
   if (err) {
     return;
   }
@@ -1737,50 +1840,43 @@ static void console_process_request_raw(uint8_t respbuffer[], size_t resplen, in
     return;
   }
 
-  size_t write_size = cbor_encoder_get_buffer_size(&encoder, respbuffer);
-  console_write_full(respbuffer, write_size);
+  tx->length = cbor_encoder_get_buffer_size(&encoder, tx->data);
 }
+
 
 void console_process(struct config *config, timeval_t now) {
   static timeval_t last_desc_time = 0;
-  static uint8_t txbuffer[16384];
+  static struct console_buffer txmsg;
+  struct console_buffer *rxmsg = NULL;
 
-  size_t read_size;
-  if ((read_size = console_try_read())) {
-    /* Parse a request from the client */
-    console_process_request_raw(txbuffer, sizeof(txbuffer), read_size, config);
-    console_shift_rx_buffer(read_size);
+  if (console_read_message(&rxmsg)) {
+      console_process_request_raw(rxmsg, &txmsg, config);
+      console_read_message_release(&rxmsg);
+      console_write_message(&txmsg);
   }
 
   /* Process any outstanding event messages */
   struct logged_event ev = get_logged_event();
   if (ev.type != EVENT_NONE) {
-    uint8_t *txptr = txbuffer;
-    size_t txsize = 0;
-
     do {
-      size_t txremaining = sizeof(txbuffer) - txsize;
-      size_t write_size = console_event_message(txptr, txremaining, &ev);
-      txsize += write_size;
-      txptr += write_size;
+      console_event_message(&txmsg, &ev);
+      console_write_message(&txmsg);
       ev = get_logged_event();
     } while(ev.type != EVENT_NONE);
-
-    console_write_full(txbuffer, txsize);
   }
 
   /* Try to ensure we send a description message at 10 hz */
   if (time_diff(now, last_desc_time) > time_from_us(100000)) {
-    size_t write_size = console_feed_line_keys(txbuffer, sizeof(txbuffer));
-    console_write_full(txbuffer, write_size);
+    console_feed_line_keys(&txmsg);
+    console_write_message(&txmsg);
     last_desc_time = now;
   } else {
     int idx = spsc_next(&engine_update_queue);
     if (idx >= 0) {
       struct console_feed_update *update = &engine_update_msgs[idx];
-      size_t write_size = console_feed_line(update, txbuffer, sizeof(txbuffer));
+      console_feed_line(&txmsg, update);
       spsc_release(&engine_update_queue);
-      console_write_full(txbuffer, write_size);
+      console_write_message(&txmsg);
     }
   }
 }

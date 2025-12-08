@@ -10,6 +10,13 @@ Major breaking changes are introduced in this release
  - Config structure changes:
    - "freq" list changed to "trigger", and the pin used for cam/crank phase is
      now type "sync" instead of just "trigger"
+ - Breaking communication protocol changes:
+   - A platform can now provide a native-framing console interface, intended
+     to be used for CAN or Ethernet.
+   - The existing serial/USB comms are "streaming" IO, but instead of directly
+     concatonating CBOR messages, each message is suffixed with a CRC32 and
+     framed using COBS and NULL byte delimiters.  See INTERFACE.md for more
+     details
 
 ### 1.6.0 (2025 March 1)
 This introduces breaking changes for sensors and table configuration

@@ -5,8 +5,12 @@ import time
 import random
 import os
 from io import BytesIO
+import struct
+import sys
 
 import cbor2 as cbor
+import zlib
+from cobs import cobs
 import usb.core
 
 from viaems.vcd import dump_vcd
@@ -93,12 +97,35 @@ class SimConnector(ViaemsInterface):
 
     def send(self, payload):
         binary = cbor.dumps(payload)
-        self.process.stdin.write(binary)
+        binary += struct.pack("<I", zlib.crc32(binary))
+        encoded = cobs.encode(binary) + b"\0"
+        self.process.stdin.write(encoded)
         self.process.stdin.flush()
 
-    def recv(self):
-        result = cbor.load(self.process.stdout)
+    def _deframe(self, frame):
+        decoded = cobs.decode(frame)
+        crcbytes = decoded[-4:]
+        pdu = decoded[0:-4]
+        crc = struct.unpack("<I", crcbytes)[0]
+        if zlib.crc32(pdu) != crc:
+            raise ValueError("CRC failure")
+        result = cbor.loads(pdu)
         return result
+
+    def recv(self):
+        frame = b""
+        while True:
+            b = self.process.stdout.read(1)
+            if b == b"\0":
+                break
+            if len(b) == 0:
+                raise EOFError
+            frame += b
+
+            if len(frame) > 16384:
+                return None
+
+        return self._deframe(frame)
 
     def _render_target_inputs(self, scenario, file):
         render_time = 0

@@ -48,6 +48,10 @@ struct console_feed_update {
   uint32_t t1_count;
 };
 
+struct console_buffer {
+  uint8_t data[16384];
+  size_t length;
+};
 
 struct logged_event {
   timeval_t time;
@@ -67,6 +71,7 @@ void console_record_event(struct logged_event);
 void record_engine_update(const struct viaems *viaems,
                           const struct engine_update *eng_update, 
                           const struct calculated_values *calcs);
+
 
 #ifdef UNITTEST
 #include <check.h>
