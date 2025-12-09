@@ -49,7 +49,7 @@ class Config:
 
     def lookup(self, pin, end_angle):
         # TODO maybe don't hardcode this, but until then:
-        #  - assume fuel is +/- 10 degrees
+        #  - assume fuel is +/- 20 degrees
         #  - assume ignition is -50 to +10 degrees
         for oc in self.outputs:
             if pin != oc.pin:
@@ -60,7 +60,7 @@ class Config:
                     return oc
 
             if oc.typ == OutputConfig.FUEL:
-                if self._offset_within(oc, end_angle, -10, 10):
+                if self._offset_within(oc, end_angle, -20, 20):
                     return oc
 
 
@@ -146,17 +146,23 @@ def validate_outputs(log: Log) -> (bool, str):
     current_fuel_pw : List[float] = []
     current_ign_pw : List[float] = []
     current_ign_adv : List[float] = []
-    current_cputime : List[float] = []
+    current_cputime : int
 
     for o in log:
         match o:
             case TargetFeedEvent(values=values):
-                # Use large time range for ignition dwells, since in-flight
-                # dwells can't change their durations (they target a specific
-                # angle)
-                _keep_range(current_fuel_pw, values["fuel_pulsewidth_us"], 5)
-                _keep_range(current_ign_pw, values["dwell"], 50)
-                _keep_range(current_ign_adv, values["advance"], 5)
+
+                # Only store values for pulses when synced
+                if values["sync"] == 1:
+                    _keep_range(current_fuel_pw, values["fuel_pulsewidth_us"], 5)
+                    _keep_range(current_ign_adv, values["advance"], 5)
+
+                    # Use large time range for ignition dwells, since in-flight
+                    # dwells can't change their durations (they target a specific
+                    # angle)
+                    _keep_range(current_ign_pw, values["dwell"], 50)
+
+                    current_cputime = int(values["cputime"])
 
             case EnrichedOutputEvent():
                 if o.config is None:

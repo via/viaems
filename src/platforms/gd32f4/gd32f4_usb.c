@@ -452,11 +452,11 @@ static uint8_t cdc_acm_out(usb_dev *udev, uint8_t ep_num) {
 size_t console_read(void *ptr, size_t max) {
 
   if (state.pending_read) {
-    disable_interrupts();
+    __disable_irq();
     assert(rx_len <= max);
     memcpy(ptr, rxbuffer, rx_len);
     state.pending_read = false;
-    enable_interrupts();
+    __enable_irq();
     return rx_len;
   }
 
@@ -471,10 +471,10 @@ size_t console_write(const void *ptr, size_t max) {
     return 0;
   }
 
-  disable_interrupts();
+  __disable_irq();
   state.pending_write = true;
   usbd_ep_send(&cdc_acm, CDC_DATA_IN_EP, ptr, max);
-  enable_interrupts();
+  __enable_irq();
 
   /* Block until sent */
   while (state.pending_write)

@@ -307,19 +307,23 @@ size_t console_read(void *ptr, size_t max) {
   return amt;
 }
 
+static uint8_t txbuffer[64];
+static size_t txlen = 0;
 size_t console_write(const void *ptr, size_t max) {
-  int amt = max;
-  if (amt > CDC_DATA_SZ) {
-    amt = CDC_DATA_SZ;
-  }
+  size_t remaining = sizeof(txbuffer) - txlen;
+  size_t amt = max > remaining ? remaining : max;
+  memcpy(txbuffer + txlen, ptr, amt);
+  txlen += amt;
 
-  NVIC_DisableIRQ(OTG_FS_IRQn);
-  int written = usbd_ep_write(&udev, CDC_TXD_EP, (void *)ptr, amt);
-  NVIC_EnableIRQ(OTG_FS_IRQn);
-  if (written < 0) {
-    return 0;
+  if (txlen == 64) {
+    NVIC_DisableIRQ(OTG_FS_IRQn);
+    int written = usbd_ep_write(&udev, CDC_TXD_EP, (void *)txbuffer, txlen);
+    NVIC_EnableIRQ(OTG_FS_IRQn);
+    if (written >= 0) {
+      txlen -= written;
+    }
   }
-  return written;
+  return amt;
 }
 
 void stm32f4_configure_usb(void) {
