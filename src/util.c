@@ -1,8 +1,8 @@
 #include <assert.h>
 
-#include "util.h"
 #include "limits.h"
 #include "platform.h"
+#include "util.h"
 
 const float tick_degree_rpm_ratio = (TICKRATE / 6.0f);
 
@@ -46,7 +46,7 @@ timeval_t time_diff(timeval_t later, timeval_t earlier) {
   return later - earlier;
 }
 
-/* Attempt to normalize an angle to [0, max) degrees.  
+/* Attempt to normalize an angle to [0, max) degrees.
  * Assumes an angle within one full cycle of the range [-max, 2*max).
  */
 degrees_t clamp_angle(const degrees_t ang, const degrees_t max) {

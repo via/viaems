@@ -11,61 +11,148 @@
 #include "decoder.h"
 #include "platform.h"
 #include "sensors.h"
+#include "sim.h"
+#include "spsc.h"
+#include "util.h"
+#include "viaems.h"
 
-static uint32_t render_loss_reason() {
-  return (uint32_t)config.decoder.loss;
+typedef enum {
+  CONSOLE_GET,
+  CONSOLE_SET,
+  CONSOLE_DESCRIBE,
+  CONSOLE_STRUCTURE,
+} console_request_type;
+
+struct console_request_context {
+  console_request_type type;
+  CborEncoder *response;
+  CborValue *path;
+  CborValue value;
+
+  bool is_filtered;
+  bool is_completed;
 };
 
-const struct console_feed_node console_feed_nodes[] = {
-  { .id = "cputime", .uint32_fptr = current_time },
+struct console_enum_mapping {
+  int e;
+  const char *s;
+};
 
-  /* Fueling */
-  { .id = "ve", .float_ptr = &calculated_values.ve },
-  { .id = "lambda", .float_ptr = &calculated_values.lambda },
-  { .id = "fuel_pulsewidth_us", .uint32_ptr = &calculated_values.fueling_us },
-  { .id = "temp_enrich_percent", .float_ptr = &calculated_values.ete },
-  { .id = "injector_dead_time", .float_ptr = &calculated_values.idt },
-  { .id = "injector_pw_correction", .float_ptr = &calculated_values.pwc },
-  { .id = "accel_enrich_percent", .float_ptr = &calculated_values.tipin },
-  { .id = "airmass_per_cycle",
-    .float_ptr = &calculated_values.airmass_per_cycle },
+typedef void (*console_renderer)(struct console_request_context *ctx,
+                                 void *ptr);
 
-  /* Ignition */
-  { .id = "advance", .float_ptr = &calculated_values.timing_advance },
-  { .id = "dwell", .uint32_ptr = &calculated_values.dwell_us },
-  { .id = "rpm_cut", .uint32_ptr = &calculated_values.rpm_limit_cut },
-  { .id = "boost_cut", .uint32_ptr = &calculated_values.boost_cut },
-  { .id = "fuel_overduty_cut",
-    .uint32_ptr = &calculated_values.fuel_overduty_cut },
+/* High level rendering helpers */
+static void render_uint32_map_field(struct console_request_context *ctx,
+                                    const char *id,
+                                    const char *description,
+                                    uint32_t *ptr);
 
-  { .id = "sensor.map", .float_ptr = &config.sensors[SENSOR_MAP].value },
-  { .id = "sensor.iat", .float_ptr = &config.sensors[SENSOR_IAT].value },
-  { .id = "sensor.clt", .float_ptr = &config.sensors[SENSOR_CLT].value },
-  { .id = "sensor.brv", .float_ptr = &config.sensors[SENSOR_BRV].value },
-  { .id = "sensor.tps", .float_ptr = &config.sensors[SENSOR_TPS].value },
-  { .id = "sensor.tps.rate",
-    .float_ptr = &config.sensors[SENSOR_TPS].derivative },
-  { .id = "sensor.aap", .float_ptr = &config.sensors[SENSOR_AAP].value },
-  { .id = "sensor.frt", .float_ptr = &config.sensors[SENSOR_FRT].value },
-  { .id = "sensor.ego", .float_ptr = &config.sensors[SENSOR_EGO].value },
-  { .id = "sensor.frp", .float_ptr = &config.sensors[SENSOR_FRP].value },
-  { .id = "knock1.value", .float_ptr = &config.knock_inputs[0].value },
-  { .id = "knock2.value", .float_ptr = &config.knock_inputs[1].value },
-  { .id = "sensor.eth", .float_ptr = &config.sensors[SENSOR_ETH].value },
+static void render_bool_map_field(struct console_request_context *ctx,
+                                  const char *id,
+                                  const char *description,
+                                  bool *ptr);
 
-  { .id = "sensor_faults", .uint32_fptr = sensor_fault_status },
+static void render_float_map_field(struct console_request_context *ctx,
+                                   const char *id,
+                                   const char *description,
+                                   float *ptr);
 
-  /* Decoder */
-  { .id = "rpm", .uint32_ptr = &config.decoder.rpm },
-  { .id = "tooth_rpm", .uint32_ptr = &config.decoder.tooth_rpm },
-  { .id = "sync", .uint32_ptr = &config.decoder.valid },
-  { .id = "loss", .uint32_fptr = render_loss_reason },
-  { .id = "rpm_variance", .float_ptr = &config.decoder.trigger_cur_rpm_change },
-  { .id = "last_trigger_angle",
-    .float_ptr = &config.decoder.last_trigger_angle },
-  { .id = "t0_count", .uint32_ptr = &config.decoder.t0_count },
-  { .id = "t1_count", .uint32_ptr = &config.decoder.t1_count },
-  { 0 },
+static void render_map_map_field(struct console_request_context *ctx,
+                                 const char *id,
+                                 console_renderer map_renderer,
+                                 void *ptr);
+
+static void render_custom_map_field(struct console_request_context *ctx,
+                                    const char *id,
+                                    console_renderer field_renderer,
+                                    void *ptr);
+
+static void render_enum_map_field(struct console_request_context *ctx,
+                                  const char *id,
+                                  const char *desc,
+                                  const struct console_enum_mapping *mapping,
+                                  void *ptr);
+
+static void render_array_map_field(struct console_request_context *ctx,
+                                   const char *id,
+                                   console_renderer array_renderer,
+                                   void *ptr);
+
+static void render_map_array_field(struct console_request_context *ctx,
+                                   int index,
+                                   console_renderer map_renderer,
+                                   void *ptr);
+
+/* Low level object rendering */
+static void render_uint32_object(struct console_request_context *ctx,
+                                 const char *description,
+                                 uint32_t *ptr);
+static void render_float_object(struct console_request_context *ctx,
+                                const char *description,
+                                float *ptr);
+static void render_bool_object(struct console_request_context *ctx,
+                               const char *description,
+                               bool *ptr);
+
+static void render_map_object(struct console_request_context *ctx,
+                              console_renderer map_renderer,
+                              void *ptr);
+static void render_enum_object(struct console_request_context *ctx,
+                               const char *desc,
+                               const struct console_enum_mapping *mapping,
+                               void *ptr);
+
+static void render_array_object(struct console_request_context *ctx,
+                                console_renderer array_renderer,
+                                void *ptr);
+
+static bool descend_map_field(struct console_request_context *ctx,
+                              struct console_request_context *deeper,
+                              const char *id);
+static bool descend_array_field(struct console_request_context *ctx,
+                                struct console_request_context *deeper,
+                                int index);
+
+static void render_description_field(CborEncoder *, const char *desc);
+static void render_type_field(CborEncoder *, const char *type);
+
+static const char *console_feed_keys[] = {
+  "cputime",
+  "ve",
+  "lambda",
+  "fuel_pulsewidth_us",
+  "temp_enrich_percent",
+  "injector_dead_time",
+  "injector_pw_correction",
+  "accel_enrich_percent",
+  "airmass_per_cycle",
+  "advance",
+  "dwell",
+  "rpm_cut",
+  "boost_cut",
+  "fuel_overduty_cut",
+  "sensor.map",
+  "sensor.iat",
+  "sensor.clt",
+  "sensor.brv",
+  "sensor.tps",
+  "sensor.tps.rate",
+  "sensor.aap",
+  "sensor.frt",
+  "sensor.ego",
+  "sensor.frp",
+  "knock1.value",
+  "knock2.value",
+  "sensor.eth",
+  "sensor_faults",
+  "rpm",
+  "tooth_rpm",
+  "sync",
+  "loss",
+  "rpm_variance",
+  "last_trigger_angle",
+  "t0_count",
+  "t1_count",
 };
 
 #define EVENT_LOG_SIZE 32
@@ -109,9 +196,6 @@ void console_record_event(struct logged_event ev) {
     return;
   }
 
-  disable_interrupts(); /* Necessary due to writes from multiple interrupt
-                           contexts that may preempt each other */
-
   uint32_t seq = atomic_fetch_add(&event_log.seq, 1);
   uint32_t read_pos = event_log.read;
   uint32_t write_pos = event_log.write;
@@ -122,8 +206,6 @@ void console_record_event(struct logged_event ev) {
     event_log.events[write_pos].seq = seq;
     event_log.write = next_write_pos;
   }
-
-  enable_interrupts();
 }
 
 static size_t console_event_message(uint8_t *dest,
@@ -180,12 +262,13 @@ static size_t console_event_message(uint8_t *dest,
   return cbor_encoder_get_buffer_size(&encoder, dest);
 }
 
-void render_type_field(CborEncoder *enc, const char *type) {
+static void render_type_field(CborEncoder *enc, const char *type) {
   cbor_encode_text_stringz(enc, "_type");
   cbor_encode_text_stringz(enc, type);
 }
 
-void render_description_field(CborEncoder *enc, const char *description) {
+static void render_description_field(CborEncoder *enc,
+                                     const char *description) {
   cbor_encode_text_stringz(enc, "description");
   cbor_encode_text_stringz(enc, description);
 }
@@ -242,19 +325,99 @@ static size_t console_feed_line_keys(uint8_t *dest, size_t bsize) {
 
   cbor_encode_text_stringz(&top_encoder, "keys");
   CborEncoder key_list_encoder;
-  cbor_encoder_create_array(
-    &top_encoder, &key_list_encoder, CborIndefiniteLength);
-  for (const struct console_feed_node *node = &console_feed_nodes[0];
-       node->id != NULL;
-       node++) {
-    cbor_encode_text_stringz(&key_list_encoder, node->id);
+
+  const size_t count = sizeof(console_feed_keys) / sizeof(const char *);
+  cbor_encoder_create_array(&top_encoder, &key_list_encoder, count);
+  for (size_t i = 0; i < count; i++) {
+    cbor_encode_text_stringz(&key_list_encoder, console_feed_keys[i]);
   }
   cbor_encoder_close_container(&top_encoder, &key_list_encoder);
   cbor_encoder_close_container(&encoder, &top_encoder);
   return cbor_encoder_get_buffer_size(&encoder, dest);
 }
 
-static size_t console_feed_line(uint8_t *dest, size_t bsize) {
+struct spsc_queue engine_update_queue = {
+  .size = 4,
+};
+struct console_feed_update engine_update_msgs[4];
+
+void record_engine_update(const struct viaems *viaems,
+                          const struct engine_update *eng_update,
+                          const struct calculated_values *calcs) {
+
+  int idx = spsc_allocate(&engine_update_queue);
+  if (idx < 0) {
+    return;
+  }
+
+  struct console_feed_update *update = &engine_update_msgs[idx];
+
+  update->time = eng_update->current_time;
+  if (calcs != NULL) {
+    update->ve = calcs->ve;
+    update->lambda = calcs->lambda;
+    update->fuel_pulsewidth_us = calcs->fueling_us;
+    update->temp_enrich_percent = calcs->ete;
+    update->injector_dead_time = calcs->idt;
+    update->injector_pw_correction = calcs->pwc;
+    update->accel_enrich_percent = calcs->tipin;
+    update->airmass_per_cycle = calcs->airmass_per_cycle;
+
+    update->advance = calcs->timing_advance;
+    update->dwell_us = calcs->dwell_us;
+    update->rpm_cut = calcs->rpm_limit_cut;
+    update->boost_cut = calcs->boost_cut;
+    update->fuel_overduty_cut = calcs->fuel_overduty_cut;
+  } else {
+    update->ve = 0;
+    update->lambda = 0;
+    update->fuel_pulsewidth_us = 0;
+    update->temp_enrich_percent = 0;
+    update->injector_dead_time = 0;
+    update->injector_pw_correction = 0;
+    update->accel_enrich_percent = 0;
+    update->airmass_per_cycle = 0;
+
+    update->advance = 0;
+    update->dwell_us = 0;
+    update->rpm_cut = false;
+    update->boost_cut = false;
+    update->fuel_overduty_cut = false;
+  }
+
+  update->map = eng_update->sensors.MAP.value;
+  update->iat = eng_update->sensors.IAT.value;
+  update->clt = eng_update->sensors.CLT.value;
+  update->brv = eng_update->sensors.BRV.value;
+  update->tps = eng_update->sensors.TPS.value;
+  update->tpsrate = eng_update->sensors.TPS.derivative;
+  update->aap = eng_update->sensors.AAP.value;
+  update->frt = eng_update->sensors.FRT.value;
+  update->ego = eng_update->sensors.EGO.value;
+  update->frp = eng_update->sensors.FRP.value;
+  update->knock1 = eng_update->sensors.KNK1;
+  update->knock2 = eng_update->sensors.KNK2;
+  update->eth = eng_update->sensors.ETH.value;
+  update->sensor_faults = 0;
+
+  update->rpm = eng_update->position.rpm;
+  update->tooth_rpm = eng_update->position.tooth_rpm;
+  update->sync =
+    engine_position_is_synced(&eng_update->position, eng_update->current_time);
+  update->last_angle = eng_update->position.last_trigger_angle;
+
+  // TODO this races, but its just debug info
+  update->loss_reason = viaems->decoder.loss;
+  update->rpm_variance = viaems->decoder.trigger_cur_rpm_change;
+  update->t0_count = viaems->decoder.t0_count;
+  update->t1_count = viaems->decoder.t1_count;
+
+  spsc_push(&engine_update_queue);
+}
+
+static size_t console_feed_line(const struct console_feed_update *update,
+                                uint8_t *dest,
+                                size_t bsize) {
   CborEncoder encoder;
 
   cbor_encoder_init(&encoder, dest, bsize, 0);
@@ -265,27 +428,49 @@ static size_t console_feed_line(uint8_t *dest, size_t bsize) {
   cbor_encode_text_stringz(&top_encoder, "feed");
 
   cbor_encode_text_stringz(&top_encoder, "time");
-  cbor_encode_int(&top_encoder, current_time());
+  cbor_encode_int(&top_encoder, update->time);
 
   cbor_encode_text_stringz(&top_encoder, "values");
   CborEncoder value_list_encoder;
-  cbor_encoder_create_array(
-    &top_encoder, &value_list_encoder, CborIndefiniteLength);
-  for (const struct console_feed_node *node = &console_feed_nodes[0];
-       node->id != NULL;
-       node++) {
-    if (node->uint32_ptr) {
-      cbor_encode_uint(&value_list_encoder, *node->uint32_ptr);
-    } else if (node->float_ptr) {
-      cbor_encode_float(&value_list_encoder, *node->float_ptr);
-    } else if (node->uint32_fptr) {
-      cbor_encode_uint(&value_list_encoder, node->uint32_fptr());
-    } else if (node->float_fptr) {
-      cbor_encode_float(&value_list_encoder, node->float_fptr());
-    } else {
-      cbor_encode_text_stringz(&value_list_encoder, "invalid");
-    }
-  }
+  const size_t count = sizeof(console_feed_keys) / sizeof(const char *);
+  cbor_encoder_create_array(&top_encoder, &value_list_encoder, count);
+  cbor_encode_uint(&value_list_encoder, update->time);
+  cbor_encode_float(&value_list_encoder, update->ve);
+  cbor_encode_float(&value_list_encoder, update->lambda);
+  cbor_encode_uint(&value_list_encoder, update->fuel_pulsewidth_us);
+  cbor_encode_float(&value_list_encoder, update->temp_enrich_percent);
+  cbor_encode_float(&value_list_encoder, update->injector_dead_time);
+  cbor_encode_float(&value_list_encoder, update->injector_pw_correction);
+  cbor_encode_float(&value_list_encoder, update->accel_enrich_percent);
+  cbor_encode_float(&value_list_encoder, update->airmass_per_cycle);
+  cbor_encode_float(&value_list_encoder, update->advance);
+  cbor_encode_uint(&value_list_encoder, update->dwell_us);
+  cbor_encode_boolean(&value_list_encoder, update->rpm_cut);
+  cbor_encode_boolean(&value_list_encoder, update->boost_cut);
+  cbor_encode_boolean(&value_list_encoder, update->fuel_overduty_cut);
+  cbor_encode_float(&value_list_encoder, update->map);
+  cbor_encode_float(&value_list_encoder, update->iat);
+  cbor_encode_float(&value_list_encoder, update->clt);
+  cbor_encode_float(&value_list_encoder, update->brv);
+  cbor_encode_float(&value_list_encoder, update->tps);
+  cbor_encode_float(&value_list_encoder, update->tpsrate);
+  cbor_encode_float(&value_list_encoder, update->aap);
+  cbor_encode_float(&value_list_encoder, update->frt);
+  cbor_encode_float(&value_list_encoder, update->ego);
+  cbor_encode_float(&value_list_encoder, update->frp);
+  cbor_encode_float(&value_list_encoder, update->knock1);
+  cbor_encode_float(&value_list_encoder, update->knock2);
+  cbor_encode_float(&value_list_encoder, update->eth);
+  cbor_encode_uint(&value_list_encoder, update->sensor_faults);
+  cbor_encode_uint(&value_list_encoder, update->rpm);
+  cbor_encode_uint(&value_list_encoder, update->tooth_rpm);
+  cbor_encode_boolean(&value_list_encoder, update->sync);
+  cbor_encode_uint(&value_list_encoder, update->loss_reason);
+  cbor_encode_float(&value_list_encoder, update->rpm_variance);
+  cbor_encode_float(&value_list_encoder, update->last_angle);
+  cbor_encode_uint(&value_list_encoder, update->t0_count);
+  cbor_encode_uint(&value_list_encoder, update->t1_count);
+
   cbor_encoder_close_container(&top_encoder, &value_list_encoder);
   cbor_encoder_close_container(&encoder, &top_encoder);
   return cbor_encoder_get_buffer_size(&encoder, dest);
@@ -387,19 +572,19 @@ static void console_request_ping(CborEncoder *enc) {
   report_success(enc, true);
 }
 
-void render_uint32_map_field(struct console_request_context *ctx,
-                             const char *id,
-                             const char *description,
-                             uint32_t *ptr) {
+static void render_uint32_map_field(struct console_request_context *ctx,
+                                    const char *id,
+                                    const char *description,
+                                    uint32_t *ptr) {
   struct console_request_context deeper;
   if (descend_map_field(ctx, &deeper, id)) {
     render_uint32_object(&deeper, description, ptr);
   }
 }
 
-void render_uint32_object(struct console_request_context *ctx,
-                          const char *description,
-                          uint32_t *ptr) {
+static void render_uint32_object(struct console_request_context *ctx,
+                                 const char *description,
+                                 uint32_t *ptr) {
   switch (ctx->type) {
   case CONSOLE_SET:
     if (cbor_value_is_integer(&ctx->value)) {
@@ -423,10 +608,10 @@ void render_uint32_object(struct console_request_context *ctx,
   }
 }
 
-void render_float_map_field(struct console_request_context *ctx,
-                            const char *id,
-                            const char *description,
-                            float *ptr) {
+static void render_float_map_field(struct console_request_context *ctx,
+                                   const char *id,
+                                   const char *description,
+                                   float *ptr) {
   struct console_request_context deeper;
   if (descend_map_field(ctx, &deeper, id)) {
     render_float_object(&deeper, description, ptr);
@@ -449,9 +634,9 @@ static float decode_half(uint16_t half) {
   return half & 0x8000 ? -val : val;
 }
 
-void render_float_object(struct console_request_context *ctx,
-                         const char *description,
-                         float *ptr) {
+static void render_float_object(struct console_request_context *ctx,
+                                const char *description,
+                                float *ptr) {
 
   switch (ctx->type) {
   case CONSOLE_SET:
@@ -490,19 +675,19 @@ void render_float_object(struct console_request_context *ctx,
   }
 }
 
-void render_bool_map_field(struct console_request_context *ctx,
-                           const char *id,
-                           const char *description,
-                           bool *ptr) {
+static void render_bool_map_field(struct console_request_context *ctx,
+                                  const char *id,
+                                  const char *description,
+                                  bool *ptr) {
   struct console_request_context deeper;
   if (descend_map_field(ctx, &deeper, id)) {
     render_bool_object(&deeper, description, ptr);
   }
 }
 
-void render_bool_object(struct console_request_context *ctx,
-                        const char *description,
-                        bool *ptr) {
+static void render_bool_object(struct console_request_context *ctx,
+                               const char *description,
+                               bool *ptr) {
   switch (ctx->type) {
   case CONSOLE_SET:
     if (cbor_value_is_boolean(&ctx->value)) {
@@ -526,29 +711,29 @@ void render_bool_object(struct console_request_context *ctx,
   }
 }
 
-void render_map_map_field(struct console_request_context *ctx,
-                          const char *id,
-                          console_renderer rend,
-                          void *ptr) {
+static void render_map_map_field(struct console_request_context *ctx,
+                                 const char *id,
+                                 console_renderer rend,
+                                 void *ptr) {
   struct console_request_context deeper;
   if (descend_map_field(ctx, &deeper, id)) {
     render_map_object(&deeper, rend, ptr);
   }
 }
 
-void render_custom_map_field(struct console_request_context *ctx,
-                             const char *id,
-                             console_renderer rend,
-                             void *ptr) {
+static void render_custom_map_field(struct console_request_context *ctx,
+                                    const char *id,
+                                    console_renderer rend,
+                                    void *ptr) {
   struct console_request_context deeper;
   if (descend_map_field(ctx, &deeper, id)) {
     rend(&deeper, ptr);
   }
 }
 
-bool descend_array_field(struct console_request_context *ctx,
-                         struct console_request_context *deeper_ctx,
-                         int index) {
+static bool descend_array_field(struct console_request_context *ctx,
+                                struct console_request_context *deeper_ctx,
+                                int index) {
   if (ctx->is_completed) {
     return false;
   }
@@ -592,9 +777,9 @@ bool descend_array_field(struct console_request_context *ctx,
   return false;
 }
 
-void render_array_object(struct console_request_context *ctx,
-                         console_renderer rend,
-                         void *ptr) {
+static void render_array_object(struct console_request_context *ctx,
+                                console_renderer rend,
+                                void *ptr) {
 
   bool wrapped = !ctx->is_filtered;
 
@@ -617,29 +802,29 @@ void render_array_object(struct console_request_context *ctx,
   ctx->response = outer;
 }
 
-void render_map_array_field(struct console_request_context *ctx,
-                            int index,
-                            console_renderer rend,
-                            void *ptr) {
+static void render_map_array_field(struct console_request_context *ctx,
+                                   int index,
+                                   console_renderer rend,
+                                   void *ptr) {
   struct console_request_context deeper;
   if (descend_array_field(ctx, &deeper, index)) {
     render_map_object(&deeper, rend, ptr);
   }
 }
 
-void render_array_map_field(struct console_request_context *ctx,
-                            const char *id,
-                            console_renderer rend,
-                            void *ptr) {
+static void render_array_map_field(struct console_request_context *ctx,
+                                   const char *id,
+                                   console_renderer rend,
+                                   void *ptr) {
   struct console_request_context deeper;
   if (descend_map_field(ctx, &deeper, id)) {
     render_array_object(&deeper, rend, ptr);
   }
 }
 
-void render_map_object(struct console_request_context *ctx,
-                       console_renderer rend,
-                       void *ptr) {
+static void render_map_object(struct console_request_context *ctx,
+                              console_renderer rend,
+                              void *ptr) {
 
   bool wrapped = !ctx->is_filtered;
 
@@ -663,9 +848,9 @@ void render_map_object(struct console_request_context *ctx,
   ctx->response = outer;
 }
 
-bool descend_map_field(struct console_request_context *ctx,
-                       struct console_request_context *deeper_ctx,
-                       const char *id) {
+static bool descend_map_field(struct console_request_context *ctx,
+                              struct console_request_context *deeper_ctx,
+                              const char *id) {
 
   if (ctx->is_completed) {
     return false;
@@ -712,21 +897,21 @@ bool descend_map_field(struct console_request_context *ctx,
   return false;
 }
 
-void render_enum_map_field(struct console_request_context *ctx,
-                           const char *id,
-                           const char *desc,
-                           const struct console_enum_mapping *mapping,
-                           void *ptr) {
+static void render_enum_map_field(struct console_request_context *ctx,
+                                  const char *id,
+                                  const char *desc,
+                                  const struct console_enum_mapping *mapping,
+                                  void *ptr) {
   struct console_request_context deeper;
   if (descend_map_field(ctx, &deeper, id)) {
     render_enum_object(&deeper, desc, mapping, ptr);
   }
 }
 
-void render_enum_object(struct console_request_context *ctx,
-                        const char *desc,
-                        const struct console_enum_mapping *mapping,
-                        void *ptr) {
+static void render_enum_object(struct console_request_context *ctx,
+                               const char *desc,
+                               const struct console_enum_mapping *mapping,
+                               void *ptr) {
   int *type = ptr;
   bool success = false;
   switch (ctx->type) {
@@ -838,7 +1023,7 @@ static void render_table_axis_values(struct console_request_context *ctx,
     }
     axis->num = len;
   }
-  for (int i = 0; (i < axis->num) && (i < MAX_AXIS_SIZE); i++) {
+  for (unsigned i = 0; (i < axis->num) && (i < MAX_AXIS_SIZE); i++) {
     struct console_request_context deeper;
     if (descend_array_field(ctx, &deeper, i)) {
       render_float_object(&deeper, "axis value", &axis->values[i]);
@@ -877,7 +1062,7 @@ static void render_table_second_axis_data(struct console_request_context *ctx,
                                           void *_ntc) {
   struct nested_table_context *ntc = _ntc;
   struct table_2d *t = ntc->t;
-  for (int c = 0; c < t->cols.num; c++) {
+  for (unsigned c = 0; c < t->cols.num; c++) {
     struct console_request_context deeper;
     if (descend_array_field(ctx, &deeper, c)) {
       render_float_object(&deeper, "axis value", &t->data[ntc->row][c]);
@@ -914,7 +1099,7 @@ static void render_table_1d_data_description(
 static void render_table_1d_data(struct console_request_context *ctx,
                                  void *_t) {
   struct table_1d *t = _t;
-  for (int i = 0; i < t->cols.num; i++) {
+  for (unsigned i = 0; i < t->cols.num; i++) {
     struct console_request_context deeper;
     if (descend_array_field(ctx, &deeper, i)) {
       render_float_object(&deeper, "axis value", &t->data[i]);
@@ -925,7 +1110,7 @@ static void render_table_1d_data(struct console_request_context *ctx,
 static void render_table_2d_data(struct console_request_context *ctx,
                                  void *_t) {
   struct table_2d *t = _t;
-  for (int r = 0; r < t->rows.num; r++) {
+  for (unsigned r = 0; r < t->rows.num; r++) {
     struct console_request_context deeper;
     if (descend_array_field(ctx, &deeper, r)) {
       struct nested_table_context ntc = { .t = t, .row = r };
@@ -972,48 +1157,48 @@ static void render_table_1d_object(struct console_request_context *ctx,
 }
 
 static void render_tables(struct console_request_context *ctx, void *ptr) {
-  (void)ptr;
-  render_map_map_field(ctx, "ve", render_table_2d_object, config.ve);
+  struct config *config = (struct config *)ptr;
+  render_map_map_field(ctx, "ve", render_table_2d_object, &config->ve);
   render_map_map_field(
-    ctx, "lambda", render_table_2d_object, config.commanded_lambda);
-  render_map_map_field(ctx, "dwell", render_table_1d_object, config.dwell);
-  render_map_map_field(ctx, "timing", render_table_2d_object, config.timing);
+    ctx, "lambda", render_table_2d_object, &config->commanded_lambda);
+  render_map_map_field(ctx, "dwell", render_table_1d_object, &config->dwell);
+  render_map_map_field(ctx, "timing", render_table_2d_object, &config->timing);
   render_map_map_field(ctx,
                        "injector_dead_time",
                        render_table_1d_object,
-                       config.injector_deadtime_offset);
+                       &config->injector_deadtime_offset);
   render_map_map_field(ctx,
                        "injector_pw_correction",
                        render_table_1d_object,
-                       config.injector_pw_correction);
+                       &config->injector_pw_correction);
   render_map_map_field(
-    ctx, "temp-enrich", render_table_2d_object, config.engine_temp_enrich);
+    ctx, "temp-enrich", render_table_2d_object, &config->engine_temp_enrich);
   render_map_map_field(
-    ctx, "tipin-amount", render_table_2d_object, config.tipin_enrich_amount);
+    ctx, "tipin-amount", render_table_2d_object, &config->tipin_enrich_amount);
   render_map_map_field(
-    ctx, "tipin-time", render_table_1d_object, config.tipin_enrich_duration);
+    ctx, "tipin-time", render_table_1d_object, &config->tipin_enrich_duration);
 }
 
 static void render_decoder(struct console_request_context *ctx, void *ptr) {
-  (void)ptr;
+  struct config *conf = (struct config *)ptr;
 
   render_float_map_field(
-    ctx, "offset", "offset past TDC for sync pulse", &config.decoder.offset);
+    ctx, "offset", "offset past TDC for sync pulse", &conf->decoder.offset);
 
   render_float_map_field(ctx,
                          "max-variance",
                          "inter-tooth max time variation (0-1)",
-                         &config.decoder.trigger_max_rpm_change);
+                         &conf->decoder.trigger_max_rpm_change);
 
   render_uint32_map_field(
-    ctx, "min-rpm", "minimum RPM for sync", &config.decoder.trigger_min_rpm);
+    ctx, "min-rpm", "minimum RPM for sync", &conf->decoder.trigger_min_rpm);
 
   render_uint32_map_field(
-    ctx, "rpm-limit-stop", "ignition and fuel cut rpm limit", &config.rpm_stop);
+    ctx, "rpm-limit-stop", "ignition and fuel cut rpm limit", &conf->rpm_stop);
   render_uint32_map_field(
-    ctx, "rpm-limit-start", "rpm limit lower hysteresis", &config.rpm_start);
+    ctx, "rpm-limit-start", "rpm limit lower hysteresis", &conf->rpm_start);
 
-  int type = config.decoder.type;
+  int type = conf->decoder.type;
   render_enum_map_field(ctx,
                         "trigger-type",
                         "Primary trigger decoder method",
@@ -1024,27 +1209,27 @@ static void render_decoder(struct console_request_context *ctx, void *ptr) {
                           { TRIGGER_MISSING_CAMSYNC, "missing+camsync" },
                           { 0, NULL } },
                         &type);
-  config.decoder.type = type;
+  conf->decoder.type = type;
 
   render_uint32_map_field(ctx,
                           "num-triggers",
                           "number of teeth on primary wheel",
-                          &config.decoder.num_triggers);
+                          &conf->decoder.num_triggers);
   render_float_map_field(ctx,
                          "degrees-per-trigger",
                          "angle a single tooth represents",
-                         &config.decoder.degrees_per_trigger);
+                         &conf->decoder.degrees_per_trigger);
 
   render_uint32_map_field(
     ctx,
     "min-triggers-rpm",
     "minimum teeth required to generate rpm for even tooth wheel",
-    &config.decoder.required_triggers_rpm);
+    &conf->decoder.required_triggers_rpm);
 
   render_uint32_map_field(ctx,
                           "rpm-window-size",
                           "rpm average window for even tooth wheel",
-                          &config.decoder.rpm_window_size);
+                          &conf->decoder.rpm_window_size);
 }
 
 static void output_console_renderer(struct console_request_context *ctx,
@@ -1054,7 +1239,7 @@ static void output_console_renderer(struct console_request_context *ctx,
     return;
   }
 
-  struct output_event *ev = ptr;
+  struct output_event_config *ev = ptr;
   render_uint32_map_field(ctx, "pin", "pin", &ev->pin);
   render_bool_map_field(ctx, "inverted", "inverted", &ev->inverted);
   render_float_map_field(
@@ -1074,36 +1259,9 @@ static void output_console_renderer(struct console_request_context *ctx,
 }
 
 static void render_outputs(struct console_request_context *ctx, void *ptr) {
-  (void)ptr;
+  struct output_event_config *outputs = (struct output_event_config *)ptr;
   for (int i = 0; i < MAX_EVENTS; i++) {
-    render_map_array_field(ctx, i, output_console_renderer, &config.events[i]);
-  }
-}
-
-static const char *sensor_name_from_type(sensor_input_type t) {
-  switch (t) {
-  case SENSOR_MAP:
-    return "map";
-  case SENSOR_IAT:
-    return "iat";
-  case SENSOR_CLT:
-    return "clt";
-  case SENSOR_BRV:
-    return "brv";
-  case SENSOR_TPS:
-    return "tps";
-  case SENSOR_AAP:
-    return "aap";
-  case SENSOR_FRT:
-    return "frt";
-  case SENSOR_EGO:
-    return "ego";
-  case SENSOR_FRP:
-    return "frp";
-  case SENSOR_ETH:
-    return "eth";
-  default:
-    return "invalid";
+    render_map_array_field(ctx, i, output_console_renderer, &outputs[i]);
   }
 }
 
@@ -1115,7 +1273,7 @@ static void render_sensor_object(struct console_request_context *ctx,
     return;
   }
 
-  struct sensor_input *input = ptr;
+  struct sensor_config *input = ptr;
 
   render_uint32_map_field(ctx, "pin", "adc sensor input pin", &input->pin);
   render_float_map_field(
@@ -1156,7 +1314,7 @@ static void render_sensor_object(struct console_request_context *ctx,
   render_float_map_field(
     ctx, "raw-max", "max raw input for linear mapping", &input->raw_max);
   render_float_map_field(
-    ctx, "fixed-value", "value to hold for const input", &input->value);
+    ctx, "fixed-value", "value to hold for const input", &input->const_value);
   render_float_map_field(ctx, "therm-a", "thermistor A", &input->therm.a);
   render_float_map_field(ctx, "therm-b", "thermistor B", &input->therm.b);
   render_float_map_field(ctx, "therm-c", "thermistor C", &input->therm.c);
@@ -1194,131 +1352,127 @@ static void render_sensor_object(struct console_request_context *ctx,
 static void render_knock_object(struct console_request_context *ctx,
                                 void *ptr) {
 
-  struct knock_input *input = ptr;
+  struct knock_sensor_config *input = ptr;
 
   render_float_map_field(
     ctx, "frequency", "knock filter center frequency (Hz)", &input->frequency);
   render_float_map_field(
     ctx, "threshold", "input level indicating knock", &input->threshold);
-
-  if (ctx->type == CONSOLE_SET) {
-    /* Reconfigure knock */
-    knock_configure(&config.knock_inputs[0]);
-    knock_configure(&config.knock_inputs[1]);
-  }
 }
 
 static void render_sensors(struct console_request_context *ctx, void *ptr) {
-  (void)ptr;
-  for (sensor_input_type i = 0; i < NUM_SENSORS; i++) {
-    render_map_map_field(
-      ctx, sensor_name_from_type(i), render_sensor_object, &config.sensors[i]);
-  }
-  render_map_map_field(
-    ctx, "knock1", render_knock_object, &config.knock_inputs[0]);
-  render_map_map_field(
-    ctx, "knock2", render_knock_object, &config.knock_inputs[1]);
+  struct sensor_configs *sensors = (struct sensor_configs *)ptr;
+  render_map_map_field(ctx, "map", render_sensor_object, &sensors->MAP);
+  render_map_map_field(ctx, "iat", render_sensor_object, &sensors->IAT);
+  render_map_map_field(ctx, "clt", render_sensor_object, &sensors->CLT);
+  render_map_map_field(ctx, "brv", render_sensor_object, &sensors->BRV);
+  render_map_map_field(ctx, "tps", render_sensor_object, &sensors->TPS);
+  render_map_map_field(ctx, "aap", render_sensor_object, &sensors->AAP);
+  render_map_map_field(ctx, "frt", render_sensor_object, &sensors->FRT);
+  render_map_map_field(ctx, "ego", render_sensor_object, &sensors->EGO);
+  render_map_map_field(ctx, "frp", render_sensor_object, &sensors->FRP);
+  render_map_map_field(ctx, "eth", render_sensor_object, &sensors->ETH);
+  render_map_map_field(ctx, "knock1", render_knock_object, &sensors->KNK1);
+  render_map_map_field(ctx, "knock2", render_knock_object, &sensors->KNK2);
 }
 
 static void render_crank_enrich(struct console_request_context *ctx,
                                 void *ptr) {
-  (void)ptr;
+  struct fueling_config *config = (struct fueling_config *)ptr;
   render_float_map_field(ctx,
                          "crank-rpm",
                          "Upper RPM limit for crank enrich",
-                         &config.fueling.crank_enrich_config.crank_rpm);
-  render_float_map_field(
-    ctx,
-    "crank-temp",
-    "Upper temperature (C) for crank enrich",
-    &config.fueling.crank_enrich_config.cutoff_temperature);
+                         &config->crank_enrich_config.crank_rpm);
+  render_float_map_field(ctx,
+                         "crank-temp",
+                         "Upper temperature (C) for crank enrich",
+                         &config->crank_enrich_config.cutoff_temperature);
   render_float_map_field(ctx,
                          "enrich-amt",
                          "crank enrichment multiplier",
-                         &config.fueling.crank_enrich_config.enrich_amt);
+                         &config->crank_enrich_config.enrich_amt);
 }
 
 static void render_fueling(struct console_request_context *ctx, void *ptr) {
-  (void)ptr;
+  struct fueling_config *fueling = (struct fueling_config *)ptr;
   render_float_map_field(ctx,
                          "injector-cc",
                          "fuel injector size cc/min",
-                         &config.fueling.injector_cc_per_minute);
+                         &fueling->injector_cc_per_minute);
   render_float_map_field(
-    ctx, "cylinder-cc", "cylinder size in cc", &config.fueling.cylinder_cc);
+    ctx, "cylinder-cc", "cylinder size in cc", &fueling->cylinder_cc);
   render_float_map_field(ctx,
                          "fuel-stoich-ratio",
                          "stoich ratio of fuel to air",
-                         &config.fueling.fuel_stoich_ratio);
+                         &fueling->fuel_stoich_ratio);
   render_uint32_map_field(ctx,
                           "injections-per-cycle",
                           "Number of times injectors fire per cycle (batching)",
-                          &config.fueling.injections_per_cycle);
+                          &fueling->injections_per_cycle);
   render_uint32_map_field(ctx,
                           "fuel-pump-pin",
                           "GPIO pin for fuel pump control",
-                          &config.fueling.fuel_pump_pin);
+                          &fueling->fuel_pump_pin);
   render_float_map_field(ctx,
                          "fuel-density",
                          "Fuel density (g/cc) at 15C",
-                         &config.fueling.density_of_fuel);
-  render_map_map_field(ctx, "crank-enrich", render_crank_enrich, NULL);
+                         &fueling->density_of_fuel);
+  render_map_map_field(ctx, "crank-enrich", render_crank_enrich, fueling);
 }
 
 static void render_ignition(struct console_request_context *ctx, void *ptr) {
-  (void)ptr;
+  struct ignition_config *ignition = (struct ignition_config *)ptr;
   render_uint32_map_field(ctx,
                           "min-fire-time",
                           "minimum wait period for coil output (uS)",
-                          &config.ignition.min_fire_time_us);
-  render_float_map_field(ctx,
-                         "dwell-time",
-                         "dwell time for fixed-duty (uS)",
-                         &config.ignition.dwell_us);
+                          &ignition->min_fire_time_us);
+  render_float_map_field(
+    ctx, "dwell-time", "dwell time for fixed-duty (uS)", &ignition->dwell_us);
 }
 
 static void render_boost_control(struct console_request_context *ctx,
                                  void *ptr) {
-  (void)ptr;
+  struct boost_control_config *boost_control =
+    (struct boost_control_config *)ptr;
   render_uint32_map_field(
-    ctx, "pin", "GPIO pin for boost control output", &config.boost_control.pin);
+    ctx, "pin", "GPIO pin for boost control output", &boost_control->pin);
   render_float_map_field(ctx,
                          "enable-threshold",
                          "MAP low threshold to enable boost control",
-                         &config.boost_control.enable_threshold_kpa);
+                         &boost_control->enable_threshold_kpa);
   render_float_map_field(
     ctx,
     "control-threshold",
     "MAP low threshold to keep valve open if TPS setting is met",
-    &config.boost_control.control_threshold_kpa);
+    &boost_control->control_threshold_kpa);
   render_float_map_field(ctx,
                          "control-threshold-tps",
                          "TPS threshold for valve-wide-open mode",
-                         &config.boost_control.control_threshold_tps);
+                         &boost_control->control_threshold_tps);
   render_float_map_field(ctx,
                          "overboost",
                          "High threshold for boost cut (kpa)",
-                         &config.boost_control.overboost);
+                         &boost_control->overboost);
   render_map_map_field(
-    ctx, "pwm", render_table_1d_object, config.boost_control.pwm_duty_vs_rpm);
+    ctx, "pwm", render_table_1d_object, &boost_control->pwm_duty_vs_rpm);
 }
 
 static void render_cel(struct console_request_context *ctx, void *ptr) {
-  (void)ptr;
-  render_uint32_map_field(
-    ctx, "pin", "GPIO pin for CEL output", &config.cel.pin);
+  struct cel_config *cel = (struct cel_config *)ptr;
+  render_uint32_map_field(ctx, "pin", "GPIO pin for CEL output", &cel->pin);
   render_float_map_field(ctx,
                          "lean-boost-kpa",
                          "Boost low threshold for lean boost warning",
-                         &config.cel.lean_boost_kpa);
+                         &cel->lean_boost_kpa);
   render_float_map_field(ctx,
                          "lean-boost-ego",
                          "EGO high threshold for lean boost warning",
-                         &config.cel.lean_boost_ego);
+                         &cel->lean_boost_ego);
 }
 
-static void render_freq_object(struct console_request_context *ctx, void *ptr) {
-  struct freq_input *f = ptr;
+static void render_trigger_input_object(struct console_request_context *ctx,
+                                        void *ptr) {
+  struct trigger_input *f = ptr;
 
   int edge = f->edge;
   int type = f->type;
@@ -1336,18 +1490,23 @@ static void render_freq_object(struct console_request_context *ctx, void *ptr) {
     ctx,
     "type",
     "input interpretation",
-    (const struct console_enum_mapping[]){
-      { NONE, "none" }, { FREQ, "freq" }, { TRIGGER, "trigger" }, { 0, NULL } },
+    (const struct console_enum_mapping[]){ { NONE, "none" },
+                                           { FREQ, "freq" },
+                                           { TRIGGER, "trigger" },
+                                           { SYNC, "sync" },
+                                           { 0, NULL } },
     &type);
 
   f->edge = edge;
   f->type = type;
 }
 
-static void render_freq_list(struct console_request_context *ctx, void *ptr) {
-  (void)ptr;
+static void render_trigger_list(struct console_request_context *ctx,
+                                void *ptr) {
+  struct trigger_input *trigger_inputs = (struct trigger_input *)ptr;
   for (int i = 0; i < 4; i++) {
-    render_map_array_field(ctx, i, render_freq_object, &config.freq_inputs[i]);
+    render_map_array_field(
+      ctx, i, render_trigger_input_object, &trigger_inputs[i]);
   }
 }
 
@@ -1399,31 +1558,35 @@ static void render_info(struct console_request_context *ctx, void *ptr) {
 
 static void console_toplevel_request(struct console_request_context *ctx,
                                      void *ptr) {
-  (void)ptr;
-  render_map_map_field(ctx, "decoder", render_decoder, NULL);
-  render_map_map_field(ctx, "sensors", render_sensors, NULL);
-  render_array_map_field(ctx, "outputs", render_outputs, NULL);
-  render_map_map_field(ctx, "fueling", render_fueling, NULL);
-  render_map_map_field(ctx, "ignition", render_ignition, NULL);
-  render_map_map_field(ctx, "tables", render_tables, NULL);
-  render_map_map_field(ctx, "boost-control", render_boost_control, NULL);
-  render_map_map_field(ctx, "check-engine-light", render_cel, NULL);
-  render_array_map_field(ctx, "freq", render_freq_list, NULL);
+  struct config *config = ptr;
+
+  render_map_map_field(ctx, "decoder", render_decoder, config);
+  render_map_map_field(ctx, "sensors", render_sensors, &config->sensors);
+  render_array_map_field(ctx, "outputs", render_outputs, &config->outputs);
+  render_map_map_field(ctx, "fueling", render_fueling, &config->fueling);
+  render_map_map_field(ctx, "ignition", render_ignition, &config->ignition);
+  render_map_map_field(ctx, "tables", render_tables, config);
+  render_map_map_field(
+    ctx, "boost-control", render_boost_control, &config->boost_control);
+  render_map_map_field(ctx, "check-engine-light", render_cel, &config->cel);
+  render_array_map_field(
+    ctx, "trigger", render_trigger_list, &config->trigger_inputs);
   render_map_map_field(ctx, "test", render_test, NULL);
   render_map_map_field(ctx, "info", render_info, NULL);
 }
 
 static void console_toplevel_types(struct console_request_context *ctx,
                                    void *ptr) {
-  (void)ptr;
-  render_map_map_field(ctx, "sensor", render_sensor_object, &config.sensors[0]);
+  struct config *config = ptr;
   render_map_map_field(
-    ctx, "output", output_console_renderer, &config.events[1]);
-  render_map_map_field(ctx, "table1d", render_table_1d_object, config.ve);
-  render_map_map_field(ctx, "table2d", render_table_2d_object, config.ve);
+    ctx, "sensor", render_sensor_object, &config->sensors.IAT);
+  render_map_map_field(
+    ctx, "output", output_console_renderer, &config->outputs[0]);
+  render_map_map_field(ctx, "table1d", render_table_1d_object, &config->dwell);
+  render_map_map_field(ctx, "table2d", render_table_2d_object, &config->ve);
 }
 
-static void console_request_structure(CborEncoder *enc) {
+static void console_request_structure(CborEncoder *enc, struct config *config) {
 
   struct console_request_context structure_ctx = {
     .type = CONSOLE_STRUCTURE,
@@ -1431,19 +1594,21 @@ static void console_request_structure(CborEncoder *enc) {
     .is_filtered = false,
   };
   render_map_map_field(
-    &structure_ctx, "response", console_toplevel_request, NULL);
+    &structure_ctx, "response", console_toplevel_request, config);
 
   struct console_request_context type_ctx = {
     .type = CONSOLE_DESCRIBE,
     .response = enc,
     .is_filtered = false,
   };
-  render_map_map_field(&type_ctx, "types", console_toplevel_types, NULL);
+  render_map_map_field(&type_ctx, "types", console_toplevel_types, config);
 
   report_success(enc, true);
 }
 
-static void console_request_get(CborEncoder *enc, CborValue *pathlist) {
+static void console_request_get(CborEncoder *enc,
+                                CborValue *pathlist,
+                                struct config *config) {
   struct console_request_context ctx = {
     .type = CONSOLE_GET,
     .response = enc,
@@ -1451,13 +1616,14 @@ static void console_request_get(CborEncoder *enc, CborValue *pathlist) {
     .is_filtered = !cbor_value_at_end(pathlist),
   };
   cbor_encode_text_stringz(enc, "response");
-  render_map_object(&ctx, console_toplevel_request, NULL);
+  render_map_object(&ctx, console_toplevel_request, config);
   report_success(enc, true);
 }
 
 static void console_request_set(CborEncoder *enc,
                                 CborValue *pathlist,
-                                CborValue *value) {
+                                CborValue *value,
+                                struct config *config) {
   struct console_request_context ctx = {
     .type = CONSOLE_SET,
     .response = enc,
@@ -1466,7 +1632,7 @@ static void console_request_set(CborEncoder *enc,
     .value = *value,
   };
   cbor_encode_text_stringz(enc, "response");
-  render_map_object(&ctx, console_toplevel_request, NULL);
+  render_map_object(&ctx, console_toplevel_request, config);
   report_success(enc, true);
 }
 
@@ -1480,7 +1646,9 @@ static void console_request_bootloader(CborEncoder *response) {
   platform_reset_into_bootloader();
 }
 
-static void console_process_request(CborValue *request, CborEncoder *response) {
+static void console_process_request(CborValue *request,
+                                    CborEncoder *response,
+                                    struct config *config) {
   cbor_encode_text_stringz(response, "type");
   cbor_encode_text_stringz(response, "response");
 
@@ -1512,7 +1680,7 @@ static void console_process_request(CborValue *request, CborEncoder *response) {
 
   cbor_value_text_string_equals(&request_method_value, "structure", &match);
   if (match) {
-    console_request_structure(response);
+    console_request_structure(response, config);
     return;
   }
 
@@ -1539,7 +1707,7 @@ static void console_process_request(CborValue *request, CborEncoder *response) {
 
   cbor_value_text_string_equals(&request_method_value, "get", &match);
   if (match) {
-    console_request_get(response, &pathlist);
+    console_request_get(response, &pathlist, config);
     return;
   }
 
@@ -1552,20 +1720,22 @@ static void console_process_request(CborValue *request, CborEncoder *response) {
 
   cbor_value_text_string_equals(&request_method_value, "set", &match);
   if (match) {
-    console_request_set(response, &pathlist, &set_value);
+    console_request_set(response, &pathlist, &set_value, config);
     return;
   }
 }
 
-static void console_process_request_raw(int len) {
+static void console_process_request_raw(uint8_t respbuffer[],
+                                        size_t resplen,
+                                        int len,
+                                        struct config *config) {
   CborParser parser;
   CborValue value;
   CborError err;
 
-  uint8_t response[16384];
   CborEncoder encoder;
 
-  cbor_encoder_init(&encoder, response, sizeof(response), 0);
+  cbor_encoder_init(&encoder, respbuffer, resplen, 0);
 
   err = cbor_parser_init(rx_buffer, len, 0, &parser, &value);
   if (err) {
@@ -1578,25 +1748,24 @@ static void console_process_request_raw(int len) {
     return;
   }
 
-  console_process_request(&value, &response_map);
+  console_process_request(&value, &response_map, config);
 
   if (cbor_encoder_close_container(&encoder, &response_map)) {
     return;
   }
 
-  size_t write_size = cbor_encoder_get_buffer_size(&encoder, response);
-  console_write_full(response, write_size);
+  size_t write_size = cbor_encoder_get_buffer_size(&encoder, respbuffer);
+  console_write_full(respbuffer, write_size);
 }
 
-void console_process() {
+void console_process(struct config *config, timeval_t now) {
   static timeval_t last_desc_time = 0;
-  static timeval_t last_feed_time = 0;
-  uint8_t txbuffer[16384];
+  static uint8_t txbuffer[16384];
 
   size_t read_size;
   if ((read_size = console_try_read())) {
     /* Parse a request from the client */
-    console_process_request_raw(read_size);
+    console_process_request_raw(txbuffer, sizeof(txbuffer), read_size, config);
     console_shift_rx_buffer(read_size);
   }
 
@@ -1612,25 +1781,24 @@ void console_process() {
       txsize += write_size;
       txptr += write_size;
       ev = get_logged_event();
-    } while(ev.type != EVENT_NONE);
+    } while (ev.type != EVENT_NONE);
 
     console_write_full(txbuffer, txsize);
   }
 
-  /* Try to maintain:
-   * - 100 Hz description messages
-   * - 10 kHz feed messages
-   */
-
-  timeval_t now = current_time();
+  /* Try to ensure we send a description message at 10 hz */
   if (time_diff(now, last_desc_time) > time_from_us(100000)) {
     size_t write_size = console_feed_line_keys(txbuffer, sizeof(txbuffer));
     console_write_full(txbuffer, write_size);
     last_desc_time = now;
-  } else if (time_diff(now, last_feed_time) > time_from_us(100)) {
-    size_t write_size = console_feed_line(txbuffer, sizeof(txbuffer));
-    console_write_full(txbuffer, write_size);
-    last_feed_time = now;
+  } else {
+    int idx = spsc_next(&engine_update_queue);
+    if (idx >= 0) {
+      struct console_feed_update *update = &engine_update_msgs[idx];
+      size_t write_size = console_feed_line(update, txbuffer, sizeof(txbuffer));
+      spsc_release(&engine_update_queue);
+      console_write_full(txbuffer, write_size);
+    }
   }
 }
 
@@ -1754,7 +1922,7 @@ END_TEST
 START_TEST(test_smoke_console_request_structure) {
   CborEncoder structure_enc;
   cbor_encoder_create_map(&test_ctx.top_encoder, &structure_enc, 1);
-  console_request_structure(&structure_enc);
+  console_request_structure(&structure_enc, &default_config);
   cbor_encoder_close_container(&test_ctx.top_encoder, &structure_enc);
   finish_writing();
 
@@ -1794,7 +1962,7 @@ START_TEST(test_smoke_console_request_get_full) {
 
   CborEncoder get_enc;
   cbor_encoder_create_map(&test_ctx.top_encoder, &get_enc, 1);
-  console_request_get(&get_enc, &test_ctx.path_value);
+  console_request_get(&get_enc, &test_ctx.path_value, &default_config);
   cbor_encoder_close_container(&test_ctx.top_encoder, &get_enc);
   finish_writing();
 

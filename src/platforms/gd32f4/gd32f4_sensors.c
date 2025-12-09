@@ -1,5 +1,7 @@
 #include "config.h"
+#include "decoder.h"
 #include "sensors.h"
+#include "viaems.h"
 
 #include "gd32f4xx.h"
 
@@ -12,6 +14,8 @@
 #else
 #error No ADC specified!
 #endif
+
+extern struct viaems gd32f4_viaems;
 
 static void setup_timer0(void) {
   gpio_mode_set(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO_PIN_8);
@@ -106,8 +110,10 @@ void DMA1_Channel0_IRQHandler(void) {
       float raw_value = (float)(5 * adc_value) / 4096.0f;
       update.values[i] = raw_value;
     }
-    sensor_update_adc(&update);
-    process_knock_inputs(sequence);
+    struct engine_position pos =
+      decoder_get_engine_position(&gd32f4_viaems.decoder);
+    sensor_update_adc(&gd32f4_viaems.sensors, &pos, &update);
+    process_knock_inputs(&gd32f4_viaems.sensors, sequence);
   }
 }
 
@@ -148,20 +154,22 @@ static void setup_freq_pw_input(void) {
     TIMER_CHCTL0_CH0CAPFLT | 0x2 | TIMER_CHCTL0_CH1CAPFLT | (0x01 << 8);
   TIMER_CHCTL2(TIMER8) = TIMER_CHCTL2_CH0EN | TIMER_CHCTL2_CH1EN;
 
-  bool active_high = (config.freq_inputs[3].edge == RISING_EDGE);
+  bool active_high = (default_config.trigger_inputs[3].edge == RISING_EDGE);
   if (active_high) {
     TIMER_CHCTL2(TIMER8) |= TIMER_CHCTL2_CH0P; /* CH0 captures falling edge */
   } else {
     TIMER_CHCTL2(TIMER8) |= TIMER_CHCTL2_CH1P; /* CH1 captures falling edge */
   }
 
-  nvic_irq_enable(TIMER0_BRK_TIMER8_IRQn, 14, 0);
+  nvic_irq_enable(TIMER0_BRK_TIMER8_IRQn, 3, 0);
   TIMER_CTL0(TIMER8) |= TIMER_CTL0_CEN;
 
   DBG_CTL2 |= DBG_CTL2_TIMER8_HOLD;
 }
 
 void TIMER0_BRK_TIMER8_IRQHandler(void) {
+  struct engine_position pos =
+    decoder_get_engine_position(&gd32f4_viaems.decoder);
   if (TIMER_INTF(TIMER8) & TIMER_INTF_CH1IF) {
     uint32_t pulsewidth = TIMER_CH0CV(TIMER8);
     uint32_t period = TIMER_CH1CV(TIMER8);
@@ -173,7 +181,7 @@ void TIMER0_BRK_TIMER8_IRQHandler(void) {
       .frequency = valid ? (65536.0f / (float)period) : 0,
       .pulsewidth = (float)pulsewidth / 65536.0f,
     };
-    sensor_update_freq(&update);
+    sensor_update_freq(&gd32f4_viaems.sensors, &pos, &update);
   }
 
   if (TIMER_INTF(TIMER8) & TIMER_INTF_UPIF) {
@@ -183,7 +191,7 @@ void TIMER0_BRK_TIMER8_IRQHandler(void) {
       .valid = false,
       .pin = 3,
     };
-    sensor_update_freq(&update);
+    sensor_update_freq(&gd32f4_viaems.sensors, &pos, &update);
   }
 }
 
@@ -194,6 +202,6 @@ void gd32f4xx_configure_adc(void) {
   setup_timer0();
   setup_freq_pw_input();
 
-  knock_configure(&config.knock_inputs[0]);
-  knock_configure(&config.knock_inputs[1]);
+  knock_configure(&gd32f4_viaems.sensors.KNK1);
+  knock_configure(&gd32f4_viaems.sensors.KNK2);
 }

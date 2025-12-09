@@ -25,11 +25,13 @@ struct table_2d {
   float data[MAX_AXIS_SIZE][MAX_AXIS_SIZE];
 };
 
-float interpolate_table_oneaxis(struct table_1d *, float column);
-float interpolate_table_twoaxis(struct table_2d *, float row, float column);
+float interpolate_table_oneaxis(const struct table_1d *, float column);
+float interpolate_table_twoaxis(const struct table_2d *,
+                                float row,
+                                float column);
 
-int table_valid_oneaxis(struct table_1d *);
-int table_valid_twoaxis(struct table_2d *);
+int table_valid_oneaxis(const struct table_1d *);
+int table_valid_twoaxis(const struct table_2d *);
 
 #ifdef UNITTEST
 #include <check.h>
