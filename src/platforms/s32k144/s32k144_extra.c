@@ -52,13 +52,6 @@ void platform_benchmark_init(void) { }
 void set_gpio(int output, char v) { }
 void set_pwm(int output, float v) { }
 
-size_t console_read(void *buf, size_t max) {
-  return 0;
-}
-size_t console_write(const void *buf, size_t count) {
-  return 0;
-}
-
 void platform_save_config(void) { }
 
 void platform_reset_into_bootloader(void) { }
