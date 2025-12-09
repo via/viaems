@@ -151,7 +151,7 @@ def log_from_target_messages(msgs: List[Dict]) -> List[TargetEvent]:
         if event_seq is not None:
             if msg['seq'] != event_seq + 1:
                 print(event_seq, " ", msg)
-                raise ValueError("Skipped target event sequence number")
+                raise ValueError("Skipped target event sequence number: " + str(msg))
         event_seq = msg['seq']
 
     result : List[TargetEvent] = []

@@ -4,254 +4,315 @@
 #include "decoder.h"
 #include "platform.h"
 #include "sensors.h"
+#include "util.h"
 
-static float sensor_convert_linear(const struct sensor_input *in) {
-  if (in->raw_max == in->raw_min) {
+float sensor_convert_linear(const struct sensor_config *conf, const float raw) {
+  if (conf->raw_max == conf->raw_min) {
     return 0.0f;
   }
-  float partial = (in->raw_value - in->raw_min) / (in->raw_max - in->raw_min);
-  return in->range.min + partial * (in->range.max - in->range.min);
+  float partial = (raw - conf->raw_min) / (conf->raw_max - conf->raw_min);
+  return conf->range.min + partial * (conf->range.max - conf->range.min);
 }
 
-static int current_angle_in_window(const struct sensor_input *in,
-                                   degrees_t angle) {
-  degrees_t cur_angle = clamp_angle(angle - in->window.offset, 720);
-  for (uint32_t i = 0; i < 720; i += in->window.total_width) {
-    if ((cur_angle >= i) && (cur_angle < i + in->window.capture_width)) {
-      return 1;
+static bool current_angle_in_window(const struct sensor_config *conf,
+                                    degrees_t angle) {
+  degrees_t cur_angle = clamp_angle(angle - conf->window.offset, 720);
+  for (uint32_t i = 0; i < 720; i += conf->window.total_width) {
+    if ((cur_angle >= i) && (cur_angle < i + conf->window.capture_width)) {
+      return true;
     }
   }
-  return 0;
+  return false;
 }
 
-static float sensor_convert_linear_windowed(struct sensor_input *in,
-                                            degrees_t angle) {
-  if (!config.decoder.rpm) {
-    /* If engine not turning, don't window */
-    return sensor_convert_linear(in);
-  }
-
-  float result = in->value;
+static float sensor_convert_linear_windowed(struct sensor_state *state,
+                                            degrees_t angle,
+                                            float raw) {
+  float result = state->output.value;
 
   /* If not in a window, or we have exceeded a window size */
-  if (!current_angle_in_window(in, angle) ||
-      clamp_angle(angle - in->window.collection_start_angle, 720) >=
-        in->window.capture_width) {
+  if (!current_angle_in_window(state->config, angle) ||
+      clamp_angle(angle - state->window_start_angle, 720) >=
+        state->config->window.capture_width) {
 
-    if (in->window.collecting && in->window.samples) {
-      in->window.collecting = 0;
-      result = in->window.accumulator / in->window.samples;
+    if (state->window_collecting && state->window_sample_count > 0) {
+      state->window_collecting = false;
+      result = state->window_accumulator / state->window_sample_count;
     }
   }
 
   /* Currently in a window. If we just started collecting, initialize */
-  if (current_angle_in_window(in, angle)) {
-    if (!in->window.collecting) {
+  if (current_angle_in_window(state->config, angle)) {
+    if (!state->window_collecting) {
       /* TODO: change this to current window start, not current angle */
-      in->window.collection_start_angle = angle;
-      in->window.accumulator = 0;
-      in->window.samples = 0;
+      state->window_start_angle = angle;
+      state->window_accumulator = 0;
+      state->window_sample_count = 0;
     }
     /* Accumulate */
-    in->window.collecting = 1;
-    in->window.accumulator += sensor_convert_linear(in);
-    in->window.samples += 1;
+    state->window_collecting = true;
+    state->window_accumulator += sensor_convert_linear(state->config, raw);
+    state->window_sample_count += 1;
   }
 
   /* Return previous processed value */
   return result;
 }
 
-float sensor_convert_thermistor(const struct sensor_input *in) {
-  if (in->raw_value == 0.0f) {
+float sensor_convert_thermistor(const struct sensor_config *conf,
+                                const float raw) {
+  if (raw == 0.0f) {
     return 0.0f;
   }
 
-  const struct thermistor_config *tc = &in->therm;
-  float r = tc->bias / ((in->raw_max / in->raw_value) - 1);
+  const struct thermistor_config *tc = &conf->therm;
+  float r = tc->bias / ((conf->raw_max / raw) - 1);
   float logf_r = logf(r);
   float t = 1 / (tc->a + tc->b * logf_r + tc->c * logf_r * logf_r * logf_r);
 
   return t - 273.15f;
 }
 
-static sensor_fault detect_faults(const struct sensor_input *in) {
-  if (in->fault != FAULT_NONE) {
+static sensor_fault detect_faults(const struct sensor_state *s, float raw) {
+  if (s->output.fault != FAULT_NONE) {
     /* Some faults come from platform code before this point, pass it back */
-    return in->fault;
+    return s->output.fault;
   }
   /* Handle conn and range fault conditions */
-  if ((in->fault_config.max != 0)) {
-    if ((in->fault_config.min > in->raw_value) ||
-        (in->fault_config.max < in->raw_value)) {
+  if ((s->config->fault_config.max != 0)) {
+    if ((s->config->fault_config.min > raw) ||
+        (s->config->fault_config.max < raw)) {
       return FAULT_RANGE;
     }
   }
   return FAULT_NONE;
 }
 
-static float process_derivative(const struct sensor_input *in,
-                                float new_value) {
-  return TICKRATE * (new_value - in->value) /
+static float process_derivative(float previous_value, float new_value) {
+  return TICKRATE * (new_value - previous_value) /
          time_from_us(1000000 / platform_adc_samplerate());
 }
 
-static float process_lag_filter(const struct sensor_input *in,
-                                float new_value) {
-  if (in->lag == 0.0f) {
+static float process_lag_filter(float lag, float old_value, float new_value) {
+  if (lag == 0.0f) {
     return new_value;
   }
-  return ((in->value * in->lag) + (new_value * (100.0f - in->lag))) / 100.0f;
+  return ((old_value * lag) + (new_value * (100.0f - lag))) / 100.0f;
 }
 
-static void sensor_convert(struct sensor_input *in, float raw, timeval_t time) {
-  in->raw_value = raw;
-  in->time = time;
+static void sensor_update_raw(struct sensor_state *s,
+                              const struct engine_position *d,
+                              timeval_t time,
+                              float raw) {
+  const struct sensor_config *conf = s->config;
+  struct sensor_value out;
 
-  float new_value = 0.0f;
-  float new_derivative = 0.0f;
-
-  if (detect_faults(in) != FAULT_NONE) {
-    new_value = in->fault_config.fault_value;
+  if (detect_faults(s, raw) != FAULT_NONE) {
+    out.value = conf->fault_config.fault_value;
+    out.derivative = 0;
   } else {
-
-    switch (in->method) {
+    float new_value = 0.0f;
+    switch (conf->method) {
     case METHOD_LINEAR:
-      new_value = sensor_convert_linear(in);
+      new_value = sensor_convert_linear(conf, raw);
       break;
     case METHOD_LINEAR_WINDOWED:
-      new_value = sensor_convert_linear_windowed(in, current_angle(time));
+      if (d->has_position && (d->rpm > 0)) {
+        new_value =
+          sensor_convert_linear_windowed(s, engine_current_angle(d, time), raw);
+      } else {
+        new_value = sensor_convert_linear(conf, raw);
+      }
       break;
     case METHOD_THERM:
-      new_value = sensor_convert_thermistor(in);
+      new_value = sensor_convert_thermistor(conf, raw);
       break;
     }
 
-    new_value = process_lag_filter(in, new_value);
-    new_derivative = process_derivative(in, new_value);
+    out.value = process_lag_filter(conf->lag, s->output.value, new_value);
+    out.derivative = process_derivative(s->output.value, out.value);
   }
 
-  /* in->value and in->derivative are read by decode/calculation in interrupts,
-   * so these race */
-  disable_interrupts();
-  in->value = new_value;
-  in->derivative = new_derivative;
-  enable_interrupts();
+  s->output = out;
 }
 
-void sensor_update_freq(const struct freq_update *u) {
-  for (int i = 0; i < NUM_SENSORS; ++i) {
-    struct sensor_input *in = &config.sensors[i];
-    if (in->pin != u->pin) {
-      continue;
-    }
-    switch (in->source) {
-    case SENSOR_FREQ:
-      in->fault = u->valid ? FAULT_NONE : FAULT_CONN;
-      sensor_convert(in, u->frequency, u->time);
-      break;
-    case SENSOR_PULSEWIDTH:
-      in->fault = u->valid ? FAULT_NONE : FAULT_CONN;
-      sensor_convert(in, u->pulsewidth, u->time);
-      break;
-    default:
-      continue;
-    }
+static void update_single_freq_sensor(struct sensor_state *s,
+                                      const struct engine_position *p,
+                                      const struct freq_update *u) {
+  if (s->config->pin != u->pin) {
+    return;
+  }
+
+  if (s->config->source == SENSOR_FREQ) {
+    sensor_update_raw(s, p, u->time, u->frequency);
+    s->output.fault = u->valid ? FAULT_NONE : FAULT_CONN;
+  } else if (s->config->source == SENSOR_PULSEWIDTH) {
+    sensor_update_raw(s, p, u->time, u->pulsewidth);
+    s->output.fault = u->valid ? FAULT_NONE : FAULT_CONN;
   }
 }
 
-void sensor_update_adc(const struct adc_update *update) {
-  for (int i = 0; i < NUM_SENSORS; ++i) {
-    struct sensor_input *in = &config.sensors[i];
-    if (in->source != SENSOR_ADC) {
-      continue;
-    }
-    if (in->pin >= MAX_ADC_PINS) {
-      continue;
-    }
-    in->fault = update->valid ? FAULT_NONE : FAULT_CONN;
-    sensor_convert(in, update->values[in->pin], update->time);
-  }
+void sensor_update_freq(struct sensors *s,
+                        const struct engine_position *p,
+                        const struct freq_update *u) {
+  update_single_freq_sensor(&s->MAP, p, u);
+  update_single_freq_sensor(&s->BRV, p, u);
+  update_single_freq_sensor(&s->IAT, p, u);
+  update_single_freq_sensor(&s->CLT, p, u);
+  update_single_freq_sensor(&s->EGO, p, u);
+  update_single_freq_sensor(&s->AAP, p, u);
+  update_single_freq_sensor(&s->TPS, p, u);
+  update_single_freq_sensor(&s->FRT, p, u);
+  update_single_freq_sensor(&s->FRP, p, u);
+  update_single_freq_sensor(&s->ETH, p, u);
 }
 
-uint32_t sensor_fault_status() {
-  uint32_t faults = 0;
-  for (int i = 0; i < NUM_SENSORS; ++i) {
-    if (config.sensors[i].fault != FAULT_NONE) {
-      faults |= (1 << i);
-    }
+static void update_single_adc_sensor(struct sensor_state *s,
+                                     const struct engine_position *p,
+                                     const struct adc_update *u) {
+  if (s->config->source != SENSOR_ADC) {
+    return;
   }
-  return faults;
+  if (s->config->pin >= MAX_ADC_PINS) {
+    return;
+  }
+  s->output.fault = u->valid ? FAULT_NONE : FAULT_CONN;
+  sensor_update_raw(s, p, u->time, u->values[s->config->pin]);
 }
 
-void knock_configure(struct knock_input *knock) {
+void sensor_update_adc(struct sensors *s,
+                       const struct engine_position *p,
+                       const struct adc_update *u) {
+  update_single_adc_sensor(&s->MAP, p, u);
+  update_single_adc_sensor(&s->BRV, p, u);
+  update_single_adc_sensor(&s->IAT, p, u);
+  update_single_adc_sensor(&s->CLT, p, u);
+  update_single_adc_sensor(&s->EGO, p, u);
+  update_single_adc_sensor(&s->AAP, p, u);
+  update_single_adc_sensor(&s->TPS, p, u);
+  update_single_adc_sensor(&s->FRT, p, u);
+  update_single_adc_sensor(&s->FRP, p, u);
+  update_single_adc_sensor(&s->ETH, p, u);
+}
+
+static void update_single_const_sensor(struct sensor_state *s) {
+  if (s->config->source != SENSOR_CONST) {
+    return;
+  }
+  s->output.fault = FAULT_NONE;
+  s->output.value = s->config->const_value;
+}
+
+bool sensor_has_faults(const struct sensor_values *s) {
+  /* For now, only report faults for the sensors we use */
+  return (s->MAP.fault != FAULT_NONE) || (s->BRV.fault != FAULT_NONE) ||
+         (s->IAT.fault != FAULT_NONE) || (s->CLT.fault != FAULT_NONE) ||
+         (s->TPS.fault != FAULT_NONE) || (s->FRT.fault != FAULT_NONE);
+}
+
+void knock_configure(struct knock_sensor *knock) {
   uint32_t samplerate = platform_knock_samplerate();
   float bucketsize = samplerate / 64.0f;
-  uint32_t bucket = (knock->frequency + bucketsize) / bucketsize;
+  uint32_t bucket = (knock->config->frequency + bucketsize) / bucketsize;
 
-  knock->state.width = 64;
-  knock->state.freq = bucket;
-  knock->state.w =
-    2.0f * 3.14159f * (float)knock->state.freq / (float)knock->state.width;
-  knock->state.cr = cosf(knock->state.w);
+  knock->width = 64;
+  knock->freq = bucket;
+  knock->w = 2.0f * 3.14159f * (float)knock->freq / (float)knock->width;
+  knock->cr = cosf(knock->w);
 
-  knock->state.n_samples = 0;
-  knock->state.sprev = 0.0f;
-  knock->state.sprev2 = 0.0f;
+  knock->n_samples = 0;
+  knock->sprev = 0.0f;
+  knock->sprev2 = 0.0f;
 };
 
-static void knock_add_sample(struct knock_input *knock, float sample) {
+static void knock_add_sample(struct knock_sensor *knock, float sample) {
 
-  knock->state.n_samples += 1;
-  float s =
-    sample + knock->state.cr * 2 * knock->state.sprev - knock->state.sprev2;
-  knock->state.sprev2 = knock->state.sprev;
-  knock->state.sprev = s;
+  knock->n_samples += 1;
+  float s = sample + knock->cr * 2 * knock->sprev - knock->sprev2;
+  knock->sprev2 = knock->sprev;
+  knock->sprev = s;
 
-  if (knock->state.n_samples == 64) {
-    knock->value =
-      knock->state.sprev * knock->state.sprev +
-      knock->state.sprev2 * knock->state.sprev2 -
-      knock->state.sprev * knock->state.sprev2 * knock->state.cr * 2;
+  if (knock->n_samples == 64) {
+    knock->value = knock->sprev * knock->sprev + knock->sprev2 * knock->sprev2 -
+                   knock->sprev * knock->sprev2 * knock->cr * 2;
 
-    knock->state.n_samples = 0;
-    knock->state.sprev = 0;
-    knock->state.sprev2 = 0;
+    knock->n_samples = 0;
+    knock->sprev = 0;
+    knock->sprev2 = 0;
   }
 }
 
-void sensor_update_knock(const struct knock_update *update) {
-  struct knock_input *in =
-    (update->pin == 0) ? &config.knock_inputs[0] : &config.knock_inputs[1];
+void sensor_update_knock(struct sensors *s, const struct knock_update *update) {
+  struct knock_sensor *knk = (update->pin == 0) ? &s->KNK1 : &s->KNK2;
 
   for (int i = 0; i < update->n_samples; i++) {
-    knock_add_sample(in, update->samples[i]);
+    knock_add_sample(knk, update->samples[i]);
   }
+}
+
+struct sensor_values sensors_get_values(const struct sensors *s) {
+  return (struct sensor_values){
+    .MAP = s->MAP.output,
+    .BRV = s->BRV.output,
+    .IAT = s->IAT.output,
+    .CLT = s->CLT.output,
+    .EGO = s->EGO.output,
+    .AAP = s->AAP.output,
+    .TPS = s->TPS.output,
+    .FRT = s->FRT.output,
+    .FRP = s->FRP.output,
+    .ETH = s->ETH.output,
+    .KNK1 = s->KNK1.value,
+    .KNK2 = s->KNK2.value,
+  };
+}
+
+void sensors_init(const struct sensor_configs *configs, struct sensors *s) {
+  *s = (struct sensors){
+    .MAP = { .config = &configs->MAP },
+    .BRV = { .config = &configs->BRV },
+    .IAT = { .config = &configs->IAT },
+    .CLT = { .config = &configs->CLT },
+    .EGO = { .config = &configs->EGO },
+    .AAP = { .config = &configs->AAP },
+    .TPS = { .config = &configs->TPS },
+    .FRT = { .config = &configs->FRT },
+    .FRP = { .config = &configs->FRP },
+    .ETH = { .config = &configs->ETH },
+    .KNK1 = { .config = &configs->KNK1 },
+    .KNK2 = { .config = &configs->KNK2 },
+  };
+
+  /* Initialize constant values */
+  update_single_const_sensor(&s->MAP);
+  update_single_const_sensor(&s->BRV);
+  update_single_const_sensor(&s->IAT);
+  update_single_const_sensor(&s->CLT);
+  update_single_const_sensor(&s->EGO);
+  update_single_const_sensor(&s->AAP);
+  update_single_const_sensor(&s->TPS);
+  update_single_const_sensor(&s->FRT);
+  update_single_const_sensor(&s->FRP);
+  update_single_const_sensor(&s->ETH);
 }
 
 #ifdef UNITTEST
 #include <check.h>
 
 START_TEST(check_sensor_convert_linear) {
-  struct sensor_input si = {
+  struct sensor_config conf = {
     .range = { .min = -10.0, .max = 10.0 },
     .raw_max = 4096.0f,
   };
 
-  si.raw_value = 0;
-  ck_assert(sensor_convert_linear(&si) == -10.0);
-
-  si.raw_value = 4096.0;
-  ck_assert(sensor_convert_linear(&si) == 10.0);
-
-  si.raw_value = 2048.0;
-  ck_assert(sensor_convert_linear(&si) == 0.0);
+  ck_assert(sensor_convert_linear(&conf, 0.0f) == -10.0);
+  ck_assert(sensor_convert_linear(&conf, 4096.0f) == 10.0);
+  ck_assert(sensor_convert_linear(&conf, 2048.0f) == 0.0);
 }
 END_TEST
 
 START_TEST(check_sensor_convert_linear_windowed) {
-  struct sensor_input si = {
-    .value = 12.0,
+  struct sensor_config conf = {
     .range = { .min=0, .max=4096.0},
     .raw_max = 4096.0,
     .window = {
@@ -260,33 +321,36 @@ START_TEST(check_sensor_convert_linear_windowed) {
     },
   };
 
-  config.decoder.rpm = 1000;
+  struct sensor_state state = {
+    .config = &conf,
+    .output = {
+      .value = 12.0f, /* "Last" value */
+    },
+  };
 
-  si.raw_value = 2048.0f;
-  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 0), 12.0, 0.01);
+  ck_assert_float_eq_tol(
+    sensor_convert_linear_windowed(&state, 0, 2048.0f), 12.0, 0.01);
 
-  si.raw_value = 2500.0f;
-  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 10), 12.0, 0.01);
+  ck_assert_float_eq_tol(
+    sensor_convert_linear_windowed(&state, 10, 2500.0f), 12.0, 0.01);
 
-  si.raw_value = 2600.0f;
-  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 40), 12.0, 0.01);
+  ck_assert_float_eq_tol(
+    sensor_convert_linear_windowed(&state, 40, 2600.0f), 12.0, 0.01);
 
   /* End of window, should average first three results together */
-  si.raw_value = 2700.0f;
   ck_assert_float_eq_tol(
-    sensor_convert_linear_windowed(&si, 50), 2382.666, 0.1);
+    sensor_convert_linear_windowed(&state, 50, 2700.0f), 2382.666, 0.1);
 
   /* All values in this non-capture window should be ignored */
-  si.raw_value = 2800.0f;
-  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 60), 12, 0.1);
-  si.raw_value = 2800.0f;
-  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 80), 12, 0.1);
+  ck_assert_float_eq_tol(
+    sensor_convert_linear_windowed(&state, 60, 2800.0f), 12, 0.1);
+  ck_assert_float_eq_tol(
+    sensor_convert_linear_windowed(&state, 80, 2800.0f), 12, 0.1);
 }
 END_TEST
 
 START_TEST(check_sensor_convert_linear_windowed_skipped) {
-  struct sensor_input si = {
-    .value = 12.0,
+  struct sensor_config conf = {
     .range = { .min=0, .max=4096.0},
     .raw_max = 4096.0,
     .window = {
@@ -294,40 +358,39 @@ START_TEST(check_sensor_convert_linear_windowed_skipped) {
       .capture_width = 45,
     },
   };
+  struct sensor_state state = {
+    .config = &conf,
+    .output = {
+      .value = 12.0f,
+    },
+  };
 
-  config.decoder.rpm = 1000;
-
-  si.raw_value = 2048;
-  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 0), 12.0, 0.01);
-
-  si.raw_value = 2500;
-  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 10), 12.0, 0.01);
-
-  si.raw_value = 2600;
-  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 40), 12.0, 0.01);
+  ck_assert_float_eq_tol(
+    sensor_convert_linear_windowed(&state, 0, 2048.0f), 12.0, 0.01);
+  ck_assert_float_eq_tol(
+    sensor_convert_linear_windowed(&state, 10, 2500.0f), 12.0, 0.01);
+  ck_assert_float_eq_tol(
+    sensor_convert_linear_windowed(&state, 40, 2600.0f), 12.0, 0.01);
 
   /* Move into next capture window, it should still produce average */
-  si.raw_value = 2700;
   ck_assert_float_eq_tol(
-    sensor_convert_linear_windowed(&si, 100), 2382.666, 0.1);
+    sensor_convert_linear_windowed(&state, 100, 2700.0f), 2382.666, 0.1);
 
   /* Remaining samples in this window should add to average */
-  si.raw_value = 1000;
-  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 120), 12, 0.1);
+  ck_assert_float_eq_tol(
+    sensor_convert_linear_windowed(&state, 120, 1000.0f), 12, 0.1);
 
-  si.raw_value = 1500;
-  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 130), 12, 0.1);
+  ck_assert_float_eq_tol(
+    sensor_convert_linear_windowed(&state, 130, 1500.0f), 12, 0.1);
 
   /* Reaches end of window, should average two prior samples */
-  si.raw_value = 2000;
   ck_assert_float_eq_tol(
-    sensor_convert_linear_windowed(&si, 140), 1733.33, 0.1);
+    sensor_convert_linear_windowed(&state, 140, 2000.0f), 1733.33, 0.1);
 }
 END_TEST
 
 START_TEST(check_sensor_convert_linear_windowed_wide) {
-  struct sensor_input si = {
-    .value = 12.0,
+  struct sensor_config conf = {
     .range = { .min=0, .max=4096.0},
     .raw_max = 4096.0,
     .window = {
@@ -336,43 +399,46 @@ START_TEST(check_sensor_convert_linear_windowed_wide) {
     },
   };
 
-  config.decoder.rpm = 1000;
+  struct sensor_state state = {
+    .config = &conf,
+    .output = {
+      .value = 12.0f,
+    },
+  };
 
-  si.raw_value = 2048;
-  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 0), 12.0, 0.01);
+  ck_assert_float_eq_tol(
+    sensor_convert_linear_windowed(&state, 0, 2048), 12.0, 0.01);
 
-  si.raw_value = 2500;
-  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 45), 12.0, 0.01);
+  ck_assert_float_eq_tol(
+    sensor_convert_linear_windowed(&state, 45, 2500), 12.0, 0.01);
 
-  si.raw_value = 2600;
-  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 89), 12.0, 0.01);
+  ck_assert_float_eq_tol(
+    sensor_convert_linear_windowed(&state, 89, 2600), 12.0, 0.01);
 
   /* Move into next capture window, it should still produce average of all
    * three*/
-  si.raw_value = 2700;
   ck_assert_float_eq_tol(
-    sensor_convert_linear_windowed(&si, 100), 2382.666, 0.1);
+    sensor_convert_linear_windowed(&state, 100, 2700), 2382.666, 0.1);
 
   /* Remaining samples in this window should add to average at end */
-  si.raw_value = 1000;
-  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 120), 12, 0.1);
+  ck_assert_float_eq_tol(
+    sensor_convert_linear_windowed(&state, 120, 1000), 12, 0.1);
 
-  si.raw_value = 1500;
-  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 130), 12, 0.1);
+  ck_assert_float_eq_tol(
+    sensor_convert_linear_windowed(&state, 130, 1500), 12, 0.1);
 
   /* TODO: right now this needs to be capture_width degrees past the first
    * sample in the last window, which is not ideal. We should just treat all
    * samples in the window as acceptable */
+
   /* Reaches end of window, should average all three prior samples */
-  si.raw_value = 2000;
   ck_assert_float_eq_tol(
-    sensor_convert_linear_windowed(&si, 210), 1733.33, 0.1);
+    sensor_convert_linear_windowed(&state, 210, 2000), 1733.33, 0.1);
 }
 END_TEST
 
 START_TEST(check_sensor_convert_linear_windowed_offset) {
-  struct sensor_input si = {
-    .value = 12.0,
+  struct sensor_config conf = {
     .range = { .min=0, .max=4096.0},
     .raw_max = 4096.0,
     .window = {
@@ -381,35 +447,39 @@ START_TEST(check_sensor_convert_linear_windowed_offset) {
       .offset = 45,
     },
   };
-
-  config.decoder.rpm = 1000;
+  struct sensor_state state = {
+    .config = &conf,
+    .output = {
+      .value = 12.0f,
+    },
+  };
 
   /* All values should be ignored */
-  si.raw_value = 2048;
-  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 0), 12.0, 0.01);
+  ck_assert_float_eq_tol(
+    sensor_convert_linear_windowed(&state, 0, 2048), 12.0, 0.01);
 
-  si.raw_value = 2500;
-  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 10), 12.0, 0.01);
+  ck_assert_float_eq_tol(
+    sensor_convert_linear_windowed(&state, 10, 2500), 12.0, 0.01);
 
-  si.raw_value = 2600;
-  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 40), 12.0, 0.01);
+  ck_assert_float_eq_tol(
+    sensor_convert_linear_windowed(&state, 40, 2600), 12.0, 0.01);
 
   /* Start of real window */
-  si.raw_value = 2700;
-  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 50), 12, 0.1);
+  ck_assert_float_eq_tol(
+    sensor_convert_linear_windowed(&state, 50, 2700), 12, 0.1);
 
-  si.raw_value = 2400;
-  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 80), 12, 0.1);
+  ck_assert_float_eq_tol(
+    sensor_convert_linear_windowed(&state, 80, 2400), 12, 0.1);
 
   /* End of window, should produce average of two prior samples */
-  si.raw_value = 2000;
-  ck_assert_float_eq_tol(sensor_convert_linear_windowed(&si, 90), 2550, 0.1);
+  ck_assert_float_eq_tol(
+    sensor_convert_linear_windowed(&state, 90, 2000), 2550, 0.1);
 }
 END_TEST
 
 START_TEST(check_sensor_convert_therm) {
   // test parameters for my CHT sensor
-  struct sensor_input in = {
+  struct sensor_config conf = {
     .raw_max = 4096.0f,
     .therm = {
       .bias = 2490.0,
@@ -419,43 +489,44 @@ START_TEST(check_sensor_convert_therm) {
     },
   };
 
-  in.raw_value = 2048;
-  ck_assert_float_eq_tol(sensor_convert_thermistor(&in), 20.31, 0.2);
+  ck_assert_float_eq_tol(sensor_convert_thermistor(&conf, 2048), 20.31, 0.2);
 
-  in.raw_value = 4092;
-  ck_assert_float_eq_tol(sensor_convert_thermistor(&in), -97.43, 0.2);
+  ck_assert_float_eq_tol(sensor_convert_thermistor(&conf, 4092), -97.43, 0.2);
 }
 END_TEST
 
 START_TEST(check_current_angle_in_window) {
-  struct sensor_input in = {
+  struct sensor_config conf = {
     .window = {
       .offset = 0,
       .total_width=100,
       .capture_width=60,
     },
   };
-  ck_assert(current_angle_in_window(&in, 0));
-  ck_assert(current_angle_in_window(&in, 50));
-  ck_assert(!current_angle_in_window(&in, 70));
+  ck_assert(current_angle_in_window(&conf, 0));
+  ck_assert(current_angle_in_window(&conf, 50));
+  ck_assert(!current_angle_in_window(&conf, 70));
 
-  ck_assert(current_angle_in_window(&in, 100));
-  ck_assert(current_angle_in_window(&in, 120));
-  ck_assert(!current_angle_in_window(&in, 170));
+  ck_assert(current_angle_in_window(&conf, 100));
+  ck_assert(current_angle_in_window(&conf, 120));
+  ck_assert(!current_angle_in_window(&conf, 170));
 
-  ck_assert(!current_angle_in_window(&in, 690));
-  ck_assert(current_angle_in_window(&in, 710));
+  ck_assert(!current_angle_in_window(&conf, 690));
+  ck_assert(current_angle_in_window(&conf, 710));
 }
 END_TEST
 
 START_TEST(check_knock_configure) {
-  struct knock_input ki = {
+  struct knock_sensor_config conf = {
     .frequency = 7000,
   };
+  struct knock_sensor sensor = {
+    .config = &conf,
+  };
 
-  knock_configure(&ki);
-  ck_assert_int_eq(ki.state.width, 64);
-  ck_assert_int_eq(ki.state.freq, 9);
+  knock_configure(&sensor);
+  ck_assert_int_eq(sensor.width, 64);
+  ck_assert_int_eq(sensor.freq, 9);
 }
 END_TEST
 

@@ -1,31 +1,35 @@
-#include "sim.h"
+#include <assert.h>
+
 #include "config.h"
 #include "decoder.h"
 #include "platform.h"
+#include "sim.h"
+#include "util.h"
 
-static struct timer_callback test_trigger_callback;
+static uint32_t test_trigger_rpm = 0;
+static timeval_t test_trigger_time = 0;
 
 struct test_wheel_event {
   float degrees;
-  uint32_t trigger;
+  trigger_type type;
 };
 
 static struct test_wheel_event test_wheel_Nminus1_next(void) {
   static int tooth = 0;
 
-  const int N = config.decoder.num_triggers;
+  const int N = 36;
   const float deg_per_tooth = 720.0f / (2 * N);
 
   struct test_wheel_event ev;
   if (tooth == 1) { /* Gap, but use the opportunity to make a cam sync pulse */
-    ev = (struct test_wheel_event){ .degrees = deg_per_tooth, .trigger = 1 };
+    ev = (struct test_wheel_event){ .degrees = deg_per_tooth, .type = SYNC };
   } else if (tooth == 36) {
     /* Or if its tooth 1 of the second rotation, make a gap, ... */
-    ev =
-      (struct test_wheel_event){ .degrees = 2 * deg_per_tooth, .trigger = 0 };
+    ev = (struct test_wheel_event){ .degrees = 2 * deg_per_tooth,
+                                    .type = TRIGGER };
     /* And skip a tooth */
   } else {
-    ev = (struct test_wheel_event){ .degrees = deg_per_tooth, .trigger = 0 };
+    ev = (struct test_wheel_event){ .degrees = deg_per_tooth, .type = TRIGGER };
   }
 
   tooth += 1;
@@ -35,33 +39,29 @@ static struct test_wheel_event test_wheel_Nminus1_next(void) {
   return ev;
 }
 
-static uint32_t test_trigger_rpm = 0;
-
-static void execute_test_trigger(void *_w) {
-  (void)_w;
-
+void sim_wakeup_callback(struct decoder *decoder) {
   if (test_trigger_rpm == 0) {
     return;
   }
 
-  timeval_t ev_time = test_trigger_callback.time;
   struct test_wheel_event wheel_ev = test_wheel_Nminus1_next();
 
   /* Handle current */
-  decoder_update_scheduling(wheel_ev.trigger, ev_time);
+  struct trigger_event tev = { .time = test_trigger_time,
+                               .type = wheel_ev.type };
+  decoder_update(decoder, &tev);
 
   /* Schedule next */
   timeval_t delay = time_from_rpm_diff(test_trigger_rpm, wheel_ev.degrees);
-  timeval_t next = ev_time + delay;
+  test_trigger_time += delay;
 
-  schedule_callback(&test_trigger_callback, next);
+  set_sim_wakeup(test_trigger_time);
 }
 
 void set_test_trigger_rpm(uint32_t rpm) {
   test_trigger_rpm = rpm;
-  test_trigger_callback.callback = execute_test_trigger;
-  test_trigger_callback.data = NULL;
-  schedule_callback(&test_trigger_callback, current_time() + 10000);
+  test_trigger_time = current_time() + 10000;
+  set_sim_wakeup(test_trigger_time);
 }
 
 uint32_t get_test_trigger_rpm() {

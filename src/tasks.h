@@ -3,8 +3,11 @@
 
 #include <stdint.h>
 
+#include "platform.h"
+#include "table.h"
+
 struct boost_control_config {
-  struct table_1d *pwm_duty_vs_rpm;
+  struct table_1d pwm_duty_vs_rpm;
   float enable_threshold_kpa;
   float control_threshold_kpa;
   float control_threshold_tps;
@@ -19,8 +22,29 @@ struct cel_config {
   float lean_boost_ego;
 };
 
+typedef enum {
+  CEL_NONE,
+  CEL_CONSTANT,
+  CEL_SLOWBLINK,
+  CEL_FASTBLINK,
+} cel_state_t;
+
+struct tasks {
+  timeval_t fuelpump_last_valid;
+
+  cel_state_t cel_state;
+  timeval_t cel_time;
+};
+
 void handle_emergency_shutdown(void);
-void run_tasks(void);
+
+struct viaems;
+struct engine_update;
+struct platform_plan;
+
+void run_tasks(struct viaems *viaems,
+               const struct engine_update *update,
+               struct platform_plan *plan);
 
 #ifdef UNITTEST
 #include <check.h>

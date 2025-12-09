@@ -1,31 +1,17 @@
+#include "sensors.h"
 #include "stm32f427xx.h"
-#include <stdint.h>
-
+#undef ETH // STM32 headers define this for ethernet
+#include "config.h"
 #include "platform.h"
 #include "tasks.h"
+#include "viaems.h"
+#include <stdint.h>
 
 #ifndef CRYSTAL_FREQ
 #define CRYSTAL_FREQ 8
 #endif
 
-void platform_enable_event_logging() {}
-
-void platform_disable_event_logging() {}
-
-#define BOOTLOADER_FLAG 0x56780123
-static volatile uint32_t bootloader_flag = 0;
-void platform_reset_into_bootloader() {
-  bootloader_flag = BOOTLOADER_FLAG;
-  NVIC_SystemReset();
-}
-
-void disable_interrupts() {
-  __disable_irq();
-}
-
-void enable_interrupts() {
-  __enable_irq();
-}
+struct viaems stm32f4_viaems;
 
 uint64_t cycles_to_ns(uint64_t cycles) {
   return cycles * 1000 / 168;
@@ -35,28 +21,8 @@ uint64_t cycle_count() {
   return DWT->CYCCNT;
 }
 
-bool interrupts_enabled() {
-  return __get_PRIMASK() == 0;
-}
-
-void set_output(int output, char value) {
-  if (value) {
-    GPIOD->ODR |= (1 << output);
-  } else {
-    GPIOD->ODR &= ~(1 << output);
-  }
-}
-
-void set_gpio(int output, char value) {
-  if (value) {
-    GPIOE->ODR |= (1 << output);
-  } else {
-    GPIOE->ODR &= ~(1 << output);
-  }
-}
-
-int get_gpio(int output) {
-  return (GPIOE->IDR & (1 << output)) > 0;
+void set_gpio_port(uint32_t output) {
+  GPIOE->ODR = output;
 }
 
 static void enable_peripherals(void) {
@@ -112,11 +78,12 @@ static void setup_clocks() {
 }
 
 static void setup_dwt() {
+  CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
   DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
   DWT->CYCCNT = 0;
 }
 
-static void reset_watchdog() {
+void reset_watchdog(void) {
   IWDG->KR = 0x0000AAAA;
 }
 
@@ -127,19 +94,6 @@ static void setup_watchdog() {
 
   DBGMCU->APB1FZ |= DBGMCU_APB1_FZ_DBG_IWDG_STOP;
   reset_watchdog();
-}
-
-void SysTick_Handler(void) {
-  run_tasks();
-  reset_watchdog();
-}
-
-static void setup_systick() {
-  NVIC_SetPriority(SysTick_IRQn, 15);
-  SysTick->LOAD = 1680000; /* 100 Hz at 168 MHz HCLK */
-  SysTick->CTRL = SysTick_CTRL_TICKINT_Msk |
-                  SysTick_CTRL_CLKSOURCE_Msk | /* Use HCLK */
-                  SysTick_CTRL_ENABLE_Msk;
 }
 
 extern unsigned _configdata_loadaddr, _sconfigdata, _econfigdata;
@@ -182,12 +136,65 @@ void platform_save_config() {
   FLASH->ACR |= FLASH_ACR_DCEN;
 }
 
-void platform_load_config() {
+extern struct config default_config;
+
+static struct config *platform_load_config(void) {
   volatile unsigned *src, *dest;
   for (src = &_configdata_loadaddr, dest = &_sconfigdata; dest < &_econfigdata;
        src++, dest++) {
     *dest = *src;
   }
+  return &default_config;
+}
+
+/* Use usb to send text from newlib printf */
+int __attribute__((externally_visible)) _write(int fd,
+                                               const char *buf,
+                                               size_t count) {
+  (void)fd;
+  size_t pos = 0;
+  while (pos < count) {
+    pos += console_write(buf + pos, count - pos);
+  }
+  return count;
+}
+
+static void setup_gpios(void) {
+  GPIOE->MODER = 0x55555555;   /* All of GPIOE is output */
+  GPIOE->OSPEEDR = 0xffffffff; /* All GPIOE set to High speed*/
+}
+
+extern void stm32f4_configure_scheduler(void);
+extern void stm32f4_configure_usb(void);
+extern void stm32f4_configure_sensors(void);
+extern void stm32f4_configure_pwm(void);
+
+static void platform_configure(bool is_benchmark) {
+
+  enable_peripherals();
+  setup_clocks();
+
+  setup_dwt();
+
+  NVIC_SetPriorityGrouping(3); /* 16 priority preemption levels */
+
+  if (!is_benchmark) {
+    setup_watchdog();
+    setup_gpios();
+
+    stm32f4_configure_scheduler();
+    stm32f4_configure_sensors();
+    stm32f4_configure_pwm();
+  }
+
+  stm32f4_configure_usb();
+}
+
+#define BOOTLOADER_FLAG 0x56780123
+static volatile uint32_t bootloader_flag = 0;
+void platform_reset_into_bootloader() {
+  bootloader_flag = BOOTLOADER_FLAG;
+  NVIC_SystemReset();
 }
 
 /* Common symbols exported by the linker script(s): */
@@ -229,56 +236,19 @@ void Reset_Handler(void) {
   }
 
   /* Call the application's entry point. */
-  int main();
-  (void)main();
-}
+  struct config *config = platform_load_config();
+  bool benchmark_enabled = false;
+#ifdef BENCHMARK
+  benchmark_enabled = true;
+#endif
 
-/* Use usb to send text from newlib printf */
-int __attribute__((externally_visible))
-_write(int fd, const char *buf, size_t count) {
-  (void)fd;
-  size_t pos = 0;
-  while (pos < count) {
-    pos += console_write(buf + pos, count - pos);
+  if (benchmark_enabled) {
+    platform_configure(true);
+    int start_benchmarks(void);
+    start_benchmarks();
+  } else {
+    viaems_init(&stm32f4_viaems, config);
+    platform_configure(false);
+    viaems_idle(&stm32f4_viaems);
   }
-  return count;
-}
-
-static void setup_gpios(void) {
-  GPIOE->MODER = 0x55555555;   /* All of GPIOE is output */
-  GPIOE->OSPEEDR = 0xffffffff; /* All GPIOE set to High speed*/
-}
-
-extern void stm32f4_configure_scheduler(void);
-extern void stm32f4_configure_usb(void);
-extern void stm32f4_configure_adc(void);
-extern void stm32f4_configure_pwm(void);
-
-void platform_init(int argc, char **argv) {
-  (void)argc;
-  (void)argv;
-
-  enable_peripherals();
-  setup_clocks();
-
-  setup_dwt();
-
-  NVIC_SetPriorityGrouping(3); /* 16 priority preemption levels */
-
-  setup_systick();
-  setup_watchdog();
-  setup_gpios();
-
-  stm32f4_configure_scheduler();
-  stm32f4_configure_usb();
-  stm32f4_configure_adc();
-  stm32f4_configure_pwm();
-}
-
-void platform_benchmark_init() {
-  enable_peripherals();
-  setup_clocks();
-  setup_dwt();
-  NVIC_SetPriorityGrouping(3); /* 16 priority preemption levels */
-  stm32f4_configure_usb();
 }

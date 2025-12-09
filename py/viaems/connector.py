@@ -317,6 +317,10 @@ class HilConnector(ViaemsInterface):
         assert tb_process.returncode == 0
         self.kill()
 
+        with open(f"scenario_{scenario.name}.trace", "w") as f:
+           for ev in target_msgs:
+               print(ev, file=f)
+
         tb_file = open(f"scenario_{scenario.name}.outputs")
         tb_msgs = tb_file.readlines()
         tb_file.close()

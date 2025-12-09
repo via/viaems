@@ -1,8 +1,9 @@
 #ifndef UTIL_H
 #define UTIL_H
 
-#include "platform.h"
 #include <stdbool.h>
+
+#include "platform.h"
 
 timeval_t time_diff(timeval_t t1, timeval_t t2);
 bool time_before(timeval_t n, timeval_t x);

@@ -1,5 +1,5 @@
 #include "config.h"
-#include "sensors.h"
+#include "viaems.h"
 
 #include "stm32f427xx.h"
 
@@ -18,6 +18,8 @@
 #else
 #error No ADC specified!
 #endif
+
+extern struct viaems stm32f4_viaems;
 
 /* Configure TIM1 to cycle at the SPI_SAMPLE_RATE.  It uses compare outputs to
  * manage CS, and on update it'll trigger DMA to send a SPI word.  DMA is also
@@ -140,8 +142,12 @@ void DMA2_Stream0_IRQHandler(void) {
       float raw_value = (float)(5 * adc_value) / 4096.0f;
       update.values[i] = raw_value;
     }
-    sensor_update_adc(&update);
-    process_knock_inputs(sequence);
+    __disable_irq();
+    struct engine_position pos =
+      decoder_get_engine_position(&stm32f4_viaems.decoder);
+    __enable_irq();
+    sensor_update_adc(&stm32f4_viaems.sensors, &pos, &update);
+    process_knock_inputs(&stm32f4_viaems.sensors, sequence);
   }
 }
 
@@ -182,7 +188,8 @@ static void setup_freq_pw_input(void) {
                 _VAL2FLD(TIM_CCMR1_CC1S, 2) | TIM_CCMR1_IC1F;
   TIM9->CCER = TIM_CCER_CC1E | TIM_CCER_CC2E;
 
-  bool active_high = (config.freq_inputs[3].edge == RISING_EDGE);
+  bool active_high =
+    (stm32f4_viaems.config->trigger_inputs[3].edge == RISING_EDGE);
   if (active_high) {
     TIM9->CCER |= TIM_CCER_CC1P;
   } else {
@@ -190,13 +197,18 @@ static void setup_freq_pw_input(void) {
   }
 
   NVIC_EnableIRQ(TIM1_BRK_TIM9_IRQn);
-  NVIC_SetPriority(TIM1_BRK_TIM9_IRQn, 14);
+  NVIC_SetPriority(TIM1_BRK_TIM9_IRQn, 3);
   TIM9->CR1 |= TIM_CR1_CEN;
 
   DBGMCU->APB2FZ |= DBGMCU_APB2_FZ_DBG_TIM9_STOP;
 }
 
 void TIM1_BRK_TIM9_IRQHandler(void) {
+  __disable_irq();
+  struct engine_position pos =
+    decoder_get_engine_position(&stm32f4_viaems.decoder);
+  __enable_irq();
+
   if (TIM9->SR & TIM_SR_CC2IF) {
     uint32_t pulsewidth = TIM9->CCR1;
     uint32_t period = TIM9->CCR2;
@@ -208,7 +220,7 @@ void TIM1_BRK_TIM9_IRQHandler(void) {
       .frequency = valid ? (65536.0f / (float)period) : 0,
       .pulsewidth = (float)pulsewidth / 65536.0f,
     };
-    sensor_update_freq(&update);
+    sensor_update_freq(&stm32f4_viaems.sensors, &pos, &update);
   }
 
   if (TIM9->SR & TIM_SR_UIF) {
@@ -218,11 +230,11 @@ void TIM1_BRK_TIM9_IRQHandler(void) {
       .valid = false,
       .pin = 3,
     };
-    sensor_update_freq(&update);
+    sensor_update_freq(&stm32f4_viaems.sensors, &pos, &update);
   }
 }
 
-void stm32f4_configure_adc(void) {
+void stm32f4_configure_sensors() {
   setup_spi1();
   setup_spi1_tx_dma();
   setup_spi1_rx_dma();
@@ -230,6 +242,6 @@ void stm32f4_configure_adc(void) {
 
   setup_freq_pw_input();
 
-  knock_configure(&config.knock_inputs[0]);
-  knock_configure(&config.knock_inputs[1]);
+  knock_configure(&stm32f4_viaems.sensors.KNK1);
+  knock_configure(&stm32f4_viaems.sensors.KNK2);
 }

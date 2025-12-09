@@ -22,7 +22,7 @@ static int axis_find_cell_lower(const struct table_axis *axis, float value) {
   return x1;
 }
 
-float interpolate_table_oneaxis(struct table_1d *t, float val) {
+float interpolate_table_oneaxis(const struct table_1d *t, float val) {
   const struct table_axis *axis = &t->cols;
 
   /* Clamp to bottom */
@@ -46,7 +46,7 @@ float interpolate_table_oneaxis(struct table_1d *t, float val) {
   return ((second_val - first_val) * partial) + first_val;
 }
 
-float interpolate_table_twoaxis(struct table_2d *t, float x, float y) {
+float interpolate_table_twoaxis(const struct table_2d *t, float x, float y) {
   const struct table_axis *xaxis = &t->cols;
   const struct table_axis *yaxis = &t->rows;
 
@@ -83,11 +83,11 @@ float interpolate_table_twoaxis(struct table_2d *t, float x, float y) {
   return xy;
 }
 
-static int table_valid_axis(struct table_axis *a) {
+static int table_valid_axis(const struct table_axis *a) {
   if (a->num > MAX_AXIS_SIZE) {
     return 0;
   }
-  for (int i = 0; i < a->num - 1; i++) {
+  for (unsigned i = 0; i < a->num - 1; i++) {
     if (a->values[i] > a->values[i + 1]) {
       return 0;
     }
@@ -95,7 +95,7 @@ static int table_valid_axis(struct table_axis *a) {
   return 1;
 }
 
-int table_valid_oneaxis(struct table_1d *t) {
+int table_valid_oneaxis(const struct table_1d *t) {
 
   if (!table_valid_axis(&t->cols)) {
     return 0;
@@ -103,7 +103,7 @@ int table_valid_oneaxis(struct table_1d *t) {
   return 1;
 }
 
-int table_valid_twoaxis(struct table_2d *t) {
+int table_valid_twoaxis(const struct table_2d *t) {
 
   if (!table_valid_axis(&t->cols)) {
     return 0;

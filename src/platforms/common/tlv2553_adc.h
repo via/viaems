@@ -82,7 +82,8 @@ static inline bool adc_response_is_valid(const uint16_t *values) {
   return true;
 }
 
-static void process_knock_inputs(const uint16_t *values) {
+static void process_knock_inputs(struct sensors *sensors,
+                                 const uint16_t *values) {
   timeval_t time = current_time(); /* TODO more useful */
   struct knock_update knk1 = {
     .valid = true,
@@ -102,8 +103,8 @@ static void process_knock_inputs(const uint16_t *values) {
     knk2.samples[i] =
       (float)read_raw_from_position(values, (i * 3) + 2) / 4096.0f;
   }
-  sensor_update_knock(&knk1);
-  sensor_update_knock(&knk2);
+  sensor_update_knock(sensors, &knk1);
+  sensor_update_knock(sensors, &knk2);
 }
 
 #endif

@@ -1,11 +1,23 @@
 #include "config.h"
 #include "decoder.h"
 #include "platform.h"
+#include "scheduler.h"
+#include "sensors.h"
 
 #include "stm32_sched_buffers.h"
+#include "viaems.h"
 
-__attribute__((
-  section(".dmadata"))) struct output_buffer output_buffers[2] = { 0 };
+__attribute__(( section(".dmadata"))) 
+struct output_buffer output_buffers[2] = { 
+  [0] = { .plan = {
+    .schedulable_start = 0,
+    .schedulable_end = NUM_SLOTS - 1,
+  }},
+  [1] = { .plan = { 
+    .schedulable_start = NUM_SLOTS,
+    .schedulable_end = NUM_SLOTS * 2 - 1,
+  }},
+};
 static uint32_t current_buffer = 0;
 
 uint32_t stm32_current_buffer() {
@@ -38,71 +50,57 @@ static void platform_output_slot_set(struct output_slot *slots,
  * pair of buffers: We can't change the current buffer, and its likely the next
  * buffer's time range is already submitted, so use the time after that.
  */
-timeval_t platform_output_earliest_schedulable_time() {
-  return output_buffers[current_buffer].first_time + NUM_SLOTS * 2;
-}
 
 /* Retire all stop/stop events that are in the time range of our "completed"
  * buffer and were previously submitted by setting them to "fired" and clearing
  * out the dma bits */
 static void retire_output_buffer(struct output_buffer *buf) {
-  timeval_t offset_from_start;
-  for (int i = 0; i < MAX_EVENTS; i++) {
-    struct output_event *oev = &config.events[i];
+  for (int i = 0; i < buf->plan.n_events; i++) {
+    struct schedule_entry *entry = buf->plan.schedule[i];
 
-    offset_from_start = oev->start.time - buf->first_time;
-    if (sched_entry_get_state(&oev->start) == SCHED_SUBMITTED &&
-        offset_from_start < NUM_SLOTS) {
-      platform_output_slot_unset(
-        buf->slots, offset_from_start, oev->start.pin, oev->start.val);
-      sched_entry_set_state(&oev->start, SCHED_FIRED);
-    }
-
-    offset_from_start = oev->stop.time - buf->first_time;
-    if (sched_entry_get_state(&oev->stop) == SCHED_SUBMITTED &&
-        offset_from_start < NUM_SLOTS) {
-      platform_output_slot_unset(
-        buf->slots, offset_from_start, oev->stop.pin, oev->stop.val);
-      sched_entry_set_state(&oev->stop, SCHED_FIRED);
-    }
+    timeval_t offset_from_start = entry->time - buf->plan.schedulable_start;
+    platform_output_slot_unset(
+      buf->slots, offset_from_start, entry->pin, entry->val);
+    entry->state = SCHED_FIRED;
   }
 }
 
 /* Any scheduled start/stop event in the time range for the new buffer can be
  * "submitted" and the dma bits set */
 static void populate_output_buffer(struct output_buffer *buf) {
-  timeval_t offset_from_start;
-  for (int i = 0; i < MAX_EVENTS; i++) {
-    struct output_event *oev = &config.events[i];
-    offset_from_start = oev->start.time - buf->first_time;
-    if (sched_entry_get_state(&oev->start) == SCHED_SCHEDULED &&
-        offset_from_start < NUM_SLOTS) {
-      platform_output_slot_set(
-        buf->slots, offset_from_start, oev->start.pin, oev->start.val);
-      sched_entry_set_state(&oev->start, SCHED_SUBMITTED);
-    }
-    offset_from_start = oev->stop.time - buf->first_time;
-    if (sched_entry_get_state(&oev->stop) == SCHED_SCHEDULED &&
-        offset_from_start < NUM_SLOTS) {
-      platform_output_slot_set(
-        buf->slots, offset_from_start, oev->stop.pin, oev->stop.val);
-      sched_entry_set_state(&oev->stop, SCHED_SUBMITTED);
-    }
+  for (int i = 0; i < buf->plan.n_events; i++) {
+    struct schedule_entry *entry = buf->plan.schedule[i];
+
+    timeval_t offset_from_start = entry->time - buf->plan.schedulable_start;
+    platform_output_slot_set(
+      buf->slots, offset_from_start, entry->pin, entry->val);
+    entry->state = SCHED_SUBMITTED;
   }
 }
 
-static timeval_t round_time_to_buffer_start(timeval_t time) {
-  timeval_t time_since_buffer_start = time % NUM_SLOTS;
-  return time - time_since_buffer_start;
-}
+void set_gpio_port(uint32_t value);
+void set_pwm(int output, float value);
 
-void stm32_buffer_swap(void) {
+void stm32_buffer_swap(struct viaems *viaems,
+                       const struct engine_update *update) {
   struct output_buffer *buf = &output_buffers[current_buffer];
   current_buffer = (current_buffer + 1) % 2;
 
   retire_output_buffer(buf);
 
-  buf->first_time = round_time_to_buffer_start(current_time()) + NUM_SLOTS;
+  buf->plan.schedulable_start += NUM_SLOTS * 2;
+  buf->plan.schedulable_end += NUM_SLOTS * 2;
+  buf->plan.n_events = 0;
+
+  viaems_reschedule(viaems, update, &buf->plan);
+
+  // TODO this is setting gpios planned for the future, when it could use the
+  // in-flight one to be more precise
+  set_gpio_port(buf->plan.gpio);
+
+  for (int i = 0; i < MAX_PWM; i++) {
+    set_pwm(i, buf->plan.pwm[i]);
+  }
 
   populate_output_buffer(buf);
 }

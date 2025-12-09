@@ -35,3 +35,20 @@ TIM9 | Flexfuel frequency/pulsewidth measurement
 USBFS | Console
 SYSTICK | 100 Hz task driver
 
+
+### Interrupts
+Main engine handling is done in the DMA IRQ for the scheduled output double
+buffer change, every 200 uS. It can be preempted by decoding updates, but is at
+the same priority as all sensor handling (adc, ethanol). 
+
+This means that only shared decoder access needs to be protected with interrupts
+disabled, and is due to that triggers can come in at a dynamic rate, potentially
+higher than the 200 uS period of the engine handling.
+
+System   | Prio | Use
+---      | ---  | ---
+TIM2     |    2 | Trigger and decoder processing
+DMA2 S0  |    3 | Process ADC samples
+TIM9     |    3 | Process Ethanol sensor
+DMA2 S1  |    3 | Engine processing and output scheduling
+USB      |   15 | Usb handling

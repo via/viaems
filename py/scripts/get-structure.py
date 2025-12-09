@@ -1,7 +1,7 @@
-from viaems.connector import ViaemsWrapper
+from viaems.connector import SimConnector
 import json
 
-conn = SimConnector()
+conn = SimConnector("obj/hosted/viaems")
 conn.start()
 
 structure = conn.structure()

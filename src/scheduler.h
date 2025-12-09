@@ -13,54 +13,55 @@ typedef enum {
 
 typedef enum {
   SCHED_UNSCHEDULED, /* Blank event, not scheduled, not valid time */
-  SCHED_SCHEDULED,   /* Event is set and scheduled, but is still changable as
-  long as interrupts are disabled to prevent it from being submitted  */
-  SCHED_SUBMITTED,   /* Event is submitted to platform and cannot be undone, but
-                        may or may not have actually fired yet */
-  SCHED_FIRED,       /* Event is confirmed fired */
+
+  SCHED_SCHEDULED, /* Event is set and scheduled with a valid time, but
+                      can still be changed */
+
+  SCHED_SUBMITTED, /* Event is submitted to platform and cannot be changed,
+                      but may or may not have actually fired yet */
+
+  SCHED_FIRED, /* Event is confirmed fired */
 } sched_state_t;
 
-struct sched_entry {
-  timeval_t time;
-  uint8_t pin;
-  bool val;
-  _Atomic sched_state_t state;
+/* Represents a single rising or falling edge for an output */
+struct schedule_entry {
+  timeval_t time;      /* Time specified for the event */
+  uint8_t pin;         /* Pin (in the high-speed output block) specified */
+  bool val;            /* True if rising edge, false if falling edge */
+  sched_state_t state; /* State of the entry */
 };
 
-static inline sched_state_t sched_entry_get_state(struct sched_entry *s) {
-  return atomic_load_explicit(&s->state, memory_order_relaxed);
-}
-
-static inline void sched_entry_set_state(struct sched_entry *s,
-                                         sched_state_t state) {
-  atomic_store_explicit(&s->state, state, memory_order_relaxed);
-}
-
-struct timer_callback {
-  void (*callback)(void *);
-  void *data;
-  timeval_t time;
-  bool scheduled;
+/* Configuration for an output event */
+struct output_event_config {
+  event_type_t type; /* Type of event, fuel or ignition */
+  degrees_t angle;   /* Angle for event: for fuel and ignition,
+                        this is the target angle to end the event */
+  uint32_t pin;      /* Which pin to use for the event */
+  bool inverted;     /* If true, output is active-low */
 };
 
-struct output_event {
-  event_type_t type;
-  degrees_t angle;
-  uint32_t pin;
-  bool inverted;
-
-  struct sched_entry start;
-  struct sched_entry stop;
-  struct timer_callback callback;
+/* Stores the scheduling state for a single output */
+struct output_event_schedule_state {
+  const struct output_event_config
+    *config; /* Reference to the configuration for the event */
+  struct schedule_entry start; /* Schedule state for event start */
+  struct schedule_entry stop;  /* Schedule state for event stop */
 };
 
-void schedule_event(struct output_event *ev);
-void deschedule_event(struct output_event *);
+struct config;
+struct calculated_values;
+struct engine_position;
+struct sensor_values;
 
-int schedule_callback(struct timer_callback *tcb, timeval_t time);
+void schedule_events(const struct config *config,
+                     const struct calculated_values *calcs,
+                     const struct engine_position *pos,
+                     struct output_event_schedule_state *evs,
+                     size_t n_events,
+                     timeval_t start_of_schedulable_time);
 
-void scheduler_callback_timer_execute(void);
-void invalidate_scheduled_events(struct output_event *, int);
+void invalidate_scheduled_events(struct output_event_schedule_state evs[],
+                                 int n_events);
 
 #ifdef UNITTEST
 #include <check.h>

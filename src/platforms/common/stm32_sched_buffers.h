@@ -3,7 +3,7 @@
 
 #include "platform.h"
 #include <stdint.h>
-#define NUM_SLOTS 128
+#define NUM_SLOTS 800
 
 /* Implement STM32 and GD32 support for output buffer handling.  Currently this
  * includes the STM32F4, STM32H7, and GD32F4.
@@ -16,7 +16,7 @@ struct output_slot {
 } __attribute__((packed)) __attribute((aligned(4)));
 
 struct output_buffer {
-  timeval_t first_time; /* First time represented by the range */
+  struct platform_plan plan;
   struct output_slot slots[NUM_SLOTS];
 };
 
@@ -27,7 +27,11 @@ extern struct output_buffer output_buffers[2];
  * Then find all the sched_entryS that are to be scheduled and set up the next
  * DMA buffer for them.
  */
-void stm32_buffer_swap(void);
+struct viaems;
+struct engine_update;
+
+void stm32_buffer_swap(struct viaems *viaems,
+                       const struct engine_update *update);
 
 /* Returns the current buffer being used for outputs */
 uint32_t stm32_current_buffer(void);

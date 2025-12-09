@@ -2,6 +2,8 @@
 #define _DECODER_H
 
 #include "platform.h"
+#include "sensors.h"
+
 #define MAX_TRIGGERS 36
 
 typedef enum {
@@ -28,12 +30,6 @@ typedef enum {
 } decoder_type;
 
 typedef enum {
-  DECODER_NOSYNC,
-  DECODER_RPM,
-  DECODER_SYNC,
-} decoder_state;
-
-typedef enum {
   DECODER_NO_LOSS,
   DECODER_VARIATION,
   DECODER_TRIGGERCOUNT_HIGH,
@@ -42,54 +38,70 @@ typedef enum {
   DECODER_OVERFLOW,
 } decoder_loss_reason;
 
-struct decoder {
-  uint32_t valid;
-  uint32_t rpm;
-  uint32_t tooth_rpm;
-  timeval_t last_trigger_time;
-  degrees_t last_trigger_angle;
-  timeval_t expiration;
-
-  /* Configuration */
+struct decoder_config {
   decoder_type type;
   degrees_t offset;
 
   float trigger_max_rpm_change;
-  float trigger_cur_rpm_change;
   uint32_t trigger_min_rpm;
   uint32_t required_triggers_rpm;
 
   uint32_t num_triggers;
   degrees_t degrees_per_trigger;
   uint32_t rpm_window_size;
+};
+
+struct engine_position {
+  timeval_t time;
+  timeval_t valid_until;
+
+  bool has_rpm;
+  uint32_t rpm;
+  uint32_t tooth_rpm;
+
+  bool has_position;
+  degrees_t last_trigger_angle;
+};
+
+typedef enum {
+  DECODER_NOSYNC,
+  DECODER_RPM,
+  DECODER_SYNC,
+} decoder_state;
+
+struct decoder {
+  const struct decoder_config *config;
+  decoder_state state;
+
+  uint32_t current_triggers_rpm;
+  uint32_t triggers_since_last_sync;
+  float trigger_cur_rpm_change;
+  timeval_t times[MAX_TRIGGERS + 1];
+
+  struct engine_position output;
 
   /* Debug */
   uint32_t t0_count;
   uint32_t t1_count;
   decoder_loss_reason loss;
-
-  /* Internal state */
-  decoder_state state;
-  uint32_t current_triggers_rpm;
-  uint32_t triggers_since_last_sync;
-  timeval_t times[MAX_TRIGGERS + 1];
 };
 
-struct decoder_event {
-  unsigned int trigger;
+struct trigger_event {
   timeval_t time;
-#ifdef UNITTEST
-  decoder_state state;
-  uint32_t valid;
-  decoder_loss_reason reason;
-  struct decoder_event *next;
-#endif
+  trigger_type type;
 };
 
-void decoder_init(struct decoder *);
-void decoder_update_scheduling(int input, timeval_t time);
-void decoder_desync(decoder_loss_reason);
-degrees_t current_angle(timeval_t at_time);
+void decoder_init(const struct decoder_config *conf, struct decoder *state);
+void decoder_desync(struct decoder *state, decoder_loss_reason reason);
+
+void decoder_update(struct decoder *state, struct trigger_event *trigger);
+
+struct engine_position decoder_get_engine_position(const struct decoder *);
+
+degrees_t engine_current_angle(const struct engine_position *d,
+                               timeval_t at_time);
+bool engine_position_is_synced(const struct engine_position *d,
+                               timeval_t at_time);
 
 #ifdef UNITTEST
 #include <check.h>

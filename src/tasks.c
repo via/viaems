@@ -1,53 +1,56 @@
 #include "tasks.h"
+#include "calculations.h"
 #include "config.h"
 #include "decoder.h"
 #include "platform.h"
+#include "scheduler.h"
 #include "util.h"
+#include "viaems.h"
 
-static void handle_fuel_pump() {
-  static timeval_t last_valid = 0;
+static bool determine_fuel_pump_state(struct tasks *state,
+                                      const struct engine_update *update) {
 
-  /* If engine is turning (as defined by seeing a trigger in the last second),
-   * keep pump on */
-  timeval_t last_trigger = config.decoder.last_trigger_time;
-  if (time_in_range(
-        current_time(), last_trigger, last_trigger + time_from_us(1000000))) {
-    last_valid = current_time();
-    set_gpio(config.fueling.fuel_pump_pin, 1);
-    return;
+  const struct engine_position *d = &update->position;
+
+  /* If engine is actively turning, fuel pump is on */
+  if (d->has_rpm &&
+      time_in_range(update->current_time, d->time, d->valid_until)) {
+    state->fuelpump_last_valid = update->current_time;
+    return true;
   }
 
-  /* Allow 4 seconds of fueling */
-  if (time_diff(current_time(), last_valid) < time_from_us(4000000)) {
-    set_gpio(config.fueling.fuel_pump_pin, 1);
+  /* Otherwise, if we're within four seconds of the last time the fuel pump was
+   * turned on (due to engine turning), keep it on */
+  if (time_diff(update->current_time, state->fuelpump_last_valid) <
+      time_from_us(4000000)) {
+    return true;
   } else {
-    set_gpio(config.fueling.fuel_pump_pin, 0);
-    /* Keep last valid 5 seconds behind to prevent rollover bugs */
-    last_valid = current_time() - time_from_us(5000000);
+    /* Update last valid time to 5 seconds ago so that we don't turn it on due
+     * to time rolling over */
+    state->fuelpump_last_valid = update->current_time - time_from_us(5000000);
+    return false;
   }
 }
 
-static void handle_boost_control() {
+static float handle_boost_control(const struct boost_control_config *config,
+                                  const struct engine_update *u) {
   float duty;
-  float map = config.sensors[SENSOR_MAP].value;
-  float tps = config.sensors[SENSOR_TPS].value;
-  if (map < config.boost_control.enable_threshold_kpa) {
+  float map = u->sensors.MAP.value;
+  float tps = u->sensors.TPS.value;
+  if (map < config->enable_threshold_kpa) {
     /* Below the "enable" threshold, keep the valve off */
     duty = 0.0f;
-  } else if (map < config.boost_control.control_threshold_kpa &&
-             tps > config.boost_control.control_threshold_tps) {
+  } else if (map < config->control_threshold_kpa &&
+             tps > config->control_threshold_tps) {
     /* Above "enable", but below "control", and WOT, so keep wastegate at
      * atmostpheric pressure to improve spool time */
     duty = 100.0f;
   } else {
     /* We are controlling the wastegate with PWM */
-    duty = interpolate_table_oneaxis(config.boost_control.pwm_duty_vs_rpm,
-                                     config.decoder.rpm);
+    duty = interpolate_table_oneaxis(&config->pwm_duty_vs_rpm, u->position.rpm);
   }
-  set_pwm(config.boost_control.pin, duty);
+  return duty;
 }
-
-static void handle_idle_control() {}
 
 /* Checks for a variety of failure conditions, and produces a check engine
  * output:
@@ -57,24 +60,17 @@ static void handle_idle_control() {}
  * Lean in boost - 3s of 1/5s blink
  */
 
-typedef enum {
-  CEL_NONE,
-  CEL_CONSTANT,
-  CEL_SLOWBLINK,
-  CEL_FASTBLINK,
-} cel_state_t;
+static cel_state_t determine_next_cel_state(const struct cel_config *config,
+                                            const struct engine_update *u) {
+  cel_state_t next_cel_state = CEL_NONE;
 
-static cel_state_t cel_state = CEL_NONE;
-static timeval_t last_cel = 0;
+  float map = u->sensors.MAP.value;
+  float ego = u->sensors.EGO.value;
 
-static cel_state_t determine_next_cel_state() {
-  static cel_state_t next_cel_state;
-
-  int sensor_in_fault = (sensor_fault_status() > 0);
-  int decode_loss = !config.decoder.valid && (config.decoder.rpm > 0);
-  int lean_in_boost =
-    (config.sensors[SENSOR_MAP].value > config.cel.lean_boost_kpa) &&
-    (config.sensors[SENSOR_EGO].value > config.cel.lean_boost_ego);
+  bool sensor_in_fault = sensor_has_faults(&u->sensors);
+  bool decode_loss = !u->position.has_position;
+  bool lean_in_boost =
+    (map > config->lean_boost_kpa) && (ego > config->lean_boost_ego);
 
   /* Translate CEL condition to CEL blink state */
   if (lean_in_boost) {
@@ -106,47 +102,42 @@ static int determine_cel_pin_state(cel_state_t state,
   }
 }
 
-static void handle_check_engine_light() {
+static bool handle_check_engine_light(const struct cel_config *config,
+                                      struct tasks *state,
+                                      const struct engine_update *u) {
 
-  cel_state_t next_cel_state = determine_next_cel_state();
+  cel_state_t next_cel_state = determine_next_cel_state(config, u);
 
   /* Handle 3s reset of CEL state */
-  if (time_diff(current_time(), last_cel) > time_from_us(3000000)) {
-    cel_state = CEL_NONE;
+  if (time_diff(u->current_time, state->cel_time) > time_from_us(3000000)) {
+    state->cel_state = CEL_NONE;
   }
 
   /* Are we transitioning to a higher state? If so reset blink timer */
-  if (next_cel_state > cel_state) {
-    cel_state = next_cel_state;
-    last_cel = current_time();
+  if (next_cel_state > state->cel_state) {
+    state->cel_state = next_cel_state;
+    state->cel_time = u->current_time;
   }
 
-  set_gpio(config.cel.pin,
-           determine_cel_pin_state(cel_state, current_time(), last_cel));
+  return determine_cel_pin_state(
+    state->cel_state, u->current_time, state->cel_time);
 }
 
-void handle_emergency_shutdown() {
+void run_tasks(struct viaems *viaems,
+               const struct engine_update *update,
+               struct platform_plan *plan) {
+  plan_set_gpio(plan,
+                viaems->config->fueling.fuel_pump_pin,
+                determine_fuel_pump_state(&viaems->tasks, update));
 
-  /* Fuel pump off */
-  set_gpio(config.fueling.fuel_pump_pin, 0);
+  plan_set_gpio(
+    plan,
+    viaems->config->cel.pin,
+    handle_check_engine_light(&viaems->config->cel, &viaems->tasks, update));
 
-  /* Stop events */
-  invalidate_scheduled_events(config.events, MAX_EVENTS);
-
-  /* TODO evaluate what to do about ignition outputs
-   * for now, make sure fuel injectors are off */
-  for (unsigned int i = 0; i < MAX_EVENTS; ++i) {
-    if (config.events[i].type == FUEL_EVENT) {
-      set_output(config.events[i].pin, config.events[i].inverted);
-    }
-  }
-}
-
-void run_tasks() {
-  handle_fuel_pump();
-  handle_boost_control();
-  handle_idle_control();
-  handle_check_engine_light();
+  plan_set_pwm(plan,
+               viaems->config->boost_control.pin,
+               handle_boost_control(&viaems->config->boost_control, update));
 }
 
 #ifdef UNITTEST
@@ -155,68 +146,85 @@ void run_tasks() {
 START_TEST(check_tasks_handle_fuel_pump) {
 
   /* Initial conditions */
-  config.fueling.fuel_pump_pin = 1;
-  ck_assert_int_eq(get_gpio(1), 0);
+  struct engine_update update = {
+    .position = { 
+      .time = 0, 
+      .valid_until = -1, 
+      .has_position = false, 
+      .has_rpm = false ,
+    },
+    .current_time = 500,
+  };
 
-  set_current_time(time_from_us(500));
-  handle_fuel_pump();
-  ck_assert_int_eq(get_gpio(1), 1);
+  struct tasks state = { 0 };
+
+  ck_assert(determine_fuel_pump_state(&state, &update) == true);
+  ck_assert_int_eq(state.fuelpump_last_valid, 0);
 
   /* Wait 4 seconds, should turn off */
-  set_current_time(time_from_us(4001000));
-  handle_fuel_pump();
-  ck_assert_int_eq(get_gpio(1), 0);
+  update.current_time = time_from_us(4001000);
+  ck_assert(determine_fuel_pump_state(&state, &update) == false);
 
   /* Wait 4 more seconds, should still be off */
-  set_current_time(time_from_us(8000000));
-  handle_fuel_pump();
-  ck_assert_int_eq(get_gpio(1), 0);
+  update.current_time = time_from_us(8000000);
+  ck_assert(determine_fuel_pump_state(&state, &update) == false);
 
   /* Have a recent trigger */
-  config.decoder.state = DECODER_RPM;
-  config.decoder.last_trigger_time = current_time() - 500000;
-  handle_fuel_pump();
-  ck_assert_int_eq(get_gpio(1), 1);
+  update.position.has_rpm = true;
+  update.position.tooth_rpm = update.position.rpm = 500;
+  update.position.time = time_from_us(9000000);
+  update.position.valid_until = time_from_us(11000000);
+  update.current_time = time_from_us(10000000);
+  ck_assert(determine_fuel_pump_state(&state, &update) == true);
 
-  /* Keep waiting, should shut off */
-  set_current_time(time_from_us(15000000));
-  handle_fuel_pump();
-  ck_assert_int_eq(get_gpio(1), 0);
+  update.current_time = time_from_us(15000000);
+  ck_assert(determine_fuel_pump_state(&state, &update) == false);
 
   /* Keep waiting, should stay shut off */
-  set_current_time(time_from_us(200000000));
-  handle_fuel_pump();
-  ck_assert_int_eq(get_gpio(1), 0);
+  update.current_time = time_from_us(20000000);
+  ck_assert(determine_fuel_pump_state(&state, &update) == false);
 }
 END_TEST
 
 START_TEST(check_tasks_next_cel_state) {
   /* no fault */
-  config.decoder.valid = 1;
-  ck_assert_int_eq(determine_next_cel_state(), CEL_NONE);
+  struct engine_update update = { 
+    .position = { 
+      .time = 0, 
+      .valid_until = -1, 
+      .has_position = true, 
+      .has_rpm = true,
+    },
+    .sensors = { 0 },
+  };
+  const struct cel_config config = {
+    .lean_boost_ego = 0.85,
+    .lean_boost_kpa = 150,
+    .pin = 1,
+  };
+
+  ck_assert_int_eq(determine_next_cel_state(&config, &update), CEL_NONE);
 
   /* Sensor fault */
-  config.sensors[SENSOR_MAP].fault = FAULT_RANGE;
-  ck_assert_int_eq(determine_next_cel_state(), CEL_CONSTANT);
+  update.sensors.MAP.fault = FAULT_RANGE;
+  ck_assert_int_eq(determine_next_cel_state(&config, &update), CEL_CONSTANT);
 
   /* Decoder loss */
-  config.decoder.valid = 0;
-  config.decoder.rpm = 1000;
-  config.sensors[SENSOR_MAP].fault = FAULT_NONE;
-  ck_assert_int_eq(determine_next_cel_state(), CEL_SLOWBLINK);
+  update.position.has_position = update.position.has_rpm = false;
+  update.sensors.MAP.fault = FAULT_NONE;
+  ck_assert_int_eq(determine_next_cel_state(&config, &update), CEL_SLOWBLINK);
 
   /* Still decoder loss, add sensor fault */
-  config.sensors[SENSOR_MAP].fault = FAULT_RANGE;
-  ck_assert_int_eq(determine_next_cel_state(), CEL_SLOWBLINK);
+  update.sensors.MAP.fault = FAULT_RANGE;
+  ck_assert_int_eq(determine_next_cel_state(&config, &update), CEL_SLOWBLINK);
 
   /* Lean in boost */
-  config.sensors[SENSOR_MAP].fault = FAULT_NONE;
-  config.decoder.valid = 1;
-  config.sensors[SENSOR_MAP].value = 180;
-  config.sensors[SENSOR_EGO].value = 1.1;
-  ck_assert_int_eq(determine_next_cel_state(), CEL_FASTBLINK);
+  update.sensors.MAP.fault = FAULT_NONE;
+  update.position.has_position = update.position.has_rpm = true;
+  update.sensors.MAP.value = 180;
+  update.sensors.EGO.value = 1.1;
+  ck_assert_int_eq(determine_next_cel_state(&config, &update), CEL_FASTBLINK);
 }
-END_TEST
 
 START_TEST(check_tasks_cel_pin_state) {
 

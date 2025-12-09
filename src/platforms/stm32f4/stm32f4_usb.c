@@ -308,18 +308,15 @@ size_t console_read(void *ptr, size_t max) {
 }
 
 size_t console_write(const void *ptr, size_t max) {
-  int amt = max;
-  if (amt > CDC_DATA_SZ) {
-    amt = CDC_DATA_SZ;
-  }
+  size_t amt = max > CDC_DATA_SZ ? CDC_DATA_SZ : max;
 
   NVIC_DisableIRQ(OTG_FS_IRQn);
-  int written = usbd_ep_write(&udev, CDC_TXD_EP, (void *)ptr, amt);
+  int written = usbd_ep_write(&udev, CDC_TXD_EP, ptr, amt);
   NVIC_EnableIRQ(OTG_FS_IRQn);
-  if (written < 0) {
-    return 0;
+  if (written >= 0) {
+    return written;
   }
-  return written;
+  return 0;
 }
 
 void stm32f4_configure_usb(void) {

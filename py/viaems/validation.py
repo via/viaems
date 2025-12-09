@@ -49,7 +49,7 @@ class Config:
 
     def lookup(self, pin, end_angle):
         # TODO maybe don't hardcode this, but until then:
-        #  - assume fuel is +/- 10 degrees
+        #  - assume fuel is +/- 20 degrees
         #  - assume ignition is -50 to +10 degrees
         for oc in self.outputs:
             if pin != oc.pin:
@@ -60,7 +60,7 @@ class Config:
                     return oc
 
             if oc.typ == OutputConfig.FUEL:
-                if self._offset_within(oc, end_angle, -10, 10):
+                if self._offset_within(oc, end_angle, -20, 20):
                     return oc
 
 
