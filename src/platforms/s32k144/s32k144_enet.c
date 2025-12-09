@@ -1,10 +1,13 @@
 #include <memory.h>
 #include <string.h>
 #include <stdint.h>
-#include "s32k1xx.h"
-
-#include "s32k144_enet.h"
 #include <stdio.h>
+
+#include "platform.h"
+#include "console.h"
+
+#include "s32k1xx.h"
+#include "s32k144_enet.h"
 
 #define MAX_PACKET_SIZE 1536
 #define TX_RING_SIZE 4
@@ -332,19 +335,23 @@ struct udp_header {
 
 };
 
-void send_mcast(uint8_t *data, uint32_t length) {
-  struct enet_tx_descriptor *tx;
-  if (!enet_get_next_available_frame_tx(&tx)) {
-    return;
-  }
+void platform_write_message(struct console_buffer *buffer) {
   const uint16_t ip_header_len = 20;
   const uint16_t udp_header_len = 8;
-  
+  const uint16_t total_len = buffer->length + ip_header_len + udp_header_len;
+
+  if (total_len > MAX_PACKET_SIZE) {
+    return;
+  }
+
+  struct enet_tx_descriptor *tx;
+  while (!enet_get_next_available_frame_tx(&tx));
+
   /* TODO make configurable, but for now:
    *  IP: 239.0.0.10
    *  MAC: 01:00:5E:00:00:0A */
 
-  const uint16_t total_len = length + ip_header_len + udp_header_len;
+
   enet_tx_frame_set_dest(tx, (uint8_t[]){0x01, 0x00, 0x5E, 0x00, 0x00, 0x0A});
   enet_tx_frame_set_length(tx, total_len + 14);
   enet_tx_frame_set_type(tx, 0x800);
@@ -382,14 +389,18 @@ void send_mcast(uint8_t *data, uint32_t length) {
   frame[22] = dport >> 8;
   frame[23] = dport;
 
-  uint16_t udp_len = 8 + length;
+  uint16_t udp_len = 8 + buffer->length;
   frame[24] = udp_len >> 8;
   frame[25] = udp_len;
   frame[26] = 0;
   frame[27] = 0; // udp checksum
 
-  memcpy(&frame[28], data, length);
+  memcpy(&frame[28], buffer->data, buffer->length);
 
   enet_send_frame(tx);
 
 }
+
+
+bool platform_read_message(struct console_buffer **buffer) { return false; }
+void platform_read_message_release(struct console_buffer **buffer) { } 
