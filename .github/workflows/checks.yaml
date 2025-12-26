@@ -6,9 +6,10 @@ on:
 jobs:
   tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: install apt deps
-        run: sudo apt update && sudo apt install -y check gcc-arm-none-eabi clang-tidy
+        run: sudo apt update && sudo apt install -y check gcc-arm-none-eabi clang-tidy libusb-1.0-0-dev
       - name: checkout
         uses: actions/checkout@v3
         with:
@@ -17,6 +18,8 @@ jobs:
         run: make PLATFORM=test check
       - name: build hosted platform
         run: make PLATFORM=hosted
+      - name: build hosted proxy
+        run: make PLATFORM=hosted proxy
       - name: install pip deps
         run: ( cd py; python3 -m pip install --upgrade pip; python3 -m pip install -r requirements.txt )
       - name: run hosted integration checks

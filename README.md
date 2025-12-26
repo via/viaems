@@ -276,7 +276,11 @@ but that work is planned. In the meantime:
 4) Connect the trigger inputs, GPIOs, outputs, and SPI ADC connections to the
 test bench.
 4) Load the bitstream onto the test bench (it is only stored in ram)
-5) Run the python integration tests as above, but as root and with the --hil flag:
+5) Ensure two tools are locally built:
+  * `viaems-fpga-tb`, the rust tool in the above repo for interfacing with the
+    test bench hardware, must be in PATH
+  * `make PLATFORM=hosted proxy` to build the target console interface tool
+6) Run the python integration tests as above, but as root and with the --hil flag:
 ```
 sudo python py/integration-tests/smoke-tests.py --hil
 ```

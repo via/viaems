@@ -17,7 +17,7 @@ class ViaemsInterface:
     def recv_until_id(self, id, max_messages=1000):
         while True:
             result = self.recv()
-            if "id" in result and int(result["id"]) == id:
+            if isinstance(result, dict) and "id" in result and int(result["id"]) == id:
                 return result
             max_messages -= 1
             if max_messages == 0:
@@ -116,7 +116,6 @@ class SimConnector(ViaemsInterface):
                     file.write(f"e {delay}\n")
 
     
-
     def execute_scenario(self, scenario, settings=[]):
         tf = open(f"scenario_{scenario.name}.inputs", "w")
         self._render_target_inputs(scenario, tf)
@@ -151,19 +150,9 @@ class SimConnector(ViaemsInterface):
         return Log(enriched_log)
 
 class HilConnector(ViaemsInterface):
-    def __init__(self):
-        self._target_reset()
-
-        # find the ECU device via USB
-        viaems_device = usb.core.find(idVendor=0x1209, idProduct=0x2041)
-        if not viaems_device:
-            raise ValueError("No Viaems USB device found")
-        
-        if viaems_device.is_kernel_driver_active(0):
-            viaems_device.detach_kernel_driver(0)
-
-        self.device = viaems_device
-        self.read_buffer = b''
+    def __init__(self, binary="obj/hosted/proxy"):
+        self.binary = binary
+        self.process = None
 
     def _target_reset(self):
         # Output 8 (MSB) is connected to nRST, pull it low and then high
@@ -182,30 +171,34 @@ class HilConnector(ViaemsInterface):
                 ], check=True)
         time.sleep(1)
 
+    def start(self):
+        self._target_reset()
+
+        self.process = subprocess.Popen(
+            [self.binary],
+            bufsize=-1,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            pipesize=1 * 1024 * 1024,
+        )
+
 
     def kill(self):
-        self.device.reset()
+        if not self.process:
+            return
+        self.process.kill()
+        self.process.communicate()
+        self.process.wait()
 
     def send(self, payload):
         binary = cbor.dumps(payload)
-        self.device.write(0x1, binary)
+        self.process.stdin.write(binary)
+        self.process.stdin.flush()
 
     def recv(self):
-        while True:
-            try: 
-                bio = BytesIO(self.read_buffer)
-                result = cbor.load(bio)
-                pos = bio.tell()
-                self.read_buffer = self.read_buffer[pos:]
-                if isinstance(result, dict):
-                    return result
-                continue
-            except Exception as e:
-                if len(self.read_buffer) > 20000:
-                    self.read_buffer = self.read_buffer[1:]
-                else:
-                    self.read_buffer += self.device.read(0x81, 4096)
-
+        result = cbor.load(self.process.stdout)
+        return result
 
     def log_from_capture(self, msgs: List[str]) -> List[CaptureEvent]:
         last_raw_value = 0
@@ -293,13 +286,15 @@ class HilConnector(ViaemsInterface):
     
 
     def execute_scenario(self, scenario, settings=[]):
-        self.set(["test", "event-logging"], True)
-        for path, value in settings:
-            self.set(path, value)
-
         tf = open(f"scenario_{scenario.name}.inputs", "w")
         self._render_target_inputs(scenario, tf)
         tf.close()
+
+        self.start()
+
+        self.set(["test", "event-logging"], True)
+        for path, value in settings:
+            self.set(path, value)
 
         # Start test bench
         tb_process = subprocess.Popen(
