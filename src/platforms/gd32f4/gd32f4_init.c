@@ -1,12 +1,17 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "config.h"
+#include "decoder.h"
 #include "gd32f4xx_fwdgt.h"
 #include "gd32f4xx_rcu.h"
 #include "platform.h"
 #include "tasks.h"
+#include "viaems.h"
 
 #include "gd32f4xx.h"
+
+struct viaems gd32f4_viaems;
 
 void platform_enable_event_logging() {}
 
@@ -26,36 +31,9 @@ static void setup_dwt() {
   DWT->CYCCNT = 0;
 }
 
-void disable_interrupts() {
-  __disable_irq();
-}
-
-void enable_interrupts() {
-  __enable_irq();
-}
-
-bool interrupts_enabled() {
-  return __get_PRIMASK() == 0;
-}
-
-void set_output(int output, char value) {
-  if (value) {
-    GPIO_OCTL(GPIOD) |= (1 << output);
-  } else {
-    GPIO_OCTL(GPIOD) &= ~(1 << output);
-  }
-}
-
-void set_gpio(int output, char value) {
-  if (value) {
-    GPIO_OCTL(GPIOE) |= (1 << output);
-  } else {
-    GPIO_OCTL(GPIOE) &= ~(1 << output);
-  }
-}
-
-int __attribute__((externally_visible))
-_write(int fd, const char *buf, size_t count) {
+int __attribute__((externally_visible)) _write(int fd,
+                                               const char *buf,
+                                               size_t count) {
   (void)fd;
   size_t pos = 0;
   while (pos < count) {
@@ -64,8 +42,12 @@ _write(int fd, const char *buf, size_t count) {
   return count;
 }
 
-static void reset_watchdog() {
+void reset_watchdog() {
   FWDGT_CTL = 0x0000AAAA;
+}
+
+void set_gpio_port(uint32_t value) {
+  GPIO_OCTL(GPIOE) = value;
 }
 
 static void setup_watchdog() {
@@ -75,24 +57,6 @@ static void setup_watchdog() {
   FWDGT_CTL = 0x00005555; /* Magic unlock sequence */
   FWDGT_RLD = 250;        /* Approx 35 mS */
   reset_watchdog();
-}
-
-void systick_handler(void) {
-  run_tasks();
-  reset_watchdog();
-}
-
-static void setup_systick() {
-  DBG_CTL1 |= DBG_CTL1_FWDGT_HOLD;
-
-  /* Systick is driven by AHB / 8 = 25 MHz
-   * Reload value 250000 for 25 MHz Systick and 10 ms period */
-  SysTick->LOAD = 250000;
-  SysTick->CTRL = SysTick_CTRL_ENABLE_Msk |
-                  SysTick_CTRL_TICKINT_Msk; /* Enable interrupt and systick */
-
-  NVIC_SetPriority(SysTick_IRQn,
-                   NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 4, 0));
 }
 
 static void setup_gpios(void) {
@@ -184,6 +148,9 @@ void platform_reset_into_bootloader() {
 /* Common symbols exported by the linker script(s): */
 extern uint32_t _data_loadaddr, _sdata, _edata, _ebss;
 
+void platform_configure(bool is_benchmark);
+void platform_load_config();
+
 void reset_handler(void) {
   if (bootloader_flag == BOOTLOADER_FLAG) {
     bootloader_flag = 0;
@@ -210,8 +177,21 @@ void reset_handler(void) {
 
   system_init();
 
-  int main();
-  (void)main();
+  platform_load_config();
+  bool benchmark_enabled = false;
+#ifdef BENCHMARK
+  benchmark_enabled = true;
+#endif
+
+  if (benchmark_enabled) {
+    platform_configure(true);
+    int start_benchmarks(void);
+    start_benchmarks();
+  } else {
+    viaems_init(&gd32f4_viaems, &default_config);
+    platform_configure(false);
+    viaems_idle(&gd32f4_viaems);
+  }
 }
 extern uint32_t _configdata_loadaddr, _sconfigdata, _econfigdata;
 void platform_load_config() {
@@ -223,8 +203,7 @@ void platform_load_config() {
 }
 
 void platform_save_config() {
-  disable_interrupts();
-  handle_emergency_shutdown();
+  __disable_irq();
   platform_disable_periphs();
 
   /* Ensure watchdog won't stop us from flashing */
@@ -250,21 +229,19 @@ extern void gd32f4xx_console_init(void);
 extern void gd32f4xx_configure_adc(void);
 extern void gd32f4xx_configure_pwm(void);
 
-void platform_init(int argc, char **argv) {
-  (void)argc;
-  (void)argv;
+void platform_configure(bool is_benchmark) {
 
   NVIC_SetPriorityGrouping(3); /* 16 priority preemption levels */
 
-  gd32f4xx_configure_scheduler();
-  gd32f4xx_console_init();
-  gd32f4xx_configure_adc();
-  gd32f4xx_configure_pwm();
+  if (!is_benchmark) {
+    gd32f4xx_configure_scheduler();
+    gd32f4xx_configure_adc();
+    gd32f4xx_configure_pwm();
 
-  setup_gpios();
-  setup_systick();
-  setup_watchdog();
+    setup_gpios();
+    setup_watchdog();
+  }
+
   setup_dwt();
+  gd32f4xx_console_init();
 }
-
-void platform_benchmark_init() {}

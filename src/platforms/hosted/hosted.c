@@ -12,16 +12,21 @@
 
 #include "config.h"
 #include "console.h"
+#include "decoder.h"
 #include "platform.h"
 #include "scheduler.h"
+#include "sensors.h"
+#include "sim.h"
+#include "util.h"
+#include "viaems.h"
 
-static _Atomic timeval_t curtime;
+static timeval_t curtime;
 
-static _Atomic timeval_t event_timer_time = 0;
-static _Atomic bool event_timer_enabled = false;
-static _Atomic bool event_timer_pending = false;
-
+static timeval_t sim_wakeup_time = 0;
+static bool sim_wakeup_enabled = false;
 static uint16_t cur_outputs = 0;
+
+static struct viaems hosted_viaems;
 
 /* Disable leak detection in asan. There are several convenience allocations,
  * but they should be single ones for the lifetime of the program */
@@ -41,90 +46,37 @@ uint64_t cycle_count() {
   return (uint64_t)tp.tv_sec * 1000000000 + tp.tv_nsec;
 }
 
+void write_string(const char *s) {
+  puts(s);
+}
+
 uint64_t cycles_to_ns(uint64_t cycles) {
   return cycles;
 }
 
-void schedule_event_timer(timeval_t t) {
-  event_timer_pending = false;
-  event_timer_time = t;
-  event_timer_enabled = true;
-  if (time_before_or_equal(t, current_time())) {
-    event_timer_pending = true;
-  }
+void set_sim_wakeup(timeval_t t) {
+  sim_wakeup_time = t;
+  sim_wakeup_enabled = true;
 }
 
-/* Used to lock the interrupt thread */
-static pthread_mutex_t interrupt_mutex;
-
-/* Used to determine when we've recursively unlocked */
-static pthread_mutex_t interrupt_count_mutex;
-_Atomic int interrupt_disables = 0;
-
-void disable_interrupts() {
-  if (pthread_mutex_lock(&interrupt_mutex)) {
-    abort();
-  }
-  interrupt_disables += 1;
-}
-
-void enable_interrupts() {
-  interrupt_disables -= 1;
-
-  if (interrupt_disables < 0) {
-    abort();
-  }
-
-  if (pthread_mutex_unlock(&interrupt_mutex)) {
-    abort();
-  }
-}
-
-bool interrupts_enabled() {
-  return (interrupt_disables == 0);
-}
-
-void set_output(int output, char value) {
-  if (value) {
-    cur_outputs |= (1 << output);
-  } else {
-    cur_outputs &= ~(1 << output);
-  }
-}
-
-void set_gpio(int output, char value) {
+void set_gpio(uint16_t new_gpios, timeval_t when) {
   static uint16_t gpios = 0;
-  uint16_t old_gpios = gpios;
-
-  if (value) {
-    gpios |= (1 << output);
-  } else {
-    gpios &= ~(1 << output);
-  }
-
-  if (old_gpios != gpios) {
+  if (gpios != new_gpios) {
     console_record_event((struct logged_event){
-      .time = current_time(),
-      .value = gpios,
+      .time = when,
+      .value = new_gpios,
       .type = EVENT_GPIO,
     });
   }
+
+  gpios = new_gpios;
 }
 
-void set_pwm(int output, float value) {
-  (void)output;
-  (void)value;
-}
-
-void adc_gather() {}
-
-timeval_t last_tx = 0;
 size_t console_write(const void *buf, size_t len) {
   ssize_t written = -1;
   while ((written = write(STDOUT_FILENO, buf, len)) < 0)
     ;
   if (written > 0) {
-    last_tx = curtime;
     return written;
   }
   return 0;
@@ -139,7 +91,9 @@ size_t console_read(void *buf, size_t len) {
   return (size_t)res;
 }
 
-void platform_load_config() {}
+struct config *platform_load_config() {
+  return &default_config;
+}
 
 void platform_save_config() {}
 
@@ -162,113 +116,20 @@ static struct timespec add_times(struct timespec a, struct timespec b) {
   return ret;
 }
 
-typedef enum event_type {
-  TRIGGER0,
-  TRIGGER1,
-  OUTPUT_CHANGED,
-  SCHEDULED_EVENT,
-} event_type;
+static int schedule_entry_compare(const void *_a, const void *_b) {
+  const struct schedule_entry *const *a = _a;
+  const struct schedule_entry *const *b = _b;
 
-struct event {
-  event_type type;
-  timeval_t time;
-  uint16_t values;
-};
-
-void *platform_interrupt_thread(void *_interrupt_fd) {
-  int *interrupt_fd = (int *)_interrupt_fd;
-
-  do {
-    struct event msg;
-
-    ssize_t rsize = read(*interrupt_fd, &msg, sizeof(msg));
-    if (rsize < 0) {
-      if (errno == EINTR) {
-        continue;
-      }
-      perror("read");
-      exit(1);
-    }
-
-    switch (msg.type) {
-    case TRIGGER0:
-      decoder_update_scheduling(0, msg.time);
-      break;
-    case TRIGGER1:
-      decoder_update_scheduling(1, msg.time);
-      break;
-    case SCHEDULED_EVENT:
-      while (event_timer_pending) {
-        event_timer_pending = false;
-        scheduler_callback_timer_execute();
-      }
-      break;
-    default:
-      break;
-    }
-
-  } while (1);
-}
-
-#define MAX_SLOTS 128
-static struct sched_entry output_events[64];
-static size_t num_output_events = 0;
-static size_t next_output_event = 0;
-
-static void clear_output_events() {
-  num_output_events = 0;
-  next_output_event = 0;
-}
-
-static void add_output_event(struct sched_entry *se) {
-  output_events[num_output_events] = *se;
-  num_output_events++;
-}
-
-static int output_event_compare(const void *_a, const void *_b) {
-  const struct sched_entry *a = _a;
-  const struct sched_entry *b = _b;
-
-  if (a->time == b->time) {
+  if ((*a)->time == (*b)->time) {
     return 0;
   }
-  return time_before(a->time, b->time) ? -1 : 1;
+  return time_before((*a)->time, (*b)->time) ? -1 : 1;
 }
 
-static void platform_buffer_swap(timeval_t new_start, timeval_t new_stop) {
-
-  disable_interrupts();
-  clear_output_events();
-  for (int i = 0; i < MAX_EVENTS; i++) {
-    struct output_event *oev = &config.events[i];
-    if (sched_entry_get_state(&oev->start) == SCHED_SUBMITTED) {
-      sched_entry_set_state(&oev->start, SCHED_FIRED);
-    }
-    if (sched_entry_get_state(&oev->stop) == SCHED_SUBMITTED) {
-      sched_entry_set_state(&oev->stop, SCHED_FIRED);
-    }
-    if (sched_entry_get_state(&oev->start) == SCHED_SCHEDULED &&
-        time_in_range(oev->start.time, new_start, new_stop)) {
-      add_output_event(&oev->start);
-      sched_entry_set_state(&oev->start, SCHED_SUBMITTED);
-    }
-    if (sched_entry_get_state(&oev->stop) == SCHED_SCHEDULED &&
-        time_in_range(oev->stop.time, new_start, new_stop)) {
-      add_output_event(&oev->stop);
-      sched_entry_set_state(&oev->stop, SCHED_SUBMITTED);
-    }
+static void retire_plan(struct platform_plan *plan) {
+  for (int i = 0; i < plan->n_events; i++) {
+    plan->schedule[i]->state = SCHED_FIRED;
   }
-  enable_interrupts();
-  /* Sort the outputs by ascending time */
-  qsort(output_events,
-        num_output_events,
-        sizeof(struct sched_entry),
-        output_event_compare);
-}
-
-timeval_t platform_output_earliest_schedulable_time() {
-  /* Round down to nearest MAX_SLOTS and then go to next window */
-  return current_time() / MAX_SLOTS * MAX_SLOTS + MAX_SLOTS;
 }
 
 static void report_output_event(timeval_t time, uint16_t outputs) {
@@ -279,12 +140,17 @@ static void report_output_event(timeval_t time, uint16_t outputs) {
   });
 }
 
-static void do_output_slots(timeval_t from, timeval_t to) {
-  /* Only take action on first slot time */
-  platform_buffer_swap(from, to);
+static void execute_plan(struct platform_plan *plan) {
+  qsort(plan->schedule,
+        plan->n_events,
+        sizeof(struct schedule_entry *),
+        schedule_entry_compare);
+  for (int i = 0; i < plan->n_events; i++) {
+    plan->schedule[i]->state = SCHED_SUBMITTED;
+  }
 
-  for (unsigned int i = 0; i < num_output_events; i++) {
-    struct sched_entry *s = &output_events[i];
+  for (int i = 0; i < plan->n_events; i++) {
+    const struct schedule_entry *s = plan->schedule[i];
     /* Update outputs */
     if (s->val) {
       cur_outputs |= (1 << s->pin);
@@ -292,7 +158,7 @@ static void do_output_slots(timeval_t from, timeval_t to) {
       cur_outputs &= ~(1 << s->pin);
     }
 
-    if ((i != num_output_events - 1) && (s->time == (s + 1)->time)) {
+    if ((i != plan->n_events - 1) && (s->time == (s + 1)->time)) {
       /* This isn't the last event, and the next event is the same time,
        * skip in reporting */
       continue;
@@ -300,86 +166,87 @@ static void do_output_slots(timeval_t from, timeval_t to) {
 
     report_output_event(s->time, cur_outputs);
   }
+
+  set_gpio(plan->gpio, plan->schedulable_start);
 }
+
+static struct adc_update current_adc = { 0 };
+static void handle_replay_events(timeval_t until_time);
 
 /* Thread that busywaits to increment the primary timebase.  This loop is also
  * responsible for triggering event timer, buffer swap, and trigger events
  */
 
-static struct adc_update current_adc = { 0 };
+void *platform_timebase_thread(void *_ptr) {
+  (void)_ptr;
 
-void *platform_timebase_thread(void *_interrupt_fd) {
-  int *interrupt_fd = (int *)_interrupt_fd;
-  timeval_t last_tasks_run = 0;
+  /* Each iteration will jump forward 200 uS, and first:
+   *  - handle any sim wakeups between now and +200 uS
+   *  - handle any replay events between now and +200 uS
+   *  - run the main engine rescheduling
+   *  - process the list of events provided
+   *  - actually wait 200 uS of real time
+   */
+
+  static struct platform_plan plan = { 0 };
   struct timespec current_time;
   struct timespec tick_increment = {
-    .tv_nsec = 32000,
+    .tv_nsec = 200000,
   };
-  
-  timeval_t last_adc_update = 0;
 
   if (clock_gettime(CLOCK_MONOTONIC, &current_time)) {
     perror("clock_gettime");
   }
 
   do {
+    timeval_t after = curtime + 800; /* 200 uS */
+
+    if (sim_wakeup_enabled && time_before(sim_wakeup_time, after)) {
+      sim_wakeup_callback(&hosted_viaems.decoder);
+      sim_wakeup_enabled = false;
+    }
+
+    handle_replay_events(after);
+
+    struct engine_update update = { .current_time = after };
+    update.position = decoder_get_engine_position(&hosted_viaems.decoder);
+    sensor_update_adc(&hosted_viaems.sensors, &update.position, &current_adc);
+
+    update.sensors = sensors_get_values(&hosted_viaems.sensors);
+
+    retire_plan(&plan);
+
+    plan = (struct platform_plan){
+      .schedulable_start = after,
+      .schedulable_end = after + 800 - 1,
+    };
+
+    viaems_reschedule(&hosted_viaems, &update, &plan);
+
+    execute_plan(&plan);
+
     struct timespec next_tick = add_times(current_time, tick_increment);
     clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &next_tick, NULL);
     current_time = next_tick;
-
-    /* Process anything that needed to happen between curtime and curtime+128 */
-    timeval_t before = curtime;
-    timeval_t after = curtime + 128; /* 32 uS */
     curtime = after;
 
-    do_output_slots(after, after + MAX_SLOTS - 1);
-
-    /* Ensure adc update occurs */
-    timeval_t next_adc_update = last_adc_update + (TICKRATE / platform_adc_samplerate());
-    if ((next_adc_update >= before) && (next_adc_update < after)) {
-      current_adc.time = next_adc_update;
-      sensor_update_adc(&current_adc);
-      last_adc_update = next_adc_update;
-    }
-
-    /* Ensure tasks are run once per 10 ms */
-    if (curtime - last_tasks_run > time_from_us(10000)) {
-      run_tasks();
-      last_tasks_run = curtime;
-    }
-
-    if (event_timer_enabled && time_in_range(event_timer_time, before, after)) {
-      event_timer_pending = true;
-    }
-    if (event_timer_pending) {
-      struct event event = { .type = SCHEDULED_EVENT };
-      if (write(*interrupt_fd, &event, sizeof(event)) < 0) {
-        perror("write");
-        exit(2);
-      }
-    }
-
-  } while (1);
+  } while (true);
 }
-
-static int interrupt_pipes[2];
-
-void platform_benchmark_init() {}
 
 struct hosted_args {
   const char *read_config_file;
   const char *write_config_file;
-  bool use_realtime;
   const char *read_replay_file;
+  bool benchmark_mode;
 };
 
 static void parse_args(struct hosted_args *args, int argc, char *argv[]) {
   *args = (struct hosted_args){ 0 };
   int opt;
-  while ((opt = getopt(argc, argv, "c:o:ri:")) != -1) {
+  while ((opt = getopt(argc, argv, "c:o:bi:")) != -1) {
     switch (opt) {
-    case 'r':
-      args->use_realtime = true;
+    case 'b':
+      args->benchmark_mode = true;
       break;
     case 'c':
       args->read_config_file = strdup(optarg);
@@ -393,13 +260,14 @@ static void parse_args(struct hosted_args *args, int argc, char *argv[]) {
     default:
       fprintf(
         stderr,
-        "usage: viaems [-c config] [-o outconfig] [-r] [-i replayfile]\n");
+        "usage: viaems [-c config] [-o outconfig] [-b] [-i replayfile]\n");
       exit(EXIT_FAILURE);
     }
   }
 }
 
 struct replay_event {
+  timeval_t time;
   enum {
     NO_EVENT,
     TRIGGER_EVENT,
@@ -411,179 +279,141 @@ struct replay_event {
   struct adc_update adc;
 };
 
-static FILE *replay_file;
-static struct timer_callback replay_timer;
-static struct replay_event replay_event = { .type = NO_EVENT };
-;
+static FILE *replay_file = NULL;
 
-static void replay_callback(void *ptr) {
-  (void)ptr;
+static struct replay_event read_next_replay_event(timeval_t last_time) {
+  /* Fetch next line */
+  static char *linebuf = NULL;
+  static size_t linebuf_size = 0;
 
-  do {
-    switch (replay_event.type) {
+  if (getline(&linebuf, &linebuf_size, replay_file) < 0) {
+    if (linebuf != NULL) {
+      free(linebuf);
+    }
+    exit(EXIT_SUCCESS);
+  }
+
+  switch (linebuf[0]) {
+  case 't': {
+    int delay;
+    int trigger;
+    sscanf(linebuf, "t %d %d", &delay, &trigger);
+
+    return (struct replay_event){
+      .time = last_time + delay,
+      .type = TRIGGER_EVENT,
+      .trigger = trigger,
+    };
+  }
+  case 'e': {
+    int delay;
+    sscanf(linebuf, "e %d", &delay);
+
+    return (struct replay_event){
+      .time = last_time + delay,
+      .type = END_EVENT,
+    };
+  }
+  case 'a': {
+    int delay;
+    struct replay_event ev;
+    sscanf(linebuf,
+           "a %d %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f",
+           &delay,
+           &ev.adc.values[0],
+           &ev.adc.values[1],
+           &ev.adc.values[2],
+           &ev.adc.values[3],
+           &ev.adc.values[4],
+           &ev.adc.values[5],
+           &ev.adc.values[6],
+           &ev.adc.values[7],
+           &ev.adc.values[8],
+           &ev.adc.values[9],
+           &ev.adc.values[10],
+           &ev.adc.values[11],
+           &ev.adc.values[12],
+           &ev.adc.values[13],
+           &ev.adc.values[14],
+           &ev.adc.values[15]);
+
+    /* Schedule an end event */
+    ev.adc.valid = true;
+    ev.adc.time = last_time + delay;
+    ev.time = last_time + delay;
+    ev.type = ADC_EVENT;
+    return ev;
+  }
+  default:
+    fprintf(stderr, "Invalid replay command: %c\n", linebuf[0]);
+    exit(EXIT_SUCCESS);
+  }
+}
+
+static void handle_replay_events(timeval_t until_time) {
+
+  static struct replay_event current_event = { 0 };
+
+  if (!replay_file) {
+    return;
+  }
+  if (current_event.type == NO_EVENT) {
+    current_event = read_next_replay_event(0);
+  }
+
+  while (time_before(current_event.time, until_time)) {
+    switch (current_event.type) {
     case END_EVENT:
       exit(EXIT_SUCCESS);
       break;
     case TRIGGER_EVENT:
-      decoder_update_scheduling(replay_event.trigger, replay_timer.time);
+      decoder_update(&hosted_viaems.decoder,
+                     &(struct trigger_event){
+                       .time = current_event.time,
+                       .type = current_event.trigger == 0 ? TRIGGER : SYNC });
       break;
     case NO_EVENT:
       break;
     case ADC_EVENT:
-      current_adc = replay_event.adc;
+      current_adc = current_event.adc;
       break;
     }
 
-    /* Fetch next line */
-    static char *linebuf = NULL;
-    static size_t linebuf_size = 0;
-
-    if (getline(&linebuf, &linebuf_size, replay_file) < 0) {
-      if (linebuf != NULL) {
-        free(linebuf);
-      }
-      exit(EXIT_SUCCESS);
-    }
-
-    switch (linebuf[0]) {
-    case 't': {
-      int delay;
-      int trigger;
-      sscanf(linebuf, "t %d %d", &delay, &trigger);
-
-      /* Schedule a trigger */
-      timeval_t next = replay_timer.time + delay;
-
-      replay_event.trigger = trigger;
-      replay_event.type = TRIGGER_EVENT;
-
-      replay_timer.data = &replay_event;
-      schedule_callback(&replay_timer, next);
-      return;
-    }
-    case 'e': {
-      int delay;
-      sscanf(linebuf, "e %d", &delay);
-
-      /* Schedule an end event */
-      timeval_t next = replay_timer.time + delay;
-
-      replay_event.type = END_EVENT;
-
-      replay_timer.data = &replay_event;
-      schedule_callback(&replay_timer, next);
-      return;
-    }
-    case 'a': {
-      int delay;
-
-      sscanf(linebuf,
-             "a %d %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f",
-             &delay,
-             &replay_event.adc.values[0],
-             &replay_event.adc.values[1],
-             &replay_event.adc.values[2],
-             &replay_event.adc.values[3],
-             &replay_event.adc.values[4],
-             &replay_event.adc.values[5],
-             &replay_event.adc.values[6],
-             &replay_event.adc.values[7],
-             &replay_event.adc.values[8],
-             &replay_event.adc.values[9],
-             &replay_event.adc.values[10],
-             &replay_event.adc.values[11],
-             &replay_event.adc.values[12],
-             &replay_event.adc.values[13],
-             &replay_event.adc.values[14],
-             &replay_event.adc.values[15]);
-
-      /* Schedule an end event */
-      timeval_t next = replay_timer.time + delay;
-      replay_event.adc.valid = true;
-      replay_event.adc.time = next;
-      replay_event.type = ADC_EVENT;
-
-      replay_timer.data = &replay_event;
-      schedule_callback(&replay_timer, next);
-      return;
-    }
-    default:
-      return;
-    }
-  } while (true);
+    current_event = read_next_replay_event(current_event.time);
+  }
 }
 
-static void configure_replay(const char *path) {
-  replay_file = fopen(path, "r");
-  replay_timer.callback = replay_callback;
-  replay_timer.data = NULL;
-
-  replay_callback(NULL);
-}
-
-void platform_init(int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
   struct hosted_args args;
   parse_args(&args, argc, argv);
 
-  // Make sure sensors are initialized before console starts
-  sensor_update_adc(&current_adc);
-
-  if (args.read_replay_file) {
-    configure_replay(args.read_replay_file);
+  if (args.benchmark_mode) {
+    int start_benchmarks(void);
+    start_benchmarks();
+    return 0;
   }
 
-  /* Initalize mutexes */
-  pthread_mutexattr_t im_attr;
-  pthread_mutexattr_init(&im_attr);
-  pthread_mutexattr_settype(&im_attr, PTHREAD_MUTEX_RECURSIVE);
-  pthread_mutex_init(&interrupt_mutex, &im_attr);
+  struct config *config = platform_load_config();
+  viaems_init(&hosted_viaems, config);
 
-  pthread_mutexattr_t imc_attr;
-  pthread_mutexattr_init(&imc_attr);
-  pthread_mutexattr_settype(&imc_attr, PTHREAD_MUTEX_ERRORCHECK);
-  pthread_mutex_init(&interrupt_count_mutex, &imc_attr);
+  // Make sure sensors are initialized before console starts
+  sensor_update_adc(
+    &hosted_viaems.sensors, &(struct engine_position){ 0 }, &current_adc);
+
+  if (args.read_replay_file) {
+    replay_file = fopen(args.read_replay_file, "r");
+  }
 
   /* Set stdin nonblock */
   fcntl(STDIN_FILENO, F_SETFL, fcntl(STDIN_FILENO, F_GETFL, 0) | O_NONBLOCK);
 
-  pipe(interrupt_pipes);
-
   pthread_t timebase;
-  pthread_attr_t timebase_attr;
-  pthread_attr_init(&timebase_attr);
-
-  pthread_attr_setinheritsched(&timebase_attr, PTHREAD_EXPLICIT_SCHED);
-  pthread_attr_setschedpolicy(&timebase_attr, SCHED_RR);
-  struct sched_param timebase_param = {
-    .sched_priority = 1,
-  };
-  pthread_attr_setschedparam(&timebase_attr, &timebase_param);
-
-  if (pthread_create(&timebase,
-                     args.use_realtime ? &timebase_attr : NULL,
-                     platform_timebase_thread,
-                     &interrupt_pipes[1])) {
+  if (pthread_create(&timebase, NULL, platform_timebase_thread, NULL)) {
     perror("pthread_create");
     exit(EXIT_FAILURE);
   }
 
-  pthread_t interrupts;
-  pthread_attr_t interrupts_attr;
-  pthread_attr_init(&interrupts_attr);
+  viaems_idle(&hosted_viaems);
 
-  pthread_attr_setinheritsched(&interrupts_attr, PTHREAD_EXPLICIT_SCHED);
-  pthread_attr_setschedpolicy(&interrupts_attr, SCHED_RR);
-  struct sched_param interrupts_param = {
-    .sched_priority = 2,
-  };
-  pthread_attr_setschedparam(&interrupts_attr, &interrupts_param);
-
-  if (pthread_create(&interrupts,
-                     args.use_realtime ? &interrupts_attr : NULL,
-                     platform_interrupt_thread,
-                     &interrupt_pipes[0])) {
-    perror("pthread_create");
-    /* Try without realtime sched */
-    exit(EXIT_FAILURE);
-  }
+  return 0;
 }

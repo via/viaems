@@ -1,6 +1,8 @@
 #ifndef _CALCULATIONS_H
 #define _CALCULATIONS_H
 
+#include "platform.h"
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -17,9 +19,7 @@ struct fueling_config {
     float enrich_amt;
   } crank_enrich_config;
 
-  /* Constants */
-  float density_of_air_stp; /* g/cc at 0C */
-  float density_of_fuel;    /* At 15 C */
+  float density_of_fuel; /* At 15 C */
 };
 
 typedef enum {
@@ -35,13 +35,26 @@ struct ignition_config {
   uint32_t min_fire_time_us;
 };
 
+struct calculations {
+  bool rpm_cut_triggered;
+
+  struct tipin_state {
+    timeval_t time;
+    timeval_t length;
+    float amount;
+    int active;
+  } tipin;
+};
+
 struct calculated_values {
+  /* Cuts */
+  bool rpm_limit_cut;
+  bool boost_cut;
+  bool fuel_overduty_cut;
+
   /* Ignition */
   float timing_advance;
   uint32_t dwell_us;
-  uint32_t rpm_limit_cut;
-  uint32_t boost_cut;
-  uint32_t fuel_overduty_cut;
 
   /* Fueling */
   uint32_t fueling_us;
@@ -55,12 +68,13 @@ struct calculated_values {
   float ete;
 };
 
-extern struct calculated_values calculated_values;
+struct config;
+struct engine_update;
 
-void calculate_ignition(void);
-void calculate_fueling(void);
-bool ignition_cut(void);
-bool fuel_cut(void);
+struct calculated_values calculate_ignition_and_fuel(
+  const struct config *config,
+  const struct engine_update *update,
+  struct calculations *state);
 
 #ifdef UNITTEST
 #include <check.h>

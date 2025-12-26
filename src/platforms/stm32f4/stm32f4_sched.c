@@ -1,9 +1,10 @@
-#include "config.h"
-#include "decoder.h"
 #include "platform.h"
-#include "scheduler.h"
 #include "stm32f427xx.h"
+#undef ETH
+#include "config.h"
+#include "sim.h"
 #include "util.h"
+#include "viaems.h"
 
 #include "stm32_sched_buffers.h"
 
@@ -30,6 +31,8 @@
  * which optionally may do fuel/ignition calculations and reschedule events.
  */
 
+extern struct viaems stm32f4_viaems;
+
 static void setup_tim8(void) {
   TIM8->CR2 = _VAL2FLD(TIM_CR2_MMS, 2); /* Master mode: TRGO on update */
   TIM8->ARR = 41; /* Period of (41+1) with 168 MHz Clock produces 4 MHz */
@@ -42,23 +45,25 @@ static void setup_tim8(void) {
    * edge aligned with the TIM2 update signal. This is useful for confirming
    * DMA output precision or otherwise tracking the clock externally */
 
-  GPIOB->MODER |= _VAL2FLD(GPIO_MODER_MODE0, 2);   /* Mode AF */
+  GPIOB->MODER |= _VAL2FLD(GPIO_MODER_MODE0, 2); /* Mode AF */
   GPIOB->OSPEEDR |= _VAL2FLD(GPIO_OSPEEDR_OSPEED0, 3);
   GPIOB->AFR[0] |= _VAL2FLD(GPIO_AFRL_AFSEL0, 3); /* AF 3 */
-  TIM8->CCMR1 = _VAL2FLD(TIM_CCMR1_OC2M, 7); /* PWM mode 1 */
-  TIM8->CCER = TIM_CCER_CC2NE | TIM_CCER_CC2NP; 
+  TIM8->CCMR1 = _VAL2FLD(TIM_CCMR1_OC2M, 7);      /* PWM mode 1 */
+  TIM8->CCER = TIM_CCER_CC2NE | TIM_CCER_CC2NP;
   TIM8->CCR2 = 21;
   TIM8->BDTR = TIM_BDTR_MOE;
 #endif
 
-  TIM8->CR1 = TIM_CR1_CEN;   /* Start counter */
+  TIM8->CR1 = TIM_CR1_CEN; /* Start counter */
 }
 
 static void configure_trigger_inputs(void) {
-  trigger_edge cc1_edge = config.freq_inputs[0].edge;
-  trigger_edge cc2_edge = config.freq_inputs[1].edge;
-  bool cc1_en = (config.freq_inputs[0].type == TRIGGER);
-  bool cc2_en = (config.freq_inputs[1].type == TRIGGER);
+  trigger_edge cc1_edge = stm32f4_viaems.config->trigger_inputs[0].edge;
+  trigger_edge cc2_edge = stm32f4_viaems.config->trigger_inputs[1].edge;
+  bool cc1_en = (stm32f4_viaems.config->trigger_inputs[0].type == TRIGGER) ||
+                (stm32f4_viaems.config->trigger_inputs[0].type == SYNC);
+  bool cc2_en = (stm32f4_viaems.config->trigger_inputs[1].type == TRIGGER) ||
+                (stm32f4_viaems.config->trigger_inputs[1].type == SYNC);
 
   bool cc1p = (cc1_edge == FALLING_EDGE) || (cc1_edge == BOTH_EDGES);
   bool cc1np = (cc1_edge == BOTH_EDGES);
@@ -83,10 +88,10 @@ static void configure_trigger_inputs(void) {
 static void setup_tim2(void) {
 
   /* Set A0, A1 as AF1 */
-  GPIOA->MODER |= _VAL2FLD(GPIO_MODER_MODE0, 2) |      /* Pin 0 AF */ 
-                  _VAL2FLD(GPIO_MODER_MODE1, 2);       /* Pin 1 AF */
-  GPIOA->AFR[0] |= _VAL2FLD(GPIO_AFRL_AFSEL0, 1) |
-                   _VAL2FLD(GPIO_AFRL_AFSEL1, 1);
+  GPIOA->MODER |= _VAL2FLD(GPIO_MODER_MODE0, 2) | /* Pin 0 AF */
+                  _VAL2FLD(GPIO_MODER_MODE1, 2);  /* Pin 1 AF */
+  GPIOA->AFR[0] |=
+    _VAL2FLD(GPIO_AFRL_AFSEL0, 1) | _VAL2FLD(GPIO_AFRL_AFSEL1, 1);
 
   TIM2->SMCR = _VAL2FLD(TIM_SMCR_SMS, 7) | /* External clock mode 1 */
                _VAL2FLD(TIM_SMCR_TS, 1);   /* ITR1 (TRGO from TIM8) */
@@ -94,7 +99,7 @@ static void setup_tim2(void) {
 
   configure_trigger_inputs();
 
-  NVIC_SetPriority(TIM2_IRQn, 3);
+  NVIC_SetPriority(TIM2_IRQn, 2);
   NVIC_EnableIRQ(TIM2_IRQn);
 
   TIM2->DIER = TIM_DIER_CC1IE | TIM_DIER_CC2IE; /* Enable trigger input capture
@@ -108,7 +113,7 @@ timeval_t current_time() {
   return TIM2->CNT;
 }
 
-void schedule_event_timer(timeval_t time) {
+void set_sim_wakeup(timeval_t time) {
   TIM2->DIER &= ~TIM_DIER_CC4IE; /* Disable CC4 interrupt */
   TIM2->SR = ~TIM_SR_CC4IF;      /* Clear any pending CC4 interrupt */
 
@@ -127,6 +132,8 @@ void TIM2_IRQHandler(void) {
   bool cc2_fired = false;
   timeval_t cc1;
   timeval_t cc2;
+  const trigger_type cc1_type = stm32f4_viaems.config->trigger_inputs[0].type;
+  const trigger_type cc2_type = stm32f4_viaems.config->trigger_inputs[1].type;
 
   if (TIM2->SR & TIM_SR_CC1IF) {
     cc1 = TIM2->CCR1;
@@ -138,30 +145,48 @@ void TIM2_IRQHandler(void) {
     cc2_fired = true;
   }
 
-  if (cc1_fired && cc2_fired && time_before(cc2, cc1)) {
-    decoder_update_scheduling(1, cc2);
-    decoder_update_scheduling(0, cc1);
+  if ((TIM2->SR & TIM_SR_CC1OF) || (TIM2->SR & TIM_SR_CC2OF)) {
+    /* We've overflowed a capture, desync the decoder */
+    decoder_desync(&stm32f4_viaems.decoder, DECODER_OVERFLOW);
+  } else if (cc1_fired && cc2_fired && time_before(cc2, cc1)) {
+    decoder_update(&stm32f4_viaems.decoder,
+                   &(struct trigger_event){ .time = cc2, .type = cc2_type });
+    decoder_update(&stm32f4_viaems.decoder,
+                   &(struct trigger_event){ .time = cc1, .type = cc1_type });
   } else {
     if (cc1_fired) {
-      decoder_update_scheduling(0, cc1);
+      decoder_update(&stm32f4_viaems.decoder,
+                     &(struct trigger_event){ .time = cc1, .type = cc1_type });
     }
     if (cc2_fired) {
-      decoder_update_scheduling(1, cc2);
+      decoder_update(&stm32f4_viaems.decoder,
+                     &(struct trigger_event){ .time = cc2, .type = cc2_type });
     }
   }
 
   if (TIM2->SR & TIM_SR_CC4IF) {
     TIM2->SR = ~TIM_SR_CC4IF;
-    scheduler_callback_timer_execute();
+    sim_wakeup_callback(&stm32f4_viaems.decoder);
   }
 }
 
 extern void abort(void); /* TODO handle this better */
+void reset_watchdog(void);
 
 void DMA2_Stream1_IRQHandler(void) {
+  static struct engine_update update = { 0 };
   if (DMA2->LISR & DMA_LISR_TCIF1) {
     DMA2->LIFCR = DMA_LIFCR_CTCIF1;
-    stm32_buffer_swap();
+
+    update.sensors = sensors_get_values(&stm32f4_viaems.sensors);
+    update.current_time =
+      output_buffers[stm32_current_buffer()].plan.schedulable_start;
+
+    __disable_irq();
+    update.position = decoder_get_engine_position(&stm32f4_viaems.decoder);
+    __enable_irq();
+
+    stm32_buffer_swap(&stm32f4_viaems, &update);
   }
 
   /* If we overran, abort */
@@ -174,22 +199,24 @@ void DMA2_Stream1_IRQHandler(void) {
   if (DMA2->LISR & DMA_LISR_TEIF1) {
     abort();
   }
+
+  reset_watchdog();
 }
 
 static void setup_scheduled_outputs(void) {
 
   /* While still in hi-z, set outputs that are active-low */
   for (int i = 0; i < MAX_EVENTS; ++i) {
-    if (config.events[i].inverted && config.events[i].type != DISABLED_EVENT) {
-      GPIOD->ODR |= (1 << config.events[i].pin);
+    if (stm32f4_viaems.config->outputs[i].inverted &&
+        stm32f4_viaems.config->outputs[i].type != DISABLED_EVENT) {
+      GPIOD->ODR |= (1 << stm32f4_viaems.config->outputs[i].pin);
     }
   }
 
   GPIOD->MODER = 0x55555555;   /* All of GPIOD is output */
   GPIOD->OSPEEDR = 0xffffffff; /* All GPIOD set to High speed*/
 
-  /* Enable Interrupt on buffer swap at highest priority */
-  NVIC_SetPriority(DMA2_Stream1_IRQn, 0);
+  NVIC_SetPriority(DMA2_Stream1_IRQn, 3);
   NVIC_EnableIRQ(DMA2_Stream1_IRQn);
 
   /* Use DMA2 Stream 1 Channel 7 to write to GPIOD's BSRR whenever TIMER8

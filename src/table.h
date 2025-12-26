@@ -8,7 +8,7 @@
 
 struct table_axis {
   char name[MAX_TABLE_TITLE_SIZE + 1];
-  unsigned char num; /* Max of 24 */
+  uint32_t num;
   float values[MAX_AXIS_SIZE];
 };
 
@@ -25,11 +25,13 @@ struct table_2d {
   float data[MAX_AXIS_SIZE][MAX_AXIS_SIZE];
 };
 
-float interpolate_table_oneaxis(struct table_1d *, float column);
-float interpolate_table_twoaxis(struct table_2d *, float row, float column);
+float interpolate_table_oneaxis(const struct table_1d *, float column);
+float interpolate_table_twoaxis(const struct table_2d *,
+                                float row,
+                                float column);
 
-int table_valid_oneaxis(struct table_1d *);
-int table_valid_twoaxis(struct table_2d *);
+int table_valid_oneaxis(const struct table_1d *);
+int table_valid_twoaxis(const struct table_2d *);
 
 #ifdef UNITTEST
 #include <check.h>

@@ -2,43 +2,36 @@
 #define _CONFIG_H
 
 #include "calculations.h"
-#include "console.h"
 #include "decoder.h"
 #include "platform.h"
 #include "scheduler.h"
 #include "sensors.h"
 #include "table.h"
 #include "tasks.h"
-#include "util.h"
-
-#define MAX_EVENTS 16
 
 struct config {
   /* Event list */
-  struct output_event events[MAX_EVENTS];
+  struct output_event_config outputs[MAX_EVENTS];
 
   /* Trigger setup */
-  struct decoder decoder;
+  struct decoder_config decoder;
 
   /* Analog inputs */
-  struct sensor_input sensors[NUM_SENSORS];
+  struct sensor_configs sensors;
 
-  /* Frequency inputs */
-  struct freq_input freq_inputs[4];
-
-  /* knock inputs */
-  struct knock_input knock_inputs[2];
+  /* Frequency and wheel inputs */
+  struct trigger_input trigger_inputs[4];
 
   /* Tables */
-  struct table_2d *timing;
-  struct table_2d *ve;
-  struct table_2d *commanded_lambda;
-  struct table_1d *injector_deadtime_offset;
-  struct table_1d *injector_pw_correction;
-  struct table_2d *engine_temp_enrich;
-  struct table_1d *dwell;
-  struct table_2d *tipin_enrich_amount;
-  struct table_1d *tipin_enrich_duration;
+  struct table_2d timing;
+  struct table_2d ve;
+  struct table_2d commanded_lambda;
+  struct table_1d injector_deadtime_offset;
+  struct table_1d injector_pw_correction;
+  struct table_2d engine_temp_enrich;
+  struct table_1d dwell;
+  struct table_2d tipin_enrich_amount;
+  struct table_1d tipin_enrich_duration;
 
   /* Fuel information */
   struct fueling_config fueling;
@@ -51,8 +44,6 @@ struct config {
   uint32_t rpm_start;
 };
 
-extern struct config config;
-
-int config_valid(void);
+extern struct config default_config;
 
 #endif
