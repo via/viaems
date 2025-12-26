@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Dict, List
 from copy import copy
+import bisect
 
 CaptureTime = int
 ScenarioTime = int
@@ -112,12 +113,26 @@ class Log(List[Event]):
         return Log(filter(lambda i: isinstance(i, EnrichedOutputEvent), self))
 
     def filter_after(self, time: ScenarioTime):
-        return Log(filter(lambda i: i.time >= time, self))
+        i = bisect.bisect_left(self, time, key=lambda s: s.time)
+        return Log(self[i:])
 
     def filter_between(self, start: ScenarioTime, end: ScenarioTime):
-        return Log(
-            filter(lambda i: i.time >= start and i.time <= end, self)
-        )
+        i1 = bisect.bisect_left(self, start, key=lambda s: s.time)
+        i2 = bisect.bisect_right(self, end, key=lambda s: s.time)
+        return Log(self[i1:i2])
+
+    # Filter out the time range but include the closest events in the log that 
+    # are outside the time range as well
+    def filter_to_surrounding(self, start: ScenarioTime, end: ScenarioTime):
+        i1 = bisect.bisect_left(self, start, key=lambda s: s.time)
+        i2 = bisect.bisect_right(self, end, key=lambda s: s.time)
+
+        if i1 > 0:
+            i1 = i1 - 1
+        if i2 < len(self):
+            i2 = i2 + 1
+
+        return Log(self[i1:i2])
 
     def filter_gpios(self):
         return Log(filter(lambda i: isinstance(i, TargetGpioEvent) or isinstance(i, CaptureGpioEvent), self))

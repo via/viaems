@@ -123,15 +123,13 @@ def enrich_log(log) -> Log:
     return Log(result)
 
 
-def _keep_range(values, new, count):
-    values.append(new)
-    if len(values) > count:
-        del values[0]
-
-def _in_range(values, value, max_error):
-    lowest = min(values)
-    highest = max(values)
-    return (value >= lowest - max_error) and (value <= highest + max_error)
+def _in_range(feeds, key, value, max_error):
+    found = False
+    for f in feeds:
+        fval = f.values[key]
+        if abs(fval - value) <= max_error:
+            found = True
+    return found
 
 def validate_outputs(log: Log) -> (bool, str):
     """Validate that all outputs are associated with a configured output,
@@ -143,59 +141,69 @@ def validate_outputs(log: Log) -> (bool, str):
     current_cycle_outputs = 0
     cycles = []
 
-    current_fuel_pw : List[float] = []
-    current_ign_pw : List[float] = []
-    current_ign_adv : List[float] = []
-    current_cputime : List[float] = []
+    feeds = log.filter_feeds()
 
-    for o in log:
-        match o:
-            case TargetFeedEvent(values=values):
-                # Use large time range for ignition dwells, since in-flight
-                # dwells can't change their durations (they target a specific
-                # angle)
-                _keep_range(current_fuel_pw, values["fuel_pulsewidth_us"], 5)
-                _keep_range(current_ign_pw, values["dwell"], 50)
-                _keep_range(current_ign_adv, values["advance"], 5)
+    for o in log.filter_enriched_outputs():
+       if o.config is None:
+           return False, f"Output not associated with configuration: {o}"
 
-            case EnrichedOutputEvent():
-                if o.config is None:
-                    return False, f"Output not associated with configuration: {o}"
+       if is_first_cycle:
+           is_first_cycle = False
+           current_cycle = o.cycle
 
-                if is_first_cycle:
-                    is_first_cycle = False
-                    current_cycle = o.cycle
+       if o.cycle != current_cycle:
+           if o.cycle > current_cycle + 1:
+               # We skipped a cycle
+               return False, "full cycle occured without outputs"
+           cycles.append(current_cycle_outputs)
+           current_cycle_outputs = 0
+           current_cycle = o.cycle
 
-                if o.cycle != current_cycle:
-                    if o.cycle > current_cycle + 1:
-                        # We skipped a cycle
-                        return False, "full cycle occured without outputs"
-                    cycles.append(current_cycle_outputs)
-                    current_cycle_outputs = 0
-                    current_cycle = o.cycle
+       # Get all feeds for the time range of the event, plus 500 uS on
+       # each end to account for the possibility of a console message
+       # racing with an event's scheduling
+       relevent_feeds = feeds.filter_to_surrounding(
+               o.time - (o.duration_us + 500) * 4,
+               o.time + (500 * 4))
 
-                if o.config.typ == OutputConfig.FUEL and current_fuel_pw is not None:
-                    if not _in_range(current_fuel_pw, o.duration_us, 5):
-                        return (
-                            False,
-                            f"Fuel output {o.pin} at time {o.time} is duration "
-                            + f"{o.duration_us}, expected {current_fuel_pw}",
-                        )
-                if o.config.typ == OutputConfig.IGN and current_ign_pw is not None:
-                    if not _in_range(current_ign_pw, o.duration_us, 500):
-                        return (
-                            False,
-                            f"Ignition output {o.pin} at time {o.time} is duration "
-                            + f"{o.duration_us}, expected {current_ign_pw}",
-                        )
-                    if not _in_range(current_ign_adv, o.advance, 2):
-                        return (
-                            False,
-                            f"Ignition output at time {o.time} ({current_cputime}) is at advance "
-                            + f"{o.advance}, expected {current_ign_adv}",
-                        )
 
-                current_cycle_outputs += 1
+       if o.config.typ == OutputConfig.FUEL:
+           # For fueling events, the duration is important, we don't
+           # care about the precision of the end angle. As long as
+           # we're within 5 uS of any feed value in the range, its
+           # valid
+           if not _in_range(relevent_feeds, "fuel_pulsewidth_us", o.duration_us, 5):
+               return (
+                   False,
+                   f"Fuel output {o.pin} at time {o.time} is duration "
+                   + f"{o.duration_us}",
+               )
+
+       if o.config.typ == OutputConfig.IGN:
+           # Ignition is more complicated:
+           #   End angle is critical, like fuel we validate that it is
+           #   within 2 degrees of any feed value
+           #
+           #   However, dwell is harder to validate dur to changes in
+           #   rpm and advance. Only validate dwell if neither dwell
+           #   nor advance vary significantly through the relevent
+           #   feeds
+           if not _in_range(relevent_feeds, "advance", o.advance, 2):
+               return (
+                   False,
+                   f"Ignition output {o.pin} at time {o.time} is at advance {o.advance}",
+               )
+           advances = [x.values["advance"] for x in relevent_feeds]
+           dwells = [x.values["dwell"] for x in relevent_feeds]
+           # Change less than 2 degrees advance and 100 us dwell?
+           if max(advances) - min(advances) < 2 and max(dwells) - min(dwells) < 100:
+               if not _in_range(relevent_feeds, "dwell", o.duration_us, 500):
+                   return (
+                       False,
+                       f"Ignition output {o.pin} at time {o.time} has duration {o.duration_us}",
+                   )
+
+       current_cycle_outputs += 1
 
     expected_count = len(config.outputs)
 
