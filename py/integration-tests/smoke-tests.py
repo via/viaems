@@ -34,11 +34,13 @@ class NMinus1DecoderTests(TestCase):
 
       scenario.set_map(35)
       scenario.set_brv(14.4)
-      scenario.wait_milliseconds(1000)
+      scenario.wait_milliseconds(10000)
 
       t4 = scenario.mark()
 
       scenario.set_rpm(0);
+      scenario.wait_milliseconds(100)
+
       scenario.set_map(102)
       scenario.set_brv(12)
       scenario.wait_milliseconds(1000)
@@ -88,7 +90,7 @@ class NMinus1DecoderTests(TestCase):
 
       outputs = list(results.filter_between(t4, t5).filter_enriched_outputs())
       if len(outputs) > 0:
-          self.assertWithin(outputs[-1].time, ms_ticks(1), ms_ticks(100))
+          self.assertWithin(outputs[-1].time - t4, ms_ticks(1), ms_ticks(100))
 
       # Finally, validate all the outputs are associated with an event and match
       # the expected angles/durations

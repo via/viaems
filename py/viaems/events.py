@@ -166,26 +166,21 @@ def align_triggers_to_sim(simlog: List[SimEvent], other: List[TargetEvent]):
     other_triggers = list(filter(lambda x: isinstance(x, TargetTriggerEvent) or
                                  isinstance(x, CaptureTriggerEvent), other))
 
-    differences = [
-            t.time - s.time
-            for s, t in zip(sim_triggers, other_triggers)]
-
-    if len(differences) < 2:
+    if len(sim_triggers) < 2 or (len(sim_triggers) != len(other_triggers)):
         raise ValueError(f"Not enough triggers to align: {len(sim_triggers)} from scenario, {len(other_triggers)} from target")
 
-    # TODO: hacky
-    coeff = (float(differences[-1]) - differences[0]) / (sim_triggers[-1].time -
-                                                  sim_triggers[0].time)
-    if max(differences) - min(differences) > 50000:
-        raise ValueError("Trigger time offsets vary")
+    time_ratio = (other_triggers[-1].time - other_triggers[0].time) / (sim_triggers[-1].time - sim_triggers[0].time)
+    ppm = (1.0 - time_ratio) * 1e6
+    if abs(ppm) > 150:
+        raise ValueError(f"Trigger time offsets vary: {ppm} ppm")
 
-    delta = differences[0]
+    delta = other_triggers[0].time - sim_triggers[0].time
     result = []
     for e in other:
          changed_ev = copy(e)
          match changed_ev.time:
              case TargetTime(time):
-                 changed_ev.time = ScenarioTime((time - delta) * (1.0-coeff))
+                 changed_ev.time = ScenarioTime((time - delta) * time_ratio)
              case CaptureTime(time):
                  changed_ev.time = ScenarioTime(time - delta)
          result.append(changed_ev)
