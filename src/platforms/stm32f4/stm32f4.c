@@ -166,8 +166,8 @@ void platform_save_config() {
                                     while programming */
   FLASH->CR |= FLASH_CR_PG;
 
-  uint32_t *src;
-  uint32_t *dest;
+  unsigned *src;
+  unsigned *dest;
   for (src = &_sconfigdata, dest = &_configdata_loadaddr; src < &_econfigdata;
        src++, dest++) {
     *dest = *src;
