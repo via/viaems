@@ -1423,9 +1423,13 @@ static void render_fueling(struct console_request_context *ctx, void *ptr) {
 static void render_ignition(struct console_request_context *ctx, void *ptr) {
   struct ignition_config *ignition = (struct ignition_config *)ptr;
   render_uint32_map_field(ctx,
-                          "min-fire-time",
-                          "minimum wait period for coil output (uS)",
-                          &ignition->min_fire_time_us);
+                          "min-coil-cooldown",
+                          "minimum wait period between coil dwells (uS)",
+                          &ignition->min_coil_cooldown_us);
+  render_uint32_map_field(ctx,
+                          "min-dwell",
+                          "Minimum dwell during transients",
+                          &ignition->min_dwell_us);
   render_float_map_field(
     ctx, "dwell-time", "dwell time for fixed-duty (uS)", &ignition->dwell_us);
 }

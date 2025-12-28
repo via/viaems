@@ -32,7 +32,8 @@ struct ignition_config {
   dwell_type dwell;
   float dwell_duty;
   float dwell_us;
-  uint32_t min_fire_time_us;
+  uint32_t min_coil_cooldown_us;
+  uint32_t min_dwell_us;
 };
 
 struct calculations {

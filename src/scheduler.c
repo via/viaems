@@ -13,10 +13,9 @@ static bool event_has_fired(struct output_event_schedule_state *ev) {
   return (ev->start.state == SCHED_FIRED) && (ev->stop.state == SCHED_FIRED);
 }
 
-/* Returns true if both the start and stop entry are unscheduled */
-static bool event_is_unscheduled(struct output_event_schedule_state *ev) {
-  return (ev->start.state == SCHED_UNSCHEDULED) &&
-         (ev->stop.state == SCHED_UNSCHEDULED);
+/* Returns true if modifications to the entry are allowed */
+static bool sched_entry_is_mutable(const struct schedule_entry *e) {
+  return (e->state == SCHED_SCHEDULED) || (e->state == SCHED_UNSCHEDULED);
 }
 
 /* Disables a scheduled entry if it is possible.
@@ -30,29 +29,6 @@ static bool sched_entry_disable(struct schedule_entry *en) {
   }
 
   en->state = SCHED_UNSCHEDULED;
-  return true;
-}
-
-/* Set an entry to fire at a specific time.  If the entry is an
- * already-scheduled entry that has been submitted or fired, it can no longer be
- * changed and must be reset before scheduling again.
- * Returns true if the entry is settable and if the specified time is feasible
- * to schedule */
-static bool sched_entry_enable(struct schedule_entry *en,
-                               timeval_t time,
-                               timeval_t earliest_schedulable_time) {
-
-  if ((en->state == SCHED_SUBMITTED) || (en->state == SCHED_FIRED)) {
-    return false;
-  }
-
-  if (time_before(time, earliest_schedulable_time)) {
-    return false;
-  }
-
-  en->time = time;
-  en->state = SCHED_SCHEDULED;
-
   return true;
 }
 
@@ -90,47 +66,19 @@ void invalidate_scheduled_events(struct output_event_schedule_state *evs,
     }
   }
 }
-/* Schedules an output event in a hazard-free manner, assuming
- * that the start and stop times occur at least after curtime
+
+/* (Re-)schedule ignition event with the provided advance and dwell.
  */
-static void schedule_output_event_safely(struct output_event_schedule_state *ev,
-                                         timeval_t earliest_schedulable_time,
-                                         timeval_t newstart,
-                                         timeval_t newstop) {
-
-  ev->start.pin = ev->config->pin;
-  ev->start.val = ev->config->inverted ? 0 : 1;
-  ev->stop.pin = ev->config->pin;
-  ev->stop.val = ev->config->inverted ? 1 : 0;
-
-  if (event_is_unscheduled(ev)) {
-    /* Schedule start first, if it succeeds we're gauranteed to be able to
-     * schedule the stop and be done, if we failed, leave the event unscheduled
-     * */
-    if (sched_entry_enable(&ev->start, newstart, earliest_schedulable_time)) {
-      sched_entry_enable(&ev->stop, newstop, earliest_schedulable_time);
-    }
-  } else {
-
-    timeval_t oldstart = ev->start.time;
-
-    int success =
-      sched_entry_enable(&ev->start, newstart, earliest_schedulable_time);
-    /* If we failed to move the start time, adjust the stop time to preserve
-     * fuel pulse time */
-    if (!success && (ev->config->type == FUEL_EVENT)) {
-      newstop += oldstart - newstart;
-    }
-    sched_entry_enable(&ev->stop, newstop, earliest_schedulable_time);
-  }
-}
-
 static bool schedule_ignition_event(const struct config *config,
                                     struct output_event_schedule_state *ev,
                                     timeval_t earliest_schedulable_time,
                                     const struct engine_position *d,
                                     degrees_t advance,
                                     unsigned int usecs_dwell) {
+
+  if (usecs_dwell < config->ignition.min_dwell_us) {
+    return false;
+  }
 
   degrees_t firing_angle =
     clamp_angle(clamp_angle(ev->config->angle - advance, 720) -
@@ -149,6 +97,12 @@ static bool schedule_ignition_event(const struct config *config,
          time_from_rpm_diff(d->rpm, 90))) {
       return false;
     }
+
+    /* Ensure a minimum cooldown period occurs before allowing a reschedule */
+    if (time_diff(start_time, ev->stop.time) < time_from_us(config->ignition.min_coil_cooldown_us)) {
+      return false;
+    }
+
     reset_fired_event(ev);
   }
 
@@ -161,18 +115,47 @@ static bool schedule_ignition_event(const struct config *config,
     return false;
   }
 
-  if (time_diff(start_time, ev->stop.time) <
-      time_from_us(config->ignition.min_fire_time_us)) {
-    /* Too little time since last fire */
-    return false;
+  /* First, can we move/set the start time? */
+  if (sched_entry_is_mutable(&ev->start)) {
+    /* If so, is it to a schedulable time? */
+    if (!time_before(start_time, earliest_schedulable_time)) {
+      ev->start.time = start_time;
+      ev->start.state = SCHED_SCHEDULED;
+
+    /* If not, can we move it up to the earliest schedulable time and still
+     * preserve a minimum dwell? */
+    } else if (time_before(earliest_schedulable_time, stop_time) &&
+        (stop_time - earliest_schedulable_time > time_from_us(config->ignition.min_dwell_us))) {
+      ev->start.time = earliest_schedulable_time;
+      ev->start.state = SCHED_SCHEDULED;
+    } else {
+      /* This is not a schedulable event */
+      ev->start.state = SCHED_UNSCHEDULED;
+      ev->stop.state = SCHED_UNSCHEDULED;
+      return false;
+    }
   }
 
-  schedule_output_event_safely(
-    ev, earliest_schedulable_time, start_time, stop_time);
+  /* At this point, the start event has either already happened, is scheduled
+   * but cannot be changed, or is scheduled with an updated time.  This means
+   * that the stop time is either already scheduled (and we might hope to change
+   * it), or it is unscheduled but *definitely* schedulable (since it is later
+   * than the start time) */
+
+  if ((ev->start.state != SCHED_UNSCHEDULED) && sched_entry_is_mutable(&ev->stop)) {
+    if (!time_before(stop_time, earliest_schedulable_time)) {
+      ev->stop.time = stop_time;
+      ev->stop.state = SCHED_SCHEDULED;
+    }
+  }
+
+  assert((ev->start.state != SCHED_SCHEDULED) || (ev->stop.state == SCHED_SCHEDULED));
 
   return true;
 }
 
+/* (Re-)schedule fuel event with the provided pulse duration.
+ */
 static bool schedule_fuel_event(const struct config *config,
                                 struct output_event_schedule_state *ev,
                                 timeval_t earliest_schedulable_time,
@@ -187,7 +170,6 @@ static bool schedule_fuel_event(const struct config *config,
   timeval_t start_time = stop_time - time_from_us(usecs_pw);
 
   if (event_has_fired(ev)) {
-
     /* Prevent rescheduling the same event after its fired by ensuring the new
      * stop time is at least 90 degrees later than the just-fired stop time */
     if ((time_diff(stop_time, ev->stop.time) <
@@ -208,8 +190,40 @@ static bool schedule_fuel_event(const struct config *config,
     return false;
   }
 
-  schedule_output_event_safely(
-    ev, earliest_schedulable_time, start_time, stop_time);
+  /* First, can we move/set the start time? */
+  if (sched_entry_is_mutable(&ev->start)) {
+    /* If so, is it to a schedulable time? */
+    if (!time_before(start_time, earliest_schedulable_time)) {
+      ev->start.time = start_time;
+      ev->start.state = SCHED_SCHEDULED;
+
+    /* If not, and the new end time is in the future, move it to the earliest
+     * schedulable time and adjust the end time */
+    } else if (!time_before(stop_time, earliest_schedulable_time)) {
+      ev->start.time = earliest_schedulable_time;
+      ev->start.state = SCHED_SCHEDULED;
+      stop_time += earliest_schedulable_time - start_time;
+    } else {
+      /* This should only happen if we're trying to schedule an event completely
+       * in the past. Prevent the event from scheduling. */
+      ev->start.state = SCHED_UNSCHEDULED;
+      ev->stop.state = SCHED_UNSCHEDULED;
+      return false;
+    }
+  } else {
+    /* We can't move the start time, but we want to preserve the duration, so
+     * recalculate the stop time from the previous start time */
+    stop_time = ev->start.time + time_from_us(usecs_pw);
+  }
+
+  if ((ev->start.state != SCHED_UNSCHEDULED) && sched_entry_is_mutable(&ev->stop)) {
+    if (!time_before(stop_time, earliest_schedulable_time)) {
+      ev->stop.time = stop_time;
+      ev->stop.state = SCHED_SCHEDULED;
+    }
+  }
+
+  assert((ev->start.state != SCHED_SCHEDULED) || (ev->stop.state == SCHED_SCHEDULED));
 
   return true;
 }
@@ -240,6 +254,19 @@ void schedule_events(const struct config *config,
     default:
       break;
     }
+  }
+}
+
+void scheduler_init(struct output_event_schedule_state evs[], int n_evs, const struct config *config) {
+  for (int i = 0; i < n_evs; i++) {
+    const struct output_event_config *conf = &config->outputs[i];
+    struct output_event_schedule_state *ev = &evs[i];
+
+    ev->config = conf;
+    ev->start.pin = conf->pin;
+    ev->start.val = conf->inverted ? 0 : 1;
+    ev->stop.pin = conf->pin;
+    ev->stop.val = conf->inverted ? 1 : 0;
   }
 }
 

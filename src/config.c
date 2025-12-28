@@ -252,7 +252,8 @@ struct config default_config __attribute__((section(".configdata"))) = {
   },
   .ignition = {
     .dwell = DWELL_BRV,
-    .min_fire_time_us = 500,
+    .min_coil_cooldown_us = 500,
+    .min_dwell_us = 1000,
   },
   .boost_control = {
     .pwm_duty_vs_rpm = {

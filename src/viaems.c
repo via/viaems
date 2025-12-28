@@ -69,10 +69,7 @@ void viaems_init(struct viaems *v, struct config *config) {
 
   decoder_init(&config->decoder, &v->decoder);
   sensors_init(&config->sensors, &v->sensors);
-
-  for (int i = 0; i < MAX_EVENTS; i++) {
-    v->events[i].config = &config->outputs[i];
-  }
+  scheduler_init(v->events, MAX_EVENTS, config);
 }
 
 void viaems_idle(struct viaems *viaems) {
