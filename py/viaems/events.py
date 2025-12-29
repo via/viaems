@@ -195,7 +195,7 @@ def align_triggers_to_sim(simlog: List[SimEvent], other: List[TargetEvent]):
          changed_ev = copy(e)
          match changed_ev.time:
              case TargetTime(time):
-                 changed_ev.time = ScenarioTime((time - delta) * time_ratio)
+                 changed_ev.time = ScenarioTime((time - delta) * (1.0 / time_ratio))
              case CaptureTime(time):
                  changed_ev.time = ScenarioTime(time - delta)
          result.append(changed_ev)
