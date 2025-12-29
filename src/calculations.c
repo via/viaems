@@ -154,10 +154,27 @@ struct calculated_values calculate_ignition_and_fuel(
   }
   state->rpm_cut_triggered = rpm_cut;
 
-  timeval_t max_allowable_pw =
-    time_from_rpm_diff(pos->rpm, 720) / config->fueling.injections_per_cycle;
-  bool fuel_overduty_cut_enabled =
-    time_from_us(commanded_pw_us) >= max_allowable_pw;
+  timeval_t max_allowable_pw = time_from_rpm_diff(pos->rpm, 720) /
+                               config->fueling.injections_per_cycle *
+                               (config->fueling.max_duty_cycle / 100.0f);
+
+  bool fuel_overduty_cut_enabled = false;
+  if (time_from_us(commanded_pw_us) >= max_allowable_pw) {
+    fuel_overduty_cut_enabled = true;
+  }
+
+  timeval_t max_allowable_dwell_us =
+    us_from_time(time_from_rpm_diff(pos->rpm, 720) /
+                 config->ignition.ignitions_per_cycle) -
+    config->ignition.min_coil_cooldown_us;
+
+  bool dwell_overduty_cut_enabled = false;
+  if (dwell_us >= max_allowable_dwell_us) {
+    dwell_us = max_allowable_dwell_us;
+  }
+  if (dwell_us < config->ignition.min_dwell_us) {
+    dwell_overduty_cut_enabled = true;
+  }
 
   bool boost_cut = map > config->boost_control.overboost;
 
@@ -165,6 +182,7 @@ struct calculated_values calculate_ignition_and_fuel(
     .rpm_limit_cut = rpm_cut,
     .boost_cut = boost_cut,
     .fuel_overduty_cut = fuel_overduty_cut_enabled,
+    .dwell_overduty_cut = dwell_overduty_cut_enabled,
 
     .timing_advance = timing_advance,
     .dwell_us = dwell_us,

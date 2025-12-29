@@ -99,7 +99,8 @@ static bool schedule_ignition_event(const struct config *config,
     }
 
     /* Ensure a minimum cooldown period occurs before allowing a reschedule */
-    if (time_diff(start_time, ev->stop.time) < time_from_us(config->ignition.min_coil_cooldown_us)) {
+    if (time_diff(start_time, ev->stop.time) <
+        time_from_us(config->ignition.min_coil_cooldown_us)) {
       return false;
     }
 
@@ -122,10 +123,11 @@ static bool schedule_ignition_event(const struct config *config,
       ev->start.time = start_time;
       ev->start.state = SCHED_SCHEDULED;
 
-    /* If not, can we move it up to the earliest schedulable time and still
-     * preserve a minimum dwell? */
+      /* If not, can we move it up to the earliest schedulable time and still
+       * preserve a minimum dwell? */
     } else if (time_before(earliest_schedulable_time, stop_time) &&
-        (stop_time - earliest_schedulable_time > time_from_us(config->ignition.min_dwell_us))) {
+               (stop_time - earliest_schedulable_time >
+                time_from_us(config->ignition.min_dwell_us))) {
       ev->start.time = earliest_schedulable_time;
       ev->start.state = SCHED_SCHEDULED;
     } else {
@@ -142,14 +144,16 @@ static bool schedule_ignition_event(const struct config *config,
    * it), or it is unscheduled but *definitely* schedulable (since it is later
    * than the start time) */
 
-  if ((ev->start.state != SCHED_UNSCHEDULED) && sched_entry_is_mutable(&ev->stop)) {
+  if ((ev->start.state != SCHED_UNSCHEDULED) &&
+      sched_entry_is_mutable(&ev->stop)) {
     if (!time_before(stop_time, earliest_schedulable_time)) {
       ev->stop.time = stop_time;
       ev->stop.state = SCHED_SCHEDULED;
     }
   }
 
-  assert((ev->start.state != SCHED_SCHEDULED) || (ev->stop.state == SCHED_SCHEDULED));
+  assert((ev->start.state != SCHED_SCHEDULED) ||
+         (ev->stop.state == SCHED_SCHEDULED));
 
   return true;
 }
@@ -197,9 +201,12 @@ static bool schedule_fuel_event(const struct config *config,
       ev->start.time = start_time;
       ev->start.state = SCHED_SCHEDULED;
 
-    /* If not, and the new end time is in the future, move it to the earliest
-     * schedulable time and adjust the end time */
-    } else if (!time_before(stop_time, earliest_schedulable_time)) {
+      /* If not, and the new end time is in the future, move it to the earliest
+       * schedulable time and adjust the end time, but not more than 20 degrees
+       * from the original scheduled angle */
+    } else if (!time_before(stop_time, earliest_schedulable_time) &&
+               (degrees_from_time_diff(earliest_schedulable_time - start_time,
+                                       pos->rpm) < 20.0f)) {
       ev->start.time = earliest_schedulable_time;
       ev->start.state = SCHED_SCHEDULED;
       stop_time += earliest_schedulable_time - start_time;
@@ -216,14 +223,16 @@ static bool schedule_fuel_event(const struct config *config,
     stop_time = ev->start.time + time_from_us(usecs_pw);
   }
 
-  if ((ev->start.state != SCHED_UNSCHEDULED) && sched_entry_is_mutable(&ev->stop)) {
+  if ((ev->start.state != SCHED_UNSCHEDULED) &&
+      sched_entry_is_mutable(&ev->stop)) {
     if (!time_before(stop_time, earliest_schedulable_time)) {
       ev->stop.time = stop_time;
       ev->stop.state = SCHED_SCHEDULED;
     }
   }
 
-  assert((ev->start.state != SCHED_SCHEDULED) || (ev->stop.state == SCHED_SCHEDULED));
+  assert((ev->start.state != SCHED_SCHEDULED) ||
+         (ev->stop.state == SCHED_SCHEDULED));
 
   return true;
 }
@@ -257,7 +266,9 @@ void schedule_events(const struct config *config,
   }
 }
 
-void scheduler_init(struct output_event_schedule_state evs[], int n_evs, const struct config *config) {
+void scheduler_init(struct output_event_schedule_state evs[],
+                    int n_evs,
+                    const struct config *config) {
   for (int i = 0; i < n_evs; i++) {
     const struct output_event_config *conf = &config->outputs[i];
     struct output_event_schedule_state *ev = &evs[i];

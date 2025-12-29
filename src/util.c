@@ -27,6 +27,11 @@ timeval_t time_from_us(unsigned int us) {
   return ticks;
 }
 
+unsigned int us_from_time(timeval_t time) {
+  unsigned int us = time / (TICKRATE / 1000000.0f);
+  return us;
+}
+
 /* True if n is before x */
 bool time_before(timeval_t n, timeval_t x) {
   signed int res = n - x;

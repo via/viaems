@@ -22,6 +22,7 @@ struct console_feed_update {
   bool rpm_cut;
   bool boost_cut;
   bool fuel_overduty_cut;
+  bool dwell_overduty_cut;
 
   float map;
   float iat;

@@ -242,6 +242,7 @@ struct config default_config __attribute__((section(".configdata"))) = {
     .cylinder_cc = 500,
     .fuel_stoich_ratio = 14.7,
     .injections_per_cycle = 1, /* All batched */
+    .max_duty_cycle = 95.0,
     .fuel_pump_pin = 0,
     .density_of_fuel = 0.755, /* g/cm^3 at 15C */
     .crank_enrich_config = {
@@ -254,6 +255,7 @@ struct config default_config __attribute__((section(".configdata"))) = {
     .dwell = DWELL_BRV,
     .min_coil_cooldown_us = 500,
     .min_dwell_us = 1000,
+    .ignitions_per_cycle = 2, /* Wasted spark */
   },
   .boost_control = {
     .pwm_duty_vs_rpm = {

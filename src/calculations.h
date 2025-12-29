@@ -11,6 +11,7 @@ struct fueling_config {
   float cylinder_cc;
   float fuel_stoich_ratio;
   uint32_t injections_per_cycle; /* fuel quantity per shot divisor */
+  float max_duty_cycle;
   uint32_t fuel_pump_pin;
 
   struct {
@@ -32,6 +33,7 @@ struct ignition_config {
   dwell_type dwell;
   float dwell_duty;
   float dwell_us;
+  uint32_t ignitions_per_cycle; /* used for dwell overduty protection */
   uint32_t min_coil_cooldown_us;
   uint32_t min_dwell_us;
 };
@@ -52,6 +54,7 @@ struct calculated_values {
   bool rpm_limit_cut;
   bool boost_cut;
   bool fuel_overduty_cut;
+  bool dwell_overduty_cut;
 
   /* Ignition */
   float timing_advance;
@@ -68,6 +71,12 @@ struct calculated_values {
   float ve;
   float ete;
 };
+
+static inline bool calculated_values_has_cuts(
+  const struct calculated_values *values) {
+  return values->rpm_limit_cut || values->boost_cut ||
+         values->fuel_overduty_cut || values->dwell_overduty_cut;
+}
 
 struct config;
 struct engine_update;

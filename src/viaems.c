@@ -43,7 +43,7 @@ void viaems_reschedule(struct viaems *viaems,
     struct calculated_values calcs =
       calculate_ignition_and_fuel(config, u, &viaems->calculations);
 
-    if (calcs.fuel_overduty_cut || calcs.rpm_limit_cut || calcs.boost_cut) {
+    if (calculated_values_has_cuts(&calcs)) {
       invalidate_scheduled_events(viaems->events, MAX_EVENTS);
     } else {
       schedule_events(config,

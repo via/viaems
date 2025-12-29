@@ -63,7 +63,9 @@ void schedule_events(const struct config *config,
 void invalidate_scheduled_events(struct output_event_schedule_state evs[],
                                  int n_events);
 
-void scheduler_init(struct output_event_schedule_state evs[], int n_evs, const struct config *config);
+void scheduler_init(struct output_event_schedule_state evs[],
+                    int n_evs,
+                    const struct config *config);
 
 #ifdef UNITTEST
 #include <check.h>

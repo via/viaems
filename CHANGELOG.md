@@ -10,6 +10,8 @@ Major breaking changes are introduced in this release
  - Config structure changes:
    - "freq" list changed to "trigger", and the pin used for cam/crank phase is
      now type "sync" instead of just "trigger"
+   - `min-fire-time` renamed to `min-coil-cooldown`
+   - added `min-dwell` and `max-duty-cycle`
 
 ### 1.6.0 (2025 March 1)
 This introduces breaking changes for sensors and table configuration

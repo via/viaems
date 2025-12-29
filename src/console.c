@@ -131,6 +131,7 @@ static const char *console_feed_keys[] = {
   "rpm_cut",
   "boost_cut",
   "fuel_overduty_cut",
+  "dwell_overduty_cut",
   "sensor.map",
   "sensor.iat",
   "sensor.clt",
@@ -368,6 +369,7 @@ void record_engine_update(const struct viaems *viaems,
     update->rpm_cut = calcs->rpm_limit_cut;
     update->boost_cut = calcs->boost_cut;
     update->fuel_overduty_cut = calcs->fuel_overduty_cut;
+    update->dwell_overduty_cut = calcs->dwell_overduty_cut;
   } else {
     update->ve = 0;
     update->lambda = 0;
@@ -383,6 +385,7 @@ void record_engine_update(const struct viaems *viaems,
     update->rpm_cut = false;
     update->boost_cut = false;
     update->fuel_overduty_cut = false;
+    update->dwell_overduty_cut = false;
   }
 
   update->map = eng_update->sensors.MAP.value;
@@ -448,6 +451,7 @@ static size_t console_feed_line(const struct console_feed_update *update,
   cbor_encode_boolean(&value_list_encoder, update->rpm_cut);
   cbor_encode_boolean(&value_list_encoder, update->boost_cut);
   cbor_encode_boolean(&value_list_encoder, update->fuel_overduty_cut);
+  cbor_encode_boolean(&value_list_encoder, update->dwell_overduty_cut);
   cbor_encode_float(&value_list_encoder, update->map);
   cbor_encode_float(&value_list_encoder, update->iat);
   cbor_encode_float(&value_list_encoder, update->clt);
@@ -1409,6 +1413,10 @@ static void render_fueling(struct console_request_context *ctx, void *ptr) {
                           "injections-per-cycle",
                           "Number of times injectors fire per cycle (batching)",
                           &fueling->injections_per_cycle);
+  render_float_map_field(ctx,
+                         "max-duty-cycle",
+                         "Max allowable duty cycle %",
+                         &fueling->max_duty_cycle);
   render_uint32_map_field(ctx,
                           "fuel-pump-pin",
                           "GPIO pin for fuel pump control",
@@ -1430,6 +1438,11 @@ static void render_ignition(struct console_request_context *ctx, void *ptr) {
                           "min-dwell",
                           "Minimum dwell during transients",
                           &ignition->min_dwell_us);
+  render_uint32_map_field(
+    ctx,
+    "ignitions-per-cycle",
+    "Number of times a single ignition output fires in one cycle",
+    &ignition->ignitions_per_cycle);
   render_float_map_field(
     ctx, "dwell-time", "dwell time for fixed-duty (uS)", &ignition->dwell_us);
 }
