@@ -148,6 +148,7 @@ void TIM2_IRQHandler(void) {
   if ((TIM2->SR & TIM_SR_CC1OF) || (TIM2->SR & TIM_SR_CC2OF)) {
     /* We've overflowed a capture, desync the decoder */
     decoder_desync(&stm32f4_viaems.decoder, DECODER_OVERFLOW);
+    TIM2->SR &= ~(TIM_SR_CC1OF | TIM_SR_CC2OF);
   } else if (cc1_fired && cc2_fired && time_before(cc2, cc1)) {
     decoder_update(&stm32f4_viaems.decoder,
                    &(struct trigger_event){ .time = cc2, .type = cc2_type });
