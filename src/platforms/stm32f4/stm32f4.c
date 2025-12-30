@@ -96,6 +96,29 @@ static void setup_watchdog() {
   reset_watchdog();
 }
 
+static void ensure_db1m(void) {
+
+  bool needs_update = (FLASH->OPTCR & FLASH_OPTCR_DB1M) == 0;
+  bool onemeg_chip  = *((uint16_t *)FLASHSIZE_BASE) == 0x400;
+
+  if (!needs_update || !onemeg_chip) {
+    return;
+  }
+
+  /* Unlock FLASH_OPTCR */
+  FLASH->OPTKEYR = 0x08192A3B;
+  FLASH->OPTKEYR = 0x4C5D6E7F;
+
+  FLASH->OPTCR |= FLASH_OPTCR_DB1M;
+
+  FLASH->OPTCR |= FLASH_OPTCR_OPTSTRT;
+  while (FLASH->SR & FLASH_SR_BSY)
+    ;
+
+  FLASH->OPTCR |= FLASH_OPTCR_OPTLOCK;
+
+}
+
 extern unsigned _configdata_loadaddr, _sconfigdata, _econfigdata;
 void platform_save_config() {
 
@@ -219,6 +242,8 @@ void Reset_Handler(void) {
   SCB->CPACR |=
     ((3UL << (10 * 2)) | (3UL << (11 * 2))); /* set CP10 and CP11 Full Access */
   SCB->CCR |= SCB_CCR_STKALIGN_Msk;
+
+  ensure_db1m();
 
   if (jump_to_bootloader) {
     /* We've set this flag and reset the cpu, jump to system bootloader */
