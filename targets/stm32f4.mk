@@ -52,4 +52,5 @@ ${OBJDIR}/viaems.dfu: ${OBJDIR}/viaems
 	python py/scripts/dfuse-pack.py -i ${OBJDIR}/viaems.hex -i ${OBJDIR}/viaems-config.hex ${OBJDIR}/viaems.dfu
 
 program: ${OBJDIR}/viaems.dfu
-	dfu-util -D ${OBJDIR}/viaems.dfu -s :leave
+	dfu-util -a 0 -s :mass-erase:force
+	dfu-util -a 0 -D ${OBJDIR}/viaems.dfu -s :leave
