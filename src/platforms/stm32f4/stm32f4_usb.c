@@ -248,18 +248,13 @@ static void cdc_rx(usbd_device *dev, uint8_t event, uint8_t ep) {
   if (ep != CDC_RXD_EP) {
     return;
   }
-  char buf[64];
-  int ret = usbd_ep_read(dev, CDC_RXD_EP, buf, CDC_DATA_SZ);
+  size_t space_avail = sizeof(usb_rx_buf) - usb_rx_len;
+  int ret = usbd_ep_read(dev, CDC_RXD_EP, usb_rx_buf + usb_rx_len, space_avail);
   if (ret < 0) {
     return;
   }
 
-  if (USB_RX_BUF_LEN - usb_rx_len < (unsigned)ret) {
-    /* No space, just drop the packet */
-  } else {
-    memcpy(usb_rx_buf + usb_rx_len, buf, ret);
-    usb_rx_len += ret;
-  }
+  usb_rx_len += ret;
 }
 
 static usbd_respond cdc_setconf(usbd_device *dev, uint8_t cfg) {

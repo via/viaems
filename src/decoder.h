@@ -27,6 +27,8 @@ typedef enum {
    * tooth 1) with the cam sync is the first crank cycle, 0-360. The first
    * tooth 1 *after* a cam sync is angle 360. */
   TRIGGER_MISSING_CAMSYNC,
+
+  DECODER_TYPE_END,
 } decoder_type;
 
 typedef enum {
@@ -35,6 +37,7 @@ typedef enum {
   DECODER_TRIGGERCOUNT_HIGH,
   DECODER_TRIGGERCOUNT_LOW,
   DECODER_EXPIRED,
+  DECODER_BADCONFIG,
   DECODER_OVERFLOW,
 } decoder_loss_reason;
 

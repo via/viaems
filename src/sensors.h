@@ -24,6 +24,7 @@ typedef enum {
   FAULT_NONE,
   FAULT_RANGE,
   FAULT_CONN,
+  FAULT_CONFIG,
 } sensor_fault;
 
 struct thermistor_config {

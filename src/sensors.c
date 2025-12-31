@@ -100,6 +100,64 @@ static float process_lag_filter(float lag, float old_value, float new_value) {
   return ((old_value * lag) + (new_value * (100.0f - lag))) / 100.0f;
 }
 
+static bool sensor_config_is_valid(const struct sensor_config *conf) {
+  bool valid = true;
+  switch (conf->source) {
+    case SENSOR_ADC: 
+      {
+        if (conf->pin >= MAX_ADC_PINS) {
+          valid = false;
+        }
+        break;
+      }
+    case SENSOR_FREQ:
+    case SENSOR_PULSEWIDTH:
+      {
+        if (conf->pin >= 2) {
+          valid = false;
+        }
+        break;
+      }
+    case SENSOR_CONST:
+      break;
+    default:
+      valid = false;
+  }
+
+  if ((conf->raw_min >= conf->raw_max) ||
+      (conf->raw_min < 0.0f) ||
+      (conf->raw_max > 5.0f)) {
+    valid = false;
+  }
+
+  if (conf->method == METHOD_THERM) {
+    if ((conf->therm.bias == 0) ||
+        (conf->therm.a == 0) || 
+        (conf->therm.b == 0) || 
+        (conf->therm.c == 0)) {
+      valid = false;
+    }
+  }
+
+  if (conf->method == METHOD_LINEAR_WINDOWED) {
+    if (conf->window.total_width >= 720) {
+      valid = false;
+    }
+    if (conf->window.capture_width > conf->window.total_width) {
+      valid = false;
+    }
+    if (conf->window.offset > conf->window.total_width) {
+      valid = false;
+    }
+  }
+
+  if ((conf->lag < 0.0f) || (conf->lag >= 100.0f)) {
+    valid = false;
+  }
+
+  return valid;
+}
+
 static void sensor_update_raw(struct sensor_state *s,
                               const struct engine_position *d,
                               timeval_t time,
@@ -139,6 +197,10 @@ static void sensor_update_raw(struct sensor_state *s,
 static void update_single_freq_sensor(struct sensor_state *s,
                                       const struct engine_position *p,
                                       const struct freq_update *u) {
+  if (s->output.fault == FAULT_CONFIG) {
+    return;
+  }
+
   if (s->config->pin != u->pin) {
     return;
   }
@@ -170,6 +232,9 @@ void sensor_update_freq(struct sensors *s,
 static void update_single_adc_sensor(struct sensor_state *s,
                                      const struct engine_position *p,
                                      const struct adc_update *u) {
+  if (s->output.fault == FAULT_CONFIG) {
+    return;
+  }
   if (s->config->source != SENSOR_ADC) {
     return;
   }
@@ -196,6 +261,9 @@ void sensor_update_adc(struct sensors *s,
 }
 
 static void update_single_const_sensor(struct sensor_state *s) {
+  if (s->output.fault == FAULT_CONFIG) {
+  }
+
   if (s->config->source != SENSOR_CONST) {
     return;
   }
@@ -267,6 +335,49 @@ struct sensor_values sensors_get_values(const struct sensors *s) {
   };
 }
 
+static void validate_sensor_configs(struct sensors *s) {
+  if (!sensor_config_is_valid(s->MAP.config)) {
+    s->MAP.output.fault = FAULT_CONFIG;
+    s->MAP.output.value = 0.0f;
+  }
+  if (!sensor_config_is_valid(s->BRV.config)) {
+    s->BRV.output.fault = FAULT_CONFIG;
+    s->BRV.output.value = 12.5f;
+  }
+  if (!sensor_config_is_valid(s->IAT.config)) {
+    s->IAT.output.fault = FAULT_CONFIG;
+    s->IAT.output.value = 25.0f;
+  }
+  if (!sensor_config_is_valid(s->CLT.config)) {
+    s->CLT.output.fault = FAULT_CONFIG;
+    s->CLT.output.value = 25.0f;
+  }
+  if (!sensor_config_is_valid(s->EGO.config)) {
+    s->EGO.output.fault = FAULT_CONFIG;
+    s->EGO.output.value = 0.0f;
+  }
+  if (!sensor_config_is_valid(s->AAP.config)) {
+    s->AAP.output.fault = FAULT_CONFIG;
+    s->AAP.output.value = 102.0f;
+  }
+  if (!sensor_config_is_valid(s->TPS.config)) {
+    s->TPS.output.fault = FAULT_CONFIG;
+    s->TPS.output.value = 0.0f;
+  }
+  if (!sensor_config_is_valid(s->FRT.config)) {
+    s->FRT.output.fault = FAULT_CONFIG;
+    s->FRT.output.value = 25.0f;
+  }
+  if (!sensor_config_is_valid(s->FRP.config)) {
+    s->FRP.output.fault = FAULT_CONFIG;
+    s->FRP.output.value = 0.0f;
+  }
+  if (!sensor_config_is_valid(s->ETH.config)) {
+    s->ETH.output.fault = FAULT_CONFIG;
+    s->ETH.output.value = 10.0f;
+  }
+}
+
 void sensors_init(const struct sensor_configs *configs, struct sensors *s) {
   *s = (struct sensors){
     .MAP = { .config = &configs->MAP },
@@ -282,6 +393,8 @@ void sensors_init(const struct sensor_configs *configs, struct sensors *s) {
     .KNK1 = { .config = &configs->KNK1 },
     .KNK2 = { .config = &configs->KNK2 },
   };
+
+  validate_sensor_configs(s);
 
   /* Initialize constant values */
   update_single_const_sensor(&s->MAP);

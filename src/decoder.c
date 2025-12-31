@@ -5,6 +5,7 @@
 #include "scheduler.h"
 #include "sensors.h"
 #include "util.h"
+#include "fault.h"
 
 #include <assert.h>
 #include <stdlib.h>
@@ -29,6 +30,39 @@ static void push_time(struct decoder *d, timeval_t t) {
     d->times[i] = d->times[i - 1];
   }
   d->times[0] = t;
+}
+
+static bool decoder_config_is_valid(const struct decoder_config *config) {
+  bool valid = true;
+  if ((int)config->type >= DECODER_TYPE_END) {
+    valid = false;
+  }
+
+  if ((config->offset < 0.0f) || (config->offset >= 720.0f)) {
+    valid = false;
+  }
+
+  if ((config->trigger_max_rpm_change < 0.0f) || (config->trigger_max_rpm_change > 1.0f)) {
+    valid = false;
+  }
+
+  if (config->required_triggers_rpm > 36) {
+    valid = false;
+  }
+
+  if (config->num_triggers > MAX_TRIGGERS) {
+    valid = false;
+  }
+
+  if ((config->degrees_per_trigger < 1.0f) || (config->degrees_per_trigger > 90.0f)) {
+    valid = false;
+  }
+
+  if (config->rpm_window_size > MAX_TRIGGERS) {
+    valid = false;
+  }
+
+  return valid;
 }
 
 static unsigned int even_tooth_rpm_window_size(
@@ -406,6 +440,11 @@ void decoder_update(struct decoder *state, struct trigger_event *ev) {
     state->t0_count++;
   } else if (ev->type == SYNC) {
     state->t1_count++;
+  }
+
+  if (!decoder_config_is_valid(state->config)) {
+    decoder_desync(state, DECODER_BADCONFIG);
+    return;
   }
 
   switch (state->config->type) {

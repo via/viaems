@@ -80,10 +80,36 @@ static float calculate_tipin_enrichment(const struct config *config,
   return state->amount;
 }
 
+static bool ignition_config_is_valid(const struct ignition_config *c) {
+  bool valid = true;
+  switch (c->dwell) {
+    case DWELL_FIXED_TIME: 
+      {
+        if ((c->dwell_us <= 0.0f) || (c->dwell_us > 50000.0f)) {
+          valid = false;
+        }
+      }
+      break;
+    case DWELL_FIXED_DUTY:
+    case DWELL_BRV:
+      break;
+    default:
+      valid = false;
+  }
+  if ((c->ignitions_per_cycle == 0) || (c->ignitions_per_cycle > 16)) {
+    valid = false;
+  }
+  return valid;
+}
+
 struct calculated_values calculate_ignition_and_fuel(
   const struct config *config,
   const struct engine_update *update,
   struct calculations *state) {
+
+  if (!ignition_config_is_valid(&config->ignition)) {
+    return (struct calculated_values){ 0 };
+  }
 
   const struct sensor_values *sensors = &update->sensors;
   const struct engine_position *pos = &update->position;
