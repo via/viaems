@@ -191,6 +191,7 @@ extern void stm32f4_configure_scheduler(void);
 extern void stm32f4_configure_usb(void);
 extern void stm32f4_configure_sensors(void);
 extern void stm32f4_configure_pwm(void);
+extern void stm32f4_usb_poll(void);
 
 static void platform_configure(bool is_benchmark) {
 

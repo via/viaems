@@ -51,4 +51,3 @@ TIM2     |    2 | Trigger and decoder processing
 DMA2 S0  |    3 | Process ADC samples
 TIM9     |    3 | Process Ethanol sensor
 DMA2 S1  |    3 | Engine processing and output scheduling
-USB      |   15 | Usb handling

@@ -147,10 +147,6 @@ const char *prod_str = "ViaEMS console";
 usbd_device udev;
 uint32_t ubuf[0x20];
 
-#define USB_RX_BUF_LEN 1024
-static char usb_rx_buf[USB_RX_BUF_LEN];
-static _Atomic size_t usb_rx_len = 0;
-
 static struct usb_cdc_line_coding cdc_line = {
   .dwDTERate = 115200,
   .bCharFormat = USB_CDC_1_STOP_BITS,
@@ -243,25 +239,6 @@ static usbd_respond cdc_control(usbd_device *dev,
   return usbd_fail;
 }
 
-static void cdc_rx(usbd_device *dev, uint8_t event, uint8_t ep) {
-  (void)event;
-  if (ep != CDC_RXD_EP) {
-    return;
-  }
-  char buf[64];
-  int ret = usbd_ep_read(dev, CDC_RXD_EP, buf, CDC_DATA_SZ);
-  if (ret < 0) {
-    return;
-  }
-
-  if (USB_RX_BUF_LEN - usb_rx_len < (unsigned)ret) {
-    /* No space, just drop the packet */
-  } else {
-    memcpy(usb_rx_buf + usb_rx_len, buf, ret);
-    usb_rx_len += ret;
-  }
-}
-
 static usbd_respond cdc_setconf(usbd_device *dev, uint8_t cfg) {
   switch (cfg) {
   case 0:
@@ -278,7 +255,7 @@ static usbd_respond cdc_setconf(usbd_device *dev, uint8_t cfg) {
     usbd_ep_config(
       dev, CDC_TXD_EP, USB_EPTYPE_BULK | USB_EPTYPE_DBLBUF, CDC_DATA_SZ);
     usbd_ep_config(dev, CDC_NTF_EP, USB_EPTYPE_INTERRUPT, CDC_NTF_SZ);
-    usbd_reg_endpoint(dev, CDC_RXD_EP, cdc_rx);
+    usbd_reg_endpoint(dev, CDC_RXD_EP, 0);
     usbd_ep_write(dev, CDC_TXD_EP, 0, 0);
     return usbd_ack;
   default:
@@ -293,26 +270,34 @@ static void cdc_init_usbd(void) {
   usbd_reg_descr(&udev, cdc_getdesc);
 }
 
-void OTG_FS_IRQHandler(void) {
-  usbd_poll(&udev);
-}
-
 size_t console_read(void *ptr, size_t max) {
-  NVIC_DisableIRQ(OTG_FS_IRQn);
-  size_t amt = usb_rx_len > max ? max : usb_rx_len;
-  memcpy(ptr, usb_rx_buf, amt);
-  memmove(usb_rx_buf, usb_rx_buf + amt, usb_rx_len - amt);
-  usb_rx_len -= amt;
-  NVIC_EnableIRQ(OTG_FS_IRQn);
+  static uint8_t rxbuf[64];
+  static size_t rxsz = 0;
+
+  usbd_poll(&udev);
+
+  if (rxsz == 0) {
+    int ret = usbd_ep_read(&udev, CDC_RXD_EP, rxbuf, sizeof(rxbuf));
+    if (ret > 0) {
+      rxsz = ret;
+    }
+  }
+
+  size_t amt = rxsz > max ? max : rxsz;
+  memcpy(ptr, rxbuf, amt);
+  memmove(rxbuf, rxbuf + amt, rxsz - amt);
+  rxsz -= amt;
+
   return amt;
 }
 
 size_t console_write(const void *ptr, size_t max) {
+
+  usbd_poll(&udev);
+
   size_t amt = max > CDC_DATA_SZ ? CDC_DATA_SZ : max;
 
-  NVIC_DisableIRQ(OTG_FS_IRQn);
   int written = usbd_ep_write(&udev, CDC_TXD_EP, ptr, amt);
-  NVIC_EnableIRQ(OTG_FS_IRQn);
   if (written >= 0) {
     return written;
   }
@@ -329,8 +314,6 @@ void stm32f4_configure_usb(void) {
                    _VAL2FLD(GPIO_AFRH_AFSEL12, 10); /* AF10 (USB FS)*/
 
   cdc_init_usbd();
-  NVIC_SetPriority(OTG_FS_IRQn, 15);
-  NVIC_EnableIRQ(OTG_FS_IRQn);
   usbd_enable(&udev, true);
   usbd_connect(&udev, true);
 }

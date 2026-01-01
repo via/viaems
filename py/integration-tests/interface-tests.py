@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import unittest
 import sys
+import time
 
 from viaems.testcase import TestCase
 
@@ -193,6 +194,26 @@ class ViaemsInterfaceTests(TestCase):
                                        [400, 500, 600],
                                        [700, 800, 900],
                                        ])
+
+
+class ConsoleUsageWhileRunning(TestCase):
+
+    def test_set_table(self):
+        self.conn.start()
+
+        self.conn.set(["test", "test-trigger-rpm"], 5000)
+        original = self.conn.get(path=["tables", "ve"])['response']
+        original["data"][2][3] = 55.0
+
+        for attempt in range(10):
+            self.conn.sleep(1)
+            self.conn.set(path=["tables", "ve"], value=original)
+            new = self.conn.get(path=["tables", "ve"])['response']
+            
+            if new != original:
+                print(original)
+                print(new)
+                self.fail("Corruption in table write")
 
 
 

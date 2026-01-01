@@ -62,6 +62,11 @@ class ViaemsInterface:
         result = self.recv_until_id(id)
         return result
 
+    def sleep(self, seconds):
+        now = time.time()
+        while time.time() < now + seconds:
+            self.recv()
+
 
 
 class SimConnector(ViaemsInterface):
