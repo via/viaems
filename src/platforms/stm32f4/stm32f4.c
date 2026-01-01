@@ -274,6 +274,9 @@ void Reset_Handler(void) {
   } else {
     viaems_init(&stm32f4_viaems, config);
     platform_configure(false);
-    viaems_idle(&stm32f4_viaems);
+
+    while (true) {
+      viaems_idle(&stm32f4_viaems, current_time());
+    }
   }
 }

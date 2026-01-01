@@ -190,7 +190,10 @@ void reset_handler(void) {
   } else {
     viaems_init(&gd32f4_viaems, &default_config);
     platform_configure(false);
-    viaems_idle(&gd32f4_viaems);
+
+    while (true) {
+      viaems_idle(&gd32f4_viaems, current_time());
+    }
   }
 }
 extern uint32_t _configdata_loadaddr, _sconfigdata, _econfigdata;

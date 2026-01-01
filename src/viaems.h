@@ -39,5 +39,5 @@ void viaems_reschedule(struct viaems *viaems,
 
 void viaems_init(struct viaems *v, struct config *config);
 
-void viaems_idle(struct viaems *viaems);
+void viaems_idle(struct viaems *viaems, timeval_t now);
 #endif

@@ -413,7 +413,9 @@ int main(int argc, char *argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  viaems_idle(&hosted_viaems);
+  while (true) {
+    viaems_idle(&hosted_viaems, current_time());
+  }
 
   return 0;
 }

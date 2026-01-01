@@ -72,10 +72,6 @@ void viaems_init(struct viaems *v, struct config *config) {
   scheduler_init(v->events, MAX_EVENTS, config);
 }
 
-void viaems_idle(struct viaems *viaems) {
-
-  (void)viaems;
-  while (true) {
-    console_process(viaems->config, current_time());
-  }
+void viaems_idle(struct viaems *viaems, timeval_t time) {
+  console_process(viaems->config, time);
 }
