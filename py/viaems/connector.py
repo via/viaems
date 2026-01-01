@@ -7,7 +7,6 @@ import os
 from io import BytesIO
 
 import cbor2 as cbor
-import usb.core
 
 from viaems.vcd import dump_vcd
 from viaems.validation import enrich_log

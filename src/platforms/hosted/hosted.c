@@ -20,7 +20,7 @@
 #include "util.h"
 #include "viaems.h"
 
-static timeval_t curtime;
+static timeval_t curtime = 0;
 
 static timeval_t sim_wakeup_time = 0;
 static bool sim_wakeup_enabled = false;
