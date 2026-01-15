@@ -106,7 +106,7 @@ int main(void) {
     }
     libusb_fill_bulk_transfer(transfers[i].xfer,
                               devh,
-                              0x81,
+                              USB_IN_EP,
                               transfers[i].buffer,
                               sizeof(transfers[i].buffer),
                               read_callback,

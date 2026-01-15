@@ -8,6 +8,6 @@
 [submodule "contrib/cmsis_device_f4"]
 	path = contrib/cmsis_device_f4
 	url = https://github.com/STMicroelectronics/cmsis_device_f4.git
-[submodule "contrib/libusb_stm32"]
-	path = contrib/libusb_stm32
-	url = https://github.com/dmitrystu/libusb_stm32.git
+[submodule "contrib/tinyusb"]
+	path = contrib/tinyusb
+	url = https://github.com/hathach/tinyusb

@@ -535,7 +535,7 @@ static uint32_t do_viaems_reschedule_normal() {
 }
 
 int start_benchmarks() {
-  for (volatile int i = 0; i < 100000; i++)
+  for (volatile int i = 0; i < 10000000; i++)
     ;
 
   puts("ViaEMS Benchmark Suite\r\n\r\n");

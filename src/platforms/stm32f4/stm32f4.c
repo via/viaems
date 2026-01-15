@@ -170,18 +170,6 @@ static struct config *platform_load_config(void) {
   return &default_config;
 }
 
-/* Use usb to send text from newlib printf */
-int __attribute__((externally_visible)) _write(int fd,
-                                               const char *buf,
-                                               size_t count) {
-  (void)fd;
-  size_t pos = 0;
-  while (pos < count) {
-    pos += console_write(buf + pos, count - pos);
-  }
-  return count;
-}
-
 static void setup_gpios(void) {
   GPIOE->MODER = 0x55555555;   /* All of GPIOE is output */
   GPIOE->OSPEEDR = 0xffffffff; /* All GPIOE set to High speed*/
@@ -272,6 +260,7 @@ void Reset_Handler(void) {
     platform_configure(true);
     int start_benchmarks(void);
     start_benchmarks();
+    while (true);
   } else {
     viaems_init(&stm32f4_viaems, config);
     platform_configure(false);

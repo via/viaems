@@ -7,34 +7,43 @@ SPI_ADC?=TLV2553
 
 CMSIS=contrib/CMSIS_5/
 CMSISDEV=contrib/cmsis_device_f4/
-LIBUSB=contrib/libusb_stm32
 
 VPATH=src/platforms/${PLATFORM} \
-      contrib/libusb_stm32/src
+      contrib/tinyusb/src/class/cdc \
+      contrib/tinyusb/src/common \
+      contrib/tinyusb/src/device \
+      contrib/tinyusb/src/portable/synopsys/dwc2 \
+      contrib/tinyusb/src
 
-LIBUSB_OBJS= usbd_core.o \
-             usbd_stm32f429_otgfs.o
+
+TINYUSB_OBJS= cdc_device.o \
+              tusb_fifo.o \
+              usbd.o \
+              usbd_control.o \
+              dcd_dwc2.o \
+              dwc2_common.o \
+              tusb.o
+
 
 OBJS+= stm32f4.o \
        stm32f4_sched.o \
        stm32f4_vectors.o \
-       stm32f4_usb.o \
        stm32f4_sensors.o \
        stm32f4_pwm.o \
+       stm32f4_usb.o \
        stm32_sched_buffers.o \
-       ${LIBUSB_OBJS}
-
+       ${TINYUSB_OBJS}
 
 OBJS+= libssp.a libssp_nonshared.a
 
 CFLAGS= -DNDEBUG -ffunction-sections -fdata-sections -O2
 CFLAGS+= -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mthumb -mcpu=cortex-m4
 CFLAGS+= -DSTM32F4 -DSTM32F4xx -DSTM32F427xx
-CFLAGS+= -DPLATFORMIO -DUSBD_SOF_DISABLED
 
 CFLAGS+= -I${CMSIS}/CMSIS/Core/Include
 CFLAGS+= -I${CMSISDEV}/Include
-CFLAGS+= -I${LIBUSB}/inc
+CFLAGS+= -Icontrib/tinyusb/src/
+CFLAGS+= -Isrc/platforms/stm32f4
 CFLAGS+= -DTICKRATE=4000000 -DSPI_${SPI_ADC}
 
 LDFLAGS+= -lc -lnosys -L ${OBJDIR} -nostartfiles -Wl,--gc-sections
