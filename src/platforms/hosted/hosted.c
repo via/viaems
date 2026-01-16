@@ -86,6 +86,10 @@ size_t console_read(void *buf, size_t len) {
   int s = len > 64 ? 64 : len;
   ssize_t res = read(STDIN_FILENO, buf, s);
   if (res < 0) {
+    struct timespec delay = {
+      .tv_nsec = 50000,
+    };
+    clock_nanosleep(CLOCK_MONOTONIC, 0, &delay, NULL);
     return 0;
   }
   return (size_t)res;
