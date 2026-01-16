@@ -36,6 +36,9 @@ static int tx_loop(void *ptr) {
   uint8_t rxbuf[512];
   do {
     ssize_t len = read(STDIN_FILENO, rxbuf, sizeof(rxbuf));
+    if (len == 0) {
+      continue;
+    }
     int actual_length;
     while (
       libusb_bulk_transfer(devh, USB_OUT_EP, rxbuf, len, &actual_length, 0) < 0)
