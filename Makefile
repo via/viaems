@@ -20,6 +20,7 @@ OBJS += calculations.o \
 				sim.o \
 				tasks.o \
 				util.o \
+				stream.o \
 				crc.o \
 				benchmark.o \
 				viaems.o \

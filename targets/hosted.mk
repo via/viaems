@@ -2,10 +2,10 @@ VPATH=src/platforms/${PLATFORM}
 
 OBJS+= hosted.o
 
+#CFLAGS+= -DPLATFORM_HAS_NATIVE_MESSAGING -DHOSTED_UDP
 CFLAGS+= -Og -DSUPPORTS_POSIX_TIMERS -Wno-error=unused-result
 CFLAGS+= -D TICKRATE=4000000 -D_POSIX_C_SOURCE=199309L -D_GNU_SOURCE
 CFLAGS+= -fsanitize=undefined -fsanitize=address -pthread
-
 
 LDFLAGS+= -lrt
 

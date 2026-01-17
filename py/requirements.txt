@@ -2,4 +2,5 @@ pip
 cbor2==5.7.1
 pyvcd
 intelhex
+cobs
 .

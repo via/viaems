@@ -12,6 +12,7 @@
 #include "tasks.h"
 #include "util.h"
 #include "crc.h"
+#include "stream.h"
 
 /* Disable leak detection in asan. There are several convenience allocations,
  * but they should be single ones for the lifetime of the program */
@@ -48,13 +49,13 @@ uint32_t platform_knock_samplerate(void) {
   return 50000;
 }
 
-size_t console_read(void *ptr, size_t max) {
+size_t platform_read(uint8_t *ptr, size_t max) {
   (void)ptr;
   (void)max;
   return 0;
 }
 
-size_t console_write(const void *ptr, size_t max) {
+size_t platform_write(const uint8_t *ptr, size_t max) {
   (void)ptr;
   (void)max;
   return 0;
@@ -75,6 +76,7 @@ void main(int argc, char *argv[]) {
   suite_add_tcase(viaems_suite, setup_console_tests());
   suite_add_tcase(viaems_suite, setup_tasks_tests());
   suite_add_tcase(viaems_suite, setup_crc_tests());
+  suite_add_tcase(viaems_suite, setup_stream_tests());
   SRunner *sr = srunner_create(viaems_suite);
   srunner_run_all(sr, CK_VERBOSE);
   exit(srunner_ntests_failed(sr));

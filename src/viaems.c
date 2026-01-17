@@ -36,7 +36,6 @@ void viaems_reschedule(struct viaems *viaems,
 
   const struct config *config = viaems->config;
 
-  // Run ancillary tasks
   run_tasks(viaems, u, plan);
 
   if (engine_position_is_synced(&u->position, u->current_time)) {

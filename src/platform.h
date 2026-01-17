@@ -20,8 +20,40 @@ timeval_t current_time(void);
 uint64_t cycle_count(void);
 uint64_t cycles_to_ns(uint64_t cycles);
 
-size_t console_read(void *buf, size_t max);
-size_t console_write(const void *buf, size_t count);
+struct console_tx_message;
+
+/* Attempt to start a new message. Return false is unable to create. */
+bool platform_message_writer_new(struct console_tx_message *, size_t length);
+
+/* Perform blocking write of data for a message. Returns false if unable to write. 
+ * When all bytes have been written (as specified in the length parameter to 
+ * platform_message_writer_new), the message is considered complete */
+bool platform_message_writer_write(struct console_tx_message *, uint8_t *data, size_t length);
+
+/* Indicate to the platform that the message will not be completed, and any
+ * internal state can be discarded */
+void platform_message_writer_abort(struct console_tx_message *);
+
+struct console_rx_message;
+
+/* If there is a pending message to receive, returns true and resets the console
+ * message struct */
+bool platform_message_reader_new(struct console_rx_message *);
+
+/* Perform a blocking read of data from a message into data. 
+ * Returns false if there is an error reading data or if the message is
+ * exhausted, after which the console message may not be read from again.
+ */
+bool platform_message_reader_read(struct console_rx_message *, uint8_t *data, size_t length);
+
+/* Indicate to the platform that the message will not be read from again, and
+ * any further data in the message can be discarded */
+void platform_message_reader_abort(struct console_rx_message *);
+
+#ifndef PLATFORM_HAS_NATIVE_MESSAGING
+size_t platform_read(uint8_t *buffer, size_t max);
+size_t platform_write(const uint8_t *buffer, size_t length);
+#endif
 
 void platform_save_config(void);
 
