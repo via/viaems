@@ -5,8 +5,12 @@ import time
 import random
 import os
 from io import BytesIO
+import struct
+import sys
 
 import cbor2 as cbor
+import zlib
+from cobs import cobs
 
 from viaems.vcd import dump_vcd
 from viaems.validation import enrich_log
@@ -97,12 +101,40 @@ class SimConnector(ViaemsInterface):
 
     def send(self, payload):
         binary = cbor.dumps(payload)
-        self.process.stdin.write(binary)
+        crcbytes = struct.pack("<I", zlib.crc32(binary))
+        lenbytes = struct.pack("<H", len(binary))
+        encoded = cobs.encode(lenbytes + binary + crcbytes) + b"\0"
+        self.process.stdin.write(encoded)
         self.process.stdin.flush()
 
-    def recv(self):
-        result = cbor.load(self.process.stdout)
+    def _deframe(self, frame):
+        decoded = cobs.decode(frame)
+        lenbytes = decoded[0:2]
+        crcbytes = decoded[-4:]
+        pdu = decoded[2:-4]
+        crc = struct.unpack("<I", crcbytes)[0]
+        length = struct.unpack("<H", lenbytes)[0]
+        if length != len(pdu):
+            raise ValueError("Invalid frame length")
+        if zlib.crc32(pdu) != crc:
+            raise ValueError("CRC failure")
+        result = cbor.loads(pdu)
         return result
+
+    def recv(self):
+        frame = b""
+        while True:
+            b = self.process.stdout.read(1)
+            if b == b"\0":
+                break
+            if len(b) == 0:
+                raise EOFError
+            frame += b
+
+            if len(frame) > 16384:
+                return None
+
+        return self._deframe(frame)
 
     def _render_target_inputs(self, scenario, file):
         render_time = 0
@@ -187,6 +219,11 @@ class HilConnector(ViaemsInterface):
             pipesize=1 * 1024 * 1024,
         )
 
+        # Wait for first null
+        while True:
+            b = self.process.stdout.read(1)
+            if b == b"\0":
+                break
 
     def kill(self):
         if not self.process:
@@ -197,12 +234,42 @@ class HilConnector(ViaemsInterface):
 
     def send(self, payload):
         binary = cbor.dumps(payload)
-        self.process.stdin.write(binary)
+        crcbytes = struct.pack("<I", zlib.crc32(binary))
+        lenbytes = struct.pack("<H", len(binary))
+        encoded = cobs.encode(lenbytes + binary + crcbytes) + b"\0"
+        self.process.stdin.write(encoded)
         self.process.stdin.flush()
 
-    def recv(self):
-        result = cbor.load(self.process.stdout)
+    def _deframe(self, frame):
+        decoded = cobs.decode(frame)
+        lenbytes = decoded[0:2]
+        crcbytes = decoded[-4:]
+        pdu = decoded[2:-4]
+        crc = struct.unpack("<I", crcbytes)[0]
+        length = struct.unpack("<H", lenbytes)[0]
+        if zlib.crc32(pdu) != crc:
+            raise ValueError("CRC failure")
+        if length != len(pdu):
+            raise ValueError("Invalid frame length")
+        result = cbor.loads(pdu)
         return result
+
+    def recv(self):
+        frame = b""
+        while True:
+            b = self.process.stdout.read(1)
+            if b == b"\0":
+                break
+            if len(b) == 0:
+                raise EOFError
+            frame += b
+
+            if len(frame) > 16384:
+                return None
+
+        return self._deframe(frame)
+
+
 
     def log_from_capture(self, msgs: List[str]) -> List[CaptureEvent]:
         last_raw_value = 0

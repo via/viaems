@@ -449,7 +449,7 @@ static uint8_t cdc_acm_out(usb_dev *udev, uint8_t ep_num) {
   return USBD_OK;
 }
 
-size_t console_read(void *ptr, size_t max) {
+size_t platform_read(uint8_t *ptr, size_t max) {
 
   if (state.pending_read) {
     __disable_irq();
@@ -466,7 +466,7 @@ size_t console_read(void *ptr, size_t max) {
   return 0;
 }
 
-size_t console_write(const void *ptr, size_t max) {
+size_t platform_write(const uint8_t *ptr, size_t max) {
   if (state.pending_write) {
     return 0;
   }

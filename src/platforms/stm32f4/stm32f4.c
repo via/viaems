@@ -6,6 +6,8 @@
 #include "tasks.h"
 #include "viaems.h"
 #include <stdint.h>
+#include <stdio.h>
+#include <string.h>
 
 #ifndef CRYSTAL_FREQ
 #define CRYSTAL_FREQ 8

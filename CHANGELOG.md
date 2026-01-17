@@ -1,3 +1,14 @@
+### master (unreleased)
+This release introduces communication protocol changes that break compatibility
+with flviaems.
+
+ - A platform can now provide a native-framing console interface, intended
+   to be used for CAN or Ethernet.
+ - The existing serial/USB comms are "streaming" IO, but instead of directly
+   concatonating CBOR messages, each message is suffixed with a CRC32 and
+   framed using COBS and NULL byte delimiters.  See INTERFACE.md for more
+   details
+
 ### 1.7.0 (2026 Feb 16)
 Major breaking changes are introduced in this release. Additionally, this is expected
 to be the last major version using the CBOR interface and flviaems companion software.

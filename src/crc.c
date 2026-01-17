@@ -1,4 +1,5 @@
 #include "crc.h"
+#include <stdint.h>
 
 #ifndef PLATFORM_HAS_CRC32
 

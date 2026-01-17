@@ -5,6 +5,7 @@
 
 #include "calculations.h"
 #include "config.h"
+#include "console.h"
 #include "crc.h"
 #include "platform.h"
 #include "scheduler.h"

@@ -1,3 +1,4 @@
+#include <fcntl.h>
 #include <libusb-1.0/libusb.h>
 #include <stdatomic.h>
 #include <stdbool.h>
@@ -15,6 +16,11 @@ static const uint8_t USB_OUT_EP = 0x01;
 static struct libusb_device_handle *devh = NULL;
 
 static void read_callback(struct libusb_transfer *xfer) {
+  if (xfer->status != LIBUSB_TRANSFER_COMPLETED) {
+    fprintf(stderr, "Transfer failed! %d\n", xfer->status);
+    exit(2);
+  }
+
   const uint8_t *rxbuf = xfer->buffer;
   const size_t length = xfer->actual_length;
   write(STDOUT_FILENO, rxbuf, length);
@@ -97,9 +103,9 @@ int main(void) {
   struct {
     struct libusb_transfer *xfer;
     uint8_t buffer[16384];
-  } transfers[4];
+  } transfers[16];
 
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < 16; i++) {
     transfers[i].xfer = libusb_alloc_transfer(0);
     if (!transfers[i].xfer) {
       return EXIT_FAILURE;
