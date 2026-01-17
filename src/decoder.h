@@ -7,6 +7,9 @@
 #define MAX_TRIGGERS 60
 
 typedef enum {
+  /* Decoder wheel processing disabled */
+  TRIGGER_DISABLED,
+
   /* Trigger wheel is N even teeth that add to 720 degrees.  This decoder is
    * only useful for low-resolution wheels, such as a Ford TFI */
   TRIGGER_EVEN_NOSYNC,
@@ -34,7 +37,6 @@ typedef enum {
   DECODER_VARIATION,
   DECODER_TRIGGERCOUNT_HIGH,
   DECODER_TRIGGERCOUNT_LOW,
-  DECODER_EXPIRED,
   DECODER_OVERFLOW,
 } decoder_loss_reason;
 
@@ -61,6 +63,8 @@ struct engine_position {
 
   bool has_position;
   degrees_t last_trigger_angle;
+
+  decoder_loss_reason loss;
 };
 
 typedef enum {
@@ -86,7 +90,6 @@ struct decoder {
   /* Debug */
   uint32_t t0_count;
   uint32_t t1_count;
-  decoder_loss_reason loss;
 };
 
 struct trigger_event {

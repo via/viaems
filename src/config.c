@@ -1,5 +1,10 @@
 #include "config.h"
+#include "calculations.h"
+#include "decoder.h"
 #include "sensors.h"
+
+#include "console.pb.h"
+#include "table.h"
 
 struct config default_config __attribute__((section(".configdata"))) = {
   .outputs = {
@@ -279,3 +284,839 @@ struct config default_config __attribute__((section(".configdata"))) = {
     .lean_boost_ego = .91,
   },
 };
+
+
+static void store_output_config(const struct output_event_config *ev, struct viaems_console_Configuration_Output *ev_msg) {
+  switch (ev->type) {
+    case DISABLED_EVENT: 
+			ev_msg->type = viaems_console_Configuration_Output_OutputType_OUTPUT_DISABLED;
+      break;
+    case FUEL_EVENT: 
+			ev_msg->type = viaems_console_Configuration_Output_OutputType_OUTPUT_FUEL;
+      break;
+    case IGNITION_EVENT: 
+			ev_msg->type = viaems_console_Configuration_Output_OutputType_OUTPUT_IGNITION;
+      break;
+  }
+  ev_msg->pin = ev->pin;
+  ev_msg->inverted = ev->inverted;
+  ev_msg->angle = ev-> angle;
+
+  ev_msg->has_type = true;
+  ev_msg->has_pin = true;
+  ev_msg->has_inverted = true;
+  ev_msg->has_angle = true;
+}
+
+static void store_trigger_config(const struct trigger_input *t, struct viaems_console_Configuration_TriggerInput *t_msg) {
+  switch (t->edge) {
+    case RISING_EDGE:
+      t_msg->edge = viaems_console_Configuration_InputEdge_EDGE_RISING;
+      break;
+    case FALLING_EDGE:
+      t_msg->edge = viaems_console_Configuration_InputEdge_EDGE_FALLING;
+      break;
+    case BOTH_EDGES:
+      t_msg->edge = viaems_console_Configuration_InputEdge_EDGE_BOTH;
+      break;
+  }
+
+  switch (t->type) {
+    case NONE:
+      t_msg->type = viaems_console_Configuration_InputType_INPUT_DISABLED;
+      break;
+    case FREQ:
+      t_msg->type = viaems_console_Configuration_InputType_INPUT_FREQ;
+      break;
+    case TRIGGER:
+      t_msg->type = viaems_console_Configuration_InputType_INPUT_TRIGGER;
+      break;
+    case SYNC:
+      t_msg->type = viaems_console_Configuration_InputType_INPUT_SYNC;
+      break;
+  }
+
+  t_msg->has_edge = true;
+  t_msg->has_type = true;
+}
+
+static void store_sensor_config(const struct sensor_config *config, struct viaems_console_Configuration_Sensor *msg) {
+  msg->has_source = true;
+  switch (config->source) {
+    case SENSOR_NONE:
+      msg->source = viaems_console_Configuration_SensorSource_SOURCE_NONE;
+      break;
+    case SENSOR_ADC:
+      msg->source = viaems_console_Configuration_SensorSource_SOURCE_ADC;
+      break;
+    case SENSOR_FREQ:
+      msg->source = viaems_console_Configuration_SensorSource_SOURCE_FREQ;
+      break;
+    case SENSOR_PULSEWIDTH:
+      msg->source = viaems_console_Configuration_SensorSource_SOURCE_PULSEWIDTH;
+      break;
+    case SENSOR_CONST:
+      msg->source = viaems_console_Configuration_SensorSource_SOURCE_CONST;
+      break;
+  }
+  msg->has_method = true;
+  switch (config->method) {
+    case METHOD_LINEAR:
+      msg->method = viaems_console_Configuration_SensorMethod_METHOD_LINEAR;
+      break;
+    case METHOD_LINEAR_WINDOWED:
+      msg->method = viaems_console_Configuration_SensorMethod_METHOD_LINEAR_WINDOWED;
+      break;
+    case METHOD_THERM:
+      msg->method = viaems_console_Configuration_SensorMethod_METHOD_THERMISTOR;
+      break;
+  }
+  msg->has_pin = true;
+  msg->pin = config->pin;
+  msg->has_lag = true;
+  msg->lag = config->lag;
+
+  if (config->source == SENSOR_CONST) {
+    msg->has_const_config = true;
+    msg->const_config.fixed_value = config->const_value;
+  } else if ((config->method == METHOD_LINEAR) || (config->method == METHOD_LINEAR_WINDOWED)) {
+    msg->has_linear_config = true;
+    msg->linear_config.output_min = config->range.min;
+    msg->linear_config.output_max = config->range.max;
+    msg->linear_config.input_min = config->raw_min;
+    msg->linear_config.input_max = config->raw_max;
+    if (config->method == METHOD_LINEAR_WINDOWED) {
+      msg->has_window_config = true;
+      msg->window_config.opening = config->window.window_opening;
+      msg->window_config.count = config->window.windows_per_cycle;
+      msg->window_config.offset = config->window.window_offset;
+    }
+  } else if (config->method == METHOD_THERM) {
+    msg->has_thermistor_config = true;
+    msg->thermistor_config.a = config->therm.a;
+    msg->thermistor_config.b = config->therm.b;
+    msg->thermistor_config.c = config->therm.c;
+    msg->thermistor_config.bias = config->therm.bias;
+  }
+
+  msg->has_fault_config = true;
+  msg->fault_config.min = config->fault_config.min;
+  msg->fault_config.max = config->fault_config.max;
+  msg->fault_config.value = config->fault_config.fault_value;
+}
+
+static void store_knock_config(const struct knock_sensor_config *config, struct viaems_console_Configuration_KnockSensor *msg) {
+  msg->has_enabled = true;
+  msg->enabled = config->enabled;
+  msg->has_frequency = true;
+  msg->frequency = config->frequency;
+  msg->has_threshold = true;
+  msg->threshold = config->threshold;
+}
+
+static void store_table_axis(const struct table_axis *axis, struct viaems_console_Configuration_TableAxis *msg) {
+  size_t name_len = strlen(axis->name);
+  msg->has_name = true;
+  msg->name.len = name_len;
+  memcpy(msg->name.str, axis->name, name_len);
+  msg->values_count = axis->num;
+  memcpy(msg->values, axis->values, sizeof(float) * axis->num);
+}
+
+static void store_table_row(const float *row, size_t count, struct viaems_console_Configuration_TableRow *msg) {
+  msg->values_count = count;
+  memcpy(msg->values, row, sizeof(float) * count);
+}
+
+static void store_table1d(const struct table_1d *table, struct viaems_console_Configuration_Table1d *msg) {
+  size_t name_len = strlen(table->title);
+  msg->has_name = true;
+  msg->name.len = name_len;
+  memcpy(msg->name.str, table->title, name_len);
+  
+  msg->has_cols = true;
+  store_table_axis(&table->cols, &msg->cols);
+
+  msg->has_data = true;
+  store_table_row(table->data, table->cols.num, &msg->data);
+
+}
+
+static void store_table2d(const struct table_2d *table, struct viaems_console_Configuration_Table2d *msg) {
+  size_t name_len = strlen(table->title);
+  msg->has_name = true;
+  msg->name.len = name_len;
+  memcpy(msg->name.str, table->title, name_len);
+  
+  msg->has_cols = true;
+  store_table_axis(&table->cols, &msg->cols);
+
+  msg->has_rows = true;
+  store_table_axis(&table->rows, &msg->rows);
+
+  msg->data_count = table->rows.num;
+  for (size_t row = 0; row < table->rows.num; row++) {
+    store_table_row(table->data[row], table->cols.num, &msg->data[row]);
+  }
+
+}
+
+void config_store_to_console_pbtype(const struct config *config, struct viaems_console_Configuration *msg) {
+
+  msg->outputs_count = MAX_EVENTS;
+  for (int i = 0; i < MAX_EVENTS; i++) {
+    store_output_config(&config->outputs[i], &msg->outputs[i]);
+	}
+
+  msg->triggers_count = 4;
+  for (int i = 0; i < 4; i++) {
+    store_trigger_config(&config->trigger_inputs[i], &msg->triggers[i]);
+	}
+
+  msg->has_sensors = true;
+  msg->sensors.has_aap = true;
+  store_sensor_config(&config->sensors.AAP, &msg->sensors.aap);
+  msg->sensors.has_brv = true;
+  store_sensor_config(&config->sensors.BRV, &msg->sensors.brv);
+  msg->sensors.has_clt = true;
+  store_sensor_config(&config->sensors.CLT, &msg->sensors.clt);
+  msg->sensors.has_ego = true;
+  store_sensor_config(&config->sensors.EGO, &msg->sensors.ego);
+  msg->sensors.has_frt = true;
+  store_sensor_config(&config->sensors.FRT, &msg->sensors.frt);
+  msg->sensors.has_iat = true;
+  store_sensor_config(&config->sensors.IAT, &msg->sensors.iat);
+  msg->sensors.has_map = true;
+  store_sensor_config(&config->sensors.MAP, &msg->sensors.map);
+  msg->sensors.has_tps = true;
+  store_sensor_config(&config->sensors.TPS, &msg->sensors.tps);
+  msg->sensors.has_frp = true;
+  store_sensor_config(&config->sensors.FRP, &msg->sensors.frp);
+  msg->sensors.has_eth = true;
+  store_sensor_config(&config->sensors.ETH, &msg->sensors.eth);
+  msg->sensors.has_knock1 = true;
+  store_knock_config(&config->sensors.KNK1, &msg->sensors.knock1);
+  msg->sensors.has_knock2 = true;
+  store_knock_config(&config->sensors.KNK2, &msg->sensors.knock2);
+
+  msg->has_ignition = true;
+  msg->ignition.has_type = true;
+  switch (config->ignition.dwell) {
+    case DWELL_FIXED_DUTY:
+      msg->ignition.type = viaems_console_Configuration_Ignition_DwellType_DWELL_FIXED_DUTY;
+      break;
+    case DWELL_FIXED_TIME:
+      msg->ignition.type = viaems_console_Configuration_Ignition_DwellType_DWELL_FIXED_TIME;
+      break;
+    case DWELL_BRV:
+      msg->ignition.type = viaems_console_Configuration_Ignition_DwellType_DWELL_BRV;
+      break;
+  }
+  msg->ignition.has_fixed_dwell = true;
+  msg->ignition.fixed_dwell = config->ignition.dwell_us;
+
+  msg->ignition.has_ignitions_per_cycle = true;
+  msg->ignition.ignitions_per_cycle = config->ignition.ignitions_per_cycle;
+
+  msg->ignition.has_min_coil_cooldown_us = true;
+  msg->ignition.min_coil_cooldown_us = config->ignition.min_coil_cooldown_us;
+
+  msg->ignition.has_min_dwell_us = true;
+  msg->ignition.min_dwell_us = config->ignition.min_dwell_us;
+
+  msg->ignition.has_dwell = true;
+  store_table1d(&config->dwell, &msg->ignition.dwell);
+
+  msg->ignition.has_timing = true;
+  store_table2d(&config->timing, &msg->ignition.timing);
+
+  msg->has_fueling = true;
+  msg->fueling.has_fuel_pump_pin = true;
+  msg->fueling.fuel_pump_pin = config->fueling.fuel_pump_pin;
+  msg->fueling.has_cylinder_cc = true;
+  msg->fueling.cylinder_cc = config->fueling.cylinder_cc;
+  msg->fueling.has_fuel_density = true;
+  msg->fueling.fuel_density = config->fueling.density_of_fuel;
+  msg->fueling.has_fuel_stoich_ratio = true;
+  msg->fueling.fuel_stoich_ratio = config->fueling.fuel_stoich_ratio;
+  msg->fueling.has_injections_per_cycle = true;
+  msg->fueling.injections_per_cycle = config->fueling.injections_per_cycle;
+  msg->fueling.has_injector_cc = true;
+  msg->fueling.injector_cc = config->fueling.injector_cc_per_minute;
+  msg->fueling.has_max_duty_cycle = true;
+  msg->fueling.max_duty_cycle = config->fueling.max_duty_cycle;
+  msg->fueling.has_crank_enrich = true;
+  msg->fueling.crank_enrich.has_cranking_rpm = true;
+  msg->fueling.crank_enrich.cranking_rpm = config->fueling.crank_enrich_config.crank_rpm;
+  msg->fueling.crank_enrich.has_cranking_temp = true;
+  msg->fueling.crank_enrich.cranking_temp = config->fueling.crank_enrich_config.cutoff_temperature;
+  msg->fueling.crank_enrich.has_enrich_amt = true;
+  msg->fueling.crank_enrich.enrich_amt = config->fueling.crank_enrich_config.enrich_amt;
+
+  msg->fueling.has_pulse_width_compensation = true;
+  store_table1d(&config->injector_pw_correction, &msg->fueling.pulse_width_compensation);
+  msg->fueling.has_injector_dead_time = true;
+  store_table1d(&config->injector_deadtime_offset, &msg->fueling.injector_dead_time);
+  msg->fueling.has_engine_temp_enrichment = true;
+  store_table2d(&config->engine_temp_enrich, &msg->fueling.engine_temp_enrichment);
+  msg->fueling.has_commanded_lambda = true;
+  store_table2d(&config->commanded_lambda, &msg->fueling.commanded_lambda);
+  msg->fueling.has_ve = true;
+  store_table2d(&config->ve, &msg->fueling.ve);
+  msg->fueling.has_tipin_enrich_amount = true;
+  store_table2d(&config->tipin_enrich_amount, &msg->fueling.tipin_enrich_amount);
+  msg->fueling.has_tipin_enrich_duration = true;
+  store_table1d(&config->tipin_enrich_duration, &msg->fueling.tipin_enrich_duration);
+
+  msg->has_decoder = true;
+  msg->decoder.has_trigger_type = true;
+  switch (config->decoder.type) {
+    case TRIGGER_DISABLED:
+      msg->decoder.trigger_type = viaems_console_Configuration_TriggerType_DECODER_DISABLED;
+      break;
+    case TRIGGER_EVEN_NOSYNC:
+      msg->decoder.trigger_type = viaems_console_Configuration_TriggerType_EVEN_TEETH;
+      break;
+    case TRIGGER_EVEN_CAMSYNC:
+      msg->decoder.trigger_type = viaems_console_Configuration_TriggerType_EVEN_TEETH_PLUS_CAMSYNC;
+      break;
+    case TRIGGER_MISSING_NOSYNC:
+      msg->decoder.trigger_type = viaems_console_Configuration_TriggerType_MISSING_TOOTH;
+      break;
+    case TRIGGER_MISSING_CAMSYNC:
+      msg->decoder.trigger_type = viaems_console_Configuration_TriggerType_MISSING_TOOTH_PLUS_CAMSYNC;
+      break;
+  }
+  msg->decoder.has_degrees_per_trigger = true;
+  msg->decoder.degrees_per_trigger = config->decoder.degrees_per_trigger;
+  msg->decoder.has_max_tooth_variance = true;
+  msg->decoder.max_tooth_variance = config->decoder.trigger_max_rpm_change;
+  msg->decoder.has_min_rpm = true;
+  msg->decoder.min_rpm = config->decoder.trigger_min_rpm;
+  msg->decoder.has_num_triggers = true;
+  msg->decoder.num_triggers = config->decoder.num_triggers;
+  msg->decoder.has_offset = true;
+  msg->decoder.offset = config->decoder.offset;
+
+  msg->has_rpm_cut = true;
+  msg->rpm_cut.has_rpm_limit_start = true;
+  msg->rpm_cut.rpm_limit_start = config->rpm_start;
+  msg->rpm_cut.has_rpm_limit_stop = true;
+  msg->rpm_cut.rpm_limit_stop = config->rpm_stop;
+
+  msg->has_cel = true;
+  msg->cel.has_pin = true;
+  msg->cel.pin = config->cel.pin;
+  msg->cel.has_lean_boost_ego = true;
+  msg->cel.lean_boost_ego = config->cel.lean_boost_ego;
+  msg->cel.has_lean_boost_map_enable = true;
+  msg->cel.lean_boost_map_enable = config->cel.lean_boost_kpa;
+
+  msg->has_boost_control = true;
+  msg->boost_control.has_pin = true;
+  msg->boost_control.pin = config->boost_control.pin;
+  msg->boost_control.has_control_threshold_map = true;
+  msg->boost_control.control_threshold_map = config->boost_control.control_threshold_kpa;
+  msg->boost_control.has_control_threshold_tps = true;
+  msg->boost_control.control_threshold_tps = config->boost_control.control_threshold_tps;
+  msg->boost_control.has_enable_threshold_map = true;
+  msg->boost_control.enable_threshold_map = config->boost_control.enable_threshold_kpa;
+  msg->boost_control.has_overboost_map = true;
+  msg->boost_control.overboost_map = config->boost_control.overboost;
+  msg->boost_control.has_pwm_vs_rpm = true;
+  store_table1d(&config->boost_control.pwm_duty_vs_rpm, &msg->boost_control.pwm_vs_rpm);
+
+  // TODO test trigger handling
+}
+
+static bool load_title(char name[MAX_TABLE_TITLE_SIZE], const char *str, unsigned len) {
+    if (len > MAX_TABLE_TITLE_SIZE) {
+      return false;
+    }
+    for (unsigned i = 0; i < len; i++) {
+      name[i] = str[i];
+    }
+    name[len] = '\0';
+    return true;
+}
+
+
+static bool load_table_axis(struct table_axis *axis, const struct viaems_console_Configuration_TableAxis *msg) {
+  
+  if (msg->has_name) {
+    load_title(axis->name, msg->name.str, msg->name.len);
+  }
+
+  if (msg->values_count > MAX_AXIS_SIZE) {
+    return false;
+  }
+  axis->num = msg->values_count;
+  for (size_t i = 0; i < axis->num; i++) {
+    axis->values[i] = msg->values[i];
+  }
+  return true;
+}
+
+static bool load_table_row(float *row, const struct table_axis *axis, const struct viaems_console_Configuration_TableRow *msg) {
+
+  if (msg->values_count != axis->num) {
+    return false;
+  }
+  for (size_t i = 0; i < msg->values_count; i++) {
+    row[i] = msg->values[i];
+  }
+  return true;
+}
+
+static bool load_table1d(struct table_1d *table, const struct viaems_console_Configuration_Table1d *msg) {
+  if (msg->has_name) {
+    load_title(table->title, msg->name.str, msg->name.len);
+  }
+
+  if (msg->has_cols) {
+    if (!load_table_axis(&table->cols, &msg->cols)) {
+      return false;
+    }
+  }
+  
+  if (msg->has_data) {
+    if (!load_table_row(table->data, &table->cols, &msg->data)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+static bool load_table2d(struct table_2d *table, const struct viaems_console_Configuration_Table2d *msg) {
+  if (msg->has_name) {
+    load_title(table->title, msg->name.str, msg->name.len);
+  }
+
+  if (msg->has_cols) {
+    if (!load_table_axis(&table->cols, &msg->cols)) {
+      return false;
+    }
+  }
+
+  if (msg->has_rows) {
+    if (!load_table_axis(&table->rows, &msg->rows)) {
+      return false;
+    }
+  }
+  
+  if (msg->data_count > 0) {
+    if (msg->data_count != table->rows.num) {
+      return false;
+    }
+    for (size_t i = 0; i < msg->data_count; i++) {
+      if (!load_table_row(table->data[i], &table->cols, &msg->data[i])) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+static bool load_output_config(struct output_event_config *config, const struct viaems_console_Configuration_Output *msg) {
+  if (msg->has_pin) {
+    config->pin = msg->pin;
+  }
+
+  if (msg->has_type) {
+    switch (msg->type) {
+      case viaems_console_Configuration_Output_OutputType_OUTPUT_DISABLED:
+        config->type = DISABLED_EVENT;
+        break;
+      case viaems_console_Configuration_Output_OutputType_OUTPUT_FUEL:
+        config->type = FUEL_EVENT;
+        break;
+      case viaems_console_Configuration_Output_OutputType_OUTPUT_IGNITION:
+        config->type = IGNITION_EVENT;
+        break;
+    }
+  }
+  if (msg->has_inverted) {
+    config->inverted = msg->inverted;
+  }
+  if (msg->has_angle) {
+    config->angle = msg->angle;
+  }
+  return true;
+}
+
+static bool load_trigger_config(struct trigger_input *config, const struct viaems_console_Configuration_TriggerInput *msg) {
+  if (msg->has_edge) {
+    switch (msg->edge) {
+      case viaems_console_Configuration_InputEdge_EDGE_RISING:
+        config->edge = RISING_EDGE;
+        break;
+      case viaems_console_Configuration_InputEdge_EDGE_FALLING:
+        config->edge = FALLING_EDGE;
+        break;
+      case viaems_console_Configuration_InputEdge_EDGE_BOTH:
+        config->edge = BOTH_EDGES;
+        break;
+    }
+  }
+
+  if (msg->has_type) {
+    switch (msg->type) {
+      case viaems_console_Configuration_InputType_INPUT_DISABLED:
+        config->type = NONE;
+        break;
+      case viaems_console_Configuration_InputType_INPUT_FREQ:
+        config->type = FREQ;
+        break;
+      case viaems_console_Configuration_InputType_INPUT_TRIGGER:
+        config->type = TRIGGER;
+        break;
+      case viaems_console_Configuration_InputType_INPUT_SYNC:
+        config->type = SYNC;
+        break;
+    }
+  }
+  return true;
+}
+
+static bool load_sensor_config(struct sensor_config *config, const struct viaems_console_Configuration_Sensor *msg) {
+  if (msg->has_source) {
+    switch (msg->source) {
+      case viaems_console_Configuration_SensorSource_SOURCE_NONE:
+        config->source = SENSOR_NONE;
+        break;
+      case viaems_console_Configuration_SensorSource_SOURCE_ADC:
+        config->source = SENSOR_ADC;
+        break;
+      case viaems_console_Configuration_SensorSource_SOURCE_FREQ:
+        config->source = SENSOR_FREQ;
+        break;
+      case viaems_console_Configuration_SensorSource_SOURCE_PULSEWIDTH:
+        config->source =  SENSOR_PULSEWIDTH;
+        break;
+      case viaems_console_Configuration_SensorSource_SOURCE_CONST:
+        config->source = SENSOR_CONST;
+        break;
+    }
+  }
+  if (msg->has_method) {
+    switch (msg->method) {
+      case viaems_console_Configuration_SensorMethod_METHOD_LINEAR:
+        config->method = METHOD_LINEAR;
+        break;
+      case viaems_console_Configuration_SensorMethod_METHOD_LINEAR_WINDOWED:
+        config->method = METHOD_LINEAR_WINDOWED;
+        break;
+      case viaems_console_Configuration_SensorMethod_METHOD_THERMISTOR:
+        config->method = METHOD_THERM;
+        break;
+    }
+  }
+  if (msg->has_pin) {
+    config->pin = msg->pin;
+  }
+  if (msg->has_lag) {
+    config->lag = msg->lag;
+  }
+
+  if (msg->has_const_config) {
+    config->const_value = msg->const_config.fixed_value;
+  }
+
+  if (msg->has_linear_config) {
+    config->range.min = msg->linear_config.output_min;
+    config->range.max = msg->linear_config.output_max;
+    config->raw_min = msg->linear_config.input_min;
+    config->raw_max = msg->linear_config.input_max;
+  }
+
+  if (msg->has_window_config) {
+   config->window.window_opening = msg->window_config.opening;
+   config->window.windows_per_cycle = msg->window_config.count;
+   config->window.window_offset = msg->window_config.offset;
+  }
+
+  if (msg->has_thermistor_config) {
+    config->therm.a = msg->thermistor_config.a;
+    config->therm.b = msg->thermistor_config.b;
+    config->therm.c = msg->thermistor_config.c;
+    config->therm.bias = msg->thermistor_config.bias;
+  }
+
+  if (msg->has_fault_config) {
+    config->fault_config.min = msg->fault_config.min;
+    config->fault_config.max = msg->fault_config.max;
+    config->fault_config.fault_value = msg->fault_config.value;
+  }
+  return true;
+}
+
+static void load_knock_config(struct knock_sensor_config *config, const struct viaems_console_Configuration_KnockSensor *msg) {
+  if (msg->has_enabled) {
+    config->enabled = msg->enabled;
+  }
+
+  if (msg->has_frequency) {
+    config->frequency = msg->frequency;
+  }
+
+  if (msg->has_threshold) {
+    config->threshold = msg->threshold;
+  }
+}
+
+config_load_result config_load_from_console_pbtype(struct config *config, const struct viaems_console_Configuration *msg) {
+
+  for (unsigned i = 0; i < msg->outputs_count; i++) {
+    load_output_config(&config->outputs[i], &msg->outputs[i]);
+	}
+
+  for (unsigned i = 0; i < msg->triggers_count; i++) {
+    load_trigger_config(&config->trigger_inputs[i], &msg->triggers[i]);
+	}
+
+  if (msg->has_sensors) {
+    if (msg->sensors.has_aap) {
+      load_sensor_config(&config->sensors.AAP, &msg->sensors.aap);
+    }
+    if (msg->sensors.has_brv) {
+      load_sensor_config(&config->sensors.BRV, &msg->sensors.brv);
+    }
+    if (msg->sensors.has_ego) {
+      load_sensor_config(&config->sensors.EGO, &msg->sensors.ego);
+    }
+    if (msg->sensors.has_frt) {
+      load_sensor_config(&config->sensors.FRT, &msg->sensors.frt);
+    }
+    if (msg->sensors.has_iat) {
+      load_sensor_config(&config->sensors.IAT, &msg->sensors.iat);
+    }
+    if (msg->sensors.has_clt) {
+      load_sensor_config(&config->sensors.CLT, &msg->sensors.clt);
+    }
+    if (msg->sensors.has_map) {
+      load_sensor_config(&config->sensors.MAP, &msg->sensors.map);
+    }
+    if (msg->sensors.has_tps) {
+      load_sensor_config(&config->sensors.TPS, &msg->sensors.tps);
+    }
+    if (msg->sensors.has_frp) {
+      load_sensor_config(&config->sensors.FRP, &msg->sensors.frp);
+    }
+    if (msg->sensors.has_eth) {
+      load_sensor_config(&config->sensors.ETH, &msg->sensors.eth);
+    }
+    if (msg->sensors.has_knock1) {
+      load_knock_config(&config->sensors.KNK1, &msg->sensors.knock1);
+    }
+    if (msg->sensors.has_knock2) {
+      load_knock_config(&config->sensors.KNK2, &msg->sensors.knock2);
+    }
+  }
+
+  if (msg->has_ignition) {
+    if (msg->ignition.has_type) {
+      switch (msg->ignition.type) {
+        case viaems_console_Configuration_Ignition_DwellType_DWELL_FIXED_DUTY:
+          config->ignition.dwell = DWELL_FIXED_DUTY;
+          break;
+        case viaems_console_Configuration_Ignition_DwellType_DWELL_FIXED_TIME:
+          config->ignition.dwell = DWELL_FIXED_TIME;
+          break;
+        case viaems_console_Configuration_Ignition_DwellType_DWELL_BRV:
+          config->ignition.dwell = DWELL_BRV;
+          break;
+      }
+    }
+
+    if (msg->ignition.has_fixed_dwell) {
+      config->ignition.dwell_us = msg->ignition.fixed_dwell;
+    }
+
+    if (msg->ignition.has_ignitions_per_cycle) {
+      config->ignition.ignitions_per_cycle = msg->ignition.ignitions_per_cycle;
+    }
+
+    if (msg->ignition.has_min_coil_cooldown_us) {
+      config->ignition.min_coil_cooldown_us = msg->ignition.min_coil_cooldown_us;
+    }
+
+    if (msg->ignition.has_min_dwell_us) {
+      config->ignition.min_dwell_us = msg->ignition.min_dwell_us;
+    }
+
+    if (msg->ignition.has_dwell) {
+      load_table1d(&config->dwell, &msg->ignition.dwell);
+    }
+
+    if (msg->ignition.has_timing) {
+      load_table2d(&config->timing, &msg->ignition.timing);
+    }
+  }
+
+  if (msg->has_fueling) {
+    if (msg->fueling.has_fuel_pump_pin) {
+      config->fueling.fuel_pump_pin = msg->fueling.fuel_pump_pin;
+    }
+    if (msg->fueling.has_cylinder_cc) {
+      config->fueling.cylinder_cc = msg->fueling.cylinder_cc;
+    }
+
+    if (msg->fueling.has_fuel_density) {
+      config->fueling.density_of_fuel = msg->fueling.fuel_density;
+    }
+
+    if (msg->fueling.has_fuel_stoich_ratio) {
+      config->fueling.fuel_stoich_ratio = msg->fueling.fuel_stoich_ratio;
+    }
+
+    if (msg->fueling.has_injections_per_cycle) {
+      config->fueling.injections_per_cycle = msg->fueling.injections_per_cycle;
+    }
+
+    if (msg->fueling.has_injector_cc) {
+      config->fueling.injector_cc_per_minute = msg->fueling.injector_cc;
+    }
+
+    if (msg->fueling.has_max_duty_cycle) {
+      config->fueling.max_duty_cycle = msg->fueling.max_duty_cycle;
+    }
+
+    if (msg->fueling.has_crank_enrich) {
+      if (msg->fueling.crank_enrich.has_cranking_rpm) {
+        config->fueling.crank_enrich_config.crank_rpm = msg->fueling.crank_enrich.cranking_rpm;
+      }
+
+      if (msg->fueling.crank_enrich.has_cranking_temp) {
+        config->fueling.crank_enrich_config.cutoff_temperature = msg->fueling.crank_enrich.cranking_temp;
+      }
+
+      if (msg->fueling.crank_enrich.has_enrich_amt) {
+        config->fueling.crank_enrich_config.enrich_amt = msg->fueling.crank_enrich.enrich_amt;
+      }
+    }
+
+    if (msg->fueling.has_pulse_width_compensation) {
+      load_table1d(&config->injector_pw_correction, &msg->fueling.pulse_width_compensation);
+    }
+
+    if (msg->fueling.has_injector_dead_time) {
+      load_table1d(&config->injector_deadtime_offset, &msg->fueling.injector_dead_time);
+    }
+
+    if (msg->fueling.has_engine_temp_enrichment) {
+      load_table2d(&config->engine_temp_enrich, &msg->fueling.engine_temp_enrichment);
+    }
+
+    if (msg->fueling.has_commanded_lambda) {
+      load_table2d(&config->commanded_lambda, &msg->fueling.commanded_lambda);
+    }
+
+    if (msg->fueling.has_ve) {
+      load_table2d(&config->ve, &msg->fueling.ve);
+    }
+
+    if (msg->fueling.has_tipin_enrich_amount) {
+      load_table2d(&config->tipin_enrich_amount, &msg->fueling.tipin_enrich_amount);
+    }
+
+    if (msg->fueling.has_tipin_enrich_duration) {
+      load_table1d(&config->tipin_enrich_duration, &msg->fueling.tipin_enrich_duration);
+    }
+  }
+
+  if (msg->has_decoder) {
+    if (msg->decoder.has_trigger_type) {
+      switch (msg->decoder.trigger_type) {
+        case viaems_console_Configuration_TriggerType_DECODER_DISABLED:
+          config->decoder.type = TRIGGER_DISABLED;
+          break;
+        case viaems_console_Configuration_TriggerType_EVEN_TEETH:
+          config->decoder.type = TRIGGER_EVEN_NOSYNC;
+          break;
+        case viaems_console_Configuration_TriggerType_EVEN_TEETH_PLUS_CAMSYNC:
+          config->decoder.type = TRIGGER_EVEN_CAMSYNC;
+          break;
+        case viaems_console_Configuration_TriggerType_MISSING_TOOTH:
+          config->decoder.type = TRIGGER_MISSING_NOSYNC;
+          break;
+        case viaems_console_Configuration_TriggerType_MISSING_TOOTH_PLUS_CAMSYNC:
+          config->decoder.type = TRIGGER_MISSING_CAMSYNC;
+          break;
+      }
+    }
+
+    if (msg->decoder.has_degrees_per_trigger) {
+      config->decoder.degrees_per_trigger = msg->decoder.degrees_per_trigger;
+    }
+
+    if (msg->decoder.has_max_tooth_variance) {
+      config->decoder.trigger_max_rpm_change = msg->decoder.max_tooth_variance;
+    }
+
+    if (msg->decoder.has_min_rpm) {
+      config->decoder.trigger_min_rpm = msg->decoder.min_rpm;
+    }
+
+    if (msg->decoder.has_num_triggers) {
+      config->decoder.num_triggers = msg->decoder.num_triggers;
+    }
+
+    if (msg->decoder.has_offset) {
+      config->decoder.offset = msg->decoder.offset;
+    }
+  }
+
+  if (msg->has_rpm_cut) {
+    if (msg->rpm_cut.has_rpm_limit_start) {
+      config->rpm_start = msg->rpm_cut.rpm_limit_start;
+    }
+    if (msg->rpm_cut.has_rpm_limit_stop) {
+      config->rpm_stop = msg->rpm_cut.rpm_limit_stop;
+    }
+  }
+
+  if (msg->has_cel) {
+    if (msg->cel.has_pin) {
+      config->cel.pin = msg->cel.pin;
+    }
+
+    if (msg->cel.has_lean_boost_ego) {
+      config->cel.lean_boost_ego = msg->cel.lean_boost_ego;
+    }
+
+    if (msg->cel.has_lean_boost_map_enable) {
+      config->cel.lean_boost_kpa = msg->cel.lean_boost_map_enable;
+    }
+  }
+
+  if (msg->has_boost_control) {
+    if (msg->boost_control.has_pin) {
+      config->boost_control.pin = msg->boost_control.pin;
+    }
+
+    if (msg->boost_control.has_control_threshold_map) {
+      config->boost_control.control_threshold_kpa = msg->boost_control.control_threshold_map;
+    }
+
+    if (msg->boost_control.has_control_threshold_tps) {
+      config->boost_control.control_threshold_tps = msg->boost_control.control_threshold_tps;
+    }
+
+    if (msg->boost_control.has_enable_threshold_map) {
+      config->boost_control.enable_threshold_kpa = msg->boost_control.enable_threshold_map;
+    }
+
+    if (msg->boost_control.has_overboost_map) {
+      config->boost_control.overboost = msg->boost_control.overboost_map;
+    }
+
+    if (msg->boost_control.has_pwm_vs_rpm) {
+      load_table1d(&config->boost_control.pwm_duty_vs_rpm, &msg->boost_control.pwm_vs_rpm);
+    }
+  }
+
+  // TODO test trigger
+  return CONFIG_SAVED;
+}

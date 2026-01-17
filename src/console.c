@@ -17,147 +17,21 @@
 #include "viaems.h"
 #include "crc.h"
 
-typedef enum {
-  CONSOLE_GET,
-  CONSOLE_SET,
-  CONSOLE_DESCRIBE,
-  CONSOLE_STRUCTURE,
-} console_request_type;
-
-struct console_request_context {
-  console_request_type type;
-  CborEncoder *response;
-  CborValue *path;
-  CborValue value;
-
-  bool is_filtered;
-  bool is_completed;
-};
-
-struct console_enum_mapping {
-  int e;
-  const char *s;
-};
-
-typedef void (*console_renderer)(struct console_request_context *ctx,
-                                 void *ptr);
-
-/* High level rendering helpers */
-static void render_uint32_map_field(struct console_request_context *ctx,
-                                    const char *id,
-                                    const char *description,
-                                    uint32_t *ptr);
-
-static void render_bool_map_field(struct console_request_context *ctx,
-                                  const char *id,
-                                  const char *description,
-                                  bool *ptr);
-
-static void render_float_map_field(struct console_request_context *ctx,
-                                   const char *id,
-                                   const char *description,
-                                   float *ptr);
-
-static void render_map_map_field(struct console_request_context *ctx,
-                                 const char *id,
-                                 console_renderer map_renderer,
-                                 void *ptr);
-
-static void render_custom_map_field(struct console_request_context *ctx,
-                                    const char *id,
-                                    console_renderer field_renderer,
-                                    void *ptr);
-
-static void render_enum_map_field(struct console_request_context *ctx,
-                                  const char *id,
-                                  const char *desc,
-                                  const struct console_enum_mapping *mapping,
-                                  void *ptr);
-
-static void render_array_map_field(struct console_request_context *ctx,
-                                   const char *id,
-                                   console_renderer array_renderer,
-                                   void *ptr);
-
-static void render_map_array_field(struct console_request_context *ctx,
-                                   int index,
-                                   console_renderer map_renderer,
-                                   void *ptr);
-
-/* Low level object rendering */
-static void render_uint32_object(struct console_request_context *ctx,
-                                 const char *description,
-                                 uint32_t *ptr);
-static void render_float_object(struct console_request_context *ctx,
-                                const char *description,
-                                float *ptr);
-static void render_bool_object(struct console_request_context *ctx,
-                               const char *description,
-                               bool *ptr);
-
-static void render_map_object(struct console_request_context *ctx,
-                              console_renderer map_renderer,
-                              void *ptr);
-static void render_enum_object(struct console_request_context *ctx,
-                               const char *desc,
-                               const struct console_enum_mapping *mapping,
-                               void *ptr);
-
-static void render_array_object(struct console_request_context *ctx,
-                                console_renderer array_renderer,
-                                void *ptr);
-
-static bool descend_map_field(struct console_request_context *ctx,
-                              struct console_request_context *deeper,
-                              const char *id);
-static bool descend_array_field(struct console_request_context *ctx,
-                                struct console_request_context *deeper,
-                                int index);
-
-static void render_description_field(CborEncoder *, const char *desc);
-static void render_type_field(CborEncoder *, const char *type);
-
-static const char *console_feed_keys[] = {
-  "cputime",
-  "ve",
-  "lambda",
-  "fuel_pulsewidth_us",
-  "temp_enrich_percent",
-  "injector_dead_time",
-  "injector_pw_correction",
-  "accel_enrich_percent",
-  "airmass_per_cycle",
-  "advance",
-  "dwell",
-  "rpm_cut",
-  "boost_cut",
-  "fuel_overduty_cut",
-  "dwell_overduty_cut",
-  "sensor.map",
-  "sensor.iat",
-  "sensor.clt",
-  "sensor.brv",
-  "sensor.tps",
-  "sensor.tps.rate",
-  "sensor.aap",
-  "sensor.frt",
-  "sensor.ego",
-  "sensor.frp",
-  "knock1.value",
-  "knock2.value",
-  "sensor.eth",
-  "sensor_faults",
-  "rpm",
-  "tooth_rpm",
-  "sync",
-  "loss",
-  "rpm_variance",
-  "last_trigger_angle",
-  "t0_count",
-  "t1_count",
-};
+#include "console.pb.h"
 
 #define EVENT_LOG_SIZE 32
+
+static struct viaems_console_Message console_message;
+
+static bool pb_write(const uint8_t *data, unsigned len, void *user) {
+  struct console_tx_message *txmsg = (struct console_tx_message *)user;
+  return platform_message_writer_write(txmsg, data, len);
+}
+
+static bool pb_read(uint8_t *data, unsigned len, void *user) {
+  struct console_rx_message *rxmsg = (struct console_rx_message *)user;
+  return platform_message_reader_read(rxmsg, data, len);
+}
 
 static struct {
   bool enabled;
@@ -211,1516 +85,262 @@ void console_record_event(struct logged_event ev) {
 }
 
 static void console_event_message(struct logged_event *ev) {
-  CborEncoder encoder;
+  struct viaems_console_Event pb_ev = { 
+    .has_header = true,
+    .header = {
+      .timestamp = ev->time,
+      .seq = ev->seq,
+    },
+  };
+  switch(ev->type) {
+    case EVENT_NONE:
+      return;
+    case EVENT_GPIO:
+      pb_ev.which_type = PB_TAG_viaems_console_Event_gpio_pins;
+      pb_ev.gpio_pins = ev->value;
+      break;
+    case EVENT_OUTPUT:
+      pb_ev.which_type = PB_TAG_viaems_console_Event_output_pins;
+      pb_ev.output_pins = ev->value;
+      break;
+    case EVENT_TRIGGER:
+      pb_ev.which_type = PB_TAG_viaems_console_Event_trigger;
+      pb_ev.trigger = ev->value;
+      break;
+  };
+  console_message.which_msg = PB_TAG_viaems_console_Message_event,
+  console_message.event = pb_ev;
 
-  uint8_t buffer[128];
-  cbor_encoder_init(&encoder, buffer, sizeof(buffer), 0);
-
-  CborEncoder top_encoder;
-  cbor_encoder_create_map(&encoder, &top_encoder, 4);
-  cbor_encode_text_stringz(&top_encoder, "type");
-  cbor_encode_text_stringz(&top_encoder, "event");
-
-  cbor_encode_text_stringz(&top_encoder, "time");
-  cbor_encode_int(&top_encoder, ev->time);
-
-  cbor_encode_text_stringz(&top_encoder, "seq");
-  cbor_encode_int(&top_encoder, ev->seq);
-
-  cbor_encode_text_stringz(&top_encoder, "event");
-
-  CborEncoder event_encoder;
-
-  switch (ev->type) {
-  case EVENT_OUTPUT:
-    cbor_encoder_create_map(&top_encoder, &event_encoder, 2);
-    cbor_encode_text_stringz(&event_encoder, "type");
-    cbor_encode_text_stringz(&event_encoder, "output");
-    cbor_encode_text_stringz(&event_encoder, "outputs");
-    cbor_encode_int(&event_encoder, ev->value);
-    cbor_encoder_close_container(&top_encoder, &event_encoder);
-    break;
-  case EVENT_GPIO:
-    cbor_encoder_create_map(&top_encoder, &event_encoder, 2);
-    cbor_encode_text_stringz(&event_encoder, "type");
-    cbor_encode_text_stringz(&event_encoder, "gpio");
-    cbor_encode_text_stringz(&event_encoder, "outputs");
-    cbor_encode_int(&event_encoder, ev->value);
-    cbor_encoder_close_container(&top_encoder, &event_encoder);
-    break;
-  case EVENT_TRIGGER:
-    cbor_encoder_create_map(&top_encoder, &event_encoder, 2);
-    cbor_encode_text_stringz(&event_encoder, "type");
-    cbor_encode_text_stringz(&event_encoder, "trigger");
-    cbor_encode_text_stringz(&event_encoder, "pin");
-    cbor_encode_int(&event_encoder, ev->value);
-    cbor_encoder_close_container(&top_encoder, &event_encoder);
-    break;
-  default:
-    break;
-  }
-  cbor_encoder_close_container(&encoder, &top_encoder);
-  size_t length = cbor_encoder_get_buffer_size(&encoder, buffer);
-
-  struct console_tx_message msg;
-  if (!platform_message_writer_new(&msg, length)) {
+  struct console_tx_message writer;
+  unsigned length = pb_sizeof_viaems_console_Message(&console_message);
+  if (!platform_message_writer_new(&writer, length)) {
     return;
   }
-  platform_message_writer_write(&msg, buffer, length);
-}
 
-static void render_type_field(CborEncoder *enc, const char *type) {
-  cbor_encode_text_stringz(enc, "_type");
-  cbor_encode_text_stringz(enc, type);
-}
-
-static void render_description_field(CborEncoder *enc,
-                                     const char *description) {
-  cbor_encode_text_stringz(enc, "description");
-  cbor_encode_text_stringz(enc, description);
-}
-
-static void report_success(CborEncoder *enc, bool success) {
-  cbor_encode_text_stringz(enc, "success");
-  cbor_encode_boolean(enc, success);
-}
-
-static void report_parsing_error(CborEncoder *enc, const char *msg) {
-  cbor_encode_text_stringz(enc, "error");
-  cbor_encode_text_stringz(enc, msg);
-  report_success(enc, false);
-}
-
-static bool console_path_match_str(CborValue *path, const char *id) {
-  bool is_match = false;
-  if (cbor_value_text_string_equals(path, id, &is_match) != CborNoError) {
-    is_match = false;
+  if (!pb_encode_viaems_console_Message(&console_message, pb_write, &writer)) {
+    platform_message_writer_abort(&writer);
   }
-  return is_match;
 }
 
-static bool console_path_match_int(CborValue *path, int index) {
-  if (!cbor_value_is_integer(path)) {
-    return false;
-  }
-  int path_int;
-  if (cbor_value_get_int_checked(path, &path_int) != CborNoError) {
-    return false;
-  }
-  return (path_int == index);
-}
-
-static bool console_string_matches(CborValue *val, const char *str) {
-  bool match;
-  if (cbor_value_text_string_equals(val, str, &match) != CborNoError) {
-    return false;
-  }
-  return match;
-}
-
-static void console_feed_line_keys(void) {
-  CborEncoder encoder;
-
-  uint8_t buffer[1024];
-  cbor_encoder_init(&encoder, buffer, sizeof(buffer), 0);
-
-  CborEncoder top_encoder;
-  cbor_encoder_create_map(&encoder, &top_encoder, 3);
-  cbor_encode_text_stringz(&top_encoder, "type");
-  cbor_encode_text_stringz(&top_encoder, "description");
-
-  cbor_encode_text_stringz(&top_encoder, "time");
-  cbor_encode_int(&top_encoder, current_time());
-
-  cbor_encode_text_stringz(&top_encoder, "keys");
-  CborEncoder key_list_encoder;
-
-  const size_t count = sizeof(console_feed_keys) / sizeof(const char *);
-  cbor_encoder_create_array(&top_encoder, &key_list_encoder, count);
-  for (size_t i = 0; i < count; i++) {
-    cbor_encode_text_stringz(&key_list_encoder, console_feed_keys[i]);
-  }
-  cbor_encoder_close_container(&top_encoder, &key_list_encoder);
-  cbor_encoder_close_container(&encoder, &top_encoder);
-  size_t length = cbor_encoder_get_buffer_size(&encoder, buffer);
-
-  struct console_tx_message msg;
-  if (!platform_message_writer_new(&msg, length)) {
-    return;
-  }
-  platform_message_writer_write(&msg, buffer, length);
-}
 
 struct spsc_queue engine_update_queue = {
   .size = 4,
 };
-struct console_feed_update engine_update_msgs[4];
+struct viaems_console_EngineUpdate engine_update_msgs[4];
+static uint32_t engine_update_seq = 0;
 
-void record_engine_update(const struct viaems *viaems,
-                          const struct engine_update *eng_update,
+static viaems_console_SensorFault convert_sensor_fault(const sensor_fault fault) {
+  switch (fault) {
+    case FAULT_NONE: return viaems_console_SensorFault_SENSOR_NO_FAULT;
+    case FAULT_RANGE: return viaems_console_SensorFault_SENSOR_RANGE_FAULT;
+    case FAULT_CONN: return viaems_console_SensorFault_SENSOR_CONNECTION_FAULT;
+  }
+  return viaems_console_SensorFault_SENSOR_NO_FAULT;
+}
+
+void record_engine_update(const struct engine_update *eng_update,
                           const struct calculated_values *calcs) {
+
+  uint32_t seq = engine_update_seq;
+  engine_update_seq++;
 
   int idx = spsc_allocate(&engine_update_queue);
   if (idx < 0) {
     return;
   }
 
-  struct console_feed_update *update = &engine_update_msgs[idx];
+  struct viaems_console_EngineUpdate *update = &engine_update_msgs[idx];
 
-  update->time = eng_update->current_time;
-  if (calcs != NULL) {
-    update->ve = calcs->ve;
-    update->lambda = calcs->lambda;
-    update->fuel_pulsewidth_us = calcs->fueling_us;
-    update->temp_enrich_percent = calcs->ete;
-    update->injector_dead_time = calcs->idt;
-    update->injector_pw_correction = calcs->pwc;
-    update->accel_enrich_percent = calcs->tipin;
-    update->airmass_per_cycle = calcs->airmass_per_cycle;
+  *update = (struct viaems_console_EngineUpdate){ 0 };
+  update->has_header = true;
+  update->header.timestamp = eng_update->current_time;
+  update->header.seq = seq;
 
-    update->advance = calcs->timing_advance;
-    update->dwell_us = calcs->dwell_us;
-    update->rpm_cut = calcs->rpm_limit_cut;
-    update->boost_cut = calcs->boost_cut;
-    update->fuel_overduty_cut = calcs->fuel_overduty_cut;
-    update->dwell_overduty_cut = calcs->dwell_overduty_cut;
-  } else {
-    update->ve = 0;
-    update->lambda = 0;
-    update->fuel_pulsewidth_us = 0;
-    update->temp_enrich_percent = 0;
-    update->injector_dead_time = 0;
-    update->injector_pw_correction = 0;
-    update->accel_enrich_percent = 0;
-    update->airmass_per_cycle = 0;
+  update->has_position = true;
+  update->position.time = eng_update->position.time;
+  update->position.average_rpm = eng_update->position.rpm;
+  update->position.instantaneous_rpm = eng_update->position.tooth_rpm;
+  update->position.has_position = eng_update->position.has_position;
+  update->position.synced = engine_position_is_synced(&eng_update->position, eng_update->current_time);
+  update->position.last_angle = eng_update->position.last_trigger_angle;
 
-    update->advance = 0;
-    update->dwell_us = 0;
-    update->rpm_cut = false;
-    update->boost_cut = false;
-    update->fuel_overduty_cut = false;
-    update->dwell_overduty_cut = false;
+  switch (eng_update->position.loss) {
+    case DECODER_NO_LOSS:
+      update->position.loss_cause = viaems_console_DecoderLossReason_DECODER_NO_LOSS;
+      break;
+    case DECODER_VARIATION:
+      update->position.loss_cause = viaems_console_DecoderLossReason_DECODER_TRIGGER_TOOTH_VARIATION;
+      break;
+    case DECODER_TRIGGERCOUNT_LOW:
+      update->position.loss_cause = viaems_console_DecoderLossReason_DECODER_TRIGGER_COUNT_LOW;
+      break;
+    case DECODER_TRIGGERCOUNT_HIGH:
+      update->position.loss_cause = viaems_console_DecoderLossReason_DECODER_TRIGGER_COUNT_HIGH;
+      break;
+    case DECODER_OVERFLOW:
+      update->position.loss_cause = viaems_console_DecoderLossReason_DECODER_OVERFLOWED;
+      break;
   }
 
-  update->map = eng_update->sensors.MAP.value;
-  update->iat = eng_update->sensors.IAT.value;
-  update->clt = eng_update->sensors.CLT.value;
-  update->brv = eng_update->sensors.BRV.value;
-  update->tps = eng_update->sensors.TPS.value;
-  update->tpsrate = eng_update->sensors.TPS.derivative;
-  update->aap = eng_update->sensors.AAP.value;
-  update->frt = eng_update->sensors.FRT.value;
-  update->ego = eng_update->sensors.EGO.value;
-  update->frp = eng_update->sensors.FRP.value;
-  update->knock1 = eng_update->sensors.KNK1;
-  update->knock2 = eng_update->sensors.KNK2;
-  update->eth = eng_update->sensors.ETH.value;
-  update->sensor_faults = 0;
+  if ((eng_update->position.loss == DECODER_NO_LOSS) &&
+      !time_before(eng_update->current_time, eng_update->position.valid_until)) {
+    update->position.loss_cause = viaems_console_DecoderLossReason_DECODER_EXPIRED;
+  }
 
-  update->rpm = eng_update->position.rpm;
-  update->tooth_rpm = eng_update->position.tooth_rpm;
-  update->sync =
-    engine_position_is_synced(&eng_update->position, eng_update->current_time);
-  update->last_angle = eng_update->position.last_trigger_angle;
+  if (calcs != NULL) {
+    update->has_calculations = true;
+    update->calculations.ve = calcs->ve;
+    update->calculations.lambda = calcs->lambda;
+    update->calculations.fuel_us = calcs->fueling_us;
+    update->calculations.engine_temp_enrichment = calcs->ete;
+    update->calculations.injector_dead_time = calcs->idt;
+    update->calculations.pulse_width_correction = calcs->pwc;
+    update->calculations.tipin_percent = calcs->tipin;
+    update->calculations.airmass_per_cycle = calcs->airmass_per_cycle;
+    update->calculations.fuelvol_per_cycle = calcs->fuelvol_per_cycle;
 
-  // TODO this races, but its just debug info
-  update->loss_reason = viaems->decoder.loss;
-  update->rpm_variance = viaems->decoder.trigger_cur_rpm_change;
-  update->t0_count = viaems->decoder.t0_count;
-  update->t1_count = viaems->decoder.t1_count;
+    update->calculations.advance = calcs->timing_advance;
+    update->calculations.dwell_us = calcs->dwell_us;
+    update->calculations.rpm_limit_cut = calcs->rpm_limit_cut;
+    update->calculations.boost_cut = calcs->boost_cut;
+    update->calculations.fuel_overduty_cut = calcs->fuel_overduty_cut;
+    update->calculations.dwell_overduty_cut = calcs->dwell_overduty_cut;
+  }
 
+  update->has_sensors = true;
+  update->sensors.map = eng_update->sensors.MAP.value;
+  update->sensors.iat = eng_update->sensors.IAT.value;
+  update->sensors.clt = eng_update->sensors.CLT.value;
+  update->sensors.brv = eng_update->sensors.BRV.value;
+  update->sensors.tps = eng_update->sensors.TPS.value;
+  update->sensors.aap = eng_update->sensors.AAP.value;
+  update->sensors.frt = eng_update->sensors.FRT.value;
+  update->sensors.ego = eng_update->sensors.EGO.value;
+  update->sensors.frp = eng_update->sensors.FRP.value;
+  update->sensors.eth = eng_update->sensors.ETH.value;
+  update->sensors.knock1 = eng_update->sensors.KNK1;
+  update->sensors.knock2 = eng_update->sensors.KNK2;
+
+  update->sensors.map_fault = convert_sensor_fault(eng_update->sensors.MAP.fault);
+  update->sensors.iat_fault = convert_sensor_fault(eng_update->sensors.IAT.fault);
+  update->sensors.clt_fault = convert_sensor_fault(eng_update->sensors.CLT.fault);
+  update->sensors.brv_fault = convert_sensor_fault(eng_update->sensors.BRV.fault);
+  update->sensors.tps_fault = convert_sensor_fault(eng_update->sensors.TPS.fault);
+  update->sensors.aap_fault = convert_sensor_fault(eng_update->sensors.AAP.fault);
+  update->sensors.frt_fault = convert_sensor_fault(eng_update->sensors.FRT.fault);
+  update->sensors.ego_fault = convert_sensor_fault(eng_update->sensors.EGO.fault);
+  update->sensors.frp_fault = convert_sensor_fault(eng_update->sensors.FRP.fault);
+  update->sensors.eth_fault = convert_sensor_fault(eng_update->sensors.ETH.fault);
+
+  update->sensors.tps_rate = eng_update->sensors.TPS.derivative;
   spsc_push(&engine_update_queue);
 }
 
-static void console_feed_line(const struct console_feed_update *update) {
-  CborEncoder encoder;
-
-  uint8_t buffer[512];
-  cbor_encoder_init(&encoder, buffer, sizeof(buffer), 0);
-
-  CborEncoder top_encoder;
-  cbor_encoder_create_map(&encoder, &top_encoder, 3);
-
-  cbor_encode_text_stringz(&top_encoder, "type");
-  cbor_encode_text_stringz(&top_encoder, "feed");
-
-  cbor_encode_text_stringz(&top_encoder, "time");
-  cbor_encode_int(&top_encoder, update->time);
-
-  cbor_encode_text_stringz(&top_encoder, "values");
-  CborEncoder value_list_encoder;
-  const size_t count = sizeof(console_feed_keys) / sizeof(const char *);
-  cbor_encoder_create_array(&top_encoder, &value_list_encoder, count);
-  cbor_encode_uint(&value_list_encoder, update->time);
-  cbor_encode_float(&value_list_encoder, update->ve);
-  cbor_encode_float(&value_list_encoder, update->lambda);
-  cbor_encode_uint(&value_list_encoder, update->fuel_pulsewidth_us);
-  cbor_encode_float(&value_list_encoder, update->temp_enrich_percent);
-  cbor_encode_float(&value_list_encoder, update->injector_dead_time);
-  cbor_encode_float(&value_list_encoder, update->injector_pw_correction);
-  cbor_encode_float(&value_list_encoder, update->accel_enrich_percent);
-  cbor_encode_float(&value_list_encoder, update->airmass_per_cycle);
-  cbor_encode_float(&value_list_encoder, update->advance);
-  cbor_encode_uint(&value_list_encoder, update->dwell_us);
-  cbor_encode_boolean(&value_list_encoder, update->rpm_cut);
-  cbor_encode_boolean(&value_list_encoder, update->boost_cut);
-  cbor_encode_boolean(&value_list_encoder, update->fuel_overduty_cut);
-  cbor_encode_boolean(&value_list_encoder, update->dwell_overduty_cut);
-  cbor_encode_float(&value_list_encoder, update->map);
-  cbor_encode_float(&value_list_encoder, update->iat);
-  cbor_encode_float(&value_list_encoder, update->clt);
-  cbor_encode_float(&value_list_encoder, update->brv);
-  cbor_encode_float(&value_list_encoder, update->tps);
-  cbor_encode_float(&value_list_encoder, update->tpsrate);
-  cbor_encode_float(&value_list_encoder, update->aap);
-  cbor_encode_float(&value_list_encoder, update->frt);
-  cbor_encode_float(&value_list_encoder, update->ego);
-  cbor_encode_float(&value_list_encoder, update->frp);
-  cbor_encode_float(&value_list_encoder, update->knock1);
-  cbor_encode_float(&value_list_encoder, update->knock2);
-  cbor_encode_float(&value_list_encoder, update->eth);
-  cbor_encode_uint(&value_list_encoder, update->sensor_faults);
-  cbor_encode_uint(&value_list_encoder, update->rpm);
-  cbor_encode_uint(&value_list_encoder, update->tooth_rpm);
-  cbor_encode_boolean(&value_list_encoder, update->sync);
-  cbor_encode_uint(&value_list_encoder, update->loss_reason);
-  cbor_encode_float(&value_list_encoder, update->rpm_variance);
-  cbor_encode_float(&value_list_encoder, update->last_angle);
-  cbor_encode_uint(&value_list_encoder, update->t0_count);
-  cbor_encode_uint(&value_list_encoder, update->t1_count);
-
-  cbor_encoder_close_container(&top_encoder, &value_list_encoder);
-  cbor_encoder_close_container(&encoder, &top_encoder);
-
-  size_t length = cbor_encoder_get_buffer_size(&encoder, buffer);
-  struct console_tx_message msg;
-  if (!platform_message_writer_new(&msg, length)) {
-    return;
-  }
-  platform_message_writer_write(&msg, buffer, length);
-
-}
-
-static void console_request_ping(CborEncoder *enc) {
-  cbor_encode_text_stringz(enc, "response");
-  cbor_encode_text_stringz(enc, "pong");
-  report_success(enc, true);
-}
-
-static void render_uint32_map_field(struct console_request_context *ctx,
-                                    const char *id,
-                                    const char *description,
-                                    uint32_t *ptr) {
-  struct console_request_context deeper;
-  if (descend_map_field(ctx, &deeper, id)) {
-    render_uint32_object(&deeper, description, ptr);
-  }
-}
-
-static void render_uint32_object(struct console_request_context *ctx,
-                                 const char *description,
-                                 uint32_t *ptr) {
-  switch (ctx->type) {
-  case CONSOLE_SET:
-    if (cbor_value_is_integer(&ctx->value)) {
-      cbor_value_get_int_checked(&ctx->value, (int *)ptr);
-    }
-    /* Fall through */
-  case CONSOLE_GET:
-    cbor_encode_int(ctx->response, *ptr);
-    break;
-  case CONSOLE_DESCRIBE:
-  case CONSOLE_STRUCTURE: {
-    CborEncoder desc;
-    cbor_encoder_create_map(ctx->response, &desc, 2);
-    render_type_field(&desc, "uint32");
-    render_description_field(&desc, description);
-    cbor_encoder_close_container(ctx->response, &desc);
-    break;
-  }
-  default:
-    break;
-  }
-}
-
-static void render_float_map_field(struct console_request_context *ctx,
-                                   const char *id,
-                                   const char *description,
-                                   float *ptr) {
-  struct console_request_context deeper;
-  if (descend_map_field(ctx, &deeper, id)) {
-    render_float_object(&deeper, description, ptr);
-  }
-}
-/* This function loosely borrowed from tinycbor's internal helpers until
- * https://github.com/intel/tinycbor/issues/149 is merged
- */
-static float decode_half(uint16_t half) {
-  int exp = (half >> 10) & 0x1f;
-  int mant = half & 0x3ff;
-  float val;
-  if (exp == 0) {
-    val = ldexpf(mant, -24);
-  } else if (exp != 31) {
-    val = ldexpf(mant + 1024, exp - 25);
-  } else {
-    val = mant == 0 ? INFINITY : NAN;
-  }
-  return half & 0x8000 ? -val : val;
-}
-
-static void render_float_object(struct console_request_context *ctx,
-                                const char *description,
-                                float *ptr) {
-
-  switch (ctx->type) {
-  case CONSOLE_SET:
-    if (cbor_value_is_float(&ctx->value)) {
-      cbor_value_get_float(&ctx->value, ptr);
-    } else if (cbor_value_is_half_float(&ctx->value)) {
-      /* Support f16 for client support */
-      uint16_t dest;
-      cbor_value_get_half_float(&ctx->value, &dest);
-      *ptr = decode_half(dest);
-    } else if (cbor_value_is_double(&ctx->value)) {
-      /* Support doubles for client support */
-      double val;
-      cbor_value_get_double(&ctx->value, &val);
-      *ptr = val;
-    } else if (cbor_value_is_integer(&ctx->value)) {
-      int val;
-      cbor_value_get_int(&ctx->value, &val);
-      *ptr = val;
-    }
-    /* Fall through */
-  case CONSOLE_GET:
-    cbor_encode_float(ctx->response, *ptr);
-    break;
-  case CONSOLE_STRUCTURE:
-  case CONSOLE_DESCRIBE: {
-    CborEncoder desc;
-    cbor_encoder_create_map(ctx->response, &desc, 2);
-    render_type_field(&desc, "float");
-    render_description_field(&desc, description);
-    cbor_encoder_close_container(ctx->response, &desc);
-    break;
-  }
-  default:
-    break;
-  }
-}
-
-static void render_bool_map_field(struct console_request_context *ctx,
-                                  const char *id,
-                                  const char *description,
-                                  bool *ptr) {
-  struct console_request_context deeper;
-  if (descend_map_field(ctx, &deeper, id)) {
-    render_bool_object(&deeper, description, ptr);
-  }
-}
-
-static void render_bool_object(struct console_request_context *ctx,
-                               const char *description,
-                               bool *ptr) {
-  switch (ctx->type) {
-  case CONSOLE_SET:
-    if (cbor_value_is_boolean(&ctx->value)) {
-      cbor_value_get_boolean(&ctx->value, ptr);
-    }
-    /* Fall through */
-  case CONSOLE_GET:
-    cbor_encode_boolean(ctx->response, *ptr);
-    break;
-  case CONSOLE_DESCRIBE:
-  case CONSOLE_STRUCTURE: {
-    CborEncoder desc;
-    cbor_encoder_create_map(ctx->response, &desc, 2);
-    render_type_field(&desc, "bool");
-    render_description_field(&desc, description);
-    cbor_encoder_close_container(ctx->response, &desc);
-    break;
-  }
-  default:
-    break;
-  }
-}
-
-static void render_map_map_field(struct console_request_context *ctx,
-                                 const char *id,
-                                 console_renderer rend,
-                                 void *ptr) {
-  struct console_request_context deeper;
-  if (descend_map_field(ctx, &deeper, id)) {
-    render_map_object(&deeper, rend, ptr);
-  }
-}
-
-static void render_custom_map_field(struct console_request_context *ctx,
-                                    const char *id,
-                                    console_renderer rend,
-                                    void *ptr) {
-  struct console_request_context deeper;
-  if (descend_map_field(ctx, &deeper, id)) {
-    rend(&deeper, ptr);
-  }
-}
-
-static bool descend_array_field(struct console_request_context *ctx,
-                                struct console_request_context *deeper_ctx,
-                                int index) {
-  if (ctx->is_completed) {
-    return false;
-  }
-
-  *deeper_ctx = *ctx;
-
-  switch (ctx->type) {
-  case CONSOLE_SET:
-    if (!ctx->is_filtered) {
-      if (!cbor_value_is_array(&ctx->value)) {
-        return false;
-      }
-      CborValue newvalue;
-      cbor_value_enter_container(&ctx->value, &newvalue);
-      for (int i = 0; i < index; i++) {
-        if (cbor_value_at_end(&newvalue)) {
-          return false;
-        }
-        cbor_value_advance(&newvalue);
-      }
-      deeper_ctx->value = newvalue;
-    }
-    /* intentional fallthrough */
-  case CONSOLE_GET:
-    /* Short circuit all future rendering if we've already matched a path */
-    if (ctx->is_filtered) {
-      /* If we're filtering, we need to match the path */
-      if (!console_path_match_int(deeper_ctx->path, index)) {
-        return false;
-      }
-      cbor_value_advance(deeper_ctx->path);
-      ctx->is_completed = true;
-      deeper_ctx->is_filtered = !cbor_value_at_end(deeper_ctx->path);
-      deeper_ctx->is_completed = false;
-    }
-    return true;
-  case CONSOLE_STRUCTURE:
-  case CONSOLE_DESCRIBE:
-    return true;
-  }
-  return false;
-}
-
-static void render_array_object(struct console_request_context *ctx,
-                                console_renderer rend,
-                                void *ptr) {
-
-  bool wrapped = !ctx->is_filtered;
-
-  CborEncoder array;
-  CborEncoder *outer = ctx->response;
-
-  if (wrapped) {
-    cbor_encoder_create_array(outer, &array, CborIndefiniteLength);
-    ctx->response = &array;
-  }
-
-  rend(ctx, ptr);
-  if (ctx->is_filtered && !ctx->is_completed) {
-    cbor_encode_null(ctx->response);
-  }
-
-  if (wrapped) {
-    cbor_encoder_close_container(outer, &array);
-  }
-  ctx->response = outer;
-}
-
-static void render_map_array_field(struct console_request_context *ctx,
-                                   int index,
-                                   console_renderer rend,
-                                   void *ptr) {
-  struct console_request_context deeper;
-  if (descend_array_field(ctx, &deeper, index)) {
-    render_map_object(&deeper, rend, ptr);
-  }
-}
-
-static void render_array_map_field(struct console_request_context *ctx,
-                                   const char *id,
-                                   console_renderer rend,
-                                   void *ptr) {
-  struct console_request_context deeper;
-  if (descend_map_field(ctx, &deeper, id)) {
-    render_array_object(&deeper, rend, ptr);
-  }
-}
-
-static void render_map_object(struct console_request_context *ctx,
-                              console_renderer rend,
-                              void *ptr) {
-
-  bool wrapped = !ctx->is_filtered;
-
-  CborEncoder map;
-  CborEncoder *outer = ctx->response;
-
-  if (wrapped) {
-    cbor_encoder_create_map(outer, &map, CborIndefiniteLength);
-    ctx->response = &map;
-  }
-
-  rend(ctx, ptr);
-  if (ctx->is_filtered && !ctx->is_completed) {
-    cbor_encode_null(ctx->response);
-  }
-
-  if (wrapped) {
-    cbor_encoder_close_container(outer, &map);
-  }
-
-  ctx->response = outer;
-}
-
-static bool descend_map_field(struct console_request_context *ctx,
-                              struct console_request_context *deeper_ctx,
-                              const char *id) {
-
-  if (ctx->is_completed) {
-    return false;
-  }
-
-  *deeper_ctx = *ctx;
-
-  switch (ctx->type) {
-  case CONSOLE_SET:
-    /* If unfiltered, start descending into the value object */
-    if (!ctx->is_filtered) {
-      if (!cbor_value_is_map(&ctx->value)) {
-        return false;
-      }
-      CborValue newvalue;
-      if (cbor_value_map_find_value(&ctx->value, id, &newvalue) !=
-          CborNoError) {
-        return false;
-      }
-      deeper_ctx->value = newvalue;
-    }
-    /* Intentional fallthrough */
-  case CONSOLE_GET:
-    /* Short circuit all future rendering if we've already matched a path */
-    if (ctx->is_filtered) {
-      /* If we're filtering, we need to match the path */
-      if (!console_path_match_str(deeper_ctx->path, id)) {
-        return false;
-      }
-      cbor_value_advance(deeper_ctx->path);
-      ctx->is_completed = true;
-      deeper_ctx->is_filtered = !cbor_value_at_end(deeper_ctx->path);
-      deeper_ctx->is_completed = false;
-    } else {
-      cbor_encode_text_stringz(ctx->response, id);
-    }
-    return true;
-  case CONSOLE_STRUCTURE:
-  case CONSOLE_DESCRIBE:
-
-    cbor_encode_text_stringz(ctx->response, id);
-    return true;
-  }
-  return false;
-}
-
-static void render_enum_map_field(struct console_request_context *ctx,
-                                  const char *id,
-                                  const char *desc,
-                                  const struct console_enum_mapping *mapping,
-                                  void *ptr) {
-  struct console_request_context deeper;
-  if (descend_map_field(ctx, &deeper, id)) {
-    render_enum_object(&deeper, desc, mapping, ptr);
-  }
-}
-
-static void render_enum_object(struct console_request_context *ctx,
-                               const char *desc,
-                               const struct console_enum_mapping *mapping,
-                               void *ptr) {
-  int *type = ptr;
-  bool success = false;
-  switch (ctx->type) {
-  case CONSOLE_SET:
-    for (const struct console_enum_mapping *m = mapping; m->s; m++) {
-      if (console_string_matches(&ctx->value, m->s)) {
-        *type = m->e;
-      }
-    }
-    /* Intentional Fallthrough */
-  case CONSOLE_GET:
-    for (const struct console_enum_mapping *m = mapping; m->s; m++) {
-      if (*type == m->e) {
-        success = true;
-        cbor_encode_text_stringz(ctx->response, m->s);
-      }
-    }
-    if (!success) {
-      cbor_encode_null(ctx->response);
-    }
-    return;
-  case CONSOLE_STRUCTURE:
-  case CONSOLE_DESCRIBE: {
-    CborEncoder map;
-    cbor_encoder_create_map(ctx->response, &map, 3);
-    render_type_field(&map, "string");
-    render_description_field(&map, desc);
-    cbor_encode_text_stringz(&map, "choices");
-    CborEncoder list_encoder;
-    cbor_encoder_create_array(&map, &list_encoder, CborIndefiniteLength);
-    for (const struct console_enum_mapping *m = mapping; m->s; m++) {
-      cbor_encode_text_stringz(&list_encoder, m->s);
-    }
-    cbor_encoder_close_container(&map, &list_encoder);
-    cbor_encoder_close_container(ctx->response, &map);
-  }
-    return;
-  }
-}
-
-static void render_table_title(struct console_request_context *ctx, void *_t) {
-
-  char *t = _t;
-  switch (ctx->type) {
-  case CONSOLE_SET:
-    if (cbor_value_is_text_string(&ctx->value)) {
-      size_t len = MAX_TABLE_TITLE_SIZE;
-      cbor_value_copy_text_string(&ctx->value, t, &len, NULL);
-      t[MAX_TABLE_TITLE_SIZE] = '\0';
-    }
-    /* Fall through */
-  case CONSOLE_GET:
-    cbor_encode_text_stringz(ctx->response, t);
-    break;
-  case CONSOLE_STRUCTURE:
-  case CONSOLE_DESCRIBE: {
-    CborEncoder desc;
-    cbor_encoder_create_map(ctx->response, &desc, 2);
-    render_type_field(&desc, "string");
-    render_description_field(&desc, "table title");
-    cbor_encoder_close_container(ctx->response, &desc);
-    break;
-  }
-  default:
-    break;
-  }
-}
-
-static void render_table_axis_name(struct console_request_context *ctx,
-                                   void *_axis) {
-
-  struct table_axis *axis = _axis;
-  switch (ctx->type) {
-  case CONSOLE_SET:
-    if (cbor_value_is_text_string(&ctx->value)) {
-      size_t len = MAX_TABLE_TITLE_SIZE;
-      cbor_value_copy_text_string(&ctx->value, axis->name, &len, NULL);
-      axis->name[MAX_TABLE_TITLE_SIZE] = '\0';
-    }
-    /* Fall through */
-  case CONSOLE_GET:
-    cbor_encode_text_stringz(ctx->response, axis->name);
-    break;
-  case CONSOLE_STRUCTURE:
-  case CONSOLE_DESCRIBE: {
-    CborEncoder desc;
-    cbor_encoder_create_map(ctx->response, &desc, 2);
-    render_type_field(&desc, "string");
-    render_description_field(&desc, "axis title");
-    cbor_encoder_close_container(ctx->response, &desc);
-    break;
-  }
-  default:
-    break;
-  }
-}
-
-static void render_table_axis_values(struct console_request_context *ctx,
-                                     void *_a) {
-
-  struct table_axis *axis = _a;
-  size_t len = axis->num;
-  if (ctx->type == CONSOLE_SET && cbor_value_is_array(&ctx->value)) {
-    if (cbor_value_get_array_length(&ctx->value, &len) != CborNoError) {
-      len = axis->num;
-    }
-    if (len > MAX_AXIS_SIZE) {
-      len = MAX_AXIS_SIZE;
-    }
-    axis->num = len;
-  }
-  for (unsigned i = 0; (i < axis->num) && (i < MAX_AXIS_SIZE); i++) {
-    struct console_request_context deeper;
-    if (descend_array_field(ctx, &deeper, i)) {
-      render_float_object(&deeper, "axis value", &axis->values[i]);
-    }
-  }
-}
-
-static void render_table_axis_description(struct console_request_context *ctx,
-                                          void *ptr) {
-  (void)ptr;
-  CborEncoder desc;
-  cbor_encoder_create_map(ctx->response, &desc, 3);
-  render_type_field(&desc, "[float]");
-  render_description_field(&desc, "list of axis values");
-  cbor_encode_text_stringz(&desc, "len");
-  cbor_encode_int(&desc, MAX_AXIS_SIZE);
-  cbor_encoder_close_container(ctx->response, &desc);
-}
-
-static void render_table_axis(struct console_request_context *ctx, void *_t) {
-  struct table_axis *axis = _t;
-  render_custom_map_field(ctx, "name", render_table_axis_name, axis);
-  if (ctx->type == CONSOLE_DESCRIBE) {
-    render_custom_map_field(ctx, "values", render_table_axis_description, NULL);
-  } else {
-    render_array_map_field(ctx, "values", render_table_axis_values, axis);
-  }
-}
-
-struct nested_table_context {
-  struct table_2d *t;
-  int row;
-};
-
-static void render_table_second_axis_data(struct console_request_context *ctx,
-                                          void *_ntc) {
-  struct nested_table_context *ntc = _ntc;
-  struct table_2d *t = ntc->t;
-  for (unsigned c = 0; c < t->cols.num; c++) {
-    struct console_request_context deeper;
-    if (descend_array_field(ctx, &deeper, c)) {
-      render_float_object(&deeper, "axis value", &t->data[ntc->row][c]);
-    }
-  }
-}
-
-static void render_table_2d_data_description(
-  struct console_request_context *ctx,
-  void *ptr) {
-  (void)ptr;
-  CborEncoder desc;
-  cbor_encoder_create_map(ctx->response, &desc, 3);
-  render_type_field(&desc, "[[float]]");
-  render_description_field(&desc, "list of lists of table values");
-  cbor_encode_text_stringz(&desc, "len");
-  cbor_encode_int(&desc, MAX_AXIS_SIZE);
-  cbor_encoder_close_container(ctx->response, &desc);
-}
-
-static void render_table_1d_data_description(
-  struct console_request_context *ctx,
-  void *ptr) {
-  (void)ptr;
-  CborEncoder desc;
-  cbor_encoder_create_map(ctx->response, &desc, 3);
-  render_type_field(&desc, "[float]");
-  render_description_field(&desc, "list of table values");
-  cbor_encode_text_stringz(&desc, "len");
-  cbor_encode_int(&desc, MAX_AXIS_SIZE);
-  cbor_encoder_close_container(ctx->response, &desc);
-}
-
-static void render_table_1d_data(struct console_request_context *ctx,
-                                 void *_t) {
-  struct table_1d *t = _t;
-  for (unsigned i = 0; i < t->cols.num; i++) {
-    struct console_request_context deeper;
-    if (descend_array_field(ctx, &deeper, i)) {
-      render_float_object(&deeper, "axis value", &t->data[i]);
-    }
-  }
-}
-
-static void render_table_2d_data(struct console_request_context *ctx,
-                                 void *_t) {
-  struct table_2d *t = _t;
-  for (unsigned r = 0; r < t->rows.num; r++) {
-    struct console_request_context deeper;
-    if (descend_array_field(ctx, &deeper, r)) {
-      struct nested_table_context ntc = { .t = t, .row = r };
-      render_array_object(&deeper, render_table_second_axis_data, &ntc);
-    }
-  }
-}
-
-static void render_table_2d_object(struct console_request_context *ctx,
-                                   void *_t) {
-  struct table_2d *t = _t;
-  if (ctx->type == CONSOLE_STRUCTURE) {
-    render_type_field(ctx->response, "table2d");
-    return;
-  }
-  render_custom_map_field(ctx, "title", render_table_title, t->title);
-  render_map_map_field(ctx, "horizontal-axis", render_table_axis, &t->cols);
-  render_map_map_field(ctx, "vertical-axis", render_table_axis, &t->rows);
-
-  if ((ctx->type != CONSOLE_DESCRIBE)) {
-    render_array_map_field(ctx, "data", render_table_2d_data, t);
-  } else {
-    render_custom_map_field(
-      ctx, "data", render_table_2d_data_description, NULL);
-  }
-}
-
-static void render_table_1d_object(struct console_request_context *ctx,
-                                   void *_t) {
-  struct table_1d *t = _t;
-  if (ctx->type == CONSOLE_STRUCTURE) {
-    render_type_field(ctx->response, "table1d");
-    return;
-  }
-  render_custom_map_field(ctx, "title", render_table_title, t->title);
-  render_map_map_field(ctx, "horizontal-axis", render_table_axis, &t->cols);
-
-  if ((ctx->type != CONSOLE_DESCRIBE)) {
-    render_array_map_field(ctx, "data", render_table_1d_data, t);
-  } else {
-    render_custom_map_field(
-      ctx, "data", render_table_1d_data_description, NULL);
-  }
-}
-
-static void render_tables(struct console_request_context *ctx, void *ptr) {
-  struct config *config = (struct config *)ptr;
-  render_map_map_field(ctx, "ve", render_table_2d_object, &config->ve);
-  render_map_map_field(
-    ctx, "lambda", render_table_2d_object, &config->commanded_lambda);
-  render_map_map_field(ctx, "dwell", render_table_1d_object, &config->dwell);
-  render_map_map_field(ctx, "timing", render_table_2d_object, &config->timing);
-  render_map_map_field(ctx,
-                       "injector_dead_time",
-                       render_table_1d_object,
-                       &config->injector_deadtime_offset);
-  render_map_map_field(ctx,
-                       "injector_pw_correction",
-                       render_table_1d_object,
-                       &config->injector_pw_correction);
-  render_map_map_field(
-    ctx, "temp-enrich", render_table_2d_object, &config->engine_temp_enrich);
-  render_map_map_field(
-    ctx, "tipin-amount", render_table_2d_object, &config->tipin_enrich_amount);
-  render_map_map_field(
-    ctx, "tipin-time", render_table_1d_object, &config->tipin_enrich_duration);
-}
-
-static void render_decoder(struct console_request_context *ctx, void *ptr) {
-  struct config *conf = (struct config *)ptr;
-
-  render_float_map_field(
-    ctx, "offset", "offset past TDC for sync pulse", &conf->decoder.offset);
-
-  render_float_map_field(ctx,
-                         "max-variance",
-                         "inter-tooth max time variation (0-1)",
-                         &conf->decoder.trigger_max_rpm_change);
-
-  render_uint32_map_field(
-    ctx, "min-rpm", "minimum RPM for sync", &conf->decoder.trigger_min_rpm);
-
-  render_uint32_map_field(
-    ctx, "rpm-limit-stop", "ignition and fuel cut rpm limit", &conf->rpm_stop);
-  render_uint32_map_field(
-    ctx, "rpm-limit-start", "rpm limit lower hysteresis", &conf->rpm_start);
-
-  int type = conf->decoder.type;
-  render_enum_map_field(ctx,
-                        "trigger-type",
-                        "Primary trigger decoder method",
-                        (struct console_enum_mapping[]){
-                          { TRIGGER_EVEN_NOSYNC, "even" },
-                          { TRIGGER_EVEN_CAMSYNC, "even+camsync" },
-                          { TRIGGER_MISSING_NOSYNC, "missing" },
-                          { TRIGGER_MISSING_CAMSYNC, "missing+camsync" },
-                          { 0, NULL } },
-                        &type);
-  conf->decoder.type = type;
-
-  render_uint32_map_field(ctx,
-                          "num-triggers",
-                          "number of teeth on primary wheel",
-                          &conf->decoder.num_triggers);
-  render_float_map_field(ctx,
-                         "degrees-per-trigger",
-                         "angle a single tooth represents",
-                         &conf->decoder.degrees_per_trigger);
-
-  render_uint32_map_field(
-    ctx,
-    "min-triggers-rpm",
-    "minimum teeth required to generate rpm for even tooth wheel",
-    &conf->decoder.required_triggers_rpm);
-
-  render_uint32_map_field(ctx,
-                          "rpm-window-size",
-                          "rpm average window for even tooth wheel",
-                          &conf->decoder.rpm_window_size);
-}
-
-static void output_console_renderer(struct console_request_context *ctx,
-                                    void *ptr) {
-  if (ctx->type == CONSOLE_STRUCTURE) {
-    render_type_field(ctx->response, "output");
+static void console_feed_line(const struct viaems_console_EngineUpdate *update) {
+  console_message.which_msg = PB_TAG_viaems_console_Message_engine_update;
+  console_message.engine_update = *update;
+
+  struct console_tx_message writer;
+  unsigned length = pb_sizeof_viaems_console_Message(&console_message);
+  if (!platform_message_writer_new(&writer, length)) {
     return;
   }
 
-  struct output_event_config *ev = ptr;
-  render_uint32_map_field(ctx, "pin", "pin", &ev->pin);
-  render_bool_map_field(ctx, "inverted", "inverted", &ev->inverted);
-  render_float_map_field(
-    ctx, "angle", "angle past TDC to trigger event", &ev->angle);
-
-  int type = ev->type;
-  render_enum_map_field(
-    ctx,
-    "type",
-    "output type",
-    (struct console_enum_mapping[]){ { DISABLED_EVENT, "disabled" },
-                                     { FUEL_EVENT, "fuel" },
-                                     { IGNITION_EVENT, "ignition" },
-                                     { 0, NULL } },
-    &type);
-  ev->type = type;
-}
-
-static void render_outputs(struct console_request_context *ctx, void *ptr) {
-  struct output_event_config *outputs = (struct output_event_config *)ptr;
-  for (int i = 0; i < MAX_EVENTS; i++) {
-    render_map_array_field(ctx, i, output_console_renderer, &outputs[i]);
-  }
-}
-
-static void render_sensor_object(struct console_request_context *ctx,
-                                 void *ptr) {
-
-  if (ctx->type == CONSOLE_STRUCTURE) {
-    render_type_field(ctx->response, "sensor");
-    return;
-  }
-
-  struct sensor_config *input = ptr;
-
-  render_uint32_map_field(ctx, "pin", "adc sensor input pin", &input->pin);
-  render_float_map_field(
-    ctx, "lag", "lag filter coefficient (0-1)", &input->lag);
-
-  int source = input->source;
-  render_enum_map_field(
-    ctx,
-    "source",
-    "sensor data source",
-    (struct console_enum_mapping[]){ { SENSOR_NONE, "none" },
-                                     { SENSOR_ADC, "adc" },
-                                     { SENSOR_FREQ, "freq" },
-                                     { SENSOR_PULSEWIDTH, "pulsewidth" },
-                                     { SENSOR_CONST, "const" },
-                                     { 0, NULL } },
-    &source);
-  input->source = source;
-
-  int method = input->method;
-  render_enum_map_field(ctx,
-                        "method",
-                        "sensor processing method",
-                        (struct console_enum_mapping[]){
-                          { METHOD_LINEAR, "linear" },
-                          { METHOD_LINEAR_WINDOWED, "linear-window" },
-                          { METHOD_THERM, "therm" },
-                          { 0, NULL } },
-                        &method);
-  input->method = method;
-
-  render_float_map_field(
-    ctx, "range-min", "min for linear mapping", &input->range.min);
-  render_float_map_field(
-    ctx, "range-max", "max for linear mapping", &input->range.max);
-  render_float_map_field(
-    ctx, "raw-min", "min raw input for linear mapping", &input->raw_min);
-  render_float_map_field(
-    ctx, "raw-max", "max raw input for linear mapping", &input->raw_max);
-  render_float_map_field(
-    ctx, "fixed-value", "value to hold for const input", &input->const_value);
-  render_float_map_field(ctx, "therm-a", "thermistor A", &input->therm.a);
-  render_float_map_field(ctx, "therm-b", "thermistor B", &input->therm.b);
-  render_float_map_field(ctx, "therm-c", "thermistor C", &input->therm.c);
-  render_float_map_field(ctx,
-                         "therm-bias",
-                         "thermistor resistor bias value (ohms)",
-                         &input->therm.bias);
-  render_float_map_field(ctx,
-                         "fault-min",
-                         "Lower bound for raw sensor input",
-                         &input->fault_config.min);
-  render_float_map_field(ctx,
-                         "fault-max",
-                         "Upper bound for raw sensor input",
-                         &input->fault_config.max);
-  render_float_map_field(ctx,
-                         "fault-value",
-                         "Value to assume in fault condition",
-                         &input->fault_config.fault_value);
-
-  render_float_map_field(ctx,
-                          "window-capture-opening",
-                          "Crank degrees in window to average samples over",
-                          &input->window.window_opening);
-  render_uint32_map_field(ctx,
-                          "window-count",
-                          "windows per engine cycle",
-                          &input->window.windows_per_cycle);
-  render_float_map_field(ctx,
-                          "window-offset",
-                          "Crank degree into window to start averagine",
-                          &input->window.window_offset);
-}
-
-static void render_knock_object(struct console_request_context *ctx,
-                                void *ptr) {
-
-  struct knock_sensor_config *input = ptr;
-
-  render_float_map_field(
-    ctx, "frequency", "knock filter center frequency (Hz)", &input->frequency);
-  render_float_map_field(
-    ctx, "threshold", "input level indicating knock", &input->threshold);
-}
-
-static void render_sensors(struct console_request_context *ctx, void *ptr) {
-  struct sensor_configs *sensors = (struct sensor_configs *)ptr;
-  render_map_map_field(ctx, "map", render_sensor_object, &sensors->MAP);
-  render_map_map_field(ctx, "iat", render_sensor_object, &sensors->IAT);
-  render_map_map_field(ctx, "clt", render_sensor_object, &sensors->CLT);
-  render_map_map_field(ctx, "brv", render_sensor_object, &sensors->BRV);
-  render_map_map_field(ctx, "tps", render_sensor_object, &sensors->TPS);
-  render_map_map_field(ctx, "aap", render_sensor_object, &sensors->AAP);
-  render_map_map_field(ctx, "frt", render_sensor_object, &sensors->FRT);
-  render_map_map_field(ctx, "ego", render_sensor_object, &sensors->EGO);
-  render_map_map_field(ctx, "frp", render_sensor_object, &sensors->FRP);
-  render_map_map_field(ctx, "eth", render_sensor_object, &sensors->ETH);
-  render_map_map_field(ctx, "knock1", render_knock_object, &sensors->KNK1);
-  render_map_map_field(ctx, "knock2", render_knock_object, &sensors->KNK2);
-}
-
-static void render_crank_enrich(struct console_request_context *ctx,
-                                void *ptr) {
-  struct fueling_config *config = (struct fueling_config *)ptr;
-  render_float_map_field(ctx,
-                         "crank-rpm",
-                         "Upper RPM limit for crank enrich",
-                         &config->crank_enrich_config.crank_rpm);
-  render_float_map_field(ctx,
-                         "crank-temp",
-                         "Upper temperature (C) for crank enrich",
-                         &config->crank_enrich_config.cutoff_temperature);
-  render_float_map_field(ctx,
-                         "enrich-amt",
-                         "crank enrichment multiplier",
-                         &config->crank_enrich_config.enrich_amt);
-}
-
-static void render_fueling(struct console_request_context *ctx, void *ptr) {
-  struct fueling_config *fueling = (struct fueling_config *)ptr;
-  render_float_map_field(ctx,
-                         "injector-cc",
-                         "fuel injector size cc/min",
-                         &fueling->injector_cc_per_minute);
-  render_float_map_field(
-    ctx, "cylinder-cc", "cylinder size in cc", &fueling->cylinder_cc);
-  render_float_map_field(ctx,
-                         "fuel-stoich-ratio",
-                         "stoich ratio of fuel to air",
-                         &fueling->fuel_stoich_ratio);
-  render_uint32_map_field(ctx,
-                          "injections-per-cycle",
-                          "Number of times injectors fire per cycle (batching)",
-                          &fueling->injections_per_cycle);
-  render_float_map_field(ctx,
-                         "max-duty-cycle",
-                         "Max allowable duty cycle %",
-                         &fueling->max_duty_cycle);
-  render_uint32_map_field(ctx,
-                          "fuel-pump-pin",
-                          "GPIO pin for fuel pump control",
-                          &fueling->fuel_pump_pin);
-  render_float_map_field(ctx,
-                         "fuel-density",
-                         "Fuel density (g/cc) at 15C",
-                         &fueling->density_of_fuel);
-  render_map_map_field(ctx, "crank-enrich", render_crank_enrich, fueling);
-}
-
-static void render_ignition(struct console_request_context *ctx, void *ptr) {
-  struct ignition_config *ignition = (struct ignition_config *)ptr;
-  render_uint32_map_field(ctx,
-                          "min-coil-cooldown",
-                          "minimum wait period between coil dwells (uS)",
-                          &ignition->min_coil_cooldown_us);
-  render_uint32_map_field(ctx,
-                          "min-dwell",
-                          "Minimum dwell during transients",
-                          &ignition->min_dwell_us);
-  render_uint32_map_field(
-    ctx,
-    "ignitions-per-cycle",
-    "Number of times a single ignition output fires in one cycle",
-    &ignition->ignitions_per_cycle);
-  render_float_map_field(
-    ctx, "dwell-time", "dwell time for fixed-duty (uS)", &ignition->dwell_us);
-}
-
-static void render_boost_control(struct console_request_context *ctx,
-                                 void *ptr) {
-  struct boost_control_config *boost_control =
-    (struct boost_control_config *)ptr;
-  render_uint32_map_field(
-    ctx, "pin", "GPIO pin for boost control output", &boost_control->pin);
-  render_float_map_field(ctx,
-                         "enable-threshold",
-                         "MAP low threshold to enable boost control",
-                         &boost_control->enable_threshold_kpa);
-  render_float_map_field(
-    ctx,
-    "control-threshold",
-    "MAP low threshold to keep valve open if TPS setting is met",
-    &boost_control->control_threshold_kpa);
-  render_float_map_field(ctx,
-                         "control-threshold-tps",
-                         "TPS threshold for valve-wide-open mode",
-                         &boost_control->control_threshold_tps);
-  render_float_map_field(ctx,
-                         "overboost",
-                         "High threshold for boost cut (kpa)",
-                         &boost_control->overboost);
-  render_map_map_field(
-    ctx, "pwm", render_table_1d_object, &boost_control->pwm_duty_vs_rpm);
-}
-
-static void render_cel(struct console_request_context *ctx, void *ptr) {
-  struct cel_config *cel = (struct cel_config *)ptr;
-  render_uint32_map_field(ctx, "pin", "GPIO pin for CEL output", &cel->pin);
-  render_float_map_field(ctx,
-                         "lean-boost-kpa",
-                         "Boost low threshold for lean boost warning",
-                         &cel->lean_boost_kpa);
-  render_float_map_field(ctx,
-                         "lean-boost-ego",
-                         "EGO high threshold for lean boost warning",
-                         &cel->lean_boost_ego);
-}
-
-static void render_trigger_input_object(struct console_request_context *ctx,
-                                        void *ptr) {
-  struct trigger_input *f = ptr;
-
-  int edge = f->edge;
-  int type = f->type;
-
-  render_enum_map_field(
-    ctx,
-    "edge",
-    "type of edge to trigger",
-    (const struct console_enum_mapping[]){ { RISING_EDGE, "rising" },
-                                           { FALLING_EDGE, "falling" },
-                                           { BOTH_EDGES, "both" },
-                                           { 0, NULL } },
-    &edge);
-  render_enum_map_field(
-    ctx,
-    "type",
-    "input interpretation",
-    (const struct console_enum_mapping[]){ { NONE, "none" },
-                                           { FREQ, "freq" },
-                                           { TRIGGER, "trigger" },
-                                           { SYNC, "sync" },
-                                           { 0, NULL } },
-    &type);
-
-  f->edge = edge;
-  f->type = type;
-}
-
-static void render_trigger_list(struct console_request_context *ctx,
-                                void *ptr) {
-  struct trigger_input *trigger_inputs = (struct trigger_input *)ptr;
-  for (int i = 0; i < 4; i++) {
-    render_map_array_field(
-      ctx, i, render_trigger_input_object, &trigger_inputs[i]);
-  }
-}
-
-static void render_test(struct console_request_context *ctx, void *ptr) {
-  (void)ptr;
-  render_bool_map_field(
-    ctx, "event-logging", "Enable event logging", &event_log.enabled);
-
-  /* Workaround to support the getter/setters */
-  uint32_t old_rpm = get_test_trigger_rpm();
-  uint32_t rpm = old_rpm;
-  render_uint32_map_field(
-    ctx, "test-trigger-rpm", "Test trigger output rpm (0 to disable)", &rpm);
-  if ((ctx->type == CONSOLE_SET) && (rpm != old_rpm)) {
-    set_test_trigger_rpm(rpm);
+  if (!pb_encode_viaems_console_Message(&console_message, pb_write, &writer)) {
+    platform_message_writer_abort(&writer);
   }
 }
 
 #ifndef GIT_DESCRIBE
 #define GIT_DESCRIBE "unknown"
 #endif
+static const char *fw_version = GIT_DESCRIBE;
+static const char *fw_platform = FW_PLATFORM;
 
-static void render_version(struct console_request_context *ctx, void *_t) {
+static struct viaems_console_Response_FirmwareInfo console_fwinfo(void) {
+  struct viaems_console_Response_FirmwareInfo fwinfo;
+  fwinfo.version.len = strlen(fw_version);
+  memcpy(fwinfo.version.str, fw_version, fwinfo.version.len);
 
-  (void)_t;
-  switch (ctx->type) {
-  case CONSOLE_SET:
-  case CONSOLE_GET:
-    cbor_encode_text_stringz(ctx->response, GIT_DESCRIBE);
-    break;
-  case CONSOLE_STRUCTURE:
-  case CONSOLE_DESCRIBE: {
-    CborEncoder desc;
-    cbor_encoder_create_map(ctx->response, &desc, 2);
-    render_type_field(&desc, "string");
-    render_description_field(&desc, "ViaEMS version (RO)");
-    cbor_encoder_close_container(ctx->response, &desc);
-    break;
-  }
-  default:
-    break;
-  }
-}
+  fwinfo.platform.len = strlen(fw_platform);
+  memcpy(fwinfo.platform.str, fw_platform, fwinfo.platform.len);
 
-static void render_info(struct console_request_context *ctx, void *ptr) {
-  (void)ptr;
-  render_custom_map_field(ctx, "version", render_version, NULL);
-}
-
-static void console_toplevel_request(struct console_request_context *ctx,
-                                     void *ptr) {
-  struct config *config = ptr;
-
-  render_map_map_field(ctx, "decoder", render_decoder, config);
-  render_map_map_field(ctx, "sensors", render_sensors, &config->sensors);
-  render_array_map_field(ctx, "outputs", render_outputs, &config->outputs);
-  render_map_map_field(ctx, "fueling", render_fueling, &config->fueling);
-  render_map_map_field(ctx, "ignition", render_ignition, &config->ignition);
-  render_map_map_field(ctx, "tables", render_tables, config);
-  render_map_map_field(
-    ctx, "boost-control", render_boost_control, &config->boost_control);
-  render_map_map_field(ctx, "check-engine-light", render_cel, &config->cel);
-  render_array_map_field(
-    ctx, "trigger", render_trigger_list, &config->trigger_inputs);
-  render_map_map_field(ctx, "test", render_test, NULL);
-  render_map_map_field(ctx, "info", render_info, NULL);
-}
-
-static void console_toplevel_types(struct console_request_context *ctx,
-                                   void *ptr) {
-  struct config *config = ptr;
-  render_map_map_field(
-    ctx, "sensor", render_sensor_object, &config->sensors.IAT);
-  render_map_map_field(
-    ctx, "output", output_console_renderer, &config->outputs[0]);
-  render_map_map_field(ctx, "table1d", render_table_1d_object, &config->dwell);
-  render_map_map_field(ctx, "table2d", render_table_2d_object, &config->ve);
-}
-
-static void console_request_structure(CborEncoder *enc, struct config *config) {
-
-  struct console_request_context structure_ctx = {
-    .type = CONSOLE_STRUCTURE,
-    .response = enc,
-    .is_filtered = false,
-  };
-  render_map_map_field(
-    &structure_ctx, "response", console_toplevel_request, config);
-
-  struct console_request_context type_ctx = {
-    .type = CONSOLE_DESCRIBE,
-    .response = enc,
-    .is_filtered = false,
-  };
-  render_map_map_field(&type_ctx, "types", console_toplevel_types, config);
-
-  report_success(enc, true);
-}
-
-static void console_request_get(CborEncoder *enc,
-                                CborValue *pathlist,
-                                struct config *config) {
-  struct console_request_context ctx = {
-    .type = CONSOLE_GET,
-    .response = enc,
-    .path = pathlist,
-    .is_filtered = !cbor_value_at_end(pathlist),
-  };
-  cbor_encode_text_stringz(enc, "response");
-  render_map_object(&ctx, console_toplevel_request, config);
-  report_success(enc, true);
-}
-
-static void console_request_set(CborEncoder *enc,
-                                CborValue *pathlist,
-                                CborValue *value,
-                                struct config *config) {
-  struct console_request_context ctx = {
-    .type = CONSOLE_SET,
-    .response = enc,
-    .path = pathlist,
-    .is_filtered = !cbor_value_at_end(pathlist),
-    .value = *value,
-  };
-  cbor_encode_text_stringz(enc, "response");
-  render_map_object(&ctx, console_toplevel_request, config);
-  report_success(enc, true);
-}
-
-static void console_request_flash(CborEncoder *response) {
-  platform_save_config();
-  report_success(response, true);
-}
-
-static void console_request_bootloader(CborEncoder *response) {
-  report_success(response, true);
-  platform_reset_into_bootloader();
-}
-
-static void console_process_request(CborValue *request,
-                                    CborEncoder *response,
-                                    struct config *config) {
-  cbor_encode_text_stringz(response, "type");
-  cbor_encode_text_stringz(response, "response");
-
-  int req_id = -1;
-  CborValue request_id_value;
-  if (!cbor_value_map_find_value(request, "id", &request_id_value)) {
-    if (cbor_value_is_integer(&request_id_value)) {
-      cbor_value_get_int(&request_id_value, &req_id);
-    }
-  }
-
-  cbor_encode_text_stringz(response, "id");
-  cbor_encode_int(response, req_id);
-
-  CborValue request_method_value;
-  cbor_value_map_find_value(request, "method", &request_method_value);
-  if (cbor_value_get_type(&request_method_value) == CborInvalidType) {
-    report_parsing_error(response, "request has no 'method'");
-    report_success(response, false);
-    return;
-  }
-
-  bool match;
-  cbor_value_text_string_equals(&request_method_value, "ping", &match);
-  if (match) {
-    console_request_ping(response);
-    return;
-  }
-
-  cbor_value_text_string_equals(&request_method_value, "structure", &match);
-  if (match) {
-    console_request_structure(response, config);
-    return;
-  }
-
-  cbor_value_text_string_equals(&request_method_value, "flash", &match);
-  if (match) {
-    console_request_flash(response);
-    return;
-  }
-
-  cbor_value_text_string_equals(&request_method_value, "bootloader", &match);
-  if (match) {
-    console_request_bootloader(response);
-    return;
-  }
-
-  CborValue path, pathlist;
-  cbor_value_map_find_value(request, "path", &path);
-  if (cbor_value_is_array(&path)) {
-    cbor_value_enter_container(&path, &pathlist);
-  } else {
-    report_parsing_error(response, "no 'path' provided'");
-    return;
-  }
-
-  cbor_value_text_string_equals(&request_method_value, "get", &match);
-  if (match) {
-    console_request_get(response, &pathlist, config);
-    return;
-  }
-
-  CborValue set_value;
-  cbor_value_map_find_value(request, "value", &set_value);
-  if (cbor_value_get_type(&set_value) == CborInvalidType) {
-    report_parsing_error(response, "invalid 'value' provided");
-    return;
-  }
-
-  cbor_value_text_string_equals(&request_method_value, "set", &match);
-  if (match) {
-    console_request_set(response, &pathlist, &set_value, config);
-    return;
-  }
-}
-
-static void console_process_request_raw(struct console_rx_message *rx, 
-                                        struct config *config) {
-  CborParser parser;
-  CborValue value;
-  CborError err;
-
-  CborEncoder encoder;
-
-  static uint8_t rxbuffer[16384];
-  if (!platform_message_reader_read(rx, rxbuffer, rx->length)) {
-    return;
-  }
-
-  static uint8_t txbuffer[16384];
-  cbor_encoder_init(&encoder, txbuffer, sizeof(txbuffer), 0);
-
-  err = cbor_parser_init(rxbuffer, rx->length, 0, &parser, &value);
-  if (err) {
-    return;
-  }
-
-  CborEncoder response_map;
-  if (cbor_encoder_create_map(&encoder, &response_map, CborIndefiniteLength) !=
-      CborNoError) {
-    return;
-  }
-
-  console_process_request(&value, &response_map, config);
-
-  if (cbor_encoder_close_container(&encoder, &response_map) != CborNoError) {
-  }
-
-  size_t txlength = cbor_encoder_get_buffer_size(&encoder, txbuffer);
-
-  struct console_tx_message msg;
-  if (!platform_message_writer_new(&msg, txlength)) {
-    return;
-  }
-  platform_message_writer_write(&msg, txbuffer, txlength);
+  fwinfo.proto.len = 0;
+  return fwinfo;
 }
 
 
-void console_process(struct config *config, timeval_t now) {
-  static timeval_t last_desc_time = 0;
+static void console_process_request(struct console_rx_message *rxmsg, struct config *config) {
+
+  console_message = (struct viaems_console_Message){ 0 };
+
+  if (!pb_decode_viaems_console_Message(&console_message, pb_read, rxmsg)) {
+    platform_message_reader_abort(rxmsg);
+    return;
+  }
+  if (console_message.which_msg != PB_TAG_viaems_console_Message_request) {
+    return;
+  }
+
+  switch (console_message.request.which_request) {
+    case PB_TAG_viaems_console_Request_ping:
+      console_message.which_msg = PB_TAG_viaems_console_Message_response;
+      console_message.response.which_response = PB_TAG_viaems_console_Response_pong;
+      break;
+    case PB_TAG_viaems_console_Request_fwinfo:
+      console_message.which_msg = PB_TAG_viaems_console_Message_response;
+      console_message.response.which_response = PB_TAG_viaems_console_Response_fwinfo;
+      console_message.response.fwinfo = console_fwinfo();
+      break;
+    case PB_TAG_viaems_console_Request_flashconfig:
+      platform_save_config();
+      console_message.which_msg = PB_TAG_viaems_console_Message_response;
+      console_message.response.which_response = PB_TAG_viaems_console_Response_flashconfig;
+      console_message.response.flashconfig.success = true;
+      break;
+    case PB_TAG_viaems_console_Request_resettobootloader:
+      platform_reset_into_bootloader();
+      break;
+    case PB_TAG_viaems_console_Request_getconfig:
+      console_message.which_msg = PB_TAG_viaems_console_Message_response;
+      console_message.response.which_response = PB_TAG_viaems_console_Response_getconfig;
+      console_message.response.getconfig.has_config = true;
+      config_store_to_console_pbtype(config, &console_message.response.getconfig.config);
+      break;
+    case PB_TAG_viaems_console_Request_setconfig: {
+     bool success = false;
+      if (console_message.request.setconfig.has_config) {
+        config_load_result r = config_load_from_console_pbtype(config, &console_message.request.setconfig.config);
+        success = (r == CONFIG_SAVED);
+      }
+      console_message.which_msg = PB_TAG_viaems_console_Message_response;
+      console_message.response.which_response = PB_TAG_viaems_console_Response_setconfig;
+      console_message.response.setconfig.has_config = true;
+      console_message.response.setconfig.success = success;
+      config_store_to_console_pbtype(config, &console_message.response.setconfig.config);
+      break;
+                                                  }
+    default:
+      break;
+  }
+
+  struct console_tx_message writer;
+  unsigned length = pb_sizeof_viaems_console_Message(&console_message);
+  if (!platform_message_writer_new(&writer, length)) {
+    return;
+  }
+
+  if (!pb_encode_viaems_console_Message(&console_message, pb_write, &writer)) {
+    platform_message_writer_abort(&writer);
+  }
+
+}
+
+void console_process(struct config *config) {
 
   struct console_rx_message rxmsg;
   if (platform_message_reader_new(&rxmsg)) {
-      console_process_request_raw(&rxmsg, config);
+      console_process_request(&rxmsg, config);
   }
 
   /* Process any outstanding event messages */
@@ -1732,204 +352,17 @@ void console_process(struct config *config, timeval_t now) {
     } while (ev.type != EVENT_NONE);
   }
 
-  /* Try to ensure we send a description message at 10 hz */
-  if (time_diff(now, last_desc_time) > time_from_us(100000)) {
-    console_feed_line_keys();
-    last_desc_time = now;
-  } else {
-    int idx = spsc_next(&engine_update_queue);
-    if (idx >= 0) {
-      struct console_feed_update *update = &engine_update_msgs[idx];
-      console_feed_line(update);
-      spsc_release(&engine_update_queue);
-    }
+  int idx = spsc_next(&engine_update_queue);
+  if (idx >= 0) {
+    struct viaems_console_EngineUpdate *update = &engine_update_msgs[idx];
+    console_feed_line(update);
+    spsc_release(&engine_update_queue);
   }
 }
 
 #ifdef UNITTEST
 #include <check.h>
 #include <stdarg.h>
-
-struct cbor_test_context {
-  uint8_t buf[16384];
-  CborEncoder top_encoder;
-  CborParser top_parser;
-  CborValue top_value;
-
-  uint8_t pathbuf[512];
-  CborParser path_parser;
-  CborValue path_value;
-};
-
-struct cbor_test_context test_ctx;
-
-static void init_console_tests() {
-  cbor_encoder_init(
-    &test_ctx.top_encoder, test_ctx.buf, sizeof(test_ctx.buf), 0);
-}
-
-static void deinit_console_tests() {}
-
-static void render_path(const char *fmt, ...) {
-  CborEncoder enc, array;
-  cbor_encoder_init(&enc, test_ctx.pathbuf, sizeof(test_ctx.pathbuf), 0);
-  cbor_encoder_create_array(&enc, &array, CborIndefiniteLength);
-  va_list va_fmt;
-  va_start(va_fmt, fmt);
-
-  for (const char *i = fmt; *i != 0; i++) {
-    uint32_t u;
-    const char *s;
-    switch (*i) {
-    case 'u':
-      u = va_arg(va_fmt, uint32_t);
-      cbor_encode_int(&array, u);
-      break;
-    case 's':
-      s = va_arg(va_fmt, const char *);
-      cbor_encode_text_stringz(&array, s);
-      break;
-    default:
-      cbor_encode_null(&array);
-      break;
-    }
-  }
-  va_end(va_fmt);
-  cbor_encoder_close_container(&enc, &array);
-
-  CborValue top_value;
-  cbor_parser_init(test_ctx.pathbuf,
-                   sizeof(test_ctx.pathbuf),
-                   0,
-                   &test_ctx.path_parser,
-                   &top_value);
-  cbor_value_enter_container(&top_value, &test_ctx.path_value);
-}
-
-static void finish_writing() {
-  cbor_parser_init(test_ctx.buf,
-                   sizeof(test_ctx.buf),
-                   0,
-                   &test_ctx.top_parser,
-                   &test_ctx.top_value);
-}
-
-START_TEST(test_render_uint32_object_get) {
-  struct console_request_context ctx = {
-    .type = CONSOLE_GET,
-    .response = &test_ctx.top_encoder,
-  };
-
-  uint32_t field = 12;
-  render_uint32_object(&ctx, "desc", &field);
-  finish_writing();
-
-  int result;
-  ck_assert(cbor_value_get_int(&test_ctx.top_value, &result) == CborNoError);
-  ck_assert_int_eq(result, field);
-}
-END_TEST
-
-START_TEST(test_render_uint32_object_get_large) {
-  struct console_request_context ctx = {
-    .type = CONSOLE_GET,
-    .response = &test_ctx.top_encoder,
-  };
-
-  /* Chosen to exceed signed 32 bit integer */
-  uint32_t field = 3000000000;
-  render_uint32_object(&ctx, "desc", &field);
-  finish_writing();
-
-  int result;
-  ck_assert(cbor_value_get_int(&test_ctx.top_value, &result) == CborNoError);
-  ck_assert_int_eq((uint32_t)result, field);
-}
-END_TEST
-
-START_TEST(test_render_float_object_get) {
-  struct console_request_context ctx = {
-    .type = CONSOLE_GET,
-    .response = &test_ctx.top_encoder,
-  };
-
-  float field = 3.2f;
-  render_float_object(&ctx, "desc", &field);
-  finish_writing();
-
-  float result;
-  ck_assert(cbor_value_get_float(&test_ctx.top_value, &result) == CborNoError);
-  ck_assert_float_eq(result, field);
-}
-END_TEST
-
-START_TEST(test_smoke_console_request_structure) {
-  CborEncoder structure_enc;
-  cbor_encoder_create_map(&test_ctx.top_encoder, &structure_enc, 1);
-  console_request_structure(&structure_enc, &default_config);
-  cbor_encoder_close_container(&test_ctx.top_encoder, &structure_enc);
-  finish_writing();
-
-  ck_assert(cbor_value_validate_basic(&test_ctx.top_value) == CborNoError);
-  ck_assert(cbor_value_is_map(&test_ctx.top_value));
-
-  /* Test that decoder has an offset field with a type and description */
-  CborValue response_value;
-  ck_assert(cbor_value_map_find_value(
-              &test_ctx.top_value, "response", &response_value) == CborNoError);
-  ck_assert(cbor_value_is_map(&response_value));
-
-  CborValue decoder_value;
-  ck_assert(cbor_value_map_find_value(
-              &response_value, "decoder", &decoder_value) == CborNoError);
-  ck_assert(cbor_value_is_map(&decoder_value));
-
-  CborValue offset_value;
-  ck_assert(cbor_value_map_find_value(
-              &decoder_value, "offset", &offset_value) == CborNoError);
-  ck_assert(cbor_value_is_map(&offset_value));
-
-  CborValue type_value, description_value;
-  ck_assert(cbor_value_map_find_value(&offset_value, "_type", &type_value) ==
-            CborNoError);
-  ck_assert(cbor_value_map_find_value(
-              &offset_value, "description", &description_value) == CborNoError);
-
-  ck_assert(cbor_value_is_text_string(&type_value));
-  ck_assert(cbor_value_is_text_string(&description_value));
-}
-END_TEST
-
-START_TEST(test_smoke_console_request_get_full) {
-
-  render_path("");
-
-  CborEncoder get_enc;
-  cbor_encoder_create_map(&test_ctx.top_encoder, &get_enc, 1);
-  console_request_get(&get_enc, &test_ctx.path_value, &default_config);
-  cbor_encoder_close_container(&test_ctx.top_encoder, &get_enc);
-  finish_writing();
-
-  ck_assert(cbor_value_validate_basic(&test_ctx.top_value) == CborNoError);
-  ck_assert(cbor_value_is_map(&test_ctx.top_value));
-
-  /* Test that decoder has an offset field with a type and description */
-  CborValue response_value;
-  ck_assert(cbor_value_map_find_value(
-              &test_ctx.top_value, "response", &response_value) == CborNoError);
-  ck_assert(cbor_value_is_map(&response_value));
-
-  CborValue decoder_value;
-  ck_assert(cbor_value_map_find_value(
-              &response_value, "decoder", &decoder_value) == CborNoError);
-  ck_assert(cbor_value_is_map(&decoder_value));
-
-  CborValue offset_value;
-  ck_assert(cbor_value_map_find_value(
-              &decoder_value, "offset", &offset_value) == CborNoError);
-  ck_assert(cbor_value_is_float(&offset_value));
-}
-END_TEST
 
 START_TEST(test_console_event_log) {
   event_log.enabled = true;
@@ -2003,18 +436,6 @@ END_TEST
 
 TCase *setup_console_tests() {
   TCase *console_tests = tcase_create("console");
-  tcase_add_checked_fixture(
-    console_tests, init_console_tests, deinit_console_tests);
-  /* Object primitives */
-  tcase_add_test(console_tests, test_render_uint32_object_get);
-  tcase_add_test(console_tests, test_render_uint32_object_get_large);
-  tcase_add_test(console_tests, test_render_float_object_get);
-
-  /* Containers */
-
-  /* Real access / integration tests */
-  tcase_add_test(console_tests, test_smoke_console_request_structure);
-  tcase_add_test(console_tests, test_smoke_console_request_get_full);
 
   tcase_add_test(console_tests, test_console_event_log);
   return console_tests;

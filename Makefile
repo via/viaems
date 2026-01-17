@@ -4,12 +4,6 @@ BENCH?=0
 
 all: $(OBJDIR)/viaems
 
-TINYCBOR_OBJS= cborerrorstrings.o \
-               cborencoder.o \
-               cborparser.o
-
-TINYCBOR_CFLAGS= -Icontrib/tinycbor/src
-
 OBJS += calculations.o \
 				config.o \
 				console.o \
@@ -23,19 +17,19 @@ OBJS += calculations.o \
 				stream.o \
 				crc.o \
 				benchmark.o \
-				viaems.o \
-				${TINYCBOR_OBJS}
+				viaems.o
 
 
 include targets/${PLATFORM}.mk
+include proto/rules.mk
 
 DEPS = $(wildcard ${OBJDIR}/*.d)
 -include $(DEPS)
 
 
 GITDESC=$(shell git describe --tags --dirty)
-CFLAGS+=-Isrc/ -Isrc/platforms/common -Wall -Wextra -ggdb -g3 -std=c11 -DGIT_DESCRIBE=\"${GITDESC}\"
-CFLAGS+=${TINYCBOR_CFLAGS}
+CFLAGS+=-Isrc/ -Isrc/platforms/common -Wall -Wextra -ggdb -g3 -std=c11
+CFLAGS+= -DGIT_DESCRIBE=\"${GITDESC}\" -DFW_PLATFORM=\"${PLATFORM}\"
 LDFLAGS+= -lm -L${OBJDIR}
 
 ifeq "$(BENCH)" "1"
@@ -55,7 +49,7 @@ $(OBJDIR)/%.o: %.s
 $(OBJDIR)/%.o: %.c
 	${CC} ${CFLAGS} -MMD -c -o $@ $<
 
-$(OBJDIR)/viaems: ${OBJDIR} ${DESTOBJS} ${OBJDIR}/${TINYCBOR_LIB}
+$(OBJDIR)/viaems: ${OBJDIR} ${DESTOBJS}
 	${CC} -o $@ ${CFLAGS} ${DESTOBJS} ${LDFLAGS}
 
 format:
@@ -66,6 +60,8 @@ lint:
 
 clean:
 	-rm ${OBJDIR}/*
+	-rm src/proto/console.pb.[ch]
+	-rm -r py/viaems_proto/*
 
 
-.PHONY: clean lint format integration benchmark
+.PHONY: clean lint format integration benchmark proto

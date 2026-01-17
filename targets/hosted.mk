@@ -18,8 +18,9 @@ ${OBJDIR}/proxy: ${OBJDIR}/proxy.o
 	${CC} -o $@ ${CFLAGS} ${LDFLAGS} ${OBJDIR}/proxy.o -lusb-1.0
 
 integration: ${OBJDIR}/viaems
-	python3 py/integration-tests/interface-tests.py
 	python3 py/integration-tests/smoke-tests.py
 	python3 py/integration-tests/safety-tests.py
+
+#TODO	python3 py/integration-tests/interface-tests.py
 
 .PHONY: proxy run

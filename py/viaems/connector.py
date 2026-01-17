@@ -8,7 +8,6 @@ from io import BytesIO
 import struct
 import sys
 
-import cbor2 as cbor
 import zlib
 from cobs import cobs
 
@@ -16,54 +15,61 @@ from viaems.vcd import dump_vcd
 from viaems.validation import enrich_log
 from viaems.events import *
 
+from viaems_proto.viaems import console
+
+def deframe_message(frame: bytes) -> console.Message:
+    decoded = cobs.decode(frame)
+    lengthbytes = decoded[0:2]
+    crcbytes = decoded[-4:]
+    pdu = decoded[2:-4]
+    crc = struct.unpack("<I", crcbytes)[0]
+    length = struct.unpack("<H", lengthbytes)[0]
+    if zlib.crc32(pdu) != crc:
+        raise ValueError("CRC failure")
+    if len(pdu) != length:
+        raise ValueError(f"Length mismatch: {len(pdu)} pdu but header is {length}")
+    message = console.Message.parse(pdu)
+    return message
+
+def enframe_message(message: console.Message) -> bytes:
+    pdu = bytes(message)
+    length = len(pdu)
+    crc = zlib.crc32(pdu)
+
+    crcbytes = struct.pack("<I", crc)
+    lengthbytes = struct.pack("<H", length)
+    payload = cobs.encode(lengthbytes + pdu + crcbytes)
+    return payload + b"\0"
+
+
 class ViaemsInterface:
-    def recv_until_id(self, id, max_messages=1000):
+    def recv_response(self, max_messages=1000):
         while True:
             result = self.recv()
-            if isinstance(result, dict) and "id" in result and int(result["id"]) == id:
+            if result.response is not None:
                 return result
             max_messages -= 1
             if max_messages == 0:
                 return None
 
-    def structure(self):
-        id = random.randint(0, 1024)
-        self.send(
-            {
-                "id": id,
-                "type": "request",
-                "method": "structure",
-            }
-        )
-        result = self.recv_until_id(id)
-        return result
+    def getconfig(self):
+        req = console.Request(
+                  getconfig=console.RequestGetConfig()
+              )
+        return self.request(req)
 
-    def get(self, path):
-        id = random.randint(0, 1024)
-        self.send(
-            {
-                "id": id,
-                "type": "request",
-                "method": "get",
-                "path": path,
-            }
-        )
-        result = self.recv_until_id(id)
-        return result
+    def setconfig(self, config: console.Configuration):
+        req = console.Request(
+                  setconfig=console.RequestSetConfig(
+                      config=config
+                  )
+              )
+        return self.request(req)
 
-    def set(self, path, value):
-        id = random.randint(0, 1024)
-        self.send(
-            {
-                "id": id,
-                "type": "request",
-                "method": "set",
-                "path": path,
-                "value": value,
-            }
-        )
-        result = self.recv_until_id(id)
-        return result
+    def request(self, req: console.Request):
+        msg = console.Message(request=req)
+        self.send(msg)
+        return self.recv_response()
 
     def sleep(self, seconds):
         now = time.time()
@@ -72,19 +78,15 @@ class ViaemsInterface:
 
 
 
-class SimConnector(ViaemsInterface):
+class ExecConnector(ViaemsInterface):
     def __init__(self, binary):
         self.binary = binary
         self.process = None
-
-    def start(self, replay=None):
-        args = [self.binary]
-        if replay:
-            args.append("-i")
-            args.append(replay)
+                   
+    def start(self, args=[]):
 
         self.process = subprocess.Popen(
-            args,
+            [self.binary] + args,
             bufsize=-1,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
@@ -99,27 +101,10 @@ class SimConnector(ViaemsInterface):
         self.process.communicate()
         self.process.wait()
 
-    def send(self, payload):
-        binary = cbor.dumps(payload)
-        crcbytes = struct.pack("<I", zlib.crc32(binary))
-        lenbytes = struct.pack("<H", len(binary))
-        encoded = cobs.encode(lenbytes + binary + crcbytes) + b"\0"
+    def send(self, message: console.Message):
+        encoded = enframe_message(message)
         self.process.stdin.write(encoded)
         self.process.stdin.flush()
-
-    def _deframe(self, frame):
-        decoded = cobs.decode(frame)
-        lenbytes = decoded[0:2]
-        crcbytes = decoded[-4:]
-        pdu = decoded[2:-4]
-        crc = struct.unpack("<I", crcbytes)[0]
-        length = struct.unpack("<H", lenbytes)[0]
-        if length != len(pdu):
-            raise ValueError("Invalid frame length")
-        if zlib.crc32(pdu) != crc:
-            raise ValueError("CRC failure")
-        result = cbor.loads(pdu)
-        return result
 
     def recv(self):
         frame = b""
@@ -134,7 +119,18 @@ class SimConnector(ViaemsInterface):
             if len(frame) > 16384:
                 return None
 
-        return self._deframe(frame)
+        return deframe_message(frame)
+
+class SimConnector(ExecConnector):
+
+    def __init__(self, binary="obj/hosted/viaems"):
+        super().__init__(binary)
+
+    def start(self, replay=None, args=[]):
+        replayargs = []
+        if replay is not None:
+            replayargs = ["-i", replay]
+        super().start(replayargs + args)
 
     def _render_target_inputs(self, scenario, file):
         render_time = 0
@@ -152,14 +148,13 @@ class SimConnector(ViaemsInterface):
                     file.write(f"e {delay}\n")
 
     
-    def execute_scenario(self, scenario, settings=[]):
+    def execute_scenario(self, scenario, config=console.Configuration()):
         tf = open(f"scenario_{scenario.name}.inputs", "w")
         self._render_target_inputs(scenario, tf)
         tf.close()
 
         self.start(replay=tf.name)
-        for path, value in settings:
-            self.set(path, value)
+        self.setconfig(config)
         target_msgs = []
         while True:
             try:
@@ -185,10 +180,10 @@ class SimConnector(ViaemsInterface):
 
         return Log(enriched_log)
 
-class HilConnector(ViaemsInterface):
+class HilConnector(ExecConnector):
+
     def __init__(self, binary="obj/hosted/proxy"):
-        self.binary = binary
-        self.process = None
+        super().__init__(binary)
 
     def _target_reset(self):
         # Output 8 (MSB) is connected to nRST, pull it low and then high
@@ -207,69 +202,16 @@ class HilConnector(ViaemsInterface):
                 ], check=True)
         time.sleep(1)
 
-    def start(self):
+    def start(self, args=[]):
         self._target_reset()
 
-        self.process = subprocess.Popen(
-            [self.binary],
-            bufsize=-1,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            pipesize=1 * 1024 * 1024,
-        )
+        super().start(args)
 
         # Wait for first null
         while True:
             b = self.process.stdout.read(1)
             if b == b"\0":
                 break
-
-    def kill(self):
-        if not self.process:
-            return
-        self.process.kill()
-        self.process.communicate()
-        self.process.wait()
-
-    def send(self, payload):
-        binary = cbor.dumps(payload)
-        crcbytes = struct.pack("<I", zlib.crc32(binary))
-        lenbytes = struct.pack("<H", len(binary))
-        encoded = cobs.encode(lenbytes + binary + crcbytes) + b"\0"
-        self.process.stdin.write(encoded)
-        self.process.stdin.flush()
-
-    def _deframe(self, frame):
-        decoded = cobs.decode(frame)
-        lenbytes = decoded[0:2]
-        crcbytes = decoded[-4:]
-        pdu = decoded[2:-4]
-        crc = struct.unpack("<I", crcbytes)[0]
-        length = struct.unpack("<H", lenbytes)[0]
-        if zlib.crc32(pdu) != crc:
-            raise ValueError("CRC failure")
-        if length != len(pdu):
-            raise ValueError("Invalid frame length")
-        result = cbor.loads(pdu)
-        return result
-
-    def recv(self):
-        frame = b""
-        while True:
-            b = self.process.stdout.read(1)
-            if b == b"\0":
-                break
-            if len(b) == 0:
-                raise EOFError
-            frame += b
-
-            if len(frame) > 16384:
-                return None
-
-        return self._deframe(frame)
-
-
 
     def log_from_capture(self, msgs: List[str]) -> List[CaptureEvent]:
         last_raw_value = 0
@@ -356,16 +298,13 @@ class HilConnector(ViaemsInterface):
 
     
 
-    def execute_scenario(self, scenario, settings=[]):
+    def execute_scenario(self, scenario, config=console.Configuration()):
         tf = open(f"scenario_{scenario.name}.inputs", "w")
         self._render_target_inputs(scenario, tf)
         tf.close()
 
         self.start()
-
-        self.set(["test", "event-logging"], True)
-        for path, value in settings:
-            self.set(path, value)
+        self.setconfig(config)
 
         # Start test bench
         tb_process = subprocess.Popen(

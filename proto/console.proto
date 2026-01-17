@@ -1,0 +1,494 @@
+syntax = "proto3";
+
+package viaems.console;
+
+// Simple header for messages
+message Header {
+  fixed32 seq = 1;        // Sequence number, increments for each payload
+  fixed32 timestamp = 2;  // Timestamp in ticks, typically 250 ns
+}
+
+enum SensorFault {
+  SENSOR_NO_FAULT = 0;          // Sensor has no fault
+  SENSOR_RANGE_FAULT = 1;       // Sensor raw value is out of range
+  SENSOR_CONNECTION_FAULT = 2;  // Unable to communicate with sensor or ADC
+}
+
+message Sensors {
+  float map = 1;    // Manifold pressure (kpa)
+  float iat = 2;    // Intake air temperature (C)
+  float clt = 3;    // Coolant/Head temperature (C)
+  float brv = 4;    // Battery voltage (V)
+  float tps = 5;    // Throttle position (%)
+  float aap = 6;    // Ambient air pressure (kpa)
+  float frt = 7;    // Fuel rail temperature (C)
+  float ego = 8;    // Exhaust gas oxygen (lambda)
+  float frp = 9;    // Fuel rail pressure (kpa)
+  float eth = 10;   // Ethanol content (%)
+
+  float knock1 = 14; // Raw knock energy level
+  float knock2 = 15;
+  
+  SensorFault map_fault = 32;
+  SensorFault iat_fault = 33;
+  SensorFault clt_fault = 34;
+  SensorFault brv_fault = 35;
+  SensorFault tps_fault = 36;
+  SensorFault aap_fault = 37;
+  SensorFault frt_fault = 38;
+  SensorFault ego_fault = 39;
+  SensorFault frp_fault = 40;
+  SensorFault eth_fault = 41;
+
+  // Current derivatives of all sensor inputs, after lag filter
+  float map_rate = 64; 
+  float iat_rate = 65; 
+  float clt_rate = 66; 
+  float brv_rate = 67; 
+  float tps_rate = 68; 
+  float aap_rate = 69; 
+  float frt_rate = 70; 
+  float ego_rate = 71; 
+  float frp_rate = 72; 
+  float eth_rate = 73; 
+}
+
+enum DecoderLossReason {
+  DECODER_NO_LOSS = 0;                  // Decoder detects no issue
+  DECODER_TRIGGER_TOOTH_VARIATION = 1;  // Inter-tooth time variation exceeds configured amount
+  DECODER_TRIGGER_COUNT_HIGH = 2;       // Too many triggers between syncs
+  DECODER_TRIGGER_COUNT_LOW = 3;        // Too few triggers between syncs
+  DECODER_EXPIRED = 4;                  // Decoder has not been updated and is no longer valid
+  DECODER_OVERFLOWED = 5;               // Decoder received inputs faster than it could handle themk
+}
+
+message Position {
+  fixed32 time = 1;                     // Time of the last trigger that updated the position
+  fixed32 valid_before_timestamp = 2;   // Time by which new position should be
+                                        // known, and this position is no longer valid
+
+  bool has_position = 3;                // This update has position information
+  bool synced = 4;                      // This update is from a synced decoder
+  DecoderLossReason loss_cause = 5;     // Reason the decoder lost position, if not synced
+
+  float last_angle = 6;                 // Angle of decoder at time `time`
+  float instantaneous_rpm = 7;          // RPM as determined by last two triggers
+  float average_rpm = 8;                // RPM over window of triggers (or whole revolution)
+}
+
+message Calculations {
+  float advance = 1;                    // Timing advance (degrees)
+  float dwell_us = 2;                   // Ignition dwell time (uS)
+  float fuel_us = 3;                    // Fuel pulsewidth (uS)
+
+  float airmass_per_cycle = 4;          // Air mass in one engine cycle per cylinder (g)
+  float fuelvol_per_cycle = 5;          // Fuel volume in one engine cycle per cylinder (cc)
+
+  float tipin_percent = 6;              // Currently applied acceleration enrichment multiplier
+  float injector_dead_time = 7;         // Injector dead time (mS)
+  float pulse_width_correction = 8;     // Non-linear injector correction (mS)
+  float lambda = 9;                     // Commanded lambda
+  float ve = 10;                        // Current volumetric efficiency
+  float engine_temp_enrichment = 11;    // Applied engine temperature enrichment multiplier
+
+  bool rpm_limit_cut = 12;
+  bool boost_cut = 13;
+  bool fuel_overduty_cut = 14;          // Fuel duty cycle exceeded configured maximum
+  bool dwell_overduty_cut = 15;         // Unable to schedule ignition pulses due to minimum dwell being reached
+}
+
+message Event {
+  Header header = 1;
+  oneof type {
+    uint32 trigger = 2;
+    uint32 output_pins = 3;
+    uint32 gpio_pins = 4;
+  }
+}
+
+message EngineUpdate {
+  Header header = 1;
+  Position position = 2;
+  Sensors sensors = 3;
+  optional Calculations calculations = 4;
+}
+
+
+message Configuration {
+  message TableRow {
+    repeated float values = 1;
+  }
+
+  message TableAxis {
+    optional string name = 1;
+    repeated float values = 2;
+  }
+
+  message Table1d {
+    optional string name = 1;
+    TableAxis cols = 2;
+    TableRow data = 3;
+  }
+
+  message Table2d {
+    optional string name = 1;
+    TableAxis cols = 2;
+    TableAxis rows = 3;
+    repeated TableRow data = 4;
+  }
+
+  message Output {
+    enum OutputType {
+      OUTPUT_DISABLED = 0;
+      OUTPUT_FUEL = 1;
+      OUTPUT_IGNITION = 2;
+    }
+
+    // Pin number (0-15) in the output block to use for this output event
+    optional uint32 pin = 1;
+
+    // Output type (Fuel or Ignition)
+    optional OutputType type = 2;    
+
+    // Enable for active-low
+    optional bool inverted = 3;
+
+    // Target angle: For ignition events, this is the spark angle if there is no timing 
+    // advance, generally TDC. For fuel, this is the target pulsewidth end angle        
+    optional float angle = 4;
+                             
+  }
+
+  enum SensorSource {
+    SOURCE_NONE = 0;         // The sensor is not used
+    SOURCE_ADC = 1;          // Sensor samples come from ADC
+    SOURCE_FREQ = 2;         // Sensor samples come from a frequency input, and raw values are in Hz
+    SOURCE_PULSEWIDTH = 3;   // Sensor is a pulsewidth measurement, raw values are in seconds
+    SOURCE_CONST = 4;        // Sensor is a fixed value
+  }
+
+  enum SensorMethod {
+    METHOD_LINEAR = 0;           // Use linear interpolation from input range to output range
+    METHOD_LINEAR_WINDOWED = 1;  // Linear interpolation, but average values over a crank angle window
+    METHOD_THERMISTOR = 2;       // Use Steinhart-Hart thermistor conversion
+  }
+
+  message Sensor {
+    optional SensorSource source = 1;
+    optional SensorMethod method = 2;
+
+    optional uint32 pin = 3;   // Which pin to use: For ADC, this translates to the ADC input pins
+                               // For frequency inputs, pins use the trigger input block
+
+    optional float lag = 4;    // First-order low pass filter, with value specifying the alpha coeffecient between
+                               // 0-100. 0 Disables the filter, and 100 will result in the filtered value being
+                               // constant.
+
+    // Configuration for linearly interpolating an input range to an output range.  The input range is generally 0-5
+    // volts for an ADC input, Hz for a frequency input, or seconds for a pulsewidth input. Inputs outside the specified
+    // input range are still translated.
+    message LinearConfig {
+      float output_min = 1;
+      float output_max = 2;
+      float input_min = 3;
+      float input_max = 4;
+    }
+
+    // Specify a fixed value for a const sensor. This is typically used when a sensor is not present but a sane value
+    // should still be present for engine processing
+    message ConstConfig {
+      float fixed_value = 1;
+    }
+
+    // Steinhart-hart thermistor coefficients
+    message ThermistorConfig {
+      float a = 1;
+      float b = 2;
+      float c = 3;
+      float bias = 4;    // Bias resistor in ohms
+    }
+
+    // Defines a range min-max of input values (V, Hz, s) where if exceeded, the sensor output will be the provided
+    // fault value.  If max is 0, the range check is disabled.
+    message FaultConfig {
+      float min = 1;
+      float max = 2;
+      float value = 3;
+    }
+
+    // Used for linear windowed interpolation. If used, a full 720 degree engine cycle is split into `count` windows.
+    // For example, count of 8 means there will be 8 90 degree windows. The windows start at `offset` degrees from TDC.
+    //
+    // Additionally, each window only uses the first `opening` degrees for sampling data.  All samples collected in each
+    // window opening are averaged together, and samples outside the window are ignored.
+    message WindowConfig {
+      float opening = 1 ;
+      uint32 count = 2;
+      float offset = 3;
+    }
+
+    optional LinearConfig linear_config = 5;
+    optional ConstConfig const_config = 6;
+    optional ThermistorConfig thermistor_config = 7;
+
+    optional FaultConfig fault_config = 8;
+    optional WindowConfig window_config = 9;
+
+  }
+
+  // When enabled, use a goertzel filter to look for energy at a certain frequency from
+  // any (if available) high-speed ADC inputs.
+  message KnockSensor {
+    optional bool enabled = 1;
+    optional float frequency = 2;   // Frequency of expected knock, used to configure the filter
+    optional float threshold = 3;   // Future use: threshold to take (some kind of) action
+  }
+
+  message Sensors {
+    Sensor aap = 1;
+    Sensor brv = 2;
+    Sensor clt = 3;
+    Sensor ego = 4;
+    Sensor frt = 5;
+    Sensor iat = 6;
+    Sensor map = 7;
+    Sensor tps = 8;
+    Sensor frp = 9;
+    Sensor eth = 10;
+    KnockSensor knock1 = 14;
+    KnockSensor knock2 = 15;
+  }
+
+  enum TriggerType {
+    DECODER_DISABLED = 0;           // No trigger wheel configured
+    EVEN_TEETH = 1;                 // Even tooth wheel on cam or crank. Generally only useful in certain situations.
+    EVEN_TEETH_PLUS_CAMSYNC = 2;    // Even tooth wheel on cam or crank with a cam phase sync
+    MISSING_TOOTH = 3;              // Missing tooth wheel on cam. Can be used on crank, but only for batch/waste spark
+    MISSING_TOOTH_PLUS_CAMSYNC = 4; // Missing tooth on crank or cam with dedicated cam phase signal
+  }
+
+  message Decoder {
+    optional TriggerType trigger_type = 1;     // Trigger wheel type
+
+    optional float degrees_per_trigger = 2;    // *Crank* degrees for each trigger, even if it is a cam wheel
+
+    optional float max_tooth_variance = 3;     // Maximum allowable inter-tooth variation: Value of 0.5 means a tooth
+                                               // gap 0.5x-1.5x as long as the previous one is the bounds
+    optional float min_rpm = 4;                // Minium rpm to produce position information
+
+    optional uint32 num_triggers = 5;          // Quantity of triggers on wheel
+
+    optional float offset = 6;                 // Offset between trigger wheel 0 and TDC. For even teeth wheels with a
+                                               // cam sync, the first trigger tooth after a cam pulse is 0 degrees on
+                                               // the wheel. For missing tooth wheels, the first tooth after a gap is
+                                               // the 0 degree mark.  Offset is measured in the direction of crank
+                                               // rotation from TDC to the wheel 0 point.
+
+  }
+
+  enum InputEdge {
+    EDGE_RISING = 0;
+    EDGE_FALLING = 1;
+    EDGE_BOTH = 2;
+  }
+
+  enum InputType {
+    INPUT_DISABLED = 0;    // Input is not used
+    INPUT_TRIGGER = 1;     // Input is a cam/crank trigger wheel input
+    INPUT_SYNC = 2;        // Input is a cam phase input
+    INPUT_FREQ = 3;        // Input is a square wave frequency sensor
+  }
+
+  message TriggerInput {
+    optional InputEdge edge = 1;
+    optional InputType type = 2;
+  }
+
+  // Crank enrichment config. This provides enrichment during engine cranking, not after.
+  message CrankEnrichment {
+    optional float cranking_rpm = 1;    // RPM threshold, below which engine is considered to be cranking
+    optional float cranking_temp = 2;   // Temperature threshold, below which enables enrichment
+    optional float enrich_amt = 3;      // Enrichment multiplier
+  }
+
+  message Fueling {
+    optional uint32 fuel_pump_pin = 1;         // Pin for fuel pump control
+    optional float cylinder_cc = 2;            // Swept displacement of a single cylinder
+    optional float fuel_density = 3;           // Density of fuel g/cm^3 at 15 C
+    optional float fuel_stoich_ratio = 4;      // Stoichiometric ratio of fuel
+    optional uint32 injections_per_cycle = 5;  // How many times an injector is expected to fire in a single engine
+                                               // cycle.  Generally 1 for sequential, and 2-8 for batch
+
+    optional float injector_cc = 6;            // Injector flow rate in cc/min
+    optional float max_duty_cycle = 7;         // Max duty cycle of injector
+
+    CrankEnrichment crank_enrich = 16;
+    Table1d pulse_width_compensation = 17;     // Correction for non-linear region of injector. At low pulsewidths, an
+                                               // injector opening time doesn't have a linear correlation with the
+                                               // pulsewidth. This table is a lookup table of desired pulse-widths to
+                                               // corrected pulsewidths
+
+    Table1d injector_dead_time = 18;           // Dead time vs battery voltage
+
+    Table2d engine_temp_enrichment = 19;       // Enrichment multipler vs coolant temperature
+
+    Table2d commanded_lambda = 20;             // Target lambda for given RPM and MAP
+
+    Table2d ve = 21;                           // Volumetric efficiency calibration for speed density
+
+    Table2d tipin_enrich_amount = 22;          // Acceleration enrichment addition to engine calculations, using a
+                                               // lookup of MAP vs throttle position rate.  It is important that TPS is
+                                               // clean (or filtered) or else the derivative will also be noisy
+
+    Table1d tipin_enrich_duration = 23;        // How long an acceleration enrichment event lasts, based on RPM
+  }
+
+  message Ignition {
+    enum DwellType {
+      DWELL_FIXED_DUTY = 0;    // Dwell operates for fixed percentage of engine cycle, similar to points
+      DWELL_FIXED_TIME = 1;    // Fixed dwell time
+      DWELL_BRV = 2;           // Dwell time references battery voltage
+    }
+    optional DwellType type = 1;
+    optional float fixed_dwell = 2;
+    optional float fixed_duty = 3;
+
+    optional uint32 ignitions_per_cycle = 4;  // Number of sparks for a coil in one engine cycle. This is used for dwell
+                                              // and cooldown safeties
+
+    optional uint32 min_coil_cooldown_us = 5; // Minimum time after a spark fires that a coil cannot start dwelling
+                                              // again
+
+    optional uint32 min_dwell_us = 6;         // Minimum allowed dwell time. Dwell can be lower than the desired amount
+                                              // because of high RPM, or changing RPM can result in a late start to a
+                                              // dwell.  If the scheduler is unable to meet the minimum dwell time, the
+                                              // dwell cut will be enabled
+
+    Table1d dwell = 7;       // Dwell lookup vs battery voltage
+    Table2d timing = 8;      // Timing advance via MAP and RPM
+
+  }
+
+  // Configuration for PWM-actuated solenoid connected to wastegate
+  message BoostControl {
+    optional uint32 pin = 1;                    // PWM pin to use
+    optional float control_threshold_map = 2;   // MAP threshold, above which PWM control is enabled
+    optional float control_threshold_tps = 3;   // TPS threshold, above which PWM control is enabled
+
+    optional float enable_threshold_map = 4;    // Above this amount, and below the control MAP threshold, if the TPS
+                                                // threshold is met, the output is set to 100% duty cycle, to act
+                                                // as spool assist.  Below this threshold, duty cycle is 0%.
+
+    optional float overboost_map = 5;           // Enable boost cut if MAP is above this threshold
+    Table1d pwm_vs_rpm = 6;                     // Table lookup for PWM vs RPM
+  }
+
+  message CheckEngineLight {
+    optional uint32 pin = 1;                    // GPIO pin for CEL
+    optional float lean_boost_ego = 2;          // Lean-in-boost alarm upper threshold. If EGO is leaner than this value
+                                                // while the map threshold is exceeded, CEL will blink for lean-in-boost
+    optional float lean_boost_map_enable = 3;   // MAP threshold for lean-in-boost alarm
+  }
+
+  message RpmCut {
+    optional float rpm_limit_start = 1;   // RPM lower hysteresis. If RPM cut is triggered (by exceeding
+                                          // rpm_limit_stop), the cut will remain enabled until RPM drops to
+                                          // rpm_limit_start
+
+    optional float rpm_limit_stop = 2;    // RPM limit
+  }
+
+  message Debug {
+    optional bool test_trigger_enabled = 1;
+    optional float test_trigger_rpm = 2;
+  }
+
+  repeated Output outputs = 1;
+  repeated TriggerInput triggers = 2;
+  optional Sensors sensors = 3;
+  optional Ignition ignition = 4;
+  optional Fueling fueling = 5;
+  optional Decoder decoder = 6;
+  optional RpmCut rpm_cut = 7;
+  optional CheckEngineLight cel = 8;
+  optional BoostControl boost_control = 9;
+  optional Debug debug = 10;
+}
+
+
+message Request {
+
+  // Connectivity test
+  message Ping { }
+
+  // Set a configuration.
+  message SetConfig {
+    Configuration config = 1;
+  }
+
+  // Retrieve a configuration
+  message GetConfig { }
+
+  // Tell target to flash live config to persistent storage
+  message FlashConfig { }
+  
+  // Tell target to reset into DFU bootloader
+  message ResetToBootloader { }
+
+  // Request firmware information
+  message FirmwareInfo { }
+
+  uint32 id = 1;
+  oneof request {
+    Ping ping = 2;
+    FirmwareInfo fwinfo = 3;
+
+    SetConfig setconfig = 4;
+    GetConfig getconfig = 5;
+    FlashConfig flashconfig = 6;
+    ResetToBootloader resettobootloader = 7;
+  }
+}
+
+message Response {
+  message Pong { }
+
+  message SetConfig {
+    Configuration config = 1;
+    bool success = 2;
+  }
+  message GetConfig {
+    Configuration config = 1;
+  }
+  message FlashConfig {
+    bool success = 1;
+  }
+
+  message FirmwareInfo { 
+    string version = 1;    // Firmware version string
+    string platform = 2;   // Platform string
+    string proto = 3;      // Full text of this file
+  }
+
+  uint32 id = 1;
+  oneof response {
+    Pong pong = 2;
+    FirmwareInfo fwinfo = 3;
+
+    SetConfig setconfig = 4;
+    GetConfig getconfig = 5;
+    FlashConfig flashconfig = 6;
+  }
+}
+
+// Top-level message intended to be directly serialized to the target or deserialized from the target.
+message Message {
+  oneof msg {
+    EngineUpdate engine_update = 2;  // Status message from target, generally at 5kHz
+    Event event = 3;                 // Debugging events for triggers, GPIOS, outputs
+    Request request = 4;             // Request message from host to target
+    Response response = 5;           // Target response to a host request
+  }
+}
+
+

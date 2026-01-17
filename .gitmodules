@@ -1,6 +1,3 @@
-[submodule "tinycbor"]
-	path = contrib/tinycbor
-	url = https://github.com/intel/tinycbor
 [submodule "CMSIS"]
 	path = contrib/CMSIS_5
 	url = https://github.com/ARM-software/CMSIS_5.git
@@ -11,3 +8,6 @@
 [submodule "contrib/tinyusb"]
 	path = contrib/tinyusb
 	url = https://github.com/hathach/tinyusb
+[submodule "contrib/viapb"]
+	path = contrib/viapb
+	url = https://github.com/via/viapb

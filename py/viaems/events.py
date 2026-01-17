@@ -3,11 +3,14 @@ from typing import Dict, List
 from copy import copy
 import bisect
 
+from viaems_proto.viaems import console
+
 CaptureTime = int
 ScenarioTime = int
 TargetTime = int
 
 Time = ScenarioTime | TargetTime | CaptureTime
+
 
 class OutputConfig:
     FUEL = 1
@@ -62,8 +65,8 @@ class SimADCEvent(SimEvent):
     values: List[float]
 
 @dataclass
-class TargetFeedEvent(TargetEvent):
-    values: Dict[str, float]
+class TargetEngineUpdateEvent(TargetEvent):
+    update: console.EngineUpdate
 
 @dataclass
 class TargetTriggerEvent(TargetEvent):
@@ -103,8 +106,8 @@ class EnrichedOutputEvent(Event):
         config: OutputConfig
 
 class Log(List[Event]):
-    def filter_feeds(self):
-        return Log(filter(lambda i: isinstance(i, TargetFeedEvent), self))
+    def filter_updates(self):
+        return Log(filter(lambda i: isinstance(i, TargetEngineUpdateEvent), self))
 
     def filter_outputs(self):
         return Log(filter(lambda i: isinstance(i, TargetOutputEvent), self))
@@ -141,37 +144,35 @@ class Log(List[Event]):
         gpio_events = self.filter_between(0, time).filter_gpios()
         return gpio_events[-1]
 
-def log_from_target_messages(msgs: List[Dict]) -> List[TargetEvent]:
-    desc_msg = next(filter(lambda m: m["type"] == "description", msgs))
-    desc_keys = desc_msg["keys"]
+def log_from_target_messages(msgs: List[console.Message]) -> List[TargetEvent]:
 
     event_seq = None
-    def check_seq(msg):
+    def check_seq(event: console.Event):
         nonlocal event_seq
         if event_seq is not None:
-            if msg['seq'] != event_seq + 1:
-                print(event_seq, " ", msg)
+            if event.header.seq != event_seq + 1:
+                print(event_seq, " ", event)
                 raise ValueError("Skipped target event sequence number: " + str(msg))
-        event_seq = msg['seq']
+        event_seq = event.header.seq
 
     result : List[TargetEvent] = []
     for msg in msgs:
-        time = int(msg["time"])
-        if msg["type"] == "event":
-            check_seq(msg)
+        if msg.is_set('event'):
+            check_seq(msg.event)
 
-        if msg["type"] == "feed":
-            values = dict(zip(desc_keys, msg["values"]))
-            result.append(TargetFeedEvent(time=TargetTime(time), values=values))
-        elif msg["type"] == "event" and msg["event"]["type"] == "trigger": 
-            result.append(TargetTriggerEvent(time=TargetTime(time),
-                                             trigger=msg["event"]["pin"]))
-        elif msg["type"] == "event" and msg["event"]["type"] == "output":
-            result.append(TargetOutputEvent(time=TargetTime(time),
-                                            values=msg["event"]["outputs"]))
-        elif msg["type"] == "event" and msg["event"]["type"] == "gpio":
-            result.append(TargetGpioEvent(time=TargetTime(time),
-                                            values=msg["event"]["outputs"]))
+        if msg.is_set('engine_update'):
+            result.append(TargetEngineUpdateEvent(time=TargetTime(msg.engine_update.header.timestamp), update=msg.engine_update))
+        elif msg.is_set("event"):
+            time = msg.event.header.timestamp
+            if msg.event.is_set("trigger"):
+                result.append(TargetTriggerEvent(time=TargetTime(time),
+                                                 trigger=msg.event.trigger))
+            elif msg.event.is_set("output_pins"):
+                result.append(TargetOutputEvent(time=TargetTime(time),
+                                                values=msg.event.output_pins))
+            elif msg.event.is_set("gpio_pins"):
+                result.append(TargetGpioEvent(time=TargetTime(time),
+                                                values=msg.event.gpio_pins))
 
     return result
 

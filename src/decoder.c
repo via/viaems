@@ -20,7 +20,7 @@ static void invalidate_decoder(struct decoder *s) {
 }
 
 void decoder_desync(struct decoder *state, decoder_loss_reason reason) {
-  state->loss = reason;
+  state->output.loss = reason;
   invalidate_decoder(state);
 }
 
@@ -84,13 +84,13 @@ static void even_tooth_trigger_update_rpm(struct decoder *state) {
       (out->tooth_rpm > out->rpm + (out->rpm * conf->trigger_max_rpm_change)) ||
       (out->tooth_rpm < out->rpm - (out->rpm * conf->trigger_max_rpm_change))) {
     state->state = DECODER_NOSYNC;
-    state->loss = DECODER_VARIATION;
+    state->output.loss = DECODER_VARIATION;
   }
 
   /* Check for too many triggers between syncs */
   if (state->triggers_since_last_sync > conf->num_triggers) {
     state->state = DECODER_NOSYNC;
-    state->loss = DECODER_TRIGGERCOUNT_HIGH;
+    state->output.loss = DECODER_TRIGGERCOUNT_HIGH;
   }
 
   /* If we pass 150% of a inter-tooth delay, lose sync */
@@ -129,16 +129,16 @@ static void even_tooth_trigger_update(struct decoder *state, timeval_t t) {
 static void even_tooth_sync_update(struct decoder *state) {
   if (state->state == DECODER_RPM) {
     state->state = DECODER_SYNC;
-    state->loss = DECODER_NO_LOSS;
-    state->output.last_trigger_angle = first_tooth_angle(state->config->offset);
+    state->output.loss = DECODER_NO_LOSS;
+    state->output.last_trigger_angle = 0;
   } else if (state->state == DECODER_SYNC) {
     if (state->triggers_since_last_sync == state->config->num_triggers) {
       state->state = DECODER_SYNC;
-      state->loss = DECODER_NO_LOSS;
-      state->output.last_trigger_angle = first_tooth_angle(state->config->offset);
+      state->output.loss = DECODER_NO_LOSS;
+      state->output.last_trigger_angle = 0;
     } else {
       state->state = DECODER_NOSYNC;
-      state->loss = DECODER_TRIGGERCOUNT_LOW;
+      state->output.loss = DECODER_TRIGGERCOUNT_LOW;
     }
   }
   state->triggers_since_last_sync = 0;
@@ -155,7 +155,7 @@ static void decode_even_with_camsync(struct decoder *state,
   }
 
   if (state->state == DECODER_SYNC) {
-    state->loss = DECODER_NO_LOSS;
+    state->output.loss = DECODER_NO_LOSS;
     state->output.has_position = true;
   } else {
     if (oldstate == DECODER_SYNC) {
@@ -173,7 +173,7 @@ static void decode_even_no_sync(struct decoder *state,
   even_tooth_trigger_update(state, ev->time);
   if (state->state == DECODER_RPM || state->state == DECODER_SYNC) {
     state->state = DECODER_SYNC;
-    state->loss = DECODER_NO_LOSS;
+    state->output.loss = DECODER_NO_LOSS;
     state->output.time = ev->time;
     state->output.has_position = true;
     state->triggers_since_last_sync = 0; /* There is no sync */
@@ -256,7 +256,7 @@ static void missing_tooth_trigger_update(struct decoder *state, timeval_t t) {
       state->output.last_trigger_angle = first_tooth_angle(conf->offset);
     } else if (!is_acceptable_normal_tooth) {
       state->state = DECODER_NOSYNC;
-      state->loss = DECODER_VARIATION;
+      state->output.loss = DECODER_VARIATION;
     }
   } else if (state->state == DECODER_SYNC) {
     state->triggers_since_last_sync += 1;
@@ -266,11 +266,11 @@ static void missing_tooth_trigger_update(struct decoder *state, timeval_t t) {
         state->triggers_since_last_sync = 0;
       } else {
         state->state = DECODER_NOSYNC;
-        state->loss = DECODER_TRIGGERCOUNT_HIGH;
+        state->output.loss = DECODER_TRIGGERCOUNT_HIGH;
       }
     } else if (!is_acceptable_normal_tooth) {
       state->state = DECODER_NOSYNC;
-      state->loss = DECODER_TRIGGERCOUNT_LOW;
+      state->output.loss = DECODER_TRIGGERCOUNT_LOW;
     }
 
     degrees_t rpm_degrees =
@@ -323,7 +323,7 @@ static void decode_missing_no_sync(struct decoder *state,
 
   if (state->state == DECODER_SYNC) {
     state->output.has_position = true;
-    state->loss = DECODER_NO_LOSS;
+    state->output.loss = DECODER_NO_LOSS;
   } else {
     if (oldstate == DECODER_SYNC) {
       /* We lost sync */
@@ -370,7 +370,7 @@ static void decode_missing_with_camsync(struct decoder *state,
   } else if (!was_valid && (state->state == DECODER_SYNC) && has_seen_camsync) {
     /* We gained sync */
     state->output.has_position = true;
-    state->loss = DECODER_NO_LOSS;
+    state->output.loss = DECODER_NO_LOSS;
     state->output.last_trigger_angle = clamp_angle(
       (state->config->degrees_per_trigger * state->triggers_since_last_sync) +
       (state->camsync_seen_this_rotation ? 0 : 360) - state->config->offset, 720);
@@ -564,11 +564,11 @@ static void validate_decoder_sequence(struct decoder *state,
       state->output.has_position);
 
     if (!ev->valid) {
-      ck_assert_msg(state->loss == ev->reason,
+      ck_assert_msg(state->output.loss == ev->reason,
                     "reason mismatch at %d: %d. Got %d",
                     ev->time,
                     ev->reason,
-                    state->loss);
+                    state->output.loss);
     }
   }
 }
