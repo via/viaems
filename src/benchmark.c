@@ -9,6 +9,7 @@
 #include "scheduler.h"
 #include "table.h"
 #include "tasks.h"
+#include "console.h"
 #include "crc.h"
 #include "viaems.h"
 

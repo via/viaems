@@ -49,6 +49,14 @@ struct console_feed_update {
   uint32_t t1_count;
 };
 
+struct console_rx_message {
+	size_t length;
+  bool eof;
+};
+
+struct console_tx_message {
+};
+
 struct logged_event {
   timeval_t time;
   uint32_t seq;
@@ -62,11 +70,15 @@ struct logged_event {
 };
 
 struct config;
+struct engine_update;
+struct calculated_values;
+
 void console_process(struct config *config, timeval_t now);
 void console_record_event(struct logged_event);
 void record_engine_update(const struct viaems *viaems,
                           const struct engine_update *eng_update,
                           const struct calculated_values *calcs);
+
 
 #ifdef UNITTEST
 #include <check.h>
