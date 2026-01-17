@@ -48,7 +48,7 @@ static inline void spsc_push(struct spsc_queue *q) {
   atomic_store_explicit(&q->write, new_write, memory_order_release);
 }
 
-static inline uint32_t spsc_next(struct spsc_queue *q) {
+static inline int32_t spsc_next(struct spsc_queue *q) {
   uint32_t this_read = atomic_load_explicit(&q->read, memory_order_relaxed);
   uint32_t this_write = atomic_load_explicit(&q->write, memory_order_acquire);
 
