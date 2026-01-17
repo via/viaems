@@ -28,7 +28,7 @@ bool platform_message_writer_new(struct console_tx_message *, size_t length);
 /* Perform blocking write of data for a message. Returns false if unable to write. 
  * When all bytes have been written (as specified in the length parameter to 
  * platform_message_writer_new), the message is considered complete */
-bool platform_message_writer_write(struct console_tx_message *, uint8_t *data, size_t length);
+bool platform_message_writer_write(struct console_tx_message *, const uint8_t *data, size_t length);
 
 /* Indicate to the platform that the message will not be completed, and any
  * internal state can be discarded */

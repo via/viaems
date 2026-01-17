@@ -24,6 +24,9 @@ message Sensors {
   float ExhaustGasOxygen = 9;
   float FuelRailPressure = 10;
   float EthanolContent = 11;
+
+  float Knock1 = 12;
+  float Knock2 = 13;
   
   SensorFault ManifoldPressure_Fault = 32;
   SensorFault IntakeTemperature_Fault = 33;
@@ -82,6 +85,7 @@ message Calculations {
   bool rpm_limit_cut = 15;
   bool boost_cut = 16;
   bool fuel_overduty_cut = 17;
+  bool dwell_overduty_cut = 18;
 }
 
 message RawAdcUpdate {
