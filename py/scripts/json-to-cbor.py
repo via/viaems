@@ -4,5 +4,6 @@ import json
 import sys
 
 blob = json.load(sys.stdin)
-cbor.dump(blob, sys.stdout.buffer)
-sys.stdout.flush()
+pdu = cbor.dumps(blob)
+sys.stdout.buffer.write(pdu)
+sys.stdout.buffer.flush()

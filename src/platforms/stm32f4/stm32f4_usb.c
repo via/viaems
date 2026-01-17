@@ -1,6 +1,7 @@
 #include <string.h>
 
 #include "platform.h"
+#include "spsc.h"
 #include "stm32f4xx.h"
 #include "tusb.h"
 
@@ -144,7 +145,7 @@ uint16_t const *tud_descriptor_string_cb(uint8_t index, uint16_t langid) {
   return _desc_str;
 }
 
-size_t console_read(void *ptr, size_t max) {
+size_t platform_read(uint8_t *ptr, size_t max) {
   NVIC_DisableIRQ(OTG_FS_IRQn);
   size_t result = 0;
   if (tud_cdc_ready()) {
@@ -154,7 +155,7 @@ size_t console_read(void *ptr, size_t max) {
   return result;
 }
 
-size_t console_write(const void *ptr, size_t max) {
+size_t platform_write(const uint8_t *ptr, size_t max) {
   if (!tud_cdc_connected()) {
     return max;
   }
@@ -178,7 +179,7 @@ int __attribute__((externally_visible)) _write(int fd,
   (void)fd;
   size_t pos = 0;
   while (pos < count) {
-    pos += console_write(buf + pos, count - pos);
+    pos += platform_write(buf + pos, count - pos);
   }
   return count;
 }

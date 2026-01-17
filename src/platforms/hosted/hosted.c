@@ -1,14 +1,18 @@
+#include <arpa/inet.h>
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h> /* For O_* constants */
+#include <netinet/in.h>
 #include <poll.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h> /* For mode constants */
+#include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
+
 
 #include "config.h"
 #include "console.h"
@@ -33,6 +37,96 @@ static struct viaems hosted_viaems;
 const char *__asan_default_options(void) {
   return "detect_leaks=0";
 }
+
+#ifdef HOSTED_UDP
+static int console_sock = -1;
+static struct sockaddr_in send_sock_addr;
+struct platform_message {
+  uint8_t packet[16384];
+  size_t length;
+  size_t written;
+  bool used;
+};
+
+static struct platform_message txmsg = { 0 };
+
+bool platform_message_writer_new(struct console_tx_message *msg, size_t length) {
+  (void)msg;
+  if (txmsg.used || length > sizeof(txmsg.packet)) {
+    return false;
+  }
+
+  txmsg.length = length;
+  txmsg.written = 0;
+  txmsg.used = true;
+  return true;
+}
+
+bool platform_message_writer_write(struct console_tx_message *msg, uint8_t *data, size_t length) {
+  (void)msg;
+
+  if (!txmsg.used) {
+    return false;
+  }
+
+  if (length + txmsg.written > txmsg.length) {
+    txmsg.used = false;
+    return false;
+  }
+  memcpy(&txmsg.packet[txmsg.written], data, length);
+  txmsg.written += length;
+
+  if (txmsg.written == txmsg.length) {
+    txmsg.used = false;
+    if (sendto(console_sock, txmsg.packet, txmsg.length, 0, &send_sock_addr, sizeof(send_sock_addr)) < 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
+void platform_message_writer_abort(struct console_tx_message *msg) {
+  (void)msg;
+  txmsg.used = false;
+}
+
+static struct platform_message rxmsg = { 0 };
+bool platform_message_reader_new(struct console_rx_message *msg) {
+  if (rxmsg.used) {
+    return false;
+  }
+  
+  ssize_t recvd = recv(console_sock, rxmsg.packet, sizeof(rxmsg.packet), MSG_DONTWAIT);
+  if (recvd < 0) {
+    return false;
+  }
+  fprintf(stderr, "Got packet: %d\n", recvd);
+  rxmsg.length = recvd;
+  rxmsg.written = 0;
+  rxmsg.used = true;
+  msg->length = recvd;
+  msg->eof = false;
+  return true;
+}
+
+bool platform_message_reader_read(struct console_rx_message *msg, uint8_t *data, size_t length) {
+  if (length + rxmsg.written > rxmsg.length) {
+    return false;
+  }
+  memcpy(data, &rxmsg.packet[rxmsg.written], length);
+  rxmsg.written += length;
+  if (rxmsg.written == rxmsg.length) {
+    rxmsg.used = false;
+    msg->eof = true;
+  }
+  return true;
+}
+
+void platform_message_reader_abort(struct console_rx_message *) {
+  rxmsg.used = false;
+}
+
+#endif
 
 void platform_reset_into_bootloader() {}
 
@@ -72,7 +166,8 @@ void set_gpio(uint16_t new_gpios, timeval_t when) {
   gpios = new_gpios;
 }
 
-size_t console_write(const void *buf, size_t len) {
+#ifndef HOSTED_UDP
+size_t platform_write(const uint8_t *buf, size_t len) {
   ssize_t written = -1;
   while ((written = write(STDOUT_FILENO, buf, len)) < 0)
     ;
@@ -82,7 +177,7 @@ size_t console_write(const void *buf, size_t len) {
   return 0;
 }
 
-size_t console_read(void *buf, size_t len) {
+size_t platform_read(uint8_t *buf, size_t len) {
   int s = len > 64 ? 64 : len;
   ssize_t res = read(STDIN_FILENO, buf, s);
   if (res < 0) {
@@ -94,6 +189,7 @@ size_t console_read(void *buf, size_t len) {
   }
   return (size_t)res;
 }
+#endif
 
 struct config *platform_load_config() {
   return &default_config;
@@ -387,6 +483,7 @@ static void handle_replay_events(timeval_t until_time) {
   }
 }
 
+
 int main(int argc, char *argv[]) {
   struct hosted_args args;
   parse_args(&args, argc, argv);
@@ -408,8 +505,28 @@ int main(int argc, char *argv[]) {
     replay_file = fopen(args.read_replay_file, "r");
   }
 
+#ifdef HOSTED_UDP
+  console_sock = socket(AF_INET, SOCK_DGRAM, 0);
+  if (console_sock < 0) {
+    perror("socket");
+    exit(EXIT_FAILURE);
+  }
+  struct sockaddr_in sock_addr;
+  sock_addr.sin_family = AF_INET;
+  sock_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+  sock_addr.sin_port = htons(5555);
+  if (bind(console_sock, &sock_addr, sizeof(sock_addr)) < 0) {
+    perror("bind");
+    exit(EXIT_FAILURE);
+  }
+
+  send_sock_addr.sin_family = AF_INET;
+  send_sock_addr.sin_addr.s_addr = inet_addr("239.0.0.10");
+  send_sock_addr.sin_port = htons(5556);
+#else
   /* Set stdin nonblock */
   fcntl(STDIN_FILENO, F_SETFL, fcntl(STDIN_FILENO, F_GETFL, 0) | O_NONBLOCK);
+#endif
 
   pthread_t timebase;
   if (pthread_create(&timebase, NULL, platform_timebase_thread, NULL)) {
