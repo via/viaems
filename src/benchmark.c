@@ -9,6 +9,7 @@
 #include "scheduler.h"
 #include "table.h"
 #include "tasks.h"
+#include "crc.h"
 #include "viaems.h"
 
 #define FAR_FUTURE (TICKRATE * 60)
@@ -534,6 +535,25 @@ static uint32_t do_viaems_reschedule_normal() {
   return end - start;
 }
 
+static uint32_t do_crc32_of_200byte_string(void) {
+
+  uint8_t mymsg[200] = {0};
+  for (size_t i = 0; i < sizeof(mymsg); i++) {
+    mymsg[i] = i;
+  }
+
+  uint64_t start = cycle_count();
+  struct crc32 crc;
+  crc32_init(&crc);
+  crc32_add_bytes(&crc, sizeof(mymsg), mymsg);
+  uint32_t result = crc32_finish(&crc);
+  if (result != 3976749440) {
+    puts("Bad result!\n");
+  }
+  uint64_t end = cycle_count();
+  return end - start;
+}
+
 int start_benchmarks() {
   for (volatile int i = 0; i < 10000000; i++)
     ;
@@ -574,6 +594,8 @@ int start_benchmarks() {
 
   report_benchmark("Decoder - missing+camsync",
                    do_missing_tooth_sequence(1000));
+  report_benchmark("crc32(uint8_t[200])",
+                   run_benchmark(do_crc32_of_200byte_string, 1000));
   puts("\r\nDone!\r\n");
 
   return 0;

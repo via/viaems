@@ -11,6 +11,7 @@
 #include "table.h"
 #include "tasks.h"
 #include "util.h"
+#include "crc.h"
 
 /* Disable leak detection in asan. There are several convenience allocations,
  * but they should be single ones for the lifetime of the program */
@@ -73,6 +74,7 @@ void main(int argc, char *argv[]) {
   suite_add_tcase(viaems_suite, setup_calculations_tests());
   suite_add_tcase(viaems_suite, setup_console_tests());
   suite_add_tcase(viaems_suite, setup_tasks_tests());
+  suite_add_tcase(viaems_suite, setup_crc_tests());
   SRunner *sr = srunner_create(viaems_suite);
   srunner_run_all(sr, CK_VERBOSE);
   exit(srunner_ntests_failed(sr));
