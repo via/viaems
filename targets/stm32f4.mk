@@ -37,6 +37,7 @@ OBJS+= stm32f4.o \
 OBJS+= libssp.a libssp_nonshared.a
 
 CFLAGS= -DNDEBUG -ffunction-sections -fdata-sections -O2
+CFLAGS+= -Wdouble-promotion
 CFLAGS+= -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mthumb -mcpu=cortex-m4
 CFLAGS+= -DSTM32F4 -DSTM32F4xx -DSTM32F427xx
 

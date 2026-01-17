@@ -78,6 +78,7 @@ struct sensor_state {
 };
 
 struct knock_sensor_config {
+  bool enabled;
   float frequency;
   float threshold;
 };

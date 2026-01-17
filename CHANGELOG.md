@@ -8,6 +8,9 @@ with flviaems.
    concatonating CBOR messages, each message is suffixed with a CRC32 and
    framed using COBS and NULL byte delimiters.  See INTERFACE.md for more
    details
+ - Protocol buffers are now used instead of CBOR for the encoding of messages
+   to and from the target. viapb is pulled in as a dependency. See proto/console.proto
+   for details on the messages.
 
 ### 1.7.0 (2026 Feb 16)
 Major breaking changes are introduced in this release. Additionally, this is expected

@@ -123,10 +123,10 @@ def enrich_log(log) -> Log:
     return Log(result)
 
 
-def _in_range(feeds, key, value, max_error):
+def _in_range(feeds, fn, value, max_error):
     found = False
     for f in feeds:
-        fval = f.values[key]
+        fval = fn(f)
         if abs(fval - value) <= max_error:
             found = True
     return found
@@ -141,7 +141,7 @@ def validate_outputs(log: Log) -> (bool, str):
     current_cycle_outputs = 0
     cycles = []
 
-    feeds = log.filter_feeds()
+    updates = log.filter_updates()
 
     for o in log.filter_enriched_outputs():
        if o.config is None:
@@ -162,9 +162,12 @@ def validate_outputs(log: Log) -> (bool, str):
        # Get all feeds for the time range of the event, plus 500 uS on
        # each end to account for the possibility of a console message
        # racing with an event's scheduling
-       relevent_feeds = feeds.filter_to_surrounding(
-               o.time - (o.duration_us + 500) * 4,
-               o.time + (500 * 4))
+       relevent_updates = [x for x in 
+               updates.filter_to_surrounding(
+                   o.time - (o.duration_us + 500) * 4,
+                   o.time + (500 * 4)) 
+                if x.update.calculations is not None
+            ]
 
 
        if o.config.typ == OutputConfig.FUEL:
@@ -172,7 +175,7 @@ def validate_outputs(log: Log) -> (bool, str):
            # care about the precision of the end angle. As long as
            # we're within 5 uS of any feed value in the range, its
            # valid
-           if not _in_range(relevent_feeds, "fuel_pulsewidth_us", o.duration_us, 5):
+           if not _in_range(relevent_updates, lambda x: x.update.calculations.fuel_us, o.duration_us, 5):
                return (
                    False,
                    f"Fuel output {o.pin} at time {o.time} is duration "
@@ -184,20 +187,20 @@ def validate_outputs(log: Log) -> (bool, str):
            #   End angle is critical, like fuel we validate that it is
            #   within 2 degrees of any feed value
            #
-           #   However, dwell is harder to validate dur to changes in
+           #   However, dwell is harder to validate due to changes in
            #   rpm and advance. Only validate dwell if neither dwell
            #   nor advance vary significantly through the relevent
            #   feeds
-           if not _in_range(relevent_feeds, "advance", o.advance, 2):
+           if not _in_range(relevent_updates, lambda x: x.update.calculations.advance, o.advance, 2):
                return (
                    False,
                    f"Ignition output {o.pin} at time {o.time} is at advance {o.advance}",
                )
-           advances = [x.values["advance"] for x in relevent_feeds]
-           dwells = [x.values["dwell"] for x in relevent_feeds]
+           advances = [x.update.calculations.advance for x in relevent_updates]
+           dwells = [x.update.calculations.dwell_us for x in relevent_updates]
            # Change less than 2 degrees advance and 100 us dwell?
            if max(advances) - min(advances) < 2 and max(dwells) - min(dwells) < 100:
-               if not _in_range(relevent_feeds, "dwell", o.duration_us, 500):
+               if not _in_range(relevent_updates, lambda x: x.update.calculations.dwell_us, o.duration_us, 500):
                    return (
                        False,
                        f"Ignition output {o.pin} at time {o.time} has duration {o.duration_us}",

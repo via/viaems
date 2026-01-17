@@ -1,7 +1,4 @@
-- Detect overlapping output schedules on same pin
+- Configuration validation checks on load from message
+- Implement a strategy that doesn't race accesses to config between console and engine loop
 - Replace asserts with something that doesn't use printf (remove -NDEBUG)
 - Protect against overly high frequency inputs
-
-+ Basic tasks
-    + Fan control
-    + Idle Control

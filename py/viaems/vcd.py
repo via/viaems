@@ -1,12 +1,15 @@
 from vcd import VCDWriter
 
 from viaems.events import *
+from viaems_proto import console_pb2 as console
 
 def dump_vcd(log, file):
     current_time = 0
 
-    first_feed = log.filter_feeds()[0]
-    sensors = []
+    first_update = log.filter_updates()[0]
+    sensors = {}
+    calculations = {}
+    position = {}
 
     with open(file, "w") as openfile:
         with VCDWriter(openfile, timescale="1 ns") as writer:
@@ -16,9 +19,17 @@ def dump_vcd(log, file):
             gpios = writer.register_var("events", "gpios", "wire", size=8)
             marks = writer.register_var("events", "mark", "event")
 
-            for key, value in first_feed.values.items():
-                var = writer.register_var("sensors", key, "real")
-                sensors.append(var)
+            for s in console.Sensors.DESCRIPTOR.fields:
+                var = writer.register_var("sensors", s.name, "real")
+                sensors[s.name] = var
+
+            for c in console.Calculations.DESCRIPTOR.fields:
+                var = writer.register_var("calculations", c.name, "real")
+                calculations[c.name] = var
+
+            for p in console.Position.DESCRIPTOR.fields:
+                var = writer.register_var("position", p.name, "real")
+                position[p.name] = var
 
             for event in log:
                 match event:
@@ -40,13 +51,16 @@ def dump_vcd(log, file):
                     case CaptureGpioEvent(time, values):
                         writer.change(gpios, time * 250, values)
 
-                    case TargetFeedEvent(time, values):
-                        for idx, name in enumerate(values.keys()):
-                            writer.change(
-                                    sensors[idx], time * 250,
-                                    float(values[name])
-                                    )
-
+                    case TargetEngineUpdateEvent(time, update):
+                        if update.HasField('sensors'):
+                            for desc, val in update.sensors.ListFields():
+                                writer.change(sensors[desc.name], time * 250, val)
+                        if update.HasField('position'):
+                            for desc, val in update.position.ListFields():
+                                writer.change(position[desc.name], time * 250, val)
+                        if update.HasField('calculations'):
+                            for desc, val in update.calculations.ListFields():
+                                writer.change(calculations[desc.name], time * 250, val)
                     case SimMarkEvent(time, name):
                         writer.change(marks, time * 250, True)
 
