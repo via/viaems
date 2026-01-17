@@ -28,6 +28,7 @@ OBJS += calculations.o \
 
 
 include targets/${PLATFORM}.mk
+include proto/rules.mk
 
 DEPS = $(wildcard ${OBJDIR}/*.d)
 -include $(DEPS)

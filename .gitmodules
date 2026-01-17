@@ -11,3 +11,6 @@
 [submodule "contrib/tinyusb"]
 	path = contrib/tinyusb
 	url = https://github.com/hathach/tinyusb
+[submodule "contrib/viapb"]
+	path = contrib/viapb
+	url = https://github.com/via/viapb

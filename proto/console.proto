@@ -1,0 +1,116 @@
+syntax = "proto3";
+
+package viaems.console;
+
+message Header {
+  fixed32 seq = 1;
+  fixed32 timestamp = 2;
+}
+
+enum SensorFault {
+  NoFault = 0;
+  RangeFault = 1;
+  ConnectionFault = 2;
+}
+
+message Sensors {
+  float ManifoldPressure = 2;
+  float IntakeTemperature = 3;
+  float CoolantTemperature = 4;
+  float BatteryVoltage = 5;
+  float ThrottlePosition = 6;
+  float AmbientPressure = 7;
+  float FuelRailTemperature = 8;
+  float ExhaustGasOxygen = 9;
+  float FuelRailPressure = 10;
+  float EthanolContent = 11;
+  
+  SensorFault ManifoldPressure_Fault = 32;
+  SensorFault IntakeTemperature_Fault = 33;
+  SensorFault CoolantTemperature_Fault = 34;
+  SensorFault BatteryVoltage_Fault = 35;
+  SensorFault ThrottlePosition_Fault = 36;
+  SensorFault AmbientPressure_Fault = 37;
+  SensorFault FuelRailTemperature_Fault = 38;
+  SensorFault ExhaustGasOxygen_Fault = 39;
+  SensorFault FuelRailPressure_Fault = 40;
+  SensorFault EthanolContent_Fault = 41;
+}
+
+enum DecoderState {
+  NoSync = 0;
+  RpmOnly = 1;
+  Sync = 2;
+}
+
+enum DecoderLossReason {
+  NoLoss = 0;
+  ToothVariation = 1;
+  TriggerCountTooHigh = 2;
+  TriggerCountTooLow = 3;
+  Expired = 4;
+  Overflowed = 5;
+}
+
+message Position {
+  fixed32 time = 1; 
+  fixed32 valid_before_timestamp = 2; 
+
+  DecoderState state = 3;
+  DecoderLossReason state_cause = 4;
+
+  float last_angle = 5;
+  float instantaneous_rpm = 6;
+  float average_rpm = 7;
+}
+
+message Calculations {
+  float advance = 4;
+  float dwell_us = 5;
+  float fuel_us = 6;
+
+  float airmass_per_cycle = 7;
+  float fuelvol_per_cycle = 8;
+
+  float tipin_percent = 9;
+  float injector_dead_time = 10;
+  float pulse_width_correction = 11;
+  float lambda = 12;
+  float ve = 13;
+  float engine_temp_enrichment = 14;
+
+  bool rpm_limit_cut = 15;
+  bool boost_cut = 16;
+  bool fuel_overduty_cut = 17;
+}
+
+message RawAdcUpdate {
+  Header header = 1;
+  bool valid = 2;
+  repeated float values = 3;
+}
+
+message RawTriggerUpdate {
+  Header header = 1;
+  int32 trigger = 2;
+}
+
+message EngineUpdate {
+  Header header = 1;
+  Position position = 2;
+  Sensors sensors = 3;
+  optional Calculations calculations = 4;
+}
+
+message Ping {
+}
+
+message Message {
+  Header header = 1;
+  oneof msg {
+    Ping ping = 2;
+    EngineUpdate engine_update = 3;
+  }
+}
+
+

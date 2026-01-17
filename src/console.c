@@ -17,6 +17,8 @@
 #include "viaems.h"
 #include "crc.h"
 
+#include "console.pb.h"
+
 typedef enum {
   CONSOLE_GET,
   CONSOLE_SET,
