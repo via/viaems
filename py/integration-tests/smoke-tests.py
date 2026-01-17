@@ -6,7 +6,7 @@ from viaems.scenario import Scenario
 from viaems.testcase import TestCase
 from viaems.util import ticks_for_rpm_degrees, ms_ticks
 from viaems.validation import validate_outputs
-
+from viaems_proto.viaems import console
 
 
 class NMinus1DecoderTests(TestCase):
@@ -56,16 +56,16 @@ class NMinus1DecoderTests(TestCase):
 #       - (after sync) advance is reasonable
 #       - (after sync) pw is reasonable
       
-      first_sync = next(filter(lambda i: i.values['sync'] == 1,
-                               results.filter_between(t1, t2).filter_feeds()))
+      first_sync = next(filter(lambda i: i.update.is_set('position') and i.update.position.synced == True,
+                               results.filter_between(t1, t2).filter_updates()))
 
       self.assertLessEqual(first_sync.time - t1, ms_ticks(500))
 
-      for f in results.filter_between(first_sync.time + ms_ticks(10), t2).filter_feeds():
+      for f in results.filter_between(first_sync.time + ms_ticks(10), t2).filter_updates():
           # start looking 10 ms later, since actual calculations race with decoder
-          self.assertWithin(f.values['advance'], 10, 20)
-          self.assertEqual(f.values['sync'], 1)
-          self.assertWithin(f.values['fuel_pulsewidth_us'], 4400, 4500, f"{f}")
+          self.assertWithin(f.update.calculations.advance, 10, 20)
+          self.assertEqual(f.update.position.synced, True)
+          self.assertWithin(f.update.calculations.fuel_us, 4400, 4500, f"{f}")
 
       first_output = results.filter_between(t1, t2).filter_enriched_outputs()[0]
       self.assertEqual(first_output.cycle, 1)
@@ -74,18 +74,18 @@ class NMinus1DecoderTests(TestCase):
 #    t2-t4:
 #     - should have sync
 #     - fully validate output
-      for f in results.filter_between(t2, t4).filter_feeds():
-          self.assertEqual(f.values['sync'], 1)
+      for f in results.filter_between(t2, t4).filter_updates():
+          self.assertEqual(f.update.position.synced, True)
 
 #    t4-t5:
 #     - we lose sync within X ms, and it stays lost
 #     - last output within Y ms
-      last_sync = next(filter(lambda i: i.values['sync'] == 0,
-                               results.filter_between(t4, t5).filter_feeds()))
+      last_sync = next(filter(lambda i: i.update.position.synced == False,
+                               results.filter_between(t4, t5).filter_updates()))
 
       self.assertWithin(last_sync.time - t4, ms_ticks(1), ms_ticks(100))
-      remaining_syncs = filter(lambda i: i.values['sync'] == 1,
-                               results.filter_between(last_sync.time, t5).filter_feeds())
+      remaining_syncs = filter(lambda i: i.update.position.synced == True,
+                               results.filter_between(last_sync.time, t5).filter_updates())
       self.assertEqual(len(list(remaining_syncs)), 0)
 
       outputs = list(results.filter_between(t4, t5).filter_enriched_outputs())
@@ -100,11 +100,15 @@ class NMinus1DecoderTests(TestCase):
 
 
     def test_high_rpm_ramp(self):
-      settings = [
-          (["decoder", "rpm-limit-start"], 9000),
-          (["decoder", "rpm-limit-stop"], 10000),
-          (["decoder", "offset"], 45),
-          ]
+      config = console.Configuration(
+              rpm_cut=console.ConfigurationRpmCut(
+                rpm_limit_start=9000,
+                rpm_limit_stop=10000,
+                ),
+              decoder=console.ConfigurationDecoder(
+                  offset=45
+                )
+              )
 
       scenario = Scenario("high_rpm_ramp", CrankNMinus1PlusCam_Wheel(36,
                                                                      offset=45))
@@ -130,10 +134,10 @@ class NMinus1DecoderTests(TestCase):
       t4 = scenario.mark()
       scenario.end()
 
-      results = self.conn.execute_scenario(scenario, settings)
+      results = self.conn.execute_scenario(scenario, config)
 
-      for f in results.filter_between(t2 + 4000000, t3).filter_feeds():
-          self.assertEqual(f.values['sync'], 1)
+      for f in results.filter_between(t2 + 4000000, t3).filter_updates():
+          self.assertEqual(f.update.position.synced, True)
 
       is_valid, msg = validate_outputs(results.filter_between(t1, t4))
       self.assertTrue(is_valid, msg)

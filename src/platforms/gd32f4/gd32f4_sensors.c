@@ -201,7 +201,4 @@ void gd32f4xx_configure_adc(void) {
   setup_spi0_rx_dma();
   setup_timer0();
   setup_freq_pw_input();
-
-  knock_configure(&gd32f4_viaems.sensors.KNK1);
-  knock_configure(&gd32f4_viaems.sensors.KNK2);
 }

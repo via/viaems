@@ -1,12 +1,16 @@
 from vcd import VCDWriter
+from betterproto2 import OutputFormat, Casing
 
 from viaems.events import *
+from viaems_proto.viaems import console
 
 def dump_vcd(log, file):
     current_time = 0
 
-    first_feed = log.filter_feeds()[0]
-    sensors = []
+    first_update = log.filter_updates()[0]
+    sensors = {}
+    calculations = {}
+    position = {}
 
     with open(file, "w") as openfile:
         with VCDWriter(openfile, timescale="1 ns") as writer:
@@ -16,9 +20,17 @@ def dump_vcd(log, file):
             gpios = writer.register_var("events", "gpios", "wire", size=8)
             marks = writer.register_var("events", "mark", "event")
 
-            for key, value in first_feed.values.items():
-                var = writer.register_var("sensors", key, "real")
-                sensors.append(var)
+            for s in console.Sensors.__dataclass_fields__.keys():
+                var = writer.register_var("sensors", s, "real")
+                sensors[s] = var
+
+            for s in console.Calculations.__dataclass_fields__.keys():
+                var = writer.register_var("calculations", s, "real")
+                calculations[s] = var
+
+            for s in console.Position.__dataclass_fields__.keys():
+                var = writer.register_var("position", s, "real")
+                position[s] = var
 
             for event in log:
                 match event:
@@ -40,12 +52,26 @@ def dump_vcd(log, file):
                     case CaptureGpioEvent(time, values):
                         writer.change(gpios, time * 250, values)
 
-                    case TargetFeedEvent(time, values):
-                        for idx, name in enumerate(values.keys()):
-                            writer.change(
-                                    sensors[idx], time * 250,
-                                    float(values[name])
-                                    )
+                    case TargetEngineUpdateEvent(time, update):
+                        if update.is_set('sensors'):
+                            for s, w in sensors.items():
+                                writer.change(w, time * 250, float(getattr(update.sensors, s)))
+                        if update.is_set('position'):
+                            for s, w in position.items():
+                                writer.change(w, time * 250, float(getattr(update.position, s)))
+                        if update.is_set('calculations'):
+                            for s, w in calculations.items():
+                                writer.change(w, time * 250, float(getattr(update.calculations, s)))
+                            #                            for s, value in pb_dict(update.sensors).items():
+                            #                                writer.change(sensors[s], time * 250, float(value))
+                            #
+                            #                        if update.is_set('calculations'):
+                            #                            for s, value in pb_dict(update.calculations).items():
+                            #                                writer.change(calculations[s], time * 250, float(value))
+                            #
+                            #                        if update.is_set('position'):
+                            #                            for s, value in pb_dict(update.position).items():
+                            #                                writer.change(position[s], time * 250, float(value))
 
                     case SimMarkEvent(time, name):
                         writer.change(marks, time * 250, True)

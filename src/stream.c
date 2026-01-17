@@ -360,7 +360,7 @@ bool platform_message_writer_new(struct console_tx_message *msg, size_t length) 
   return true;
 }
 
-bool platform_message_writer_write(struct console_tx_message *msg, uint8_t *data, size_t length) {
+bool platform_message_writer_write(struct console_tx_message *msg, const uint8_t *data, size_t length) {
   (void)msg;
   if (!stream_message_write(&msg_writer, blocking_platform_write, NULL, length, data)) {
     return false;
@@ -415,6 +415,10 @@ bool platform_message_reader_read(struct console_rx_message *msg, uint8_t *data,
 
   msg->eof = msg_reader.eof;
   return true;
+}
+
+void platform_message_reader_abort(struct console_rx_message *rxmsg) {
+  (void)rxmsg;
 }
 
 #ifdef UNITTEST

@@ -212,6 +212,10 @@ bool sensor_has_faults(const struct sensor_values *s) {
 }
 
 void knock_configure(struct knock_sensor *knock) {
+  if (!knock->config->enabled) {
+    return;
+  }
+
   uint32_t samplerate = platform_knock_samplerate();
   float bucketsize = samplerate / 64.0f;
   uint32_t bucket = (knock->config->frequency + bucketsize) / bucketsize;
@@ -227,7 +231,6 @@ void knock_configure(struct knock_sensor *knock) {
 };
 
 static void knock_add_sample(struct knock_sensor *knock, float sample) {
-
   knock->n_samples += 1;
   float s = sample + knock->cr * 2 * knock->sprev - knock->sprev2;
   knock->sprev2 = knock->sprev;
@@ -245,6 +248,10 @@ static void knock_add_sample(struct knock_sensor *knock, float sample) {
 
 void sensor_update_knock(struct sensors *s, const struct knock_update *update) {
   struct knock_sensor *knk = (update->pin == 0) ? &s->KNK1 : &s->KNK2;
+
+  if (!knk->config->enabled) {
+    return;
+  }
 
   for (int i = 0; i < update->n_samples; i++) {
     knock_add_sample(knk, update->samples[i]);
@@ -295,6 +302,9 @@ void sensors_init(const struct sensor_configs *configs, struct sensors *s) {
   update_single_const_sensor(&s->FRT);
   update_single_const_sensor(&s->FRP);
   update_single_const_sensor(&s->ETH);
+
+  knock_configure(&s->KNK1);
+  knock_configure(&s->KNK2);
 }
 
 #ifdef UNITTEST
@@ -553,6 +563,7 @@ END_TEST
 
 START_TEST(check_knock_configure) {
   struct knock_sensor_config conf = {
+    .enabled = true,
     .frequency = 7000,
   };
   struct knock_sensor sensor = {

@@ -241,7 +241,4 @@ void stm32f4_configure_sensors() {
   setup_tim1();
 
   setup_freq_pw_input();
-
-  knock_configure(&stm32f4_viaems.sensors.KNK1);
-  knock_configure(&stm32f4_viaems.sensors.KNK2);
 }

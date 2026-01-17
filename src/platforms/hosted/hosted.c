@@ -180,9 +180,9 @@ size_t platform_write(const uint8_t *buf, size_t len) {
 size_t platform_read(uint8_t *buf, size_t len) {
   int s = len > 64 ? 64 : len;
   ssize_t res = read(STDIN_FILENO, buf, s);
-  if (res < 0) {
+  if (res <= 0) {
     struct timespec delay = {
-      .tv_nsec = 50000,
+      .tv_nsec = 5000,
     };
     clock_nanosleep(CLOCK_MONOTONIC, 0, &delay, NULL);
     return 0;

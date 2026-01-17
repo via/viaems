@@ -1,8 +1,6 @@
 #ifndef _CONSOLE_H
 #define _CONSOLE_H
 
-#include <cbor.h>
-
 #include "platform.h"
 
 struct console_feed_update {
@@ -73,10 +71,9 @@ struct config;
 struct engine_update;
 struct calculated_values;
 
-void console_process(struct config *config, timeval_t now);
+void console_process(struct config *config);
 void console_record_event(struct logged_event);
-void record_engine_update(const struct viaems *viaems,
-                          const struct engine_update *eng_update,
+void record_engine_update(const struct engine_update *eng_update,
                           const struct calculated_values *calcs);
 
 

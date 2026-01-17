@@ -1,0 +1,15 @@
+.viaems.console.Configuration.TableRow.values      max_count:24                 
+.viaems.console.Configuration.TableAxis.name       max_size:24                 
+.viaems.console.Configuration.TableAxis.values     max_count:24                 
+.viaems.console.Configuration.Table1d.name         max_size:24                 
+.viaems.console.Configuration.Table2d.name         max_size:24                 
+.viaems.console.Configuration.Table2d.data         max_count:24                 
+.viaems.console.Configuration.outputs              max_count:16
+.viaems.console.Configuration.triggers             max_count:4
+
+.viaems.console.RawAdcUpdate.values                max_count:16
+.viaems.console.Message                            submsg_store:256
+
+.viaems.console.Response.FirmwareInfo.version      max_size:64
+.viaems.console.Response.FirmwareInfo.platform     max_size:32
+.viaems.console.Response.FirmwareInfo.proto        max_size:16384

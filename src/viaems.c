@@ -30,6 +30,10 @@ static void populate_plan_from_events(
   }
 }
 
+/* Primary engine loop processing.
+ * We run all auxilliary tasks, perform engine calculations, and schedule
+ * upcoming events, at rate dictated by the platform. Currently this happens
+ * every 200 uS, 5000 Hz, allowing an input reaction time of 200-400 uS */
 void viaems_reschedule(struct viaems *viaems,
                        const struct engine_update *u,
                        struct platform_plan *plan) {
@@ -52,10 +56,10 @@ void viaems_reschedule(struct viaems *viaems,
                       MAX_EVENTS,
                       plan->schedulable_start);
     }
-    record_engine_update(viaems, u, &calcs);
+    record_engine_update(u, &calcs);
   } else {
     invalidate_scheduled_events(viaems->events, MAX_EVENTS);
-    record_engine_update(viaems, u, NULL);
+    record_engine_update(u, NULL);
   }
 
   populate_plan_from_events(plan, viaems->events);
@@ -72,5 +76,7 @@ void viaems_init(struct viaems *v, struct config *config) {
 }
 
 void viaems_idle(struct viaems *viaems, timeval_t time) {
-  console_process(viaems->config, time);
+  (void)time;
+
+  console_process(viaems->config);
 }
