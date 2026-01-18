@@ -99,6 +99,14 @@ message RawTriggerUpdate {
   int32 trigger = 2;
 }
 
+message Event {
+  oneof type {
+    uint32 Trigger = 1;
+    uint32 OutputPins = 2;
+    uint32 GpioPins = 3;
+  }
+}
+
 message EngineUpdate {
   Header header = 1;
   Position position = 2;
@@ -106,14 +114,11 @@ message EngineUpdate {
   optional Calculations calculations = 4;
 }
 
-message Ping {
-}
-
 message Message {
   Header header = 1;
   oneof msg {
-    Ping ping = 2;
-    EngineUpdate engine_update = 3;
+    EngineUpdate engine_update = 2;
+    Event event = 3;
   }
 }
 

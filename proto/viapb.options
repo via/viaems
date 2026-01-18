@@ -1,1 +1,2 @@
 .viaems.console.RawAdcUpdate.values        max_count:16
+.viaems.console.Message.something          max_size:16384

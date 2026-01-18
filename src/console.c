@@ -21,6 +21,13 @@
 
 #define EVENT_LOG_SIZE 32
 
+static struct viaems_console_Message console_message;
+
+static bool pb_write(const uint8_t *data, unsigned len, void *user) {
+  struct console_tx_message *txmsg = (struct console_tx_message *)user;
+  return platform_message_writer_write(txmsg, data, len);
+}
+
 static struct {
   bool enabled;
   _Atomic uint32_t read;
@@ -73,6 +80,42 @@ void console_record_event(struct logged_event ev) {
 }
 
 static void console_event_message(struct logged_event *ev) {
+  struct viaems_console_Event pb_ev = { 0 };
+  switch(ev->type) {
+    case EVENT_GPIO:
+      pb_ev.which_type = PB_TAG_viaems_console_Event_GpioPins;
+      pb_ev.type.GpioPins = ev->value;
+      break;
+    case EVENT_OUTPUT:
+      pb_ev.which_type = PB_TAG_viaems_console_Event_OutputPins;
+      pb_ev.type.OutputPins = ev->value;
+      break;
+    case EVENT_TRIGGER:
+      pb_ev.which_type = PB_TAG_viaems_console_Event_Trigger;
+      pb_ev.type.Trigger = ev->value;
+      break;
+  };
+  console_message = (struct viaems_console_Message){
+    .has_header = true,
+    .header = {
+      .timestamp = ev->time,
+      .seq = ev->seq,
+    },
+    .which_msg = PB_TAG_viaems_console_Message_event,
+    .msg = {
+      .event = pb_ev,
+    },
+  };
+
+  struct console_tx_message writer;
+  unsigned length = pb_sizeof_viaems_console_Message(&console_message);
+  if (!platform_message_writer_new(&writer, length)) {
+    return;
+  }
+
+  if (!pb_encode_viaems_console_Message(&console_message, pb_write, &writer)) {
+    platform_message_writer_abort(&writer);
+  }
 }
 
 
@@ -148,14 +191,8 @@ void record_engine_update(const struct viaems *viaems,
   spsc_push(&engine_update_queue);
 }
 
-static bool pb_write(const uint8_t *data, unsigned len, void *user) {
-  struct console_tx_message *txmsg = (struct console_tx_message *)user;
-  return platform_message_writer_write(txmsg, data, len);
-}
-
-static struct viaems_console_Message tx_msg;
 static void console_feed_line(const struct viaems_console_EngineUpdate *update) {
-  tx_msg = (struct viaems_console_Message){
+  console_message = (struct viaems_console_Message){
     .has_header = true,
     .header = {
       .timestamp = current_time(),
@@ -168,12 +205,12 @@ static void console_feed_line(const struct viaems_console_EngineUpdate *update) 
   };
 
   struct console_tx_message writer;
-  unsigned length = pb_sizeof_viaems_console_Message(&tx_msg);
+  unsigned length = pb_sizeof_viaems_console_Message(&console_message);
   if (!platform_message_writer_new(&writer, length)) {
     return;
   }
 
-  if (!pb_encode_viaems_console_Message(&tx_msg, pb_write, &writer)) {
+  if (!pb_encode_viaems_console_Message(&console_message, pb_write, &writer)) {
     platform_message_writer_abort(&writer);
   }
 
@@ -186,6 +223,7 @@ void console_process(struct config *config, timeval_t now) {
   if (platform_message_reader_new(&rxmsg)) {
       console_process_request_raw(&rxmsg, config);
   }
+#endif
 
   /* Process any outstanding event messages */
   struct logged_event ev = get_logged_event();
@@ -195,7 +233,6 @@ void console_process(struct config *config, timeval_t now) {
       ev = get_logged_event();
     } while (ev.type != EVENT_NONE);
   }
-#endif
 
   int idx = spsc_next(&engine_update_queue);
   if (idx >= 0) {

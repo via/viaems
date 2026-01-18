@@ -1,6 +1,5 @@
-#!/usr/bin/python3
+#!/usr/bin/env python
 import sys
-import cbor2 as cbor
 import json
 from cobs import cobs
 import zlib
