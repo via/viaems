@@ -93,6 +93,8 @@ static void console_event_message(struct logged_event *ev) {
     },
   };
   switch(ev->type) {
+    case EVENT_NONE:
+      return;
     case EVENT_GPIO:
       pb_ev.which_type = PB_TAG_viaems_console_Event_GpioPins;
       pb_ev.type.GpioPins = ev->value;
@@ -127,6 +129,15 @@ struct spsc_queue engine_update_queue = {
 struct viaems_console_EngineUpdate engine_update_msgs[4];
 static uint32_t engine_update_seq = 0;
 
+static viaems_console_SensorFault convert_sensor_fault(const sensor_fault fault) {
+  switch (fault) {
+    case FAULT_NONE: return viaems_console_SensorFault_NoFault;
+    case FAULT_RANGE: return viaems_console_SensorFault_RangeFault;
+    case FAULT_CONN: return viaems_console_SensorFault_ConnectionFault;
+  }
+  return viaems_console_SensorFault_NoFault;
+}
+
 void record_engine_update(const struct viaems *viaems,
                           const struct engine_update *eng_update,
                           const struct calculated_values *calcs) {
@@ -150,8 +161,8 @@ void record_engine_update(const struct viaems *viaems,
   update->position.time = eng_update->position.time;
   update->position.average_rpm = eng_update->position.rpm;
   update->position.instantaneous_rpm = eng_update->position.tooth_rpm;
-  update->position.state = engine_position_is_synced(&eng_update->position, eng_update->current_time) ? 
-      viaems_console_DecoderState_Sync : viaems_console_DecoderState_NoSync;
+  update->position.has_position = eng_update->position.has_position;
+  update->position.synced = engine_position_is_synced(&eng_update->position, eng_update->current_time);
 
   update->position.last_angle = eng_update->position.last_trigger_angle;
 
@@ -176,20 +187,30 @@ void record_engine_update(const struct viaems *viaems,
 
   update->has_sensors = true;
   update->sensors.ManifoldPressure = eng_update->sensors.MAP.value;
-  update->sensors.IntakeTemperature = eng_update->sensors.IAT.value;
+  update->sensors.IntakeAirTemperature = eng_update->sensors.IAT.value;
   update->sensors.CoolantTemperature = eng_update->sensors.CLT.value;
   update->sensors.BatteryVoltage = eng_update->sensors.BRV.value;
   update->sensors.ThrottlePosition = eng_update->sensors.TPS.value;
-//  update->sensors.tpsrate = eng_update->sensors.TPS.derivative;
-  update->sensors.AmbientPressure = eng_update->sensors.AAP.value;
+  update->sensors.AmbientAirPressure = eng_update->sensors.AAP.value;
   update->sensors.FuelRailPressure = eng_update->sensors.FRT.value;
   update->sensors.ExhaustGasOxygen = eng_update->sensors.EGO.value;
   update->sensors.FuelRailPressure = eng_update->sensors.FRP.value;
   update->sensors.Knock1 = eng_update->sensors.KNK1;
   update->sensors.Knock2 = eng_update->sensors.KNK2;
   update->sensors.EthanolContent = eng_update->sensors.ETH.value;
-//  update->sensors.sensor_faults = 0;
 
+  update->sensors.ManifoldPressure_Fault = convert_sensor_fault(eng_update->sensors.MAP.fault);
+  update->sensors.IntakeAirTemperature_Fault = convert_sensor_fault(eng_update->sensors.IAT.fault);
+  update->sensors.CoolantTemperature_Fault = convert_sensor_fault(eng_update->sensors.CLT.fault);
+  update->sensors.BatteryVoltage_Fault = convert_sensor_fault(eng_update->sensors.BRV.fault);
+  update->sensors.ThrottlePosition_Fault = convert_sensor_fault(eng_update->sensors.TPS.fault);
+  update->sensors.AmbientAirPressure_Fault = convert_sensor_fault(eng_update->sensors.AAP.fault);
+  update->sensors.FuelRailTemperature_Fault = convert_sensor_fault(eng_update->sensors.FRT.fault);
+  update->sensors.ExhaustGasOxygen_Fault = convert_sensor_fault(eng_update->sensors.EGO.fault);
+  update->sensors.FuelRailPressure_Fault = convert_sensor_fault(eng_update->sensors.FRP.fault);
+  update->sensors.EthanolContent_Fault = convert_sensor_fault(eng_update->sensors.ETH.fault);
+
+  update->sensors.ThrottlePosition_Rate = eng_update->sensors.TPS.derivative;
   spsc_push(&engine_update_queue);
 }
 
@@ -209,50 +230,6 @@ static void console_feed_line(const struct viaems_console_EngineUpdate *update) 
 
 }
 
-static void store_output_config(const struct output_event_config *ev, struct viaems_console_Configuration_Output *ev_msg) {
-  switch (ev->type) {
-    case DISABLED_EVENT: 
-			ev_msg->type = viaems_console_Configuration_Output_OutputType_OutputDisabled;
-      break;
-    case FUEL_EVENT: 
-			ev_msg->type = viaems_console_Configuration_Output_OutputType_Fuel;
-      break;
-    case IGNITION_EVENT: 
-			ev_msg->type = viaems_console_Configuration_Output_OutputType_Ignition;
-      break;
-  }
-  ev_msg->pin = ev->pin;
-  ev_msg->inverted = ev->inverted;
-  ev_msg->angle = ev-> angle;
-}
-
-static void store_trigger_config(const struct trigger_input *t, struct viaems_console_Configuration_TriggerInput *t_msg) {
-  switch (t->edge) {
-    case RISING_EDGE:
-      t_msg->edge = viaems_console_Configuration_InputEdge_Rising;
-      break;
-    case FALLING_EDGE:
-      t_msg->edge = viaems_console_Configuration_InputEdge_Falling;
-      break;
-    case BOTH_EDGES:
-      t_msg->edge = viaems_console_Configuration_InputEdge_Both;
-      break;
-  }
-}
-
-void store_config(const struct config *config, struct viaems_console_Configuration *msg) {
-
-  msg->outputs_count = MAX_EVENTS;
-  for (int i = 0; i < MAX_EVENTS; i++) {
-    store_output_config(&config->outputs[i], &msg->outputs[i]);
-	}
-
-
-  msg->triggers_count = 4;
-  for (int i = 0; i < 4; i++) {
-    store_trigger_config(&config->trigger_inputs[i], &msg->triggers[i]);
-	}
-}
 
 static void console_process_request(struct console_rx_message *rxmsg, struct config *config) {
   if (!pb_decode_viaems_console_Message(&console_message, pb_read, rxmsg)) {
@@ -263,10 +240,19 @@ static void console_process_request(struct console_rx_message *rxmsg, struct con
     return;
   }
 
-  console_message.which_msg = PB_TAG_viaems_console_Message_response;
-
-  console_message.msg.response.which_response = PB_TAG_viaems_console_Response_pong;
-//  store_config(config, &console_message.msg.response.config);
+  switch (console_message.msg.request.which_request) {
+    case PB_TAG_viaems_console_Request_ping:
+      console_message.which_msg = PB_TAG_viaems_console_Message_response;
+      console_message.msg.response.which_response = PB_TAG_viaems_console_Response_pong;
+      break;
+    case PB_TAG_viaems_console_Request_getconfig:
+      console_message.which_msg = PB_TAG_viaems_console_Message_response;
+      console_message.msg.response.which_response = PB_TAG_viaems_console_Response_getconfig;
+      config_store_to_console_pbtype(config, &console_message.msg.response.response.getconfig.config);
+      break;
+    default:
+      break;
+  }
 
   struct console_tx_message writer;
   unsigned length = pb_sizeof_viaems_console_Message(&console_message);

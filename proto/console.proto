@@ -15,11 +15,11 @@ enum SensorFault {
 
 message Sensors {
   float ManifoldPressure = 2;
-  float IntakeTemperature = 3;
+  float IntakeAirTemperature = 3;
   float CoolantTemperature = 4;
   float BatteryVoltage = 5;
   float ThrottlePosition = 6;
-  float AmbientPressure = 7;
+  float AmbientAirPressure = 7;
   float FuelRailTemperature = 8;
   float ExhaustGasOxygen = 9;
   float FuelRailPressure = 10;
@@ -29,21 +29,26 @@ message Sensors {
   float Knock2 = 13;
   
   SensorFault ManifoldPressure_Fault = 32;
-  SensorFault IntakeTemperature_Fault = 33;
+  SensorFault IntakeAirTemperature_Fault = 33;
   SensorFault CoolantTemperature_Fault = 34;
   SensorFault BatteryVoltage_Fault = 35;
   SensorFault ThrottlePosition_Fault = 36;
-  SensorFault AmbientPressure_Fault = 37;
+  SensorFault AmbientAirPressure_Fault = 37;
   SensorFault FuelRailTemperature_Fault = 38;
   SensorFault ExhaustGasOxygen_Fault = 39;
   SensorFault FuelRailPressure_Fault = 40;
   SensorFault EthanolContent_Fault = 41;
-}
 
-enum DecoderState {
-  NoSync = 0;
-  RpmOnly = 1;
-  Sync = 2;
+//  float ManifoldPressure_Rate = 64; 
+//  float IntakeAirTemperature_Rate = 65; 
+//  float CoolantTemperature_Rate = 66; 
+//  float BatteryVoltage_Rate = 67; 
+  float ThrottlePosition_Rate = 68; 
+//  float AmbientPressure_Rate = 69; 
+//  float FuelRailTemperature_Rate = 70; 
+//  float ExhaustGasOxygen_Rate = 71; 
+//  float FuelRailPressure_Rate = 72; 
+//  float EthanolContent_Rate = 73; 
 }
 
 enum DecoderLossReason {
@@ -59,12 +64,13 @@ message Position {
   fixed32 time = 1; 
   fixed32 valid_before_timestamp = 2; 
 
-  DecoderState state = 3;
-  DecoderLossReason state_cause = 4;
+  bool has_position = 3;
+  bool synced = 4;
+  DecoderLossReason loss_cause = 5;
 
-  float last_angle = 5;
-  float instantaneous_rpm = 6;
-  float average_rpm = 7;
+  float last_angle = 6;
+  float instantaneous_rpm = 7;
+  float average_rpm = 8;
 }
 
 message Calculations {
@@ -86,17 +92,6 @@ message Calculations {
   bool boost_cut = 16;
   bool fuel_overduty_cut = 17;
   bool dwell_overduty_cut = 18;
-}
-
-message RawAdcUpdate {
-  Header header = 1;
-  bool valid = 2;
-  repeated float values = 3;
-}
-
-message RawTriggerUpdate {
-  Header header = 1;
-  int32 trigger = 2;
 }
 
 message Event {
@@ -219,7 +214,7 @@ message Configuration {
   }
 
   message Sensors {
-    Sensor AbsoluteAirPressure = 1;
+    Sensor AmbientAirPressure = 1;
     Sensor BatteryReferenceVoltage = 2;
     Sensor CoolantTemperature = 3;
     Sensor ExhaustGasOxygen = 4;
@@ -227,6 +222,8 @@ message Configuration {
     Sensor IntakeAirTemperature = 6;
     Sensor ManifoldPressure = 7;
     Sensor ThrottlePosition = 8;
+    Sensor FuelRailPressure = 9;
+    Sensor EthanolContent = 10;
     KnockSensor knock1 = 14;
     KnockSensor knock2 = 15;
   }
@@ -257,7 +254,8 @@ message Configuration {
   enum InputType {
     InputDisabled = 0;
     Trigger = 1;
-    Freq = 2;
+    Sync = 2;
+    Freq = 3;
   }
 
   message TriggerInput {
@@ -291,7 +289,6 @@ message Configuration {
 
     Table2d tipin_enrich_amount = 14;
     Table1d tipin_enrich_duration = 15;
-
   }
 
   message Ignition {
@@ -360,7 +357,7 @@ message Request {
 
   message FirmwareInfo { }
 
-  oneof type {
+  oneof request {
     Ping ping = 1;
     FirmwareInfo fwinfo = 2;
 

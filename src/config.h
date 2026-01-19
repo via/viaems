@@ -46,4 +46,15 @@ struct config {
 
 extern struct config default_config;
 
+typedef enum {
+  CONFIG_SAVED = 0,
+  CONFIG_FAILED_ENGINE_RUNNING,
+  CONFIG_FAILED_NEEDS_RESET,
+} config_load_result;
+
+struct viaems_console_Configuration;
+
+void config_store_to_console_pbtype(const struct config *config, struct viaems_console_Configuration *msg);
+
+config_load_result config_load_from_console_pbtype(struct config *config, const struct viaems_console_Configuration *msg);
 #endif

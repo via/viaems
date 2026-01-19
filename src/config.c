@@ -1,6 +1,8 @@
 #include "config.h"
 #include "sensors.h"
 
+#include "console.pb.h"
+
 struct config default_config __attribute__((section(".configdata"))) = {
   .outputs = {
     {.type=IGNITION_EVENT, .angle=0, .pin=0},
@@ -279,3 +281,49 @@ struct config default_config __attribute__((section(".configdata"))) = {
     .lean_boost_ego = .91,
   },
 };
+
+
+static void store_output_config(const struct output_event_config *ev, struct viaems_console_Configuration_Output *ev_msg) {
+  switch (ev->type) {
+    case DISABLED_EVENT: 
+			ev_msg->type = viaems_console_Configuration_Output_OutputType_OutputDisabled;
+      break;
+    case FUEL_EVENT: 
+			ev_msg->type = viaems_console_Configuration_Output_OutputType_Fuel;
+      break;
+    case IGNITION_EVENT: 
+			ev_msg->type = viaems_console_Configuration_Output_OutputType_Ignition;
+      break;
+  }
+  ev_msg->pin = ev->pin;
+  ev_msg->inverted = ev->inverted;
+  ev_msg->angle = ev-> angle;
+}
+
+static void store_trigger_config(const struct trigger_input *t, struct viaems_console_Configuration_TriggerInput *t_msg) {
+  switch (t->edge) {
+    case RISING_EDGE:
+      t_msg->edge = viaems_console_Configuration_InputEdge_Rising;
+      break;
+    case FALLING_EDGE:
+      t_msg->edge = viaems_console_Configuration_InputEdge_Falling;
+      break;
+    case BOTH_EDGES:
+      t_msg->edge = viaems_console_Configuration_InputEdge_Both;
+      break;
+  }
+}
+
+void config_store_to_console_pbtype(const struct config *config, struct viaems_console_Configuration *msg) {
+
+  msg->outputs_count = MAX_EVENTS;
+  for (int i = 0; i < MAX_EVENTS; i++) {
+    store_output_config(&config->outputs[i], &msg->outputs[i]);
+	}
+
+
+  msg->triggers_count = 4;
+  for (int i = 0; i < 4; i++) {
+    store_trigger_config(&config->trigger_inputs[i], &msg->triggers[i]);
+	}
+}
