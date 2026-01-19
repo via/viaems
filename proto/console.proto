@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package viaems.console;
 
-
 message Header {
   fixed32 seq = 1;
   fixed32 timestamp = 2;
@@ -101,10 +100,11 @@ message RawTriggerUpdate {
 }
 
 message Event {
+  Header header = 1;
   oneof type {
-    uint32 Trigger = 1;
-    uint32 OutputPins = 2;
-    uint32 GpioPins = 3;
+    uint32 Trigger = 4;
+    uint32 OutputPins = 5;
+    uint32 GpioPins = 6;
   }
 }
 
@@ -122,18 +122,18 @@ message Configuration {
   }
 
   message TableAxis {
-    string name = 1;
+    optional string name = 1;
     repeated float values = 2;
   }
 
   message Table1d {
-    string name = 1;
+    optional string name = 1;
     TableAxis cols = 2;
     TableRow data = 3;
   }
 
   message Table2d {
-    string name = 1;
+    optional string name = 1;
     TableAxis cols = 2;
     TableAxis rows = 3;
     repeated TableRow data = 4;
@@ -146,10 +146,10 @@ message Configuration {
       Ignition = 2;
     }
 
-    uint32 pin = 1;
-    OutputType type = 2;
-    bool inverted = 3;
-    float angle = 4;
+    optional uint32 pin = 1;
+    optional OutputType type = 2;
+    optional bool inverted = 3;
+    optional float angle = 4;
   }
 
   enum SensorSource {
@@ -167,11 +167,11 @@ message Configuration {
   }
 
   message Sensor {
-    SensorSource source = 1;
-    SensorMethod method = 2;
+    optional SensorSource source = 1;
+    optional SensorMethod method = 2;
 
-    uint32 pin = 3;
-    float lag = 4;
+    optional uint32 pin = 3;
+    optional float lag = 4;
 
     message LinearConfig {
       float output_min = 1;
@@ -213,9 +213,9 @@ message Configuration {
   }
 
   message KnockSensor {
-    bool enabled = 1;
-    float frequency = 2;
-    float threshold = 3;
+    optional bool enabled = 1;
+    optional float frequency = 2;
+    optional float threshold = 3;
   }
 
   message Sensors {
@@ -240,12 +240,12 @@ message Configuration {
   }
 
   message Decoder {
-    TriggerType trigger_type = 1;
-    float degrees_per_trigger = 2;
-    float max_tooth_variance = 3;
-    float min_rpm = 4;
-    uint32 num_triggers = 5;
-    float offset = 6;
+    optional TriggerType trigger_type = 1;
+    optional float degrees_per_trigger = 2;
+    optional float max_tooth_variance = 3;
+    optional float min_rpm = 4;
+    optional uint32 num_triggers = 5;
+    optional float offset = 6;
   }
 
   enum InputEdge {
@@ -260,27 +260,27 @@ message Configuration {
     Freq = 2;
   }
 
-  message FreqInput {
-    InputEdge edge = 1;
-    InputType type = 2;
+  message TriggerInput {
+    optional InputEdge edge = 1;
+    optional InputType type = 2;
   }
 
   message CrankEnrichment {
-    float cranking_rpm = 1;
-    float cranking_temp = 2;
-    float enrich_amt = 3;
+    optional float cranking_rpm = 1;
+    optional float cranking_temp = 2;
+    optional float enrich_amt = 3;
   }
 
   message Fueling {
-    uint32 fuel_pump_pin = 1;
-    float cylinder_cc = 2;
-    float fuel_density = 3;
-    float fuel_stoich_ratio = 4;
-    uint32 injections_per_cycle = 5;
-    float injector_cc = 6;
+    optional uint32 fuel_pump_pin = 1;
+    optional float cylinder_cc = 2;
+    optional float fuel_density = 3;
+    optional float fuel_stoich_ratio = 4;
+    optional uint32 injections_per_cycle = 5;
+    optional float injector_cc = 6;
+    optional float max_duty_cycle = 40;
 
     CrankEnrichment crank_enrich = 7;
-
     Table1d PulseWidthCompensation = 8;
     Table1d InjectorDeadTime = 9;
     Table2d EngineTempEnrichment = 10;
@@ -291,6 +291,7 @@ message Configuration {
 
     Table2d tipin_enrich_amount = 14;
     Table1d tipin_enrich_duration = 15;
+
   }
 
   message Ignition {
@@ -298,75 +299,111 @@ message Configuration {
       FixedDwellTime = 0;
       BatteryVoltage = 1;
     }
-    DwellType type = 1;
-    float fixed_dwell = 2;
+    optional DwellType type = 1;
+    optional float fixed_dwell = 2;
+
     Table1d dwell = 3;
     Table2d timing = 4;
+
   }
 
   message BoostControl {
-    uint32 pin = 1;
-    float control_threshold_map = 2;
-    float control_threshold_tps = 3;
-    float enable_threshold_map = 4;
-    float overboost_map = 5;
+    optional uint32 pin = 1;
+    optional float control_threshold_map = 2;
+    optional float control_threshold_tps = 3;
+    optional float enable_threshold_map = 4;
+    optional float overboost_map = 5;
     Table1d pwm_vs_rpm = 6;
   }
 
   message CheckEngineLight {
-    uint32 pin = 1;
-    float lean_boost_ego = 2;
-    float lean_boost_map_enable = 3;
+    optional uint32 pin = 1;
+    optional float lean_boost_ego = 2;
+    optional float lean_boost_map_enable = 3;
   }
 
   message RpmCut {
-    float rpm_limit_start = 1;
-    float rpm_limit_stop = 2;
+    optional float rpm_limit_start = 1;
+    optional float rpm_limit_stop = 2;
   }
 
   message Debug {
-    bool test_trigger_enabled = 1;
-    float test_trigger_rpm = 2;
+    optional bool test_trigger_enabled = 1;
+    optional float test_trigger_rpm = 2;
   }
 
   repeated Output outputs = 1;
-  repeated FreqInput freq = 2;
-  Sensors sensors = 3;
-  Ignition ignition = 4;
-  Fueling fueling = 5;
-  Decoder decoder = 6;
-  RpmCut rpm_cut = 7;
-  CheckEngineLight cel = 8;
-  BoostControl boost_control = 9;
-  Debug debug = 10;
+  repeated TriggerInput triggers = 2;
+  optional Sensors sensors = 3;
+  optional Ignition ignition = 4;
+  optional Fueling fueling = 5;
+  optional Decoder decoder = 6;
+  optional RpmCut rpm_cut = 7;
+  optional CheckEngineLight cel = 8;
+  optional BoostControl boost_control = 9;
+  optional Debug debug = 10;
 }
 
 
 message Request {
-  message Ping {
-  }
+  message Ping { }
 
   message SetConfig {
     Configuration config = 1;
   }
 
-  message GetConfig {
-  }
+  message GetConfig { }
+
+  message FlashConfig { }
+  
+  message ResetToBootloader { }
+
+  message FirmwareInfo { }
 
   oneof type {
     Ping ping = 1;
-    SetConfig set = 2;
-    GetConfig get = 3;
+    FirmwareInfo fwinfo = 2;
+
+    SetConfig setconfig = 3;
+    GetConfig getconfig = 4;
+    FlashConfig flashconfig = 5;
+    ResetToBootloader resettobootloader = 6;
   }
 }
 
 message Response {
-  bool success = 1;
-  Configuration config = 2;
+  message Pong { }
+
+  message SetConfig {
+    Configuration config = 1;
+    bool success = 2;
+    bool requires_restart = 3;
+  }
+  message GetConfig {
+    Configuration config = 1;
+    bool needs_flash = 2;
+  }
+  message FlashConfig {
+    bool success = 1;
+  }
+
+  message FirmwareInfo { 
+    string version = 1;
+    string platform = 2;
+    string proto = 3;
+  }
+
+  oneof response {
+    Pong pong = 1;
+    FirmwareInfo fwinfo = 2;
+
+    SetConfig setconfig = 3;
+    GetConfig getconfig = 4;
+    FlashConfig flashconfig = 5;
+  }
 }
 
 message Message {
-  Header header = 1;
   oneof msg {
     EngineUpdate engine_update = 2;
     Event event = 3;

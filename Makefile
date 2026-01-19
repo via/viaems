@@ -2,7 +2,7 @@ PLATFORM?=gd32f4
 OBJDIR=obj/${PLATFORM}
 BENCH?=0
 
-all: $(OBJDIR)/viaems
+all: $(OBJDIR)/viaems proto
 
 TINYCBOR_OBJS= cborerrorstrings.o \
                cborencoder.o \
@@ -69,4 +69,4 @@ clean:
 	-rm ${OBJDIR}/*
 
 
-.PHONY: clean lint format integration benchmark
+.PHONY: clean lint format integration benchmark proto

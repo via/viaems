@@ -85,7 +85,13 @@ void console_record_event(struct logged_event ev) {
 }
 
 static void console_event_message(struct logged_event *ev) {
-  struct viaems_console_Event pb_ev = { 0 };
+  struct viaems_console_Event pb_ev = { 
+    .has_header = true,
+    .header = {
+      .timestamp = ev->time,
+      .seq = ev->seq,
+    },
+  };
   switch(ev->type) {
     case EVENT_GPIO:
       pb_ev.which_type = PB_TAG_viaems_console_Event_GpioPins;
@@ -100,17 +106,8 @@ static void console_event_message(struct logged_event *ev) {
       pb_ev.type.Trigger = ev->value;
       break;
   };
-  console_message = (struct viaems_console_Message){
-    .has_header = true,
-    .header = {
-      .timestamp = ev->time,
-      .seq = ev->seq,
-    },
-    .which_msg = PB_TAG_viaems_console_Message_event,
-    .msg = {
-      .event = pb_ev,
-    },
-  };
+  console_message.which_msg = PB_TAG_viaems_console_Message_event,
+  console_message.msg.event = pb_ev;
 
   struct console_tx_message writer;
   unsigned length = pb_sizeof_viaems_console_Message(&console_message);
@@ -197,17 +194,8 @@ void record_engine_update(const struct viaems *viaems,
 }
 
 static void console_feed_line(const struct viaems_console_EngineUpdate *update) {
-  console_message = (struct viaems_console_Message){
-    .has_header = true,
-    .header = {
-      .timestamp = current_time(),
-      .seq = 0,
-    },
-    .which_msg = PB_TAG_viaems_console_Message_engine_update,
-    .msg = {
-      .engine_update = *update,
-    },
-  };
+  console_message.which_msg = PB_TAG_viaems_console_Message_engine_update;
+  console_message.msg.engine_update = *update;
 
   struct console_tx_message writer;
   unsigned length = pb_sizeof_viaems_console_Message(&console_message);
@@ -238,7 +226,7 @@ static void store_output_config(const struct output_event_config *ev, struct via
   ev_msg->angle = ev-> angle;
 }
 
-static void store_trigger_config(const struct trigger_input *t, struct viaems_console_Configuration_FreqInput *t_msg) {
+static void store_trigger_config(const struct trigger_input *t, struct viaems_console_Configuration_TriggerInput *t_msg) {
   switch (t->edge) {
     case RISING_EDGE:
       t_msg->edge = viaems_console_Configuration_InputEdge_Rising;
@@ -260,9 +248,9 @@ void store_config(const struct config *config, struct viaems_console_Configurati
 	}
 
 
-  msg->freq_count = 4;
+  msg->triggers_count = 4;
   for (int i = 0; i < 4; i++) {
-    store_trigger_config(&config->trigger_inputs[i], &msg->freq[i]);
+    store_trigger_config(&config->trigger_inputs[i], &msg->triggers[i]);
 	}
 }
 
@@ -275,11 +263,10 @@ static void console_process_request(struct console_rx_message *rxmsg, struct con
     return;
   }
 
-  console_message.has_header = false;
   console_message.which_msg = PB_TAG_viaems_console_Message_response;
-  console_message.msg.response.success = true;
-  console_message.msg.response.has_config = true;
-  store_config(config, &console_message.msg.response.config);
+
+  console_message.msg.response.which_response = PB_TAG_viaems_console_Response_pong;
+//  store_config(config, &console_message.msg.response.config);
 
   struct console_tx_message writer;
   unsigned length = pb_sizeof_viaems_console_Message(&console_message);
