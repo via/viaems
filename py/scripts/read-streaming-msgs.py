@@ -7,7 +7,7 @@ import struct
 
 from google.protobuf import json_format 
 
-import viaems.console_pb2
+import viaems.console_pb2 as console_pb2
 
 def _deframe(frame):
     decoded = cobs.decode(frame)
@@ -20,7 +20,7 @@ def _deframe(frame):
         raise ValueError(f"Length mismatch: {len(pdu)} pdu but header is {length}")
     if zlib.crc32(pdu) != crc:
         raise ValueError("CRC failure")
-    message = viaems.console_pb2.Message()
+    message = console_pb2.Message()
     message.ParseFromString(pdu)
     return message
 

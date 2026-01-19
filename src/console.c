@@ -28,6 +28,11 @@ static bool pb_write(const uint8_t *data, unsigned len, void *user) {
   return platform_message_writer_write(txmsg, data, len);
 }
 
+static bool pb_read(uint8_t *data, unsigned len, void *user) {
+  struct console_rx_message *rxmsg = (struct console_rx_message *)user;
+  return platform_message_reader_read(rxmsg, data, len);
+}
+
 static struct {
   bool enabled;
   _Atomic uint32_t read;
@@ -216,14 +221,84 @@ static void console_feed_line(const struct viaems_console_EngineUpdate *update) 
 
 }
 
+static void store_output_config(const struct output_event_config *ev, struct viaems_console_Configuration_Output *ev_msg) {
+  switch (ev->type) {
+    case DISABLED_EVENT: 
+			ev_msg->type = viaems_console_Configuration_Output_OutputType_OutputDisabled;
+      break;
+    case FUEL_EVENT: 
+			ev_msg->type = viaems_console_Configuration_Output_OutputType_Fuel;
+      break;
+    case IGNITION_EVENT: 
+			ev_msg->type = viaems_console_Configuration_Output_OutputType_Ignition;
+      break;
+  }
+  ev_msg->pin = ev->pin;
+  ev_msg->inverted = ev->inverted;
+  ev_msg->angle = ev-> angle;
+}
+
+static void store_trigger_config(const struct trigger_input *t, struct viaems_console_Configuration_FreqInput *t_msg) {
+  switch (t->edge) {
+    case RISING_EDGE:
+      t_msg->edge = viaems_console_Configuration_InputEdge_Rising;
+      break;
+    case FALLING_EDGE:
+      t_msg->edge = viaems_console_Configuration_InputEdge_Falling;
+      break;
+    case BOTH_EDGES:
+      t_msg->edge = viaems_console_Configuration_InputEdge_Both;
+      break;
+  }
+}
+
+void store_config(const struct config *config, struct viaems_console_Configuration *msg) {
+
+  msg->outputs_count = MAX_EVENTS;
+  for (int i = 0; i < MAX_EVENTS; i++) {
+    store_output_config(&config->outputs[i], &msg->outputs[i]);
+	}
+
+
+  msg->freq_count = 4;
+  for (int i = 0; i < 4; i++) {
+    store_trigger_config(&config->trigger_inputs[i], &msg->freq[i]);
+	}
+}
+
+static void console_process_request(struct console_rx_message *rxmsg, struct config *config) {
+  if (!pb_decode_viaems_console_Message(&console_message, pb_read, rxmsg)) {
+//    platform_message_reader_abort(rxmsg);
+    return;
+  }
+  if (console_message.which_msg != PB_TAG_viaems_console_Message_request) {
+    return;
+  }
+
+  console_message.has_header = false;
+  console_message.which_msg = PB_TAG_viaems_console_Message_response;
+  console_message.msg.response.success = true;
+  console_message.msg.response.has_config = true;
+  store_config(config, &console_message.msg.response.config);
+
+  struct console_tx_message writer;
+  unsigned length = pb_sizeof_viaems_console_Message(&console_message);
+  if (!platform_message_writer_new(&writer, length)) {
+    return;
+  }
+
+  if (!pb_encode_viaems_console_Message(&console_message, pb_write, &writer)) {
+    platform_message_writer_abort(&writer);
+  }
+
+}
+
 void console_process(struct config *config, timeval_t now) {
 
-#if 0
   struct console_rx_message rxmsg;
   if (platform_message_reader_new(&rxmsg)) {
-      console_process_request_raw(&rxmsg, config);
+      console_process_request(&rxmsg, config);
   }
-#endif
 
   /* Process any outstanding event messages */
   struct logged_event ev = get_logged_event();

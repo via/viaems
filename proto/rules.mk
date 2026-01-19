@@ -10,7 +10,7 @@ src/proto/console.pb.c src/proto/console.pb.h: proto/console.fds
 	       -H src/proto/console.pb.h
 
 proto/console.fds: proto/console.proto
-	python -m grpc_tools.protoc -I proto -o proto/console.fds proto/console.proto
+	python -m grpc_tools.protoc --include_imports -I proto -o proto/console.fds proto/console.proto
 
 py/viaems/console_pb2.py: proto/console.proto
 	python -m grpc_tools.protoc -I proto --python_out py/viaems proto/console.proto
