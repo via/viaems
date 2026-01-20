@@ -4,10 +4,7 @@ CFLAGS+=-Isrc/proto -Icontrib/viapb
 
 proto: src/proto/console.pb.c src/proto/console.pb.h py/viaems/console_pb2.py
 
-src/proto:
-	mkdir src/proto
-
-src/proto/console.pb.c src/proto/console.pb.h: proto/console.fds proto/viapb.options src/proto
+src/proto/console.pb.c src/proto/console.pb.h: proto/console.fds proto/viapb.options
 	python contrib/viapb/generate.py \
 	       -f proto/console.fds            \
 	       --options proto/viapb.options   \
