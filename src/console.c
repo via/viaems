@@ -96,16 +96,16 @@ static void console_event_message(struct logged_event *ev) {
     case EVENT_NONE:
       return;
     case EVENT_GPIO:
-      pb_ev.which_type = PB_TAG_viaems_console_Event_GpioPins;
-      pb_ev.type.GpioPins = ev->value;
+      pb_ev.which_type = PB_TAG_viaems_console_Event_gpio_pins;
+      pb_ev.type.gpio_pins = ev->value;
       break;
     case EVENT_OUTPUT:
-      pb_ev.which_type = PB_TAG_viaems_console_Event_OutputPins;
-      pb_ev.type.OutputPins = ev->value;
+      pb_ev.which_type = PB_TAG_viaems_console_Event_output_pins;
+      pb_ev.type.output_pins = ev->value;
       break;
     case EVENT_TRIGGER:
-      pb_ev.which_type = PB_TAG_viaems_console_Event_Trigger;
-      pb_ev.type.Trigger = ev->value;
+      pb_ev.which_type = PB_TAG_viaems_console_Event_trigger;
+      pb_ev.type.trigger = ev->value;
       break;
   };
   console_message.which_msg = PB_TAG_viaems_console_Message_event,
@@ -131,11 +131,11 @@ static uint32_t engine_update_seq = 0;
 
 static viaems_console_SensorFault convert_sensor_fault(const sensor_fault fault) {
   switch (fault) {
-    case FAULT_NONE: return viaems_console_SensorFault_NoFault;
-    case FAULT_RANGE: return viaems_console_SensorFault_RangeFault;
-    case FAULT_CONN: return viaems_console_SensorFault_ConnectionFault;
+    case FAULT_NONE: return viaems_console_SensorFault_SENSOR_NO_FAULT;
+    case FAULT_RANGE: return viaems_console_SensorFault_SENSOR_RANGE_FAULT;
+    case FAULT_CONN: return viaems_console_SensorFault_SENSOR_CONNECTION_FAULT;
   }
-  return viaems_console_SensorFault_NoFault;
+  return viaems_console_SensorFault_SENSOR_NO_FAULT;
 }
 
 void record_engine_update(const struct viaems *viaems,
@@ -186,31 +186,31 @@ void record_engine_update(const struct viaems *viaems,
   }
 
   update->has_sensors = true;
-  update->sensors.ManifoldPressure = eng_update->sensors.MAP.value;
-  update->sensors.IntakeAirTemperature = eng_update->sensors.IAT.value;
-  update->sensors.CoolantTemperature = eng_update->sensors.CLT.value;
-  update->sensors.BatteryVoltage = eng_update->sensors.BRV.value;
-  update->sensors.ThrottlePosition = eng_update->sensors.TPS.value;
-  update->sensors.AmbientAirPressure = eng_update->sensors.AAP.value;
-  update->sensors.FuelRailPressure = eng_update->sensors.FRT.value;
-  update->sensors.ExhaustGasOxygen = eng_update->sensors.EGO.value;
-  update->sensors.FuelRailPressure = eng_update->sensors.FRP.value;
-  update->sensors.Knock1 = eng_update->sensors.KNK1;
-  update->sensors.Knock2 = eng_update->sensors.KNK2;
-  update->sensors.EthanolContent = eng_update->sensors.ETH.value;
+  update->sensors.map = eng_update->sensors.MAP.value;
+  update->sensors.iat = eng_update->sensors.IAT.value;
+  update->sensors.clt = eng_update->sensors.CLT.value;
+  update->sensors.brv = eng_update->sensors.BRV.value;
+  update->sensors.tps = eng_update->sensors.TPS.value;
+  update->sensors.aap = eng_update->sensors.AAP.value;
+  update->sensors.frt = eng_update->sensors.FRT.value;
+  update->sensors.ego = eng_update->sensors.EGO.value;
+  update->sensors.frp = eng_update->sensors.FRP.value;
+  update->sensors.eth = eng_update->sensors.ETH.value;
+  update->sensors.knock1 = eng_update->sensors.KNK1;
+  update->sensors.knock2 = eng_update->sensors.KNK2;
 
-  update->sensors.ManifoldPressure_Fault = convert_sensor_fault(eng_update->sensors.MAP.fault);
-  update->sensors.IntakeAirTemperature_Fault = convert_sensor_fault(eng_update->sensors.IAT.fault);
-  update->sensors.CoolantTemperature_Fault = convert_sensor_fault(eng_update->sensors.CLT.fault);
-  update->sensors.BatteryVoltage_Fault = convert_sensor_fault(eng_update->sensors.BRV.fault);
-  update->sensors.ThrottlePosition_Fault = convert_sensor_fault(eng_update->sensors.TPS.fault);
-  update->sensors.AmbientAirPressure_Fault = convert_sensor_fault(eng_update->sensors.AAP.fault);
-  update->sensors.FuelRailTemperature_Fault = convert_sensor_fault(eng_update->sensors.FRT.fault);
-  update->sensors.ExhaustGasOxygen_Fault = convert_sensor_fault(eng_update->sensors.EGO.fault);
-  update->sensors.FuelRailPressure_Fault = convert_sensor_fault(eng_update->sensors.FRP.fault);
-  update->sensors.EthanolContent_Fault = convert_sensor_fault(eng_update->sensors.ETH.fault);
+  update->sensors.map_fault = convert_sensor_fault(eng_update->sensors.MAP.fault);
+  update->sensors.iat_fault = convert_sensor_fault(eng_update->sensors.IAT.fault);
+  update->sensors.clt_fault = convert_sensor_fault(eng_update->sensors.CLT.fault);
+  update->sensors.brv_fault = convert_sensor_fault(eng_update->sensors.BRV.fault);
+  update->sensors.tps_fault = convert_sensor_fault(eng_update->sensors.TPS.fault);
+  update->sensors.aap_fault = convert_sensor_fault(eng_update->sensors.AAP.fault);
+  update->sensors.frt_fault = convert_sensor_fault(eng_update->sensors.FRT.fault);
+  update->sensors.ego_fault = convert_sensor_fault(eng_update->sensors.EGO.fault);
+  update->sensors.frp_fault = convert_sensor_fault(eng_update->sensors.FRP.fault);
+  update->sensors.eth_fault = convert_sensor_fault(eng_update->sensors.ETH.fault);
 
-  update->sensors.ThrottlePosition_Rate = eng_update->sensors.TPS.derivative;
+  update->sensors.tps_rate = eng_update->sensors.TPS.derivative;
   spsc_push(&engine_update_queue);
 }
 

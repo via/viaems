@@ -8,56 +8,56 @@ message Header {
 }
 
 enum SensorFault {
-  NoFault = 0;
-  RangeFault = 1;
-  ConnectionFault = 2;
+  SENSOR_NO_FAULT = 0;
+  SENSOR_RANGE_FAULT = 1;
+  SENSOR_CONNECTION_FAULT = 2;
 }
 
 message Sensors {
-  float ManifoldPressure = 2;
-  float IntakeAirTemperature = 3;
-  float CoolantTemperature = 4;
-  float BatteryVoltage = 5;
-  float ThrottlePosition = 6;
-  float AmbientAirPressure = 7;
-  float FuelRailTemperature = 8;
-  float ExhaustGasOxygen = 9;
-  float FuelRailPressure = 10;
-  float EthanolContent = 11;
+  float map = 1;
+  float iat = 2;
+  float clt = 3;
+  float brv = 4;
+  float tps = 5;
+  float aap = 6;
+  float frt = 7;
+  float ego = 8;
+  float frp = 9;
+  float eth = 10;
 
-  float Knock1 = 12;
-  float Knock2 = 13;
+  float knock1 = 14;
+  float knock2 = 15;
   
-  SensorFault ManifoldPressure_Fault = 32;
-  SensorFault IntakeAirTemperature_Fault = 33;
-  SensorFault CoolantTemperature_Fault = 34;
-  SensorFault BatteryVoltage_Fault = 35;
-  SensorFault ThrottlePosition_Fault = 36;
-  SensorFault AmbientAirPressure_Fault = 37;
-  SensorFault FuelRailTemperature_Fault = 38;
-  SensorFault ExhaustGasOxygen_Fault = 39;
-  SensorFault FuelRailPressure_Fault = 40;
-  SensorFault EthanolContent_Fault = 41;
+  SensorFault map_fault = 32;
+  SensorFault iat_fault = 33;
+  SensorFault clt_fault = 34;
+  SensorFault brv_fault = 35;
+  SensorFault tps_fault = 36;
+  SensorFault aap_fault = 37;
+  SensorFault frt_fault = 38;
+  SensorFault ego_fault = 39;
+  SensorFault frp_fault = 40;
+  SensorFault eth_fault = 41;
 
-//  float ManifoldPressure_Rate = 64; 
-//  float IntakeAirTemperature_Rate = 65; 
-//  float CoolantTemperature_Rate = 66; 
-//  float BatteryVoltage_Rate = 67; 
-  float ThrottlePosition_Rate = 68; 
-//  float AmbientPressure_Rate = 69; 
-//  float FuelRailTemperature_Rate = 70; 
-//  float ExhaustGasOxygen_Rate = 71; 
-//  float FuelRailPressure_Rate = 72; 
-//  float EthanolContent_Rate = 73; 
+  float map_rate = 64; 
+  float iat_rate = 65; 
+  float clt_rate = 66; 
+  float brv_rate = 67; 
+  float tps_rate = 68; 
+  float aap_rate = 69; 
+  float frt_rate = 70; 
+  float ego_Rate = 71; 
+  float frp_rate = 72; 
+  float eth_rate = 73; 
 }
 
 enum DecoderLossReason {
-  NoLoss = 0;
-  ToothVariation = 1;
-  TriggerCountTooHigh = 2;
-  TriggerCountTooLow = 3;
-  Expired = 4;
-  Overflowed = 5;
+  DECODER_NO_LOSS = 0;
+  DECODER_TRIGGER_TOOTH_VARIATION = 1;
+  DECODER_TRIGGER_COUNT_HIGH = 2;
+  DECODER_TRIGGER_COUNT_LOW = 3;
+  DECODER_EXPIRED = 4;
+  DECODER_OVERFLOWED = 5;
 }
 
 message Position {
@@ -74,32 +74,32 @@ message Position {
 }
 
 message Calculations {
-  float advance = 4;
-  float dwell_us = 5;
-  float fuel_us = 6;
+  float advance = 1;
+  float dwell_us = 2;
+  float fuel_us = 3;
 
-  float airmass_per_cycle = 7;
-  float fuelvol_per_cycle = 8;
+  float airmass_per_cycle = 4;
+  float fuelvol_per_cycle = 5;
 
-  float tipin_percent = 9;
-  float injector_dead_time = 10;
-  float pulse_width_correction = 11;
-  float lambda = 12;
-  float ve = 13;
-  float engine_temp_enrichment = 14;
+  float tipin_percent = 6;
+  float injector_dead_time = 7;
+  float pulse_width_correction = 8;
+  float lambda = 9;
+  float ve = 10;
+  float engine_temp_enrichment = 11;
 
-  bool rpm_limit_cut = 15;
-  bool boost_cut = 16;
-  bool fuel_overduty_cut = 17;
-  bool dwell_overduty_cut = 18;
+  bool rpm_limit_cut = 12;
+  bool boost_cut = 13;
+  bool fuel_overduty_cut = 14;
+  bool dwell_overduty_cut = 15;
 }
 
 message Event {
   Header header = 1;
   oneof type {
-    uint32 Trigger = 4;
-    uint32 OutputPins = 5;
-    uint32 GpioPins = 6;
+    uint32 trigger = 2;
+    uint32 output_pins = 3;
+    uint32 gpio_pins = 4;
   }
 }
 
@@ -136,9 +136,9 @@ message Configuration {
 
   message Output {
     enum OutputType {
-      OutputDisabled = 0;
-      Fuel = 1;
-      Ignition = 2;
+      OUTPUT_DISABLED = 0;
+      OUTPUT_FUEL = 1;
+      OUTPUT_IGNITION = 2;
     }
 
     optional uint32 pin = 1;
@@ -148,17 +148,17 @@ message Configuration {
   }
 
   enum SensorSource {
-    None = 0;
-    Adc = 1;
-    Frequency = 2;
-    Pulsewidth = 3;
-    Const = 4;
+    SOURCE_NONE = 0;
+    SOURCE_ADC = 1;
+    SOURCE_FREQ = 2;
+    SOURCE_PULSEWIDTH = 3;
+    SOURCE_CONST = 4;
   }
 
   enum SensorMethod {
-    Linear = 0;
-    LinearWindowed = 1;
-    Thermistor = 2;
+    METHOD_LINEAR = 0;
+    METHOD_LINEAR_WINDOWED = 1;
+    METHOD_THERMISTOR = 2;
   }
 
   message Sensor {
@@ -180,9 +180,9 @@ message Configuration {
     }
 
     message ThermistorConfig {
-      float A = 1;
-      float B = 2;
-      float C = 3;
+      float a = 1;
+      float b = 2;
+      float c = 3;
       float bias = 4;
     }
 
@@ -214,26 +214,26 @@ message Configuration {
   }
 
   message Sensors {
-    Sensor AmbientAirPressure = 1;
-    Sensor BatteryVoltage = 2;
-    Sensor CoolantTemperature = 3;
-    Sensor ExhaustGasOxygen = 4;
-    Sensor FuelRailTemperature = 5;
-    Sensor IntakeAirTemperature = 6;
-    Sensor ManifoldPressure = 7;
-    Sensor ThrottlePosition = 8;
-    Sensor FuelRailPressure = 9;
-    Sensor EthanolContent = 10;
+    Sensor aap = 1;
+    Sensor brv = 2;
+    Sensor clt = 3;
+    Sensor ego = 4;
+    Sensor frt = 5;
+    Sensor iat = 6;
+    Sensor map = 7;
+    Sensor tps = 8;
+    Sensor frp = 9;
+    Sensor eth = 10;
     KnockSensor knock1 = 14;
     KnockSensor knock2 = 15;
   }
 
   enum TriggerType {
-    DecoderDisabled = 0;
-    EvenTeeth = 1;
-    EvenTeethPlusCamSync = 2;
-    MissingTooth = 3;
-    MissingToothPlusCamSync = 4;
+    DECODER_DISABLED = 0;
+    EVEN_TEETH = 1;
+    EVEN_TEETH_PLUS_CAMSYNC = 2;
+    MISSING_TOOTH = 3;
+    MISSING_TOOTH_PLUS_CAMSYNC = 4;
   }
 
   message Decoder {
@@ -246,16 +246,16 @@ message Configuration {
   }
 
   enum InputEdge {
-    Rising = 0;
-    Falling = 1;
-    Both = 2;
+    EDGE_RISING = 0;
+    EDGE_FALLING = 1;
+    EDGE_BOTH = 2;
   }
 
   enum InputType {
-    InputDisabled = 0;
-    Trigger = 1;
-    Sync = 2;
-    Freq = 3;
+    INPUT_DISABLED = 0;
+    INPUT_TRIGGER = 1;
+    INPUT_SYNC = 2;
+    INPUT_FREQ = 3;
   }
 
   message TriggerInput {
@@ -276,30 +276,31 @@ message Configuration {
     optional float fuel_stoich_ratio = 4;
     optional uint32 injections_per_cycle = 5;
     optional float injector_cc = 6;
-    optional float max_duty_cycle = 40;
+    optional float max_duty_cycle = 7;
 
-    CrankEnrichment crank_enrich = 7;
-    Table1d PulseWidthCompensation = 8;
-    Table1d InjectorDeadTime = 9;
-    Table2d EngineTempEnrichment = 10;
-    Table2d commanded_lambda = 12;
-    Table2d ve = 13;
+    CrankEnrichment crank_enrich = 16;
+    Table1d pulse_width_compensation = 17;
+    Table1d injector_dead_time = 18;
+    Table2d engine_temp_enrichment = 19;
+    Table2d commanded_lambda = 20;
+    Table2d ve = 21;
 
-    Table2d tipin_enrich_amount = 14;
-    Table1d tipin_enrich_duration = 15;
+    Table2d tipin_enrich_amount = 22;
+    Table1d tipin_enrich_duration = 23;
   }
 
   message Ignition {
     enum DwellType {
-      FixedDuty = 0;
-      FixedTime = 1;
-      BatteryVoltage = 2;
+      DWELL_FIXED_DUTY = 0;
+      DWELL_FIXED_TIME = 1;
+      DWELL_BRV = 2;
     }
     optional DwellType type = 1;
     optional float fixed_dwell = 2;
+    optional float fixed_duty = 3;
 
-    Table1d dwell = 3;
-    Table2d timing = 4;
+    Table1d dwell = 4;
+    Table2d timing = 5;
 
   }
 
@@ -356,14 +357,15 @@ message Request {
 
   message FirmwareInfo { }
 
+  uint32 id = 1;
   oneof request {
-    Ping ping = 1;
-    FirmwareInfo fwinfo = 2;
+    Ping ping = 2;
+    FirmwareInfo fwinfo = 3;
 
-    SetConfig setconfig = 3;
-    GetConfig getconfig = 4;
-    FlashConfig flashconfig = 5;
-    ResetToBootloader resettobootloader = 6;
+    SetConfig setconfig = 4;
+    GetConfig getconfig = 5;
+    FlashConfig flashconfig = 6;
+    ResetToBootloader resettobootloader = 7;
   }
 }
 
@@ -389,13 +391,14 @@ message Response {
     string proto = 3;
   }
 
+  uint32 id = 1;
   oneof response {
-    Pong pong = 1;
-    FirmwareInfo fwinfo = 2;
+    Pong pong = 2;
+    FirmwareInfo fwinfo = 3;
 
-    SetConfig setconfig = 3;
-    GetConfig getconfig = 4;
-    FlashConfig flashconfig = 5;
+    SetConfig setconfig = 4;
+    GetConfig getconfig = 5;
+    FlashConfig flashconfig = 6;
   }
 }
 
