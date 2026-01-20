@@ -248,6 +248,7 @@ static void console_process_request(struct console_rx_message *rxmsg, struct con
     case PB_TAG_viaems_console_Request_getconfig:
       console_message.which_msg = PB_TAG_viaems_console_Message_response;
       console_message.msg.response.which_response = PB_TAG_viaems_console_Response_getconfig;
+      console_message.msg.response.response.getconfig.has_config = true;
       config_store_to_console_pbtype(config, &console_message.msg.response.response.getconfig.config);
       break;
     default:

@@ -8,62 +8,58 @@ from io import BytesIO
 import struct
 import sys
 
-import cbor2 as cbor
 import zlib
 from cobs import cobs
 
 from viaems.vcd import dump_vcd
 from viaems.validation import enrich_log
 from viaems.events import *
+from viaems import console_pb2
+
+def deframe_message(frame: bytes) -> console_pb2.Message:
+    decoded = cobs.decode(frame)
+    lengthbytes = decoded[0:2]
+    crcbytes = decoded[-4:]
+    pdu = decoded[2:-4]
+    crc = struct.unpack("<I", crcbytes)[0]
+    length = struct.unpack("<H", lengthbytes)[0]
+    if len(pdu) != length:
+        raise ValueError(f"Length mismatch: {len(pdu)} pdu but header is {length}")
+    if zlib.crc32(pdu) != crc:
+        raise ValueError("CRC failure")
+    message = console_pb2.Message()
+    message.ParseFromString(pdu)
+    return message
+
+def enframe_message(message: console_pb2.Message) -> bytes:
+    pdu = message.SerializeToString()
+    length = len(pdu)
+    crc = zlib.crc32(pdu)
+
+    crcbytes = struct.pack("<I", crc)
+    lengthbytes = struct.pack("<H", length)
+    payload = cobs.encode(lengthbytes + pdu + crcbytes)
+    return payload + b"\0"
+
 
 class ViaemsInterface:
-    def recv_until_id(self, id, max_messages=1000):
+    def recv_response(self, max_messages=1000):
         while True:
             result = self.recv()
-            if isinstance(result, dict) and "id" in result and int(result["id"]) == id:
+            if result.HasField("response"):
                 return result
             max_messages -= 1
             if max_messages == 0:
                 return None
 
-    def structure(self):
-        id = random.randint(0, 1024)
-        self.send(
-            {
-                "id": id,
-                "type": "request",
-                "method": "structure",
-            }
-        )
-        result = self.recv_until_id(id)
-        return result
+    def getconfig(self):
+        m = console_pb2.Message()
+        m.request.getconfig.SetInParent()
+        self.send(m)
+        return self.recv_response()
 
-    def get(self, path):
-        id = random.randint(0, 1024)
-        self.send(
-            {
-                "id": id,
-                "type": "request",
-                "method": "get",
-                "path": path,
-            }
-        )
-        result = self.recv_until_id(id)
-        return result
-
-    def set(self, path, value):
-        id = random.randint(0, 1024)
-        self.send(
-            {
-                "id": id,
-                "type": "request",
-                "method": "set",
-                "path": path,
-                "value": value,
-            }
-        )
-        result = self.recv_until_id(id)
-        return result
+    def setconfig(self, config: console_pb2.Configuration):
+        return None
 
     def sleep(self, seconds):
         now = time.time()
@@ -99,27 +95,10 @@ class SimConnector(ViaemsInterface):
         self.process.communicate()
         self.process.wait()
 
-    def send(self, payload):
-        binary = cbor.dumps(payload)
-        crcbytes = struct.pack("<I", zlib.crc32(binary))
-        lenbytes = struct.pack("<H", len(binary))
-        encoded = cobs.encode(lenbytes + binary + crcbytes) + b"\0"
+    def send(self, message: console_pb2.Message):
+        encoded = enframe_message(message)
         self.process.stdin.write(encoded)
         self.process.stdin.flush()
-
-    def _deframe(self, frame):
-        decoded = cobs.decode(frame)
-        lenbytes = decoded[0:2]
-        crcbytes = decoded[-4:]
-        pdu = decoded[2:-4]
-        crc = struct.unpack("<I", crcbytes)[0]
-        length = struct.unpack("<H", lenbytes)[0]
-        if length != len(pdu):
-            raise ValueError("Invalid frame length")
-        if zlib.crc32(pdu) != crc:
-            raise ValueError("CRC failure")
-        result = cbor.loads(pdu)
-        return result
 
     def recv(self):
         frame = b""
@@ -134,7 +113,7 @@ class SimConnector(ViaemsInterface):
             if len(frame) > 16384:
                 return None
 
-        return self._deframe(frame)
+        return deframe_message(frame)
 
     def _render_target_inputs(self, scenario, file):
         render_time = 0
@@ -158,8 +137,8 @@ class SimConnector(ViaemsInterface):
         tf.close()
 
         self.start(replay=tf.name)
-        for path, value in settings:
-            self.set(path, value)
+#        for path, value in settings:
+#            self.set(path, value)
         target_msgs = []
         while True:
             try:
@@ -232,27 +211,10 @@ class HilConnector(ViaemsInterface):
         self.process.communicate()
         self.process.wait()
 
-    def send(self, payload):
-        binary = cbor.dumps(payload)
-        crcbytes = struct.pack("<I", zlib.crc32(binary))
-        lenbytes = struct.pack("<H", len(binary))
-        encoded = cobs.encode(lenbytes + binary + crcbytes) + b"\0"
+    def send(self, message: console_pb2.Message):
+        binary = enframe_message(message)
         self.process.stdin.write(encoded)
         self.process.stdin.flush()
-
-    def _deframe(self, frame):
-        decoded = cobs.decode(frame)
-        lenbytes = decoded[0:2]
-        crcbytes = decoded[-4:]
-        pdu = decoded[2:-4]
-        crc = struct.unpack("<I", crcbytes)[0]
-        length = struct.unpack("<H", lenbytes)[0]
-        if zlib.crc32(pdu) != crc:
-            raise ValueError("CRC failure")
-        if length != len(pdu):
-            raise ValueError("Invalid frame length")
-        result = cbor.loads(pdu)
-        return result
 
     def recv(self):
         frame = b""
@@ -267,7 +229,7 @@ class HilConnector(ViaemsInterface):
             if len(frame) > 16384:
                 return None
 
-        return self._deframe(frame)
+        return deframe_message(frame)
 
 
 

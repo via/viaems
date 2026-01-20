@@ -29,7 +29,7 @@ while True:
     b = sys.stdin.buffer.read(1)
     if b == b"\0":
         deframed = _deframe(frame)
-        print(json.dumps( json_format.MessageToDict(deframed)))
+        print(len(frame), " ", json.dumps( json_format.MessageToDict(deframed)))
         frame = b""
     else:
         frame += b

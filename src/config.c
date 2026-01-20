@@ -1,7 +1,9 @@
 #include "config.h"
+#include "calculations.h"
 #include "sensors.h"
 
 #include "console.pb.h"
+#include "table.h"
 
 struct config default_config __attribute__((section(".configdata"))) = {
   .outputs = {
@@ -298,6 +300,11 @@ static void store_output_config(const struct output_event_config *ev, struct via
   ev_msg->pin = ev->pin;
   ev_msg->inverted = ev->inverted;
   ev_msg->angle = ev-> angle;
+
+  ev_msg->has_type = true;
+  ev_msg->has_pin = true;
+  ev_msg->has_inverted = true;
+  ev_msg->has_angle = true;
 }
 
 static void store_trigger_config(const struct trigger_input *t, struct viaems_console_Configuration_TriggerInput *t_msg) {
@@ -312,6 +319,145 @@ static void store_trigger_config(const struct trigger_input *t, struct viaems_co
       t_msg->edge = viaems_console_Configuration_InputEdge_Both;
       break;
   }
+
+  switch (t->type) {
+    case NONE:
+      t_msg->type = viaems_console_Configuration_InputType_InputDisabled;
+      break;
+    case FREQ:
+      t_msg->type = viaems_console_Configuration_InputType_Freq;
+      break;
+    case TRIGGER:
+      t_msg->type = viaems_console_Configuration_InputType_Trigger;
+      break;
+    case SYNC:
+      t_msg->type = viaems_console_Configuration_InputType_Sync;
+      break;
+  }
+
+  t_msg->has_edge = true;
+  t_msg->has_type = true;
+}
+
+static void store_sensor_config(const struct sensor_config *config, struct viaems_console_Configuration_Sensor *msg) {
+  msg->has_source = true;
+  switch (config->source) {
+    case SENSOR_NONE:
+      msg->source = viaems_console_Configuration_SensorSource_None;
+      break;
+    case SENSOR_ADC:
+      msg->source = viaems_console_Configuration_SensorSource_Adc;
+      break;
+    case SENSOR_FREQ:
+      msg->source = viaems_console_Configuration_SensorSource_Frequency;
+      break;
+    case SENSOR_PULSEWIDTH:
+      msg->source = viaems_console_Configuration_SensorSource_Pulsewidth;
+      break;
+    case SENSOR_CONST:
+      msg->source = viaems_console_Configuration_SensorSource_Const;
+      break;
+  }
+  msg->has_method = true;
+  switch (config->method) {
+    case METHOD_LINEAR:
+      msg->method = viaems_console_Configuration_SensorMethod_Linear;
+      break;
+    case METHOD_LINEAR_WINDOWED:
+      msg->method = viaems_console_Configuration_SensorMethod_LinearWindowed;
+      break;
+    case METHOD_THERM:
+      msg->method = viaems_console_Configuration_SensorMethod_Thermistor;
+      break;
+  }
+  msg->has_pin = true;
+  msg->pin = config->pin;
+  msg->has_lag = true;
+  msg->lag = config->lag;
+
+  if (config->source == SENSOR_CONST) {
+    msg->has_const_config = true;
+    msg->const_config.fixed_value = config->const_value;
+  } else if ((config->method == METHOD_LINEAR) || (config->method == METHOD_LINEAR_WINDOWED)) {
+    msg->has_linear_config = true;
+    msg->linear_config.output_min = config->range.min;
+    msg->linear_config.output_max = config->range.max;
+    msg->linear_config.input_min = config->raw_min;
+    msg->linear_config.input_max = config->raw_max;
+    if (config->method == METHOD_LINEAR_WINDOWED) {
+      msg->has_window_config = true;
+      msg->window_config.capture_width = config->window.capture_width;
+      msg->window_config.total_width = config->window.total_width;
+      msg->window_config.offset = config->window.offset;
+    }
+  } else if (config->method == METHOD_THERM) {
+    msg->has_thermistor_config = true;
+    msg->thermistor_config.A = config->therm.a;
+    msg->thermistor_config.B = config->therm.b;
+    msg->thermistor_config.C = config->therm.c;
+    msg->thermistor_config.bias = config->therm.bias;
+  }
+
+  msg->has_fault_config = true;
+  msg->fault_config.min = config->fault_config.min;
+  msg->fault_config.max = config->fault_config.max;
+  msg->fault_config.value = config->fault_config.fault_value;
+}
+
+static void store_knock_config(const struct knock_sensor_config *config, struct viaems_console_Configuration_KnockSensor *msg) {
+  msg->has_enabled = true;
+  msg->enabled = true;
+  msg->has_frequency = true;
+  msg->frequency = config->frequency;
+  msg->has_threshold = true;
+  msg->threshold = config->threshold;
+}
+
+static void store_table_axis(const struct table_axis *axis, struct viaems_console_Configuration_TableAxis *msg) {
+  size_t name_len = strlen(axis->name);
+  msg->has_name = true;
+  msg->name.len = name_len;
+  memcpy(msg->name.str, axis->name, name_len);
+  msg->values_count = axis->num;
+  memcpy(msg->values, axis->values, sizeof(float) * axis->num);
+}
+
+static void store_table_row(const float *row, size_t count, struct viaems_console_Configuration_TableRow *msg) {
+  msg->values_count = count;
+  memcpy(msg->values, row, sizeof(float) * count);
+}
+
+static void store_table1d(const struct table_1d *table, struct viaems_console_Configuration_Table1d *msg) {
+  size_t name_len = strlen(table->title);
+  msg->has_name = true;
+  msg->name.len = name_len;
+  memcpy(msg->name.str, table->title, name_len);
+  
+  msg->has_cols = true;
+  store_table_axis(&table->cols, &msg->cols);
+
+  msg->has_data = true;
+  store_table_row(table->data, table->cols.num, &msg->data);
+
+}
+
+static void store_table2d(const struct table_2d *table, struct viaems_console_Configuration_Table2d *msg) {
+  size_t name_len = strlen(table->title);
+  msg->has_name = true;
+  msg->name.len = name_len;
+  memcpy(msg->name.str, table->title, name_len);
+  
+  msg->has_cols = true;
+  store_table_axis(&table->cols, &msg->cols);
+
+  msg->has_rows = true;
+  store_table_axis(&table->rows, &msg->rows);
+
+  msg->data_count = table->rows.num;
+  for (size_t row = 0; row < table->rows.num; row++) {
+    store_table_row(table->data[row], table->cols.num, &msg->data[row]);
+  }
+
 }
 
 void config_store_to_console_pbtype(const struct config *config, struct viaems_console_Configuration *msg) {
@@ -326,4 +472,91 @@ void config_store_to_console_pbtype(const struct config *config, struct viaems_c
   for (int i = 0; i < 4; i++) {
     store_trigger_config(&config->trigger_inputs[i], &msg->triggers[i]);
 	}
+
+  msg->has_sensors = true;
+  msg->sensors.has_AmbientAirPressure = true;
+  store_sensor_config(&config->sensors.AAP, &msg->sensors.AmbientAirPressure);
+  msg->sensors.has_BatteryVoltage = true;
+  store_sensor_config(&config->sensors.BRV, &msg->sensors.BatteryVoltage);
+  msg->sensors.has_CoolantTemperature = true;
+  store_sensor_config(&config->sensors.CLT, &msg->sensors.CoolantTemperature);
+  msg->sensors.has_ExhaustGasOxygen = true;
+  store_sensor_config(&config->sensors.EGO, &msg->sensors.ExhaustGasOxygen);
+  msg->sensors.has_FuelRailTemperature = true;
+  store_sensor_config(&config->sensors.FRT, &msg->sensors.FuelRailTemperature);
+  msg->sensors.has_IntakeAirTemperature = true;
+  store_sensor_config(&config->sensors.IAT, &msg->sensors.IntakeAirTemperature);
+  msg->sensors.has_ManifoldPressure = true;
+  store_sensor_config(&config->sensors.MAP, &msg->sensors.ManifoldPressure);
+  msg->sensors.has_ThrottlePosition = true;
+  store_sensor_config(&config->sensors.TPS, &msg->sensors.ThrottlePosition);
+  msg->sensors.has_FuelRailPressure = true;
+  store_sensor_config(&config->sensors.FRP, &msg->sensors.FuelRailPressure);
+  msg->sensors.has_EthanolContent = true;
+  store_sensor_config(&config->sensors.ETH, &msg->sensors.EthanolContent);
+  msg->sensors.has_knock1 = true;
+  store_knock_config(&config->sensors.KNK1, &msg->sensors.knock1);
+  msg->sensors.has_knock2 = true;
+  store_knock_config(&config->sensors.KNK2, &msg->sensors.knock2);
+
+  msg->has_ignition = true;
+  msg->ignition.has_type = true;
+  switch (config->ignition.dwell) {
+    case DWELL_FIXED_DUTY:
+      msg->ignition.type = viaems_console_Configuration_Ignition_DwellType_FixedDuty;
+      break;
+    case DWELL_FIXED_TIME:
+      msg->ignition.type = viaems_console_Configuration_Ignition_DwellType_FixedTime;
+      break;
+    case DWELL_BRV:
+      msg->ignition.type = viaems_console_Configuration_Ignition_DwellType_BatteryVoltage;
+      break;
+  }
+  msg->ignition.has_fixed_dwell = true;
+  msg->ignition.fixed_dwell = config->ignition.dwell_us;
+
+  msg->ignition.has_dwell = true;
+  store_table1d(&config->dwell, &msg->ignition.dwell);
+
+  msg->ignition.has_timing = true;
+  store_table2d(&config->timing, &msg->ignition.timing);
+
+  msg->has_fueling = true;
+  msg->fueling.has_fuel_pump_pin = true;
+  msg->fueling.fuel_pump_pin = config->fueling.fuel_pump_pin;
+  msg->fueling.has_cylinder_cc = true;
+  msg->fueling.cylinder_cc = config->fueling.cylinder_cc;
+  msg->fueling.has_fuel_density = true;
+  msg->fueling.fuel_density = config->fueling.density_of_fuel;
+  msg->fueling.has_fuel_stoich_ratio = true;
+  msg->fueling.fuel_stoich_ratio = config->fueling.fuel_stoich_ratio;
+  msg->fueling.has_injections_per_cycle = true;
+  msg->fueling.injections_per_cycle = config->fueling.injections_per_cycle;
+  msg->fueling.has_injector_cc = true;
+  msg->fueling.injector_cc = config->fueling.injector_cc_per_minute;
+  msg->fueling.has_max_duty_cycle = true;
+  msg->fueling.max_duty_cycle = config->fueling.max_duty_cycle;
+  msg->fueling.has_crank_enrich = true;
+  msg->fueling.crank_enrich.has_cranking_rpm = true;
+  msg->fueling.crank_enrich.cranking_rpm = config->fueling.crank_enrich_config.crank_rpm;
+  msg->fueling.crank_enrich.has_cranking_temp = true;
+  msg->fueling.crank_enrich.cranking_temp = config->fueling.crank_enrich_config.cutoff_temperature;
+  msg->fueling.crank_enrich.has_enrich_amt = true;
+  msg->fueling.crank_enrich.enrich_amt = config->fueling.crank_enrich_config.enrich_amt;
+
+  msg->fueling.has_PulseWidthCompensation = true;
+  store_table1d(&config->injector_pw_correction, &msg->fueling.PulseWidthCompensation);
+  msg->fueling.has_InjectorDeadTime = true;
+  store_table1d(&config->injector_deadtime_offset, &msg->fueling.InjectorDeadTime);
+  msg->fueling.has_EngineTempEnrichment = true;
+  store_table2d(&config->engine_temp_enrich, &msg->fueling.EngineTempEnrichment);
+  msg->fueling.has_commanded_lambda = true;
+  store_table2d(&config->commanded_lambda, &msg->fueling.commanded_lambda);
+  msg->fueling.has_ve = true;
+  store_table2d(&config->ve, &msg->fueling.ve);
+  msg->fueling.has_tipin_enrich_amount = true;
+  store_table2d(&config->tipin_enrich_amount, &msg->fueling.tipin_enrich_amount);
+  msg->fueling.has_tipin_enrich_duration = true;
+  store_table1d(&config->tipin_enrich_duration, &msg->fueling.tipin_enrich_duration);
+
 }

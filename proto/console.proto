@@ -215,7 +215,7 @@ message Configuration {
 
   message Sensors {
     Sensor AmbientAirPressure = 1;
-    Sensor BatteryReferenceVoltage = 2;
+    Sensor BatteryVoltage = 2;
     Sensor CoolantTemperature = 3;
     Sensor ExhaustGasOxygen = 4;
     Sensor FuelRailTemperature = 5;
@@ -282,8 +282,6 @@ message Configuration {
     Table1d PulseWidthCompensation = 8;
     Table1d InjectorDeadTime = 9;
     Table2d EngineTempEnrichment = 10;
-    Table1d CrankingEnrichment = 11;
-
     Table2d commanded_lambda = 12;
     Table2d ve = 13;
 
@@ -293,8 +291,9 @@ message Configuration {
 
   message Ignition {
     enum DwellType {
-      FixedDwellTime = 0;
-      BatteryVoltage = 1;
+      FixedDuty = 0;
+      FixedTime = 1;
+      BatteryVoltage = 2;
     }
     optional DwellType type = 1;
     optional float fixed_dwell = 2;
