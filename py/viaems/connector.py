@@ -59,7 +59,10 @@ class ViaemsInterface:
         return self.recv_response()
 
     def setconfig(self, config: console_pb2.Configuration):
-        return None
+        msg = console_pb2.Message()
+        msg.request.setconfig.config.CopyFrom(config)
+        self.send(msg)
+        return self.recv_response()
 
     def sleep(self, seconds):
         now = time.time()

@@ -97,19 +97,19 @@ static void console_event_message(struct logged_event *ev) {
       return;
     case EVENT_GPIO:
       pb_ev.which_type = PB_TAG_viaems_console_Event_gpio_pins;
-      pb_ev.type.gpio_pins = ev->value;
+      pb_ev.gpio_pins = ev->value;
       break;
     case EVENT_OUTPUT:
       pb_ev.which_type = PB_TAG_viaems_console_Event_output_pins;
-      pb_ev.type.output_pins = ev->value;
+      pb_ev.output_pins = ev->value;
       break;
     case EVENT_TRIGGER:
       pb_ev.which_type = PB_TAG_viaems_console_Event_trigger;
-      pb_ev.type.trigger = ev->value;
+      pb_ev.trigger = ev->value;
       break;
   };
   console_message.which_msg = PB_TAG_viaems_console_Message_event,
-  console_message.msg.event = pb_ev;
+  console_message.event = pb_ev;
 
   struct console_tx_message writer;
   unsigned length = pb_sizeof_viaems_console_Message(&console_message);
@@ -216,7 +216,7 @@ void record_engine_update(const struct viaems *viaems,
 
 static void console_feed_line(const struct viaems_console_EngineUpdate *update) {
   console_message.which_msg = PB_TAG_viaems_console_Message_engine_update;
-  console_message.msg.engine_update = *update;
+  console_message.engine_update = *update;
 
   struct console_tx_message writer;
   unsigned length = pb_sizeof_viaems_console_Message(&console_message);
@@ -240,17 +240,30 @@ static void console_process_request(struct console_rx_message *rxmsg, struct con
     return;
   }
 
-  switch (console_message.msg.request.which_request) {
+  switch (console_message.request.which_request) {
     case PB_TAG_viaems_console_Request_ping:
       console_message.which_msg = PB_TAG_viaems_console_Message_response;
-      console_message.msg.response.which_response = PB_TAG_viaems_console_Response_pong;
+      console_message.response.which_response = PB_TAG_viaems_console_Response_pong;
       break;
     case PB_TAG_viaems_console_Request_getconfig:
       console_message.which_msg = PB_TAG_viaems_console_Message_response;
-      console_message.msg.response.which_response = PB_TAG_viaems_console_Response_getconfig;
-      console_message.msg.response.response.getconfig.has_config = true;
-      config_store_to_console_pbtype(config, &console_message.msg.response.response.getconfig.config);
+      console_message.response.which_response = PB_TAG_viaems_console_Response_getconfig;
+      console_message.response.getconfig.has_config = true;
+      config_store_to_console_pbtype(config, &console_message.response.getconfig.config);
       break;
+    case PB_TAG_viaems_console_Request_setconfig: {
+     bool success = false;
+      if (console_message.request.setconfig.has_config) {
+        config_load_result r = config_load_from_console_pbtype(config, &console_message.request.setconfig.config);
+        success = (r == CONFIG_SAVED);
+      }
+      console_message.which_msg = PB_TAG_viaems_console_Message_response;
+      console_message.response.which_response = PB_TAG_viaems_console_Response_setconfig;
+      console_message.response.setconfig.has_config = true;
+      console_message.response.setconfig.success = success;
+      config_store_to_console_pbtype(config, &console_message.response.setconfig.config);
+      break;
+                                                  }
     default:
       break;
   }

@@ -48,6 +48,7 @@ extern struct config default_config;
 
 typedef enum {
   CONFIG_SAVED = 0,
+  CONFIG_INVALID,
   CONFIG_FAILED_ENGINE_RUNNING,
   CONFIG_FAILED_NEEDS_RESET,
 } config_load_result;
