@@ -103,9 +103,11 @@ class NMinus1DecoderTests(TestCase):
       settings = [
           (["decoder", "rpm-limit-start"], 9000),
           (["decoder", "rpm-limit-stop"], 10000),
+          (["decoder", "offset"], 45),
           ]
 
-      scenario = Scenario("high_rpm_ramp", CrankNMinus1PlusCam_Wheel(36))
+      scenario = Scenario("high_rpm_ramp", CrankNMinus1PlusCam_Wheel(36,
+                                                                     offset=45))
       scenario.set_brv(14.0)
       scenario.set_map(90);
       scenario.wait_milliseconds(1000)

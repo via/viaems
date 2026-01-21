@@ -2,11 +2,12 @@ from viaems.util import ticks_for_rpm_degrees, clamp_angle
 
 
 class CrankNMinus1PlusCam_Wheel:
-    def __init__(self, N):
+    def __init__(self, N, offset=0):
         self.N = N
         self.degrees_per_tooth = 360.0 / N
         self.cycle = 0
         self.index = 0
+        self.offset = offset
 
         # Populate even tooth wheel for trigger 0
         self.wheel = [
@@ -36,4 +37,4 @@ class CrankNMinus1PlusCam_Wheel:
         trigger, angle = self.wheel[self.index]
         if angle == 0:
             self.cycle += 1
-        return (trigger, angle)
+        return (trigger, clamp_angle(angle - self.offset))
