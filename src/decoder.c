@@ -31,6 +31,10 @@ static void push_time(struct decoder *d, timeval_t t) {
   d->times[0] = t;
 }
 
+static degrees_t first_tooth_angle(const degrees_t offset) {
+  return clamp_angle(720.0f - offset, 720);
+}
+
 static unsigned int even_tooth_rpm_window_size(
   unsigned int current_triggers,
   unsigned int normal_window_size) {
@@ -122,12 +126,12 @@ static void even_tooth_sync_update(struct decoder *state) {
   if (state->state == DECODER_RPM) {
     state->state = DECODER_SYNC;
     state->loss = DECODER_NO_LOSS;
-    state->output.last_trigger_angle = 0;
+    state->output.last_trigger_angle = first_tooth_angle(state->config->offset);
   } else if (state->state == DECODER_SYNC) {
     if (state->triggers_since_last_sync == state->config->num_triggers) {
       state->state = DECODER_SYNC;
       state->loss = DECODER_NO_LOSS;
-      state->output.last_trigger_angle = 0;
+      state->output.last_trigger_angle = first_tooth_angle(state->config->offset);
     } else {
       state->state = DECODER_NOSYNC;
       state->loss = DECODER_TRIGGERCOUNT_LOW;
@@ -245,7 +249,7 @@ static void missing_tooth_trigger_update(struct decoder *state, timeval_t t) {
     if (is_acceptable_missing_tooth) {
       state->state = DECODER_SYNC;
       state->triggers_since_last_sync = 0;
-      state->output.last_trigger_angle = 0;
+      state->output.last_trigger_angle = first_tooth_angle(conf->offset);
     } else if (!is_acceptable_normal_tooth) {
       state->state = DECODER_NOSYNC;
       state->loss = DECODER_VARIATION;
@@ -366,9 +370,9 @@ static void decode_missing_with_camsync(struct decoder *state,
     /* We gained sync */
     state->output.has_position = true;
     state->loss = DECODER_NO_LOSS;
-    state->output.last_trigger_angle =
-      state->config->degrees_per_trigger * state->triggers_since_last_sync +
-      (camsync_seen_this_rotation ? 0 : 360);
+    state->output.last_trigger_angle = clamp_angle(
+      (state->config->degrees_per_trigger * state->triggers_since_last_sync) +
+      (camsync_seen_this_rotation ? 0 : 360) - state->config->offset, 720);
   }
   if (was_valid && !state->output.has_position) {
     /* We lost sync */
@@ -385,7 +389,7 @@ void decoder_init(const struct decoder_config *conf, struct decoder *state) {
     .rpm = 0,
     .tooth_rpm = 0,
     .time = 0,
-    .last_trigger_angle = 0,
+    .last_trigger_angle = first_tooth_angle(conf->offset),
   };
   state->state = DECODER_NOSYNC;
   state->triggers_since_last_sync = 0;

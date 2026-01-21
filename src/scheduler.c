@@ -82,8 +82,7 @@ static bool schedule_ignition_event(const struct config *config,
 
   degrees_t firing_angle =
     clamp_angle(clamp_angle(ev->config->angle - advance, 720) -
-                  d->last_trigger_angle + config->decoder.offset,
-                720);
+                  d->last_trigger_angle, 720);
 
   timeval_t stop_time =
     d->time + time_from_rpm_diff(d->tooth_rpm, firing_angle);
@@ -160,14 +159,13 @@ static bool schedule_ignition_event(const struct config *config,
 
 /* (Re-)schedule fuel event with the provided pulse duration.
  */
-static bool schedule_fuel_event(const struct config *config,
-                                struct output_event_schedule_state *ev,
+static bool schedule_fuel_event(struct output_event_schedule_state *ev,
                                 timeval_t earliest_schedulable_time,
                                 const struct engine_position *pos,
                                 unsigned int usecs_pw) {
 
   degrees_t firing_angle = clamp_angle(
-    ev->config->angle - pos->last_trigger_angle + config->decoder.offset, 720);
+    ev->config->angle - pos->last_trigger_angle, 720);
 
   timeval_t stop_time =
     pos->time + time_from_rpm_diff(pos->tooth_rpm, firing_angle);
@@ -257,7 +255,7 @@ void schedule_events(const struct config *config,
 
     case FUEL_EVENT:
       schedule_fuel_event(
-        config, &ev[i], earliest_scheduable_time, pos, calcs->fueling_us);
+        &ev[i], earliest_scheduable_time, pos, calcs->fueling_us);
       break;
 
     default:
@@ -463,7 +461,7 @@ START_TEST(check_schedule_fuel_reschedule_active_later) {
 
   const unsigned int pw = 1000;
 
-  schedule_fuel_event(&default_config, &ev, 0, &pos, pw);
+  schedule_fuel_event(&ev, 0, &pos, pw);
 
   /* Move to a time we're sure the event can no longer reschedule */
   timeval_t original_start_time = ev.start.time;
@@ -473,7 +471,7 @@ START_TEST(check_schedule_fuel_reschedule_active_later) {
   /* Reschedule 10* later, and one microsecond longer */
   const unsigned int new_pw = pw + 1;
   ev_conf.angle += 10;
-  schedule_fuel_event(&default_config, &ev, time, &pos, new_pw);
+  schedule_fuel_event(&ev, time, &pos, new_pw);
 
   ck_assert(ev.stop.state == SCHED_SCHEDULED);
   /* We shouldn't have changed the start */
@@ -535,7 +533,7 @@ START_TEST(check_schedule_fuel_immediately_after_finish) {
 
   const unsigned int pw = 1000;
 
-  schedule_fuel_event(&default_config, &ev, 0, &pos, pw);
+  schedule_fuel_event(&ev, 0, &pos, pw);
 
   ev.start.state = SCHED_FIRED;
   ev.stop.state = SCHED_FIRED;
@@ -543,7 +541,7 @@ START_TEST(check_schedule_fuel_immediately_after_finish) {
   /* Attempt to reschedule to immediately after it fired */
   timeval_t time = ev.stop.time + 5;
   pos.last_trigger_angle = 360;
-  schedule_fuel_event(&default_config, &ev, time, &pos, pw);
+  schedule_fuel_event(&ev, time, &pos, pw);
 
   ck_assert(ev.start.state != SCHED_SCHEDULED);
   ck_assert(ev.stop.state != SCHED_SCHEDULED);
@@ -552,7 +550,7 @@ START_TEST(check_schedule_fuel_immediately_after_finish) {
   time += time_from_rpm_diff(pos.rpm, 180);
   pos.last_trigger_angle = 540;
   pos.time = time_from_rpm_diff(pos.rpm, 540);
-  schedule_fuel_event(&default_config, &ev, time, &pos, pw);
+  schedule_fuel_event(&ev, time, &pos, pw);
 
   ck_assert(ev.start.state == SCHED_SCHEDULED);
   ck_assert(ev.stop.state == SCHED_SCHEDULED);
