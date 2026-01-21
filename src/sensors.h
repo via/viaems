@@ -53,10 +53,10 @@ struct sensor_config {
     float fault_value;
   } fault_config;
 
-  struct window {
-    uint32_t capture_width;
-    uint32_t total_width;
-    uint32_t offset;
+  struct window_config {
+    uint32_t windows_per_cycle;
+    degrees_t window_opening;
+    degrees_t window_offset;
   } window;
 };
 
@@ -69,13 +69,12 @@ struct sensor_value {
 
 struct sensor_state {
   const struct sensor_config *config;
-  ;
   struct sensor_value output;
 
+  bool window_collecting;
+  degrees_t window_start;
   float window_accumulator;
   uint32_t window_sample_count;
-  bool window_collecting;
-  degrees_t window_start_angle;
 };
 
 struct knock_sensor_config {

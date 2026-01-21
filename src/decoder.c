@@ -445,19 +445,18 @@ degrees_t engine_current_angle(const struct engine_position *d,
     return d->last_trigger_angle;
   }
 
-  timeval_t last_time = d->time;
-  degrees_t last_angle = d->last_trigger_angle;
-
   degrees_t angle_since_last_tooth =
-    degrees_from_time_diff(at_time - last_time, d->rpm);
+    time_before(at_time, d->time) ?
+      -degrees_from_time_diff(d->time - at_time, d->rpm) :
+      degrees_from_time_diff(at_time - d->time, d->rpm);
 
-  if ((angle_since_last_tooth < 0) || (angle_since_last_tooth > 720)) {
+  if ((angle_since_last_tooth < -720.0f) || (angle_since_last_tooth > 720.0f)) {
     /* This should never happen unless something is wrong with the input time,
      * but let's protect the inputs to clamp_angle regardless */
-    angle_since_last_tooth = last_angle;
+    angle_since_last_tooth = 0;
   }
 
-  return clamp_angle(last_angle + angle_since_last_tooth, 720);
+  return clamp_angle(d->last_trigger_angle + angle_since_last_tooth, 720);
 }
 
 #ifdef UNITTEST

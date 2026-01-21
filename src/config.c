@@ -59,7 +59,7 @@ struct config default_config __attribute__((section(".configdata"))) = {
       .raw_min=0, .raw_max=5,
       .range={.min=12, .max=420}, /* AEM 3.5 bar MAP sensor*/
       .fault_config={.min = 0.05f, .max = 4.95f, .fault_value = 50.0},
-      .window={.total_width=120, .capture_width = 120}},
+      .window={.windows_per_cycle=6, .window_opening = 120}},
     .AAP = {.pin=5, .source=SENSOR_CONST, .const_value=102.0f},
     .TPS = {.pin=6, .source=SENSOR_ADC, .method=METHOD_LINEAR,
       .raw_min=0, .raw_max=5,

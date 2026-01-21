@@ -14,13 +14,16 @@ float sensor_convert_linear(const struct sensor_config *conf, const float raw) {
   return conf->range.min + partial * (conf->range.max - conf->range.min);
 }
 
-static bool current_angle_in_window(const struct sensor_config *conf,
-                                    degrees_t angle) {
-  degrees_t cur_angle = clamp_angle(angle - conf->window.offset, 720);
-  for (uint32_t i = 0; i < 720; i += conf->window.total_width) {
-    if ((cur_angle >= i) && (cur_angle < i + conf->window.capture_width)) {
-      return true;
-    }
+static bool current_window_for_angle(const struct window_config *conf,
+                                     degrees_t *window_start,
+                                     degrees_t angle) {
+
+  degrees_t window_size = 720.0 / conf->windows_per_cycle;
+  int window_num = clamp_angle(angle - conf->window_offset, 720) / window_size;
+  *window_start = window_num * window_size + conf->window_offset;
+  degrees_t angle_in_window = clamp_angle(angle - *window_start, 720);
+  if (angle_in_window < conf->window_opening) {
+    return true;
   }
   return false;
 }
@@ -30,22 +33,20 @@ static float sensor_convert_linear_windowed(struct sensor_state *state,
                                             float raw) {
   float result = state->output.value;
 
-  /* If not in a window, or we have exceeded a window size */
-  if (!current_angle_in_window(state->config, angle) ||
-      clamp_angle(angle - state->window_start_angle, 720) >=
-        state->config->window.capture_width) {
+  degrees_t window_start;
+  bool in_window = current_window_for_angle(&state->config->window, &window_start, angle);
 
+  /* If not in a window, or we are not in the same window that we started accumulating with */
+  if (!in_window || (window_start != state->window_start)) {
     if (state->window_collecting && state->window_sample_count > 0) {
       state->window_collecting = false;
       result = state->window_accumulator / state->window_sample_count;
     }
   }
 
-  /* Currently in a window. If we just started collecting, initialize */
-  if (current_angle_in_window(state->config, angle)) {
+  if (in_window) {
     if (!state->window_collecting) {
-      /* TODO: change this to current window start, not current angle */
-      state->window_start_angle = angle;
+      state->window_start = window_start;
       state->window_accumulator = 0;
       state->window_sample_count = 0;
     }
@@ -316,8 +317,8 @@ START_TEST(check_sensor_convert_linear_windowed) {
     .range = { .min=0, .max=4096.0},
     .raw_max = 4096.0,
     .window = {
-      .total_width = 90,
-      .capture_width = 45,
+      .windows_per_cycle = 8,
+      .window_opening = 45,
     },
   };
 
@@ -354,8 +355,8 @@ START_TEST(check_sensor_convert_linear_windowed_skipped) {
     .range = { .min=0, .max=4096.0},
     .raw_max = 4096.0,
     .window = {
-      .total_width = 90,
-      .capture_width = 45,
+      .windows_per_cycle = 8,
+      .window_opening = 45,
     },
   };
   struct sensor_state state = {
@@ -394,8 +395,8 @@ START_TEST(check_sensor_convert_linear_windowed_wide) {
     .range = { .min=0, .max=4096.0},
     .raw_max = 4096.0,
     .window = {
-      .total_width = 90,
-      .capture_width = 90,
+      .windows_per_cycle = 8,
+      .window_opening = 90,
     },
   };
 
@@ -427,13 +428,10 @@ START_TEST(check_sensor_convert_linear_windowed_wide) {
   ck_assert_float_eq_tol(
     sensor_convert_linear_windowed(&state, 130, 1500), 12, 0.1);
 
-  /* TODO: right now this needs to be capture_width degrees past the first
-   * sample in the last window, which is not ideal. We should just treat all
-   * samples in the window as acceptable */
 
   /* Reaches end of window, should average all three prior samples */
   ck_assert_float_eq_tol(
-    sensor_convert_linear_windowed(&state, 210, 2000), 1733.33, 0.1);
+    sensor_convert_linear_windowed(&state, 180, 2000), 1733.33, 0.1);
 }
 END_TEST
 
@@ -442,9 +440,9 @@ START_TEST(check_sensor_convert_linear_windowed_offset) {
     .range = { .min=0, .max=4096.0},
     .raw_max = 4096.0,
     .window = {
-      .total_width = 90,
-      .capture_width = 45,
-      .offset = 45,
+      .windows_per_cycle = 8,
+      .window_opening = 45,
+      .window_offset = 45,
     },
   };
   struct sensor_state state = {
@@ -498,21 +496,58 @@ END_TEST
 START_TEST(check_current_angle_in_window) {
   struct sensor_config conf = {
     .window = {
-      .offset = 0,
-      .total_width=100,
-      .capture_width=60,
+      .windows_per_cycle = 8,
+      .window_opening = 60,
+      .window_offset = 60 ,
     },
   };
-  ck_assert(current_angle_in_window(&conf, 0));
-  ck_assert(current_angle_in_window(&conf, 50));
-  ck_assert(!current_angle_in_window(&conf, 70));
+  /* This config should produce 8 windows:
+   * - [60, 120)
+   * - [150, 210)
+   * - [240, 300)
+   * - [330, 390)
+   * - [420, 480)
+   * - [510, 570)
+   * - [600, 660)
+   * - [690, 30)
+   */
 
-  ck_assert(current_angle_in_window(&conf, 100));
-  ck_assert(current_angle_in_window(&conf, 120));
-  ck_assert(!current_angle_in_window(&conf, 170));
+  degrees_t window;
+  ck_assert(current_window_for_angle(&conf.window, &window, 0));
+  ck_assert(window == 690);
+  ck_assert(!current_window_for_angle(&conf.window, &window, 50));
 
-  ck_assert(!current_angle_in_window(&conf, 690));
-  ck_assert(current_angle_in_window(&conf, 710));
+  ck_assert(current_window_for_angle(&conf.window, &window, 90));
+  ck_assert(window == 60);
+  ck_assert(!current_window_for_angle(&conf.window, &window, 140));
+
+  ck_assert(current_window_for_angle(&conf.window, &window, 180));
+  ck_assert(window == 150);
+  ck_assert(!current_window_for_angle(&conf.window, &window, 230));
+
+  ck_assert(current_window_for_angle(&conf.window, &window, 270));
+  ck_assert(window == 240);
+  ck_assert(!current_window_for_angle(&conf.window, &window, 320));
+
+  ck_assert(current_window_for_angle(&conf.window, &window, 360));
+  ck_assert(window == 330);
+  ck_assert(!current_window_for_angle(&conf.window, &window, 410));
+
+  ck_assert(current_window_for_angle(&conf.window, &window, 450));
+  ck_assert(window == 420);
+  ck_assert(!current_window_for_angle(&conf.window, &window, 500));
+
+  ck_assert(current_window_for_angle(&conf.window, &window, 540));
+  ck_assert(window == 510);
+  ck_assert(!current_window_for_angle(&conf.window, &window, 590));
+
+  ck_assert(current_window_for_angle(&conf.window, &window, 630));
+  ck_assert(window == 600);
+  ck_assert(!current_window_for_angle(&conf.window, &window, 680));
+
+  ck_assert(current_window_for_angle(&conf.window, &window, 710));
+  ck_assert(window == 690);
+
 }
 END_TEST
 

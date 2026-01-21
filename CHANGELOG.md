@@ -12,6 +12,8 @@ Major breaking changes are introduced in this release
      now type "sync" instead of just "trigger"
    - `min-fire-time` renamed to `min-coil-cooldown`
    - added `min-dwell` and `max-duty-cycle`
+   - sensor window config now uses windows per cycle instead of degrees, making it more
+     clear that it needs to evenly divide a cycle. E.g. 90 degrees is now 8 windows.
 
 ### 1.6.0 (2025 March 1)
 This introduces breaking changes for sensors and table configuration
