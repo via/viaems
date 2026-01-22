@@ -1309,19 +1309,19 @@ unsigned pb_sizeof_viaems_console_Event(const struct viaems_console_Event *msg) 
 
   if (msg->which_type == PB_TAG_viaems_console_Event_trigger) {
     size += 1;  // Size of tag
-    unsigned element_size = pb_sizeof_varint(msg->trigger);
+    unsigned element_size = pb_sizeof_varint(msg->type.trigger);
     size += element_size;
   }
 
   if (msg->which_type == PB_TAG_viaems_console_Event_output_pins) {
     size += 1;  // Size of tag
-    unsigned element_size = pb_sizeof_varint(msg->output_pins);
+    unsigned element_size = pb_sizeof_varint(msg->type.output_pins);
     size += element_size;
   }
 
   if (msg->which_type == PB_TAG_viaems_console_Event_gpio_pins) {
     size += 1;  // Size of tag
-    unsigned element_size = pb_sizeof_varint(msg->gpio_pins);
+    unsigned element_size = pb_sizeof_varint(msg->type.gpio_pins);
     size += element_size;
   }
 
@@ -1342,21 +1342,21 @@ bool pb_encode_viaems_console_Event(const struct viaems_console_Event *msg, pb_w
   if (msg->which_type == PB_TAG_viaems_console_Event_trigger) {
     uint8_t *ptr = scratch;
     ptr += pb_encode_varint(ptr, (2 << 3) | PB_WT_VARINT);
-    ptr += pb_encode_varint(ptr, msg->trigger);
+    ptr += pb_encode_varint(ptr, msg->type.trigger);
     if (!w(scratch, ptr - scratch, user)) { return false; }
   }
 
   if (msg->which_type == PB_TAG_viaems_console_Event_output_pins) {
     uint8_t *ptr = scratch;
     ptr += pb_encode_varint(ptr, (3 << 3) | PB_WT_VARINT);
-    ptr += pb_encode_varint(ptr, msg->output_pins);
+    ptr += pb_encode_varint(ptr, msg->type.output_pins);
     if (!w(scratch, ptr - scratch, user)) { return false; }
   }
 
   if (msg->which_type == PB_TAG_viaems_console_Event_gpio_pins) {
     uint8_t *ptr = scratch;
     ptr += pb_encode_varint(ptr, (4 << 3) | PB_WT_VARINT);
-    ptr += pb_encode_varint(ptr, msg->gpio_pins);
+    ptr += pb_encode_varint(ptr, msg->type.gpio_pins);
     if (!w(scratch, ptr - scratch, user)) { return false; }
   }
 
@@ -1373,17 +1373,17 @@ unsigned pb_encode_viaems_console_Event_to_buffer(uint8_t buffer[18], const stru
 
   if (msg->which_type == PB_TAG_viaems_console_Event_trigger) {
     ptr += pb_encode_varint(ptr, (2 << 3) | PB_WT_VARINT);
-    ptr += pb_encode_varint(ptr, msg->trigger);
+    ptr += pb_encode_varint(ptr, msg->type.trigger);
   }
 
   if (msg->which_type == PB_TAG_viaems_console_Event_output_pins) {
     ptr += pb_encode_varint(ptr, (3 << 3) | PB_WT_VARINT);
-    ptr += pb_encode_varint(ptr, msg->output_pins);
+    ptr += pb_encode_varint(ptr, msg->type.output_pins);
   }
 
   if (msg->which_type == PB_TAG_viaems_console_Event_gpio_pins) {
     ptr += pb_encode_varint(ptr, (4 << 3) | PB_WT_VARINT);
-    ptr += pb_encode_varint(ptr, msg->gpio_pins);
+    ptr += pb_encode_varint(ptr, msg->type.gpio_pins);
   }
 
   return (ptr - buffer);
@@ -1400,15 +1400,15 @@ bool pb_decode_viaems_console_Event(struct viaems_console_Event *msg, pb_read_fn
       msg->has_header = true;
     }
     if (prefix == ((2ul << 3) | PB_WT_VARINT)) {
-      if (!pb_decode_varint_uint32(&msg->trigger, r, user)) { return false; }
+      if (!pb_decode_varint_uint32(&msg->type.trigger, r, user)) { return false; }
       msg->which_type = 2;
     }
     if (prefix == ((3ul << 3) | PB_WT_VARINT)) {
-      if (!pb_decode_varint_uint32(&msg->output_pins, r, user)) { return false; }
+      if (!pb_decode_varint_uint32(&msg->type.output_pins, r, user)) { return false; }
       msg->which_type = 3;
     }
     if (prefix == ((4ul << 3) | PB_WT_VARINT)) {
-      if (!pb_decode_varint_uint32(&msg->gpio_pins, r, user)) { return false; }
+      if (!pb_decode_varint_uint32(&msg->type.gpio_pins, r, user)) { return false; }
       msg->which_type = 4;
     }
   }
@@ -4114,10 +4114,8 @@ bool pb_decode_viaems_console_Configuration_TableAxis(struct viaems_console_Conf
     if (prefix == ((1ul << 3) | PB_WT_STRING)) {
       uint32_t length;
       if (!pb_decode_varint_uint32(&length, r, user)) { return false; }
-      if (length > 24) { return false; }
       if (!r((uint8_t *)msg->name.str, length, user)) { return false; }
       msg->name.len = length;
-      msg->has_name = true;
     }
     if (prefix == ((2ul << 3) | PB_WT_STRING)) {
       uint32_t length;
@@ -4144,10 +4142,8 @@ bool pb_decode_viaems_console_Configuration_Table1d(struct viaems_console_Config
     if (prefix == ((1ul << 3) | PB_WT_STRING)) {
       uint32_t length;
       if (!pb_decode_varint_uint32(&length, r, user)) { return false; }
-      if (length > 24) { return false; }
       if (!r((uint8_t *)msg->name.str, length, user)) { return false; }
       msg->name.len = length;
-      msg->has_name = true;
     }
     if (prefix == ((2ul << 3) | PB_WT_STRING)) {
       uint32_t length;
@@ -4173,10 +4169,8 @@ bool pb_decode_viaems_console_Configuration_Table2d(struct viaems_console_Config
     if (prefix == ((1ul << 3) | PB_WT_STRING)) {
       uint32_t length;
       if (!pb_decode_varint_uint32(&length, r, user)) { return false; }
-      if (length > 24) { return false; }
       if (!r((uint8_t *)msg->name.str, length, user)) { return false; }
       msg->name.len = length;
-      msg->has_name = true;
     }
     if (prefix == ((2ul << 3) | PB_WT_STRING)) {
       uint32_t length;
@@ -4217,19 +4211,15 @@ bool pb_decode_viaems_console_Configuration_Output(struct viaems_console_Configu
     if (!pb_decode_varint_uint32(&prefix, r, user)) { break; }
     if (prefix == ((1ul << 3) | PB_WT_VARINT)) {
       if (!pb_decode_varint_uint32(&msg->pin, r, user)) { return false; }
-      msg->has_pin = true;
     }
     if (prefix == ((2ul << 3) | PB_WT_VARINT)) {
       if (!pb_decode_enum_viaems_console_Configuration_Output_OutputType(&msg->type, r, user)) { return false; }
-      msg->has_type = true;
     }
     if (prefix == ((3ul << 3) | PB_WT_VARINT)) {
       if (!pb_decode_bool(&msg->inverted, r, user)) { return false; }
-      msg->has_inverted = true;
     }
     if (prefix == ((4ul << 3) | PB_WT_32BIT)) {
       if (!pb_decode_float(&msg->angle, r, user)) { return false; }
-      msg->has_angle = true;
     }
   }
   return true;
@@ -4320,19 +4310,15 @@ bool pb_decode_viaems_console_Configuration_Sensor(struct viaems_console_Configu
     if (!pb_decode_varint_uint32(&prefix, r, user)) { break; }
     if (prefix == ((1ul << 3) | PB_WT_VARINT)) {
       if (!pb_decode_enum_viaems_console_Configuration_SensorSource(&msg->source, r, user)) { return false; }
-      msg->has_source = true;
     }
     if (prefix == ((2ul << 3) | PB_WT_VARINT)) {
       if (!pb_decode_enum_viaems_console_Configuration_SensorMethod(&msg->method, r, user)) { return false; }
-      msg->has_method = true;
     }
     if (prefix == ((3ul << 3) | PB_WT_VARINT)) {
       if (!pb_decode_varint_uint32(&msg->pin, r, user)) { return false; }
-      msg->has_pin = true;
     }
     if (prefix == ((4ul << 3) | PB_WT_32BIT)) {
       if (!pb_decode_float(&msg->lag, r, user)) { return false; }
-      msg->has_lag = true;
     }
     if (prefix == ((5ul << 3) | PB_WT_STRING)) {
       uint32_t length;
@@ -4378,15 +4364,12 @@ bool pb_decode_viaems_console_Configuration_KnockSensor(struct viaems_console_Co
     if (!pb_decode_varint_uint32(&prefix, r, user)) { break; }
     if (prefix == ((1ul << 3) | PB_WT_VARINT)) {
       if (!pb_decode_bool(&msg->enabled, r, user)) { return false; }
-      msg->has_enabled = true;
     }
     if (prefix == ((2ul << 3) | PB_WT_32BIT)) {
       if (!pb_decode_float(&msg->frequency, r, user)) { return false; }
-      msg->has_frequency = true;
     }
     if (prefix == ((3ul << 3) | PB_WT_32BIT)) {
       if (!pb_decode_float(&msg->threshold, r, user)) { return false; }
-      msg->has_threshold = true;
     }
   }
   return true;
@@ -4488,27 +4471,21 @@ bool pb_decode_viaems_console_Configuration_Decoder(struct viaems_console_Config
     if (!pb_decode_varint_uint32(&prefix, r, user)) { break; }
     if (prefix == ((1ul << 3) | PB_WT_VARINT)) {
       if (!pb_decode_enum_viaems_console_Configuration_TriggerType(&msg->trigger_type, r, user)) { return false; }
-      msg->has_trigger_type = true;
     }
     if (prefix == ((2ul << 3) | PB_WT_32BIT)) {
       if (!pb_decode_float(&msg->degrees_per_trigger, r, user)) { return false; }
-      msg->has_degrees_per_trigger = true;
     }
     if (prefix == ((3ul << 3) | PB_WT_32BIT)) {
       if (!pb_decode_float(&msg->max_tooth_variance, r, user)) { return false; }
-      msg->has_max_tooth_variance = true;
     }
     if (prefix == ((4ul << 3) | PB_WT_32BIT)) {
       if (!pb_decode_float(&msg->min_rpm, r, user)) { return false; }
-      msg->has_min_rpm = true;
     }
     if (prefix == ((5ul << 3) | PB_WT_VARINT)) {
       if (!pb_decode_varint_uint32(&msg->num_triggers, r, user)) { return false; }
-      msg->has_num_triggers = true;
     }
     if (prefix == ((6ul << 3) | PB_WT_32BIT)) {
       if (!pb_decode_float(&msg->offset, r, user)) { return false; }
-      msg->has_offset = true;
     }
   }
   return true;
@@ -4519,11 +4496,9 @@ bool pb_decode_viaems_console_Configuration_TriggerInput(struct viaems_console_C
     if (!pb_decode_varint_uint32(&prefix, r, user)) { break; }
     if (prefix == ((1ul << 3) | PB_WT_VARINT)) {
       if (!pb_decode_enum_viaems_console_Configuration_InputEdge(&msg->edge, r, user)) { return false; }
-      msg->has_edge = true;
     }
     if (prefix == ((2ul << 3) | PB_WT_VARINT)) {
       if (!pb_decode_enum_viaems_console_Configuration_InputType(&msg->type, r, user)) { return false; }
-      msg->has_type = true;
     }
   }
   return true;
@@ -4534,15 +4509,12 @@ bool pb_decode_viaems_console_Configuration_CrankEnrichment(struct viaems_consol
     if (!pb_decode_varint_uint32(&prefix, r, user)) { break; }
     if (prefix == ((1ul << 3) | PB_WT_32BIT)) {
       if (!pb_decode_float(&msg->cranking_rpm, r, user)) { return false; }
-      msg->has_cranking_rpm = true;
     }
     if (prefix == ((2ul << 3) | PB_WT_32BIT)) {
       if (!pb_decode_float(&msg->cranking_temp, r, user)) { return false; }
-      msg->has_cranking_temp = true;
     }
     if (prefix == ((3ul << 3) | PB_WT_32BIT)) {
       if (!pb_decode_float(&msg->enrich_amt, r, user)) { return false; }
-      msg->has_enrich_amt = true;
     }
   }
   return true;
@@ -4553,31 +4525,24 @@ bool pb_decode_viaems_console_Configuration_Fueling(struct viaems_console_Config
     if (!pb_decode_varint_uint32(&prefix, r, user)) { break; }
     if (prefix == ((1ul << 3) | PB_WT_VARINT)) {
       if (!pb_decode_varint_uint32(&msg->fuel_pump_pin, r, user)) { return false; }
-      msg->has_fuel_pump_pin = true;
     }
     if (prefix == ((2ul << 3) | PB_WT_32BIT)) {
       if (!pb_decode_float(&msg->cylinder_cc, r, user)) { return false; }
-      msg->has_cylinder_cc = true;
     }
     if (prefix == ((3ul << 3) | PB_WT_32BIT)) {
       if (!pb_decode_float(&msg->fuel_density, r, user)) { return false; }
-      msg->has_fuel_density = true;
     }
     if (prefix == ((4ul << 3) | PB_WT_32BIT)) {
       if (!pb_decode_float(&msg->fuel_stoich_ratio, r, user)) { return false; }
-      msg->has_fuel_stoich_ratio = true;
     }
     if (prefix == ((5ul << 3) | PB_WT_VARINT)) {
       if (!pb_decode_varint_uint32(&msg->injections_per_cycle, r, user)) { return false; }
-      msg->has_injections_per_cycle = true;
     }
     if (prefix == ((6ul << 3) | PB_WT_32BIT)) {
       if (!pb_decode_float(&msg->injector_cc, r, user)) { return false; }
-      msg->has_injector_cc = true;
     }
     if (prefix == ((7ul << 3) | PB_WT_32BIT)) {
       if (!pb_decode_float(&msg->max_duty_cycle, r, user)) { return false; }
-      msg->has_max_duty_cycle = true;
     }
     if (prefix == ((16ul << 3) | PB_WT_STRING)) {
       uint32_t length;
@@ -4651,15 +4616,12 @@ bool pb_decode_viaems_console_Configuration_Ignition(struct viaems_console_Confi
     if (!pb_decode_varint_uint32(&prefix, r, user)) { break; }
     if (prefix == ((1ul << 3) | PB_WT_VARINT)) {
       if (!pb_decode_enum_viaems_console_Configuration_Ignition_DwellType(&msg->type, r, user)) { return false; }
-      msg->has_type = true;
     }
     if (prefix == ((2ul << 3) | PB_WT_32BIT)) {
       if (!pb_decode_float(&msg->fixed_dwell, r, user)) { return false; }
-      msg->has_fixed_dwell = true;
     }
     if (prefix == ((3ul << 3) | PB_WT_32BIT)) {
       if (!pb_decode_float(&msg->fixed_duty, r, user)) { return false; }
-      msg->has_fixed_duty = true;
     }
     if (prefix == ((4ul << 3) | PB_WT_STRING)) {
       uint32_t length;
@@ -4684,23 +4646,18 @@ bool pb_decode_viaems_console_Configuration_BoostControl(struct viaems_console_C
     if (!pb_decode_varint_uint32(&prefix, r, user)) { break; }
     if (prefix == ((1ul << 3) | PB_WT_VARINT)) {
       if (!pb_decode_varint_uint32(&msg->pin, r, user)) { return false; }
-      msg->has_pin = true;
     }
     if (prefix == ((2ul << 3) | PB_WT_32BIT)) {
       if (!pb_decode_float(&msg->control_threshold_map, r, user)) { return false; }
-      msg->has_control_threshold_map = true;
     }
     if (prefix == ((3ul << 3) | PB_WT_32BIT)) {
       if (!pb_decode_float(&msg->control_threshold_tps, r, user)) { return false; }
-      msg->has_control_threshold_tps = true;
     }
     if (prefix == ((4ul << 3) | PB_WT_32BIT)) {
       if (!pb_decode_float(&msg->enable_threshold_map, r, user)) { return false; }
-      msg->has_enable_threshold_map = true;
     }
     if (prefix == ((5ul << 3) | PB_WT_32BIT)) {
       if (!pb_decode_float(&msg->overboost_map, r, user)) { return false; }
-      msg->has_overboost_map = true;
     }
     if (prefix == ((6ul << 3) | PB_WT_STRING)) {
       uint32_t length;
@@ -4718,15 +4675,12 @@ bool pb_decode_viaems_console_Configuration_CheckEngineLight(struct viaems_conso
     if (!pb_decode_varint_uint32(&prefix, r, user)) { break; }
     if (prefix == ((1ul << 3) | PB_WT_VARINT)) {
       if (!pb_decode_varint_uint32(&msg->pin, r, user)) { return false; }
-      msg->has_pin = true;
     }
     if (prefix == ((2ul << 3) | PB_WT_32BIT)) {
       if (!pb_decode_float(&msg->lean_boost_ego, r, user)) { return false; }
-      msg->has_lean_boost_ego = true;
     }
     if (prefix == ((3ul << 3) | PB_WT_32BIT)) {
       if (!pb_decode_float(&msg->lean_boost_map_enable, r, user)) { return false; }
-      msg->has_lean_boost_map_enable = true;
     }
   }
   return true;
@@ -4737,11 +4691,9 @@ bool pb_decode_viaems_console_Configuration_RpmCut(struct viaems_console_Configu
     if (!pb_decode_varint_uint32(&prefix, r, user)) { break; }
     if (prefix == ((1ul << 3) | PB_WT_32BIT)) {
       if (!pb_decode_float(&msg->rpm_limit_start, r, user)) { return false; }
-      msg->has_rpm_limit_start = true;
     }
     if (prefix == ((2ul << 3) | PB_WT_32BIT)) {
       if (!pb_decode_float(&msg->rpm_limit_stop, r, user)) { return false; }
-      msg->has_rpm_limit_stop = true;
     }
   }
   return true;
@@ -4752,11 +4704,9 @@ bool pb_decode_viaems_console_Configuration_Debug(struct viaems_console_Configur
     if (!pb_decode_varint_uint32(&prefix, r, user)) { break; }
     if (prefix == ((1ul << 3) | PB_WT_VARINT)) {
       if (!pb_decode_bool(&msg->test_trigger_enabled, r, user)) { return false; }
-      msg->has_test_trigger_enabled = true;
     }
     if (prefix == ((2ul << 3) | PB_WT_32BIT)) {
       if (!pb_decode_float(&msg->test_trigger_rpm, r, user)) { return false; }
-      msg->has_test_trigger_rpm = true;
     }
   }
   return true;
@@ -4889,42 +4839,42 @@ unsigned pb_sizeof_viaems_console_Request(const struct viaems_console_Request *m
 
   if (msg->which_request == PB_TAG_viaems_console_Request_ping) {
     size += 1;  // Size of tag
-    unsigned element_size = pb_sizeof_viaems_console_Request_Ping(&msg->ping);
+    unsigned element_size = pb_sizeof_viaems_console_Request_Ping(&msg->request.ping);
     size += pb_sizeof_varint(element_size);
     size += element_size;
   }
 
   if (msg->which_request == PB_TAG_viaems_console_Request_fwinfo) {
     size += 1;  // Size of tag
-    unsigned element_size = pb_sizeof_viaems_console_Request_FirmwareInfo(&msg->fwinfo);
+    unsigned element_size = pb_sizeof_viaems_console_Request_FirmwareInfo(&msg->request.fwinfo);
     size += pb_sizeof_varint(element_size);
     size += element_size;
   }
 
   if (msg->which_request == PB_TAG_viaems_console_Request_setconfig) {
     size += 1;  // Size of tag
-    unsigned element_size = pb_sizeof_viaems_console_Request_SetConfig(&msg->setconfig);
+    unsigned element_size = pb_sizeof_viaems_console_Request_SetConfig(&msg->request.setconfig);
     size += pb_sizeof_varint(element_size);
     size += element_size;
   }
 
   if (msg->which_request == PB_TAG_viaems_console_Request_getconfig) {
     size += 1;  // Size of tag
-    unsigned element_size = pb_sizeof_viaems_console_Request_GetConfig(&msg->getconfig);
+    unsigned element_size = pb_sizeof_viaems_console_Request_GetConfig(&msg->request.getconfig);
     size += pb_sizeof_varint(element_size);
     size += element_size;
   }
 
   if (msg->which_request == PB_TAG_viaems_console_Request_flashconfig) {
     size += 1;  // Size of tag
-    unsigned element_size = pb_sizeof_viaems_console_Request_FlashConfig(&msg->flashconfig);
+    unsigned element_size = pb_sizeof_viaems_console_Request_FlashConfig(&msg->request.flashconfig);
     size += pb_sizeof_varint(element_size);
     size += element_size;
   }
 
   if (msg->which_request == PB_TAG_viaems_console_Request_resettobootloader) {
     size += 1;  // Size of tag
-    unsigned element_size = pb_sizeof_viaems_console_Request_ResetToBootloader(&msg->resettobootloader);
+    unsigned element_size = pb_sizeof_viaems_console_Request_ResetToBootloader(&msg->request.resettobootloader);
     size += pb_sizeof_varint(element_size);
     size += element_size;
   }
@@ -4977,55 +4927,55 @@ bool pb_encode_viaems_console_Request(const struct viaems_console_Request *msg, 
   if (msg->which_request == PB_TAG_viaems_console_Request_ping) {
     uint8_t *ptr = scratch;
     ptr += pb_encode_varint(ptr, (2 << 3) | PB_WT_STRING);
-    unsigned elem_size = pb_sizeof_viaems_console_Request_Ping(&msg->ping);
+    unsigned elem_size = pb_sizeof_viaems_console_Request_Ping(&msg->request.ping);
     ptr += pb_encode_varint(ptr, elem_size);
     if (!w(scratch, ptr - scratch, user)) { return false; }
-    if (!pb_encode_viaems_console_Request_Ping(&msg->ping, w, user)) { return false; }
+    if (!pb_encode_viaems_console_Request_Ping(&msg->request.ping, w, user)) { return false; }
   }
 
   if (msg->which_request == PB_TAG_viaems_console_Request_fwinfo) {
     uint8_t *ptr = scratch;
     ptr += pb_encode_varint(ptr, (3 << 3) | PB_WT_STRING);
-    unsigned elem_size = pb_sizeof_viaems_console_Request_FirmwareInfo(&msg->fwinfo);
+    unsigned elem_size = pb_sizeof_viaems_console_Request_FirmwareInfo(&msg->request.fwinfo);
     ptr += pb_encode_varint(ptr, elem_size);
     if (!w(scratch, ptr - scratch, user)) { return false; }
-    if (!pb_encode_viaems_console_Request_FirmwareInfo(&msg->fwinfo, w, user)) { return false; }
+    if (!pb_encode_viaems_console_Request_FirmwareInfo(&msg->request.fwinfo, w, user)) { return false; }
   }
 
   if (msg->which_request == PB_TAG_viaems_console_Request_setconfig) {
     uint8_t *ptr = scratch;
     ptr += pb_encode_varint(ptr, (4 << 3) | PB_WT_STRING);
-    unsigned elem_size = pb_sizeof_viaems_console_Request_SetConfig(&msg->setconfig);
+    unsigned elem_size = pb_sizeof_viaems_console_Request_SetConfig(&msg->request.setconfig);
     ptr += pb_encode_varint(ptr, elem_size);
     if (!w(scratch, ptr - scratch, user)) { return false; }
-    if (!pb_encode_viaems_console_Request_SetConfig(&msg->setconfig, w, user)) { return false; }
+    if (!pb_encode_viaems_console_Request_SetConfig(&msg->request.setconfig, w, user)) { return false; }
   }
 
   if (msg->which_request == PB_TAG_viaems_console_Request_getconfig) {
     uint8_t *ptr = scratch;
     ptr += pb_encode_varint(ptr, (5 << 3) | PB_WT_STRING);
-    unsigned elem_size = pb_sizeof_viaems_console_Request_GetConfig(&msg->getconfig);
+    unsigned elem_size = pb_sizeof_viaems_console_Request_GetConfig(&msg->request.getconfig);
     ptr += pb_encode_varint(ptr, elem_size);
     if (!w(scratch, ptr - scratch, user)) { return false; }
-    if (!pb_encode_viaems_console_Request_GetConfig(&msg->getconfig, w, user)) { return false; }
+    if (!pb_encode_viaems_console_Request_GetConfig(&msg->request.getconfig, w, user)) { return false; }
   }
 
   if (msg->which_request == PB_TAG_viaems_console_Request_flashconfig) {
     uint8_t *ptr = scratch;
     ptr += pb_encode_varint(ptr, (6 << 3) | PB_WT_STRING);
-    unsigned elem_size = pb_sizeof_viaems_console_Request_FlashConfig(&msg->flashconfig);
+    unsigned elem_size = pb_sizeof_viaems_console_Request_FlashConfig(&msg->request.flashconfig);
     ptr += pb_encode_varint(ptr, elem_size);
     if (!w(scratch, ptr - scratch, user)) { return false; }
-    if (!pb_encode_viaems_console_Request_FlashConfig(&msg->flashconfig, w, user)) { return false; }
+    if (!pb_encode_viaems_console_Request_FlashConfig(&msg->request.flashconfig, w, user)) { return false; }
   }
 
   if (msg->which_request == PB_TAG_viaems_console_Request_resettobootloader) {
     uint8_t *ptr = scratch;
     ptr += pb_encode_varint(ptr, (7 << 3) | PB_WT_STRING);
-    unsigned elem_size = pb_sizeof_viaems_console_Request_ResetToBootloader(&msg->resettobootloader);
+    unsigned elem_size = pb_sizeof_viaems_console_Request_ResetToBootloader(&msg->request.resettobootloader);
     ptr += pb_encode_varint(ptr, elem_size);
     if (!w(scratch, ptr - scratch, user)) { return false; }
-    if (!pb_encode_viaems_console_Request_ResetToBootloader(&msg->resettobootloader, w, user)) { return false; }
+    if (!pb_encode_viaems_console_Request_ResetToBootloader(&msg->request.resettobootloader, w, user)) { return false; }
   }
 
   return true;
@@ -5070,44 +5020,44 @@ unsigned pb_encode_viaems_console_Request_to_buffer(uint8_t buffer[16217], const
 
   if (msg->which_request == PB_TAG_viaems_console_Request_ping) {
     ptr += pb_encode_varint(ptr, (2 << 3) | PB_WT_STRING);
-    unsigned elem_size = pb_sizeof_viaems_console_Request_Ping(&msg->ping);
+    unsigned elem_size = pb_sizeof_viaems_console_Request_Ping(&msg->request.ping);
     ptr += pb_encode_varint(ptr, elem_size);
-    ptr += pb_encode_viaems_console_Request_Ping_to_buffer(ptr, &msg->ping);
+    ptr += pb_encode_viaems_console_Request_Ping_to_buffer(ptr, &msg->request.ping);
   }
 
   if (msg->which_request == PB_TAG_viaems_console_Request_fwinfo) {
     ptr += pb_encode_varint(ptr, (3 << 3) | PB_WT_STRING);
-    unsigned elem_size = pb_sizeof_viaems_console_Request_FirmwareInfo(&msg->fwinfo);
+    unsigned elem_size = pb_sizeof_viaems_console_Request_FirmwareInfo(&msg->request.fwinfo);
     ptr += pb_encode_varint(ptr, elem_size);
-    ptr += pb_encode_viaems_console_Request_FirmwareInfo_to_buffer(ptr, &msg->fwinfo);
+    ptr += pb_encode_viaems_console_Request_FirmwareInfo_to_buffer(ptr, &msg->request.fwinfo);
   }
 
   if (msg->which_request == PB_TAG_viaems_console_Request_setconfig) {
     ptr += pb_encode_varint(ptr, (4 << 3) | PB_WT_STRING);
-    unsigned elem_size = pb_sizeof_viaems_console_Request_SetConfig(&msg->setconfig);
+    unsigned elem_size = pb_sizeof_viaems_console_Request_SetConfig(&msg->request.setconfig);
     ptr += pb_encode_varint(ptr, elem_size);
-    ptr += pb_encode_viaems_console_Request_SetConfig_to_buffer(ptr, &msg->setconfig);
+    ptr += pb_encode_viaems_console_Request_SetConfig_to_buffer(ptr, &msg->request.setconfig);
   }
 
   if (msg->which_request == PB_TAG_viaems_console_Request_getconfig) {
     ptr += pb_encode_varint(ptr, (5 << 3) | PB_WT_STRING);
-    unsigned elem_size = pb_sizeof_viaems_console_Request_GetConfig(&msg->getconfig);
+    unsigned elem_size = pb_sizeof_viaems_console_Request_GetConfig(&msg->request.getconfig);
     ptr += pb_encode_varint(ptr, elem_size);
-    ptr += pb_encode_viaems_console_Request_GetConfig_to_buffer(ptr, &msg->getconfig);
+    ptr += pb_encode_viaems_console_Request_GetConfig_to_buffer(ptr, &msg->request.getconfig);
   }
 
   if (msg->which_request == PB_TAG_viaems_console_Request_flashconfig) {
     ptr += pb_encode_varint(ptr, (6 << 3) | PB_WT_STRING);
-    unsigned elem_size = pb_sizeof_viaems_console_Request_FlashConfig(&msg->flashconfig);
+    unsigned elem_size = pb_sizeof_viaems_console_Request_FlashConfig(&msg->request.flashconfig);
     ptr += pb_encode_varint(ptr, elem_size);
-    ptr += pb_encode_viaems_console_Request_FlashConfig_to_buffer(ptr, &msg->flashconfig);
+    ptr += pb_encode_viaems_console_Request_FlashConfig_to_buffer(ptr, &msg->request.flashconfig);
   }
 
   if (msg->which_request == PB_TAG_viaems_console_Request_resettobootloader) {
     ptr += pb_encode_varint(ptr, (7 << 3) | PB_WT_STRING);
-    unsigned elem_size = pb_sizeof_viaems_console_Request_ResetToBootloader(&msg->resettobootloader);
+    unsigned elem_size = pb_sizeof_viaems_console_Request_ResetToBootloader(&msg->request.resettobootloader);
     ptr += pb_encode_varint(ptr, elem_size);
-    ptr += pb_encode_viaems_console_Request_ResetToBootloader_to_buffer(ptr, &msg->resettobootloader);
+    ptr += pb_encode_viaems_console_Request_ResetToBootloader_to_buffer(ptr, &msg->request.resettobootloader);
   }
 
   return (ptr - buffer);
@@ -5172,42 +5122,42 @@ bool pb_decode_viaems_console_Request(struct viaems_console_Request *msg, pb_rea
       uint32_t length;
       if (!pb_decode_varint_uint32(&length, r, user)) { return false; }
       struct pb_bounded_reader br = { .r = r, .user = user, .len = length };
-      if (!pb_decode_viaems_console_Request_Ping(&msg->ping, pb_bounded_read, &br)) { return false; }
+      if (!pb_decode_viaems_console_Request_Ping(&msg->request.ping, pb_bounded_read, &br)) { return false; }
       msg->which_request = 2;
     }
     if (prefix == ((3ul << 3) | PB_WT_STRING)) {
       uint32_t length;
       if (!pb_decode_varint_uint32(&length, r, user)) { return false; }
       struct pb_bounded_reader br = { .r = r, .user = user, .len = length };
-      if (!pb_decode_viaems_console_Request_FirmwareInfo(&msg->fwinfo, pb_bounded_read, &br)) { return false; }
+      if (!pb_decode_viaems_console_Request_FirmwareInfo(&msg->request.fwinfo, pb_bounded_read, &br)) { return false; }
       msg->which_request = 3;
     }
     if (prefix == ((4ul << 3) | PB_WT_STRING)) {
       uint32_t length;
       if (!pb_decode_varint_uint32(&length, r, user)) { return false; }
       struct pb_bounded_reader br = { .r = r, .user = user, .len = length };
-      if (!pb_decode_viaems_console_Request_SetConfig(&msg->setconfig, pb_bounded_read, &br)) { return false; }
+      if (!pb_decode_viaems_console_Request_SetConfig(&msg->request.setconfig, pb_bounded_read, &br)) { return false; }
       msg->which_request = 4;
     }
     if (prefix == ((5ul << 3) | PB_WT_STRING)) {
       uint32_t length;
       if (!pb_decode_varint_uint32(&length, r, user)) { return false; }
       struct pb_bounded_reader br = { .r = r, .user = user, .len = length };
-      if (!pb_decode_viaems_console_Request_GetConfig(&msg->getconfig, pb_bounded_read, &br)) { return false; }
+      if (!pb_decode_viaems_console_Request_GetConfig(&msg->request.getconfig, pb_bounded_read, &br)) { return false; }
       msg->which_request = 5;
     }
     if (prefix == ((6ul << 3) | PB_WT_STRING)) {
       uint32_t length;
       if (!pb_decode_varint_uint32(&length, r, user)) { return false; }
       struct pb_bounded_reader br = { .r = r, .user = user, .len = length };
-      if (!pb_decode_viaems_console_Request_FlashConfig(&msg->flashconfig, pb_bounded_read, &br)) { return false; }
+      if (!pb_decode_viaems_console_Request_FlashConfig(&msg->request.flashconfig, pb_bounded_read, &br)) { return false; }
       msg->which_request = 6;
     }
     if (prefix == ((7ul << 3) | PB_WT_STRING)) {
       uint32_t length;
       if (!pb_decode_varint_uint32(&length, r, user)) { return false; }
       struct pb_bounded_reader br = { .r = r, .user = user, .len = length };
-      if (!pb_decode_viaems_console_Request_ResetToBootloader(&msg->resettobootloader, pb_bounded_read, &br)) { return false; }
+      if (!pb_decode_viaems_console_Request_ResetToBootloader(&msg->request.resettobootloader, pb_bounded_read, &br)) { return false; }
       msg->which_request = 7;
     }
   }
@@ -5307,35 +5257,35 @@ unsigned pb_sizeof_viaems_console_Response(const struct viaems_console_Response 
 
   if (msg->which_response == PB_TAG_viaems_console_Response_pong) {
     size += 1;  // Size of tag
-    unsigned element_size = pb_sizeof_viaems_console_Response_Pong(&msg->pong);
+    unsigned element_size = pb_sizeof_viaems_console_Response_Pong(&msg->response.pong);
     size += pb_sizeof_varint(element_size);
     size += element_size;
   }
 
   if (msg->which_response == PB_TAG_viaems_console_Response_fwinfo) {
     size += 1;  // Size of tag
-    unsigned element_size = pb_sizeof_viaems_console_Response_FirmwareInfo(&msg->fwinfo);
+    unsigned element_size = pb_sizeof_viaems_console_Response_FirmwareInfo(&msg->response.fwinfo);
     size += pb_sizeof_varint(element_size);
     size += element_size;
   }
 
   if (msg->which_response == PB_TAG_viaems_console_Response_setconfig) {
     size += 1;  // Size of tag
-    unsigned element_size = pb_sizeof_viaems_console_Response_SetConfig(&msg->setconfig);
+    unsigned element_size = pb_sizeof_viaems_console_Response_SetConfig(&msg->response.setconfig);
     size += pb_sizeof_varint(element_size);
     size += element_size;
   }
 
   if (msg->which_response == PB_TAG_viaems_console_Response_getconfig) {
     size += 1;  // Size of tag
-    unsigned element_size = pb_sizeof_viaems_console_Response_GetConfig(&msg->getconfig);
+    unsigned element_size = pb_sizeof_viaems_console_Response_GetConfig(&msg->response.getconfig);
     size += pb_sizeof_varint(element_size);
     size += element_size;
   }
 
   if (msg->which_response == PB_TAG_viaems_console_Response_flashconfig) {
     size += 1;  // Size of tag
-    unsigned element_size = pb_sizeof_viaems_console_Response_FlashConfig(&msg->flashconfig);
+    unsigned element_size = pb_sizeof_viaems_console_Response_FlashConfig(&msg->response.flashconfig);
     size += pb_sizeof_varint(element_size);
     size += element_size;
   }
@@ -5448,46 +5398,46 @@ bool pb_encode_viaems_console_Response(const struct viaems_console_Response *msg
   if (msg->which_response == PB_TAG_viaems_console_Response_pong) {
     uint8_t *ptr = scratch;
     ptr += pb_encode_varint(ptr, (2 << 3) | PB_WT_STRING);
-    unsigned elem_size = pb_sizeof_viaems_console_Response_Pong(&msg->pong);
+    unsigned elem_size = pb_sizeof_viaems_console_Response_Pong(&msg->response.pong);
     ptr += pb_encode_varint(ptr, elem_size);
     if (!w(scratch, ptr - scratch, user)) { return false; }
-    if (!pb_encode_viaems_console_Response_Pong(&msg->pong, w, user)) { return false; }
+    if (!pb_encode_viaems_console_Response_Pong(&msg->response.pong, w, user)) { return false; }
   }
 
   if (msg->which_response == PB_TAG_viaems_console_Response_fwinfo) {
     uint8_t *ptr = scratch;
     ptr += pb_encode_varint(ptr, (3 << 3) | PB_WT_STRING);
-    unsigned elem_size = pb_sizeof_viaems_console_Response_FirmwareInfo(&msg->fwinfo);
+    unsigned elem_size = pb_sizeof_viaems_console_Response_FirmwareInfo(&msg->response.fwinfo);
     ptr += pb_encode_varint(ptr, elem_size);
     if (!w(scratch, ptr - scratch, user)) { return false; }
-    if (!pb_encode_viaems_console_Response_FirmwareInfo(&msg->fwinfo, w, user)) { return false; }
+    if (!pb_encode_viaems_console_Response_FirmwareInfo(&msg->response.fwinfo, w, user)) { return false; }
   }
 
   if (msg->which_response == PB_TAG_viaems_console_Response_setconfig) {
     uint8_t *ptr = scratch;
     ptr += pb_encode_varint(ptr, (4 << 3) | PB_WT_STRING);
-    unsigned elem_size = pb_sizeof_viaems_console_Response_SetConfig(&msg->setconfig);
+    unsigned elem_size = pb_sizeof_viaems_console_Response_SetConfig(&msg->response.setconfig);
     ptr += pb_encode_varint(ptr, elem_size);
     if (!w(scratch, ptr - scratch, user)) { return false; }
-    if (!pb_encode_viaems_console_Response_SetConfig(&msg->setconfig, w, user)) { return false; }
+    if (!pb_encode_viaems_console_Response_SetConfig(&msg->response.setconfig, w, user)) { return false; }
   }
 
   if (msg->which_response == PB_TAG_viaems_console_Response_getconfig) {
     uint8_t *ptr = scratch;
     ptr += pb_encode_varint(ptr, (5 << 3) | PB_WT_STRING);
-    unsigned elem_size = pb_sizeof_viaems_console_Response_GetConfig(&msg->getconfig);
+    unsigned elem_size = pb_sizeof_viaems_console_Response_GetConfig(&msg->response.getconfig);
     ptr += pb_encode_varint(ptr, elem_size);
     if (!w(scratch, ptr - scratch, user)) { return false; }
-    if (!pb_encode_viaems_console_Response_GetConfig(&msg->getconfig, w, user)) { return false; }
+    if (!pb_encode_viaems_console_Response_GetConfig(&msg->response.getconfig, w, user)) { return false; }
   }
 
   if (msg->which_response == PB_TAG_viaems_console_Response_flashconfig) {
     uint8_t *ptr = scratch;
     ptr += pb_encode_varint(ptr, (6 << 3) | PB_WT_STRING);
-    unsigned elem_size = pb_sizeof_viaems_console_Response_FlashConfig(&msg->flashconfig);
+    unsigned elem_size = pb_sizeof_viaems_console_Response_FlashConfig(&msg->response.flashconfig);
     ptr += pb_encode_varint(ptr, elem_size);
     if (!w(scratch, ptr - scratch, user)) { return false; }
-    if (!pb_encode_viaems_console_Response_FlashConfig(&msg->flashconfig, w, user)) { return false; }
+    if (!pb_encode_viaems_console_Response_FlashConfig(&msg->response.flashconfig, w, user)) { return false; }
   }
 
   return true;
@@ -5579,37 +5529,37 @@ unsigned pb_encode_viaems_console_Response_to_buffer(uint8_t buffer[16498], cons
 
   if (msg->which_response == PB_TAG_viaems_console_Response_pong) {
     ptr += pb_encode_varint(ptr, (2 << 3) | PB_WT_STRING);
-    unsigned elem_size = pb_sizeof_viaems_console_Response_Pong(&msg->pong);
+    unsigned elem_size = pb_sizeof_viaems_console_Response_Pong(&msg->response.pong);
     ptr += pb_encode_varint(ptr, elem_size);
-    ptr += pb_encode_viaems_console_Response_Pong_to_buffer(ptr, &msg->pong);
+    ptr += pb_encode_viaems_console_Response_Pong_to_buffer(ptr, &msg->response.pong);
   }
 
   if (msg->which_response == PB_TAG_viaems_console_Response_fwinfo) {
     ptr += pb_encode_varint(ptr, (3 << 3) | PB_WT_STRING);
-    unsigned elem_size = pb_sizeof_viaems_console_Response_FirmwareInfo(&msg->fwinfo);
+    unsigned elem_size = pb_sizeof_viaems_console_Response_FirmwareInfo(&msg->response.fwinfo);
     ptr += pb_encode_varint(ptr, elem_size);
-    ptr += pb_encode_viaems_console_Response_FirmwareInfo_to_buffer(ptr, &msg->fwinfo);
+    ptr += pb_encode_viaems_console_Response_FirmwareInfo_to_buffer(ptr, &msg->response.fwinfo);
   }
 
   if (msg->which_response == PB_TAG_viaems_console_Response_setconfig) {
     ptr += pb_encode_varint(ptr, (4 << 3) | PB_WT_STRING);
-    unsigned elem_size = pb_sizeof_viaems_console_Response_SetConfig(&msg->setconfig);
+    unsigned elem_size = pb_sizeof_viaems_console_Response_SetConfig(&msg->response.setconfig);
     ptr += pb_encode_varint(ptr, elem_size);
-    ptr += pb_encode_viaems_console_Response_SetConfig_to_buffer(ptr, &msg->setconfig);
+    ptr += pb_encode_viaems_console_Response_SetConfig_to_buffer(ptr, &msg->response.setconfig);
   }
 
   if (msg->which_response == PB_TAG_viaems_console_Response_getconfig) {
     ptr += pb_encode_varint(ptr, (5 << 3) | PB_WT_STRING);
-    unsigned elem_size = pb_sizeof_viaems_console_Response_GetConfig(&msg->getconfig);
+    unsigned elem_size = pb_sizeof_viaems_console_Response_GetConfig(&msg->response.getconfig);
     ptr += pb_encode_varint(ptr, elem_size);
-    ptr += pb_encode_viaems_console_Response_GetConfig_to_buffer(ptr, &msg->getconfig);
+    ptr += pb_encode_viaems_console_Response_GetConfig_to_buffer(ptr, &msg->response.getconfig);
   }
 
   if (msg->which_response == PB_TAG_viaems_console_Response_flashconfig) {
     ptr += pb_encode_varint(ptr, (6 << 3) | PB_WT_STRING);
-    unsigned elem_size = pb_sizeof_viaems_console_Response_FlashConfig(&msg->flashconfig);
+    unsigned elem_size = pb_sizeof_viaems_console_Response_FlashConfig(&msg->response.flashconfig);
     ptr += pb_encode_varint(ptr, elem_size);
-    ptr += pb_encode_viaems_console_Response_FlashConfig_to_buffer(ptr, &msg->flashconfig);
+    ptr += pb_encode_viaems_console_Response_FlashConfig_to_buffer(ptr, &msg->response.flashconfig);
   }
 
   return (ptr - buffer);
@@ -5675,21 +5625,18 @@ bool pb_decode_viaems_console_Response_FirmwareInfo(struct viaems_console_Respon
     if (prefix == ((1ul << 3) | PB_WT_STRING)) {
       uint32_t length;
       if (!pb_decode_varint_uint32(&length, r, user)) { return false; }
-      if (length > 64) { return false; }
       if (!r((uint8_t *)msg->version.str, length, user)) { return false; }
       msg->version.len = length;
     }
     if (prefix == ((2ul << 3) | PB_WT_STRING)) {
       uint32_t length;
       if (!pb_decode_varint_uint32(&length, r, user)) { return false; }
-      if (length > 32) { return false; }
       if (!r((uint8_t *)msg->platform.str, length, user)) { return false; }
       msg->platform.len = length;
     }
     if (prefix == ((3ul << 3) | PB_WT_STRING)) {
       uint32_t length;
       if (!pb_decode_varint_uint32(&length, r, user)) { return false; }
-      if (length > 16384) { return false; }
       if (!r((uint8_t *)msg->proto.str, length, user)) { return false; }
       msg->proto.len = length;
     }
@@ -5707,35 +5654,35 @@ bool pb_decode_viaems_console_Response(struct viaems_console_Response *msg, pb_r
       uint32_t length;
       if (!pb_decode_varint_uint32(&length, r, user)) { return false; }
       struct pb_bounded_reader br = { .r = r, .user = user, .len = length };
-      if (!pb_decode_viaems_console_Response_Pong(&msg->pong, pb_bounded_read, &br)) { return false; }
+      if (!pb_decode_viaems_console_Response_Pong(&msg->response.pong, pb_bounded_read, &br)) { return false; }
       msg->which_response = 2;
     }
     if (prefix == ((3ul << 3) | PB_WT_STRING)) {
       uint32_t length;
       if (!pb_decode_varint_uint32(&length, r, user)) { return false; }
       struct pb_bounded_reader br = { .r = r, .user = user, .len = length };
-      if (!pb_decode_viaems_console_Response_FirmwareInfo(&msg->fwinfo, pb_bounded_read, &br)) { return false; }
+      if (!pb_decode_viaems_console_Response_FirmwareInfo(&msg->response.fwinfo, pb_bounded_read, &br)) { return false; }
       msg->which_response = 3;
     }
     if (prefix == ((4ul << 3) | PB_WT_STRING)) {
       uint32_t length;
       if (!pb_decode_varint_uint32(&length, r, user)) { return false; }
       struct pb_bounded_reader br = { .r = r, .user = user, .len = length };
-      if (!pb_decode_viaems_console_Response_SetConfig(&msg->setconfig, pb_bounded_read, &br)) { return false; }
+      if (!pb_decode_viaems_console_Response_SetConfig(&msg->response.setconfig, pb_bounded_read, &br)) { return false; }
       msg->which_response = 4;
     }
     if (prefix == ((5ul << 3) | PB_WT_STRING)) {
       uint32_t length;
       if (!pb_decode_varint_uint32(&length, r, user)) { return false; }
       struct pb_bounded_reader br = { .r = r, .user = user, .len = length };
-      if (!pb_decode_viaems_console_Response_GetConfig(&msg->getconfig, pb_bounded_read, &br)) { return false; }
+      if (!pb_decode_viaems_console_Response_GetConfig(&msg->response.getconfig, pb_bounded_read, &br)) { return false; }
       msg->which_response = 5;
     }
     if (prefix == ((6ul << 3) | PB_WT_STRING)) {
       uint32_t length;
       if (!pb_decode_varint_uint32(&length, r, user)) { return false; }
       struct pb_bounded_reader br = { .r = r, .user = user, .len = length };
-      if (!pb_decode_viaems_console_Response_FlashConfig(&msg->flashconfig, pb_bounded_read, &br)) { return false; }
+      if (!pb_decode_viaems_console_Response_FlashConfig(&msg->response.flashconfig, pb_bounded_read, &br)) { return false; }
       msg->which_response = 6;
     }
   }
@@ -5745,28 +5692,28 @@ unsigned pb_sizeof_viaems_console_Message(const struct viaems_console_Message *m
   unsigned size = 0;
   if (msg->which_msg == PB_TAG_viaems_console_Message_engine_update) {
     size += 1;  // Size of tag
-    unsigned element_size = pb_sizeof_viaems_console_EngineUpdate(&msg->engine_update);
+    unsigned element_size = pb_sizeof_viaems_console_EngineUpdate(&msg->msg.engine_update);
     size += pb_sizeof_varint(element_size);
     size += element_size;
   }
 
   if (msg->which_msg == PB_TAG_viaems_console_Message_event) {
     size += 1;  // Size of tag
-    unsigned element_size = pb_sizeof_viaems_console_Event(&msg->event);
+    unsigned element_size = pb_sizeof_viaems_console_Event(&msg->msg.event);
     size += pb_sizeof_varint(element_size);
     size += element_size;
   }
 
   if (msg->which_msg == PB_TAG_viaems_console_Message_request) {
     size += 1;  // Size of tag
-    unsigned element_size = pb_sizeof_viaems_console_Request(&msg->request);
+    unsigned element_size = pb_sizeof_viaems_console_Request(&msg->msg.request);
     size += pb_sizeof_varint(element_size);
     size += element_size;
   }
 
   if (msg->which_msg == PB_TAG_viaems_console_Message_response) {
     size += 1;  // Size of tag
-    unsigned element_size = pb_sizeof_viaems_console_Response(&msg->response);
+    unsigned element_size = pb_sizeof_viaems_console_Response(&msg->msg.response);
     size += pb_sizeof_varint(element_size);
     size += element_size;
   }
@@ -5780,16 +5727,16 @@ bool pb_encode_viaems_console_Message(const struct viaems_console_Message *msg, 
   if (msg->which_msg == PB_TAG_viaems_console_Message_engine_update) {
     uint8_t *ptr = scratch;
     ptr += pb_encode_varint(ptr, (2 << 3) | PB_WT_STRING);
-    unsigned elem_size = pb_sizeof_viaems_console_EngineUpdate(&msg->engine_update);
+    unsigned elem_size = pb_sizeof_viaems_console_EngineUpdate(&msg->msg.engine_update);
     ptr += pb_encode_varint(ptr, elem_size);
     if (!w(scratch, ptr - scratch, user)) { return false; }
-    if (!pb_encode_viaems_console_EngineUpdate(&msg->engine_update, w, user)) { return false; }
+    if (!pb_encode_viaems_console_EngineUpdate(&msg->msg.engine_update, w, user)) { return false; }
   }
 
   if (msg->which_msg == PB_TAG_viaems_console_Message_event) {
     uint8_t *ptr = scratch;
     ptr += pb_encode_varint(ptr, (3 << 3) | PB_WT_STRING);
-    unsigned elem_size = pb_encode_viaems_console_Event_to_buffer(submsg, &msg->event);
+    unsigned elem_size = pb_encode_viaems_console_Event_to_buffer(submsg, &msg->msg.event);
     ptr += pb_encode_varint(ptr, elem_size);
     if (!w(scratch, ptr - scratch, user)) { return false; }
     if (!w(submsg, elem_size, user)) { return false; }
@@ -5798,19 +5745,19 @@ bool pb_encode_viaems_console_Message(const struct viaems_console_Message *msg, 
   if (msg->which_msg == PB_TAG_viaems_console_Message_request) {
     uint8_t *ptr = scratch;
     ptr += pb_encode_varint(ptr, (4 << 3) | PB_WT_STRING);
-    unsigned elem_size = pb_sizeof_viaems_console_Request(&msg->request);
+    unsigned elem_size = pb_sizeof_viaems_console_Request(&msg->msg.request);
     ptr += pb_encode_varint(ptr, elem_size);
     if (!w(scratch, ptr - scratch, user)) { return false; }
-    if (!pb_encode_viaems_console_Request(&msg->request, w, user)) { return false; }
+    if (!pb_encode_viaems_console_Request(&msg->msg.request, w, user)) { return false; }
   }
 
   if (msg->which_msg == PB_TAG_viaems_console_Message_response) {
     uint8_t *ptr = scratch;
     ptr += pb_encode_varint(ptr, (5 << 3) | PB_WT_STRING);
-    unsigned elem_size = pb_sizeof_viaems_console_Response(&msg->response);
+    unsigned elem_size = pb_sizeof_viaems_console_Response(&msg->msg.response);
     ptr += pb_encode_varint(ptr, elem_size);
     if (!w(scratch, ptr - scratch, user)) { return false; }
-    if (!pb_encode_viaems_console_Response(&msg->response, w, user)) { return false; }
+    if (!pb_encode_viaems_console_Response(&msg->msg.response, w, user)) { return false; }
   }
 
   return true;
@@ -5819,30 +5766,30 @@ unsigned pb_encode_viaems_console_Message_to_buffer(uint8_t buffer[16502], const
   uint8_t *ptr = buffer;
   if (msg->which_msg == PB_TAG_viaems_console_Message_engine_update) {
     ptr += pb_encode_varint(ptr, (2 << 3) | PB_WT_STRING);
-    unsigned elem_size = pb_sizeof_viaems_console_EngineUpdate(&msg->engine_update);
+    unsigned elem_size = pb_sizeof_viaems_console_EngineUpdate(&msg->msg.engine_update);
     ptr += pb_encode_varint(ptr, elem_size);
-    ptr += pb_encode_viaems_console_EngineUpdate_to_buffer(ptr, &msg->engine_update);
+    ptr += pb_encode_viaems_console_EngineUpdate_to_buffer(ptr, &msg->msg.engine_update);
   }
 
   if (msg->which_msg == PB_TAG_viaems_console_Message_event) {
     ptr += pb_encode_varint(ptr, (3 << 3) | PB_WT_STRING);
-    unsigned elem_size = pb_sizeof_viaems_console_Event(&msg->event);
+    unsigned elem_size = pb_sizeof_viaems_console_Event(&msg->msg.event);
     ptr += pb_encode_varint(ptr, elem_size);
-    ptr += pb_encode_viaems_console_Event_to_buffer(ptr, &msg->event);
+    ptr += pb_encode_viaems_console_Event_to_buffer(ptr, &msg->msg.event);
   }
 
   if (msg->which_msg == PB_TAG_viaems_console_Message_request) {
     ptr += pb_encode_varint(ptr, (4 << 3) | PB_WT_STRING);
-    unsigned elem_size = pb_sizeof_viaems_console_Request(&msg->request);
+    unsigned elem_size = pb_sizeof_viaems_console_Request(&msg->msg.request);
     ptr += pb_encode_varint(ptr, elem_size);
-    ptr += pb_encode_viaems_console_Request_to_buffer(ptr, &msg->request);
+    ptr += pb_encode_viaems_console_Request_to_buffer(ptr, &msg->msg.request);
   }
 
   if (msg->which_msg == PB_TAG_viaems_console_Message_response) {
     ptr += pb_encode_varint(ptr, (5 << 3) | PB_WT_STRING);
-    unsigned elem_size = pb_sizeof_viaems_console_Response(&msg->response);
+    unsigned elem_size = pb_sizeof_viaems_console_Response(&msg->msg.response);
     ptr += pb_encode_varint(ptr, elem_size);
-    ptr += pb_encode_viaems_console_Response_to_buffer(ptr, &msg->response);
+    ptr += pb_encode_viaems_console_Response_to_buffer(ptr, &msg->msg.response);
   }
 
   return (ptr - buffer);
@@ -5855,28 +5802,28 @@ bool pb_decode_viaems_console_Message(struct viaems_console_Message *msg, pb_rea
       uint32_t length;
       if (!pb_decode_varint_uint32(&length, r, user)) { return false; }
       struct pb_bounded_reader br = { .r = r, .user = user, .len = length };
-      if (!pb_decode_viaems_console_EngineUpdate(&msg->engine_update, pb_bounded_read, &br)) { return false; }
+      if (!pb_decode_viaems_console_EngineUpdate(&msg->msg.engine_update, pb_bounded_read, &br)) { return false; }
       msg->which_msg = 2;
     }
     if (prefix == ((3ul << 3) | PB_WT_STRING)) {
       uint32_t length;
       if (!pb_decode_varint_uint32(&length, r, user)) { return false; }
       struct pb_bounded_reader br = { .r = r, .user = user, .len = length };
-      if (!pb_decode_viaems_console_Event(&msg->event, pb_bounded_read, &br)) { return false; }
+      if (!pb_decode_viaems_console_Event(&msg->msg.event, pb_bounded_read, &br)) { return false; }
       msg->which_msg = 3;
     }
     if (prefix == ((4ul << 3) | PB_WT_STRING)) {
       uint32_t length;
       if (!pb_decode_varint_uint32(&length, r, user)) { return false; }
       struct pb_bounded_reader br = { .r = r, .user = user, .len = length };
-      if (!pb_decode_viaems_console_Request(&msg->request, pb_bounded_read, &br)) { return false; }
+      if (!pb_decode_viaems_console_Request(&msg->msg.request, pb_bounded_read, &br)) { return false; }
       msg->which_msg = 4;
     }
     if (prefix == ((5ul << 3) | PB_WT_STRING)) {
       uint32_t length;
       if (!pb_decode_varint_uint32(&length, r, user)) { return false; }
       struct pb_bounded_reader br = { .r = r, .user = user, .len = length };
-      if (!pb_decode_viaems_console_Response(&msg->response, pb_bounded_read, &br)) { return false; }
+      if (!pb_decode_viaems_console_Response(&msg->msg.response, pb_bounded_read, &br)) { return false; }
       msg->which_msg = 5;
     }
   }

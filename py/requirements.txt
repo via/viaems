@@ -4,4 +4,4 @@ pyvcd
 intelhex
 cobs
 grpcio-tools
-.
+-e .

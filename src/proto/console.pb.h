@@ -249,7 +249,7 @@ struct viaems_console_Event {
     uint32_t trigger;
     uint32_t output_pins;
     uint32_t gpio_pins;
-  };
+  } type;
 
 };
 
@@ -1105,7 +1105,7 @@ struct viaems_console_Request {
     struct viaems_console_Request_GetConfig getconfig;
     struct viaems_console_Request_FlashConfig flashconfig;
     struct viaems_console_Request_ResetToBootloader resettobootloader;
-  };
+  } request;
 
 };
 
@@ -1220,7 +1220,7 @@ struct viaems_console_Response {
     struct viaems_console_Response_SetConfig setconfig;
     struct viaems_console_Response_GetConfig getconfig;
     struct viaems_console_Response_FlashConfig flashconfig;
-  };
+  } response;
 
 };
 
@@ -1245,7 +1245,7 @@ struct viaems_console_Message {
     struct viaems_console_Event event;
     struct viaems_console_Request request;
     struct viaems_console_Response response;
-  };
+  } msg;
 
 };
 

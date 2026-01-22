@@ -16,6 +16,8 @@ jobs:
           submodules: recursive
       - name: install pip deps
         run: ( cd py; python3 -m pip install --upgrade pip; python3 -m pip install -r requirements.txt )
+      - name: make protobuf outputs
+        run: make proto
       - name: run unit tests
         run: make PLATFORM=test check
       - name: build hosted platform
