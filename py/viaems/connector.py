@@ -14,9 +14,10 @@ from cobs import cobs
 from viaems.vcd import dump_vcd
 from viaems.validation import enrich_log
 from viaems.events import *
-from viaems import console_pb2
 
-def deframe_message(frame: bytes) -> console_pb2.Message:
+from viaems_proto.viaems import console
+
+def deframe_message(frame: bytes) -> console.Message:
     decoded = cobs.decode(frame)
     lengthbytes = decoded[0:2]
     crcbytes = decoded[-4:]
@@ -27,12 +28,11 @@ def deframe_message(frame: bytes) -> console_pb2.Message:
         raise ValueError(f"Length mismatch: {len(pdu)} pdu but header is {length}")
     if zlib.crc32(pdu) != crc:
         raise ValueError("CRC failure")
-    message = console_pb2.Message()
-    message.ParseFromString(pdu)
+    message = console.Message.parse(pdu)
     return message
 
-def enframe_message(message: console_pb2.Message) -> bytes:
-    pdu = message.SerializeToString()
+def enframe_message(message: console.Message) -> bytes:
+    pdu = bytes(message)
     length = len(pdu)
     crc = zlib.crc32(pdu)
 
@@ -46,21 +46,29 @@ class ViaemsInterface:
     def recv_response(self, max_messages=1000):
         while True:
             result = self.recv()
-            if result.HasField("response"):
+            if result.response is not None:
                 return result
             max_messages -= 1
             if max_messages == 0:
                 return None
 
     def getconfig(self):
-        m = console_pb2.Message()
-        m.request.getconfig.SetInParent()
+        m = console.Message(
+                request=console.Request(
+                    getconfig=console.RequestGetConfig()
+                )
+            )
         self.send(m)
         return self.recv_response()
 
-    def setconfig(self, config: console_pb2.Configuration):
-        msg = console_pb2.Message()
-        msg.request.setconfig.config.CopyFrom(config)
+    def setconfig(self, config: console.Configuration):
+        msg = console.Message(
+                request=console.Request(
+                    setconfig=console.RequestSetConfig(
+                        config=config
+                    )
+                )
+              )
         self.send(msg)
         return self.recv_response()
 
@@ -71,19 +79,15 @@ class ViaemsInterface:
 
 
 
-class SimConnector(ViaemsInterface):
+class ExecConnector(ViaemsInterface):
     def __init__(self, binary):
         self.binary = binary
         self.process = None
-
-    def start(self, replay=None):
-        args = [self.binary]
-        if replay:
-            args.append("-i")
-            args.append(replay)
+                   
+    def start(self, args=[]):
 
         self.process = subprocess.Popen(
-            args,
+            [self.binary] + args,
             bufsize=-1,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
@@ -98,7 +102,7 @@ class SimConnector(ViaemsInterface):
         self.process.communicate()
         self.process.wait()
 
-    def send(self, message: console_pb2.Message):
+    def send(self, message: console.Message):
         encoded = enframe_message(message)
         self.process.stdin.write(encoded)
         self.process.stdin.flush()
@@ -118,6 +122,17 @@ class SimConnector(ViaemsInterface):
 
         return deframe_message(frame)
 
+class SimConnector(ExecConnector):
+
+    def __init__(self, binary="obj/hosted/viaems"):
+        super().__init(self, binary)
+
+    def start(self, replay=None, args=[]):
+        replayargs = []
+        if replay is not None:
+            replayargs = ["-i", replay]
+        super().start(self, replayargs + args)
+
     def _render_target_inputs(self, scenario, file):
         render_time = 0
         for event in scenario.events:
@@ -134,14 +149,13 @@ class SimConnector(ViaemsInterface):
                     file.write(f"e {delay}\n")
 
     
-    def execute_scenario(self, scenario, settings=[]):
+    def execute_scenario(self, scenario, config=console.Configuration()):
         tf = open(f"scenario_{scenario.name}.inputs", "w")
         self._render_target_inputs(scenario, tf)
         tf.close()
 
         self.start(replay=tf.name)
-#        for path, value in settings:
-#            self.set(path, value)
+        self.setconfig(config)
         target_msgs = []
         while True:
             try:
@@ -168,9 +182,9 @@ class SimConnector(ViaemsInterface):
         return Log(enriched_log)
 
 class HilConnector(ViaemsInterface):
+
     def __init__(self, binary="obj/hosted/proxy"):
-        self.binary = binary
-        self.process = None
+        super().__init(self, binary)
 
     def _target_reset(self):
         # Output 8 (MSB) is connected to nRST, pull it low and then high
@@ -189,51 +203,16 @@ class HilConnector(ViaemsInterface):
                 ], check=True)
         time.sleep(1)
 
-    def start(self):
+    def start(self, args=[]):
         self._target_reset()
 
-        self.process = subprocess.Popen(
-            [self.binary],
-            bufsize=-1,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            pipesize=1 * 1024 * 1024,
-        )
+        super().start(self, replayargs + args)
 
         # Wait for first null
         while True:
             b = self.process.stdout.read(1)
             if b == b"\0":
                 break
-
-    def kill(self):
-        if not self.process:
-            return
-        self.process.kill()
-        self.process.communicate()
-        self.process.wait()
-
-    def send(self, message: console_pb2.Message):
-        binary = enframe_message(message)
-        self.process.stdin.write(encoded)
-        self.process.stdin.flush()
-
-    def recv(self):
-        frame = b""
-        while True:
-            b = self.process.stdout.read(1)
-            if b == b"\0":
-                break
-            if len(b) == 0:
-                raise EOFError
-            frame += b
-
-            if len(frame) > 16384:
-                return None
-
-        return deframe_message(frame)
-
 
     def log_from_capture(self, msgs: List[str]) -> List[CaptureEvent]:
         last_raw_value = 0
@@ -320,16 +299,13 @@ class HilConnector(ViaemsInterface):
 
     
 
-    def execute_scenario(self, scenario, settings=[]):
+    def execute_scenario(self, scenario, config=console.Configuration()):
         tf = open(f"scenario_{scenario.name}.inputs", "w")
         self._render_target_inputs(scenario, tf)
         tf.close()
 
         self.start()
-
-        self.set(["test", "event-logging"], True)
-        for path, value in settings:
-            self.set(path, value)
+        self.setconfig(config)
 
         # Start test bench
         tb_process = subprocess.Popen(

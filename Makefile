@@ -68,7 +68,7 @@ lint:
 clean:
 	-rm ${OBJDIR}/*
 	-rm src/proto/console.pb.[ch]
-	-rm -r py/proto/*
+	-rm -r py/viaems_proto/*
 
 
 .PHONY: clean lint format integration benchmark proto

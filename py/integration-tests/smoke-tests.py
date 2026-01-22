@@ -8,7 +8,6 @@ from viaems.util import ticks_for_rpm_degrees, ms_ticks
 from viaems.validation import validate_outputs
 
 
-
 class NMinus1DecoderTests(TestCase):
 
     def test_start_stop_start(self):

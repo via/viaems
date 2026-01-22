@@ -2,7 +2,7 @@ OBJS+= console.pb.o
 VPATH+= src/proto/
 CFLAGS+=-Isrc/proto -Icontrib/viapb
 
-proto: src/proto/console.pb.c src/proto/console.pb.h py/proto/__init__.py
+proto: src/proto/console.pb.c src/proto/console.pb.h py/viaems_proto/__init__.py
 
 # Hardcode the protobuf dependency for known sources
 src/config.c src/console.c: proto
@@ -17,9 +17,9 @@ src/proto/console.pb.c src/proto/console.pb.h: proto/console.fds proto/viapb.opt
 proto/console.fds: proto/console.proto
 	python -m grpc_tools.protoc --include_imports -I proto -o proto/console.fds proto/console.proto
 
-py/proto:
-	mkdir py/proto
+py/viaems_proto:
+	mkdir py/viaems_proto
 
-py/proto/__init__.py: proto/console.proto py/proto
-	python -m grpc_tools.protoc -I proto --python_betterproto2_out py/proto proto/console.proto
+py/viaems_proto/__init__.py: proto/console.proto py/viaems_proto
+	python -m grpc_tools.protoc -I proto --python_betterproto2_out py/viaems_proto proto/console.proto
 

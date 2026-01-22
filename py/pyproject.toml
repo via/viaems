@@ -3,4 +3,4 @@ name = "viaems"
 version = "0.0.0"
 
 [tool.setuptools]
-packages = ["viaems", "proto"]
+packages = ["viaems", "viaems_proto"]
