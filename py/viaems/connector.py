@@ -125,13 +125,13 @@ class ExecConnector(ViaemsInterface):
 class SimConnector(ExecConnector):
 
     def __init__(self, binary="obj/hosted/viaems"):
-        super().__init(self, binary)
+        super().__init__(binary)
 
     def start(self, replay=None, args=[]):
         replayargs = []
         if replay is not None:
             replayargs = ["-i", replay]
-        super().start(self, replayargs + args)
+        super().start(replayargs + args)
 
     def _render_target_inputs(self, scenario, file):
         render_time = 0
@@ -181,10 +181,10 @@ class SimConnector(ExecConnector):
 
         return Log(enriched_log)
 
-class HilConnector(ViaemsInterface):
+class HilConnector(ExecConnector):
 
     def __init__(self, binary="obj/hosted/proxy"):
-        super().__init(self, binary)
+        super().__init__(binary)
 
     def _target_reset(self):
         # Output 8 (MSB) is connected to nRST, pull it low and then high
@@ -206,7 +206,7 @@ class HilConnector(ViaemsInterface):
     def start(self, args=[]):
         self._target_reset()
 
-        super().start(self, replayargs + args)
+        super().start(replayargs + args)
 
         # Wait for first null
         while True:

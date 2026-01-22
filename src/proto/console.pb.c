@@ -259,7 +259,7 @@ unsigned pb_sizeof_viaems_console_Sensors(const struct viaems_console_Sensors *m
     size += element_size;
   }
 
-  if (msg->ego_Rate != 0.0f) {
+  if (msg->ego_rate != 0.0f) {
     size += 2;  // Size of tag
     unsigned element_size = 4;
     size += element_size;
@@ -485,10 +485,10 @@ bool pb_encode_viaems_console_Sensors(const struct viaems_console_Sensors *msg, 
     if (!w(scratch, ptr - scratch, user)) { return false; }
   }
 
-  if (msg->ego_Rate != 0.0f) {
+  if (msg->ego_rate != 0.0f) {
     uint8_t *ptr = scratch;
     ptr += pb_encode_varint(ptr, (71 << 3) | PB_WT_32BIT);
-    ptr += pb_encode_float(ptr, msg->ego_Rate);
+    ptr += pb_encode_float(ptr, msg->ego_rate);
     if (!w(scratch, ptr - scratch, user)) { return false; }
   }
 
@@ -655,9 +655,9 @@ unsigned pb_encode_viaems_console_Sensors_to_buffer(uint8_t buffer[150], const s
     ptr += pb_encode_float(ptr, msg->frt_rate);
   }
 
-  if (msg->ego_Rate != 0.0f) {
+  if (msg->ego_rate != 0.0f) {
     ptr += pb_encode_varint(ptr, (71 << 3) | PB_WT_32BIT);
-    ptr += pb_encode_float(ptr, msg->ego_Rate);
+    ptr += pb_encode_float(ptr, msg->ego_rate);
   }
 
   if (msg->frp_rate != 0.0f) {
@@ -764,7 +764,7 @@ bool pb_decode_viaems_console_Sensors(struct viaems_console_Sensors *msg, pb_rea
       if (!pb_decode_float(&msg->frt_rate, r, user)) { return false; }
     }
     if (prefix == ((71ul << 3) | PB_WT_32BIT)) {
-      if (!pb_decode_float(&msg->ego_Rate, r, user)) { return false; }
+      if (!pb_decode_float(&msg->ego_rate, r, user)) { return false; }
     }
     if (prefix == ((72ul << 3) | PB_WT_32BIT)) {
       if (!pb_decode_float(&msg->frp_rate, r, user)) { return false; }

@@ -46,7 +46,7 @@ message Sensors {
   float tps_rate = 68; 
   float aap_rate = 69; 
   float frt_rate = 70; 
-  float ego_Rate = 71; 
+  float ego_rate = 71; 
   float frp_rate = 72; 
   float eth_rate = 73; 
 }

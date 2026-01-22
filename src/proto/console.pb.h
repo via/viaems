@@ -101,7 +101,7 @@ struct viaems_console_Sensors {
 
   float frt_rate;
 
-  float ego_Rate;
+  float ego_rate;
 
   float frp_rate;
 
@@ -143,7 +143,7 @@ bool pb_decode_viaems_console_Sensors(struct viaems_console_Sensors *msg, pb_rea
 #define PB_TAG_viaems_console_Sensors_tps_rate     68ul
 #define PB_TAG_viaems_console_Sensors_aap_rate     69ul
 #define PB_TAG_viaems_console_Sensors_frt_rate     70ul
-#define PB_TAG_viaems_console_Sensors_ego_Rate     71ul
+#define PB_TAG_viaems_console_Sensors_ego_rate     71ul
 #define PB_TAG_viaems_console_Sensors_frp_rate     72ul
 #define PB_TAG_viaems_console_Sensors_eth_rate     73ul
 #define PB_MAX_SIZE_viaems_console_Sensors    150ul

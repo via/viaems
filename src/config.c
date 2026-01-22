@@ -559,6 +559,12 @@ void config_store_to_console_pbtype(const struct config *config, struct viaems_c
   msg->fueling.has_tipin_enrich_duration = true;
   store_table1d(&config->tipin_enrich_duration, &msg->fueling.tipin_enrich_duration);
 
+  msg->has_rpm_cut = true;
+  msg->rpm_cut.has_rpm_limit_start = true;
+  msg->rpm_cut.rpm_limit_start = config->rpm_start;
+  msg->rpm_cut.has_rpm_limit_stop = true;
+  msg->rpm_cut.rpm_limit_stop = config->rpm_stop;
+
 }
 
 static bool load_table_axis(struct table_axis *axis, const struct viaems_console_Configuration_TableAxis *msg) {
@@ -886,5 +892,15 @@ config_load_result config_load_from_console_pbtype(struct config *config, const 
   msg->fueling.has_tipin_enrich_duration = true;
   store_table1d(&config->tipin_enrich_duration, &msg->fueling.tipin_enrich_duration);
 #endif
+
+  if (msg->has_rpm_cut) {
+    if (msg->rpm_cut.has_rpm_limit_start) {
+      config->rpm_start = msg->rpm_cut.rpm_limit_start;
+    }
+    if (msg->rpm_cut.has_rpm_limit_stop) {
+      config->rpm_stop = msg->rpm_cut.rpm_limit_stop;
+    }
+  }
+
   return CONFIG_SAVED;
 }
