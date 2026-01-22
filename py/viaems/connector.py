@@ -235,7 +235,6 @@ class HilConnector(ViaemsInterface):
         return deframe_message(frame)
 
 
-
     def log_from_capture(self, msgs: List[str]) -> List[CaptureEvent]:
         last_raw_value = 0
 

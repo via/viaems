@@ -62,8 +62,8 @@ class SimADCEvent(SimEvent):
     values: List[float]
 
 @dataclass
-class TargetFeedEvent(TargetEvent):
-    values: Dict[str, float]
+class TargetEngineUpdateEvent(TargetEvent):
+    update: console_pb2.EngineUpdate
 
 @dataclass
 class TargetTriggerEvent(TargetEvent):
@@ -141,9 +141,7 @@ class Log(List[Event]):
         gpio_events = self.filter_between(0, time).filter_gpios()
         return gpio_events[-1]
 
-def log_from_target_messages(msgs: List[Dict]) -> List[TargetEvent]:
-    desc_msg = next(filter(lambda m: m["type"] == "description", msgs))
-    desc_keys = desc_msg["keys"]
+def log_from_target_messages(msgs: List[console_pb2.Message]) -> List[TargetEvent]:
 
     event_seq = None
     def check_seq(msg):

@@ -204,10 +204,17 @@ Requires:
 - Complete arm toolchain with hardware fpu support.
 - GNU make
 - check (for unit tests)
+- python3 to generate protobuf sources
 
 Before trying to compile, make sure to bring in submodules in contrib:
 ```
 git submodule update --init
+```
+
+Next, build protocol buffer source files:
+```
+pip install -r proto/requirements.txt
+make proto
 ```
 
 To run the unit tests:

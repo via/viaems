@@ -2,7 +2,7 @@ PLATFORM?=gd32f4
 OBJDIR=obj/${PLATFORM}
 BENCH?=0
 
-all: $(OBJDIR)/viaems proto
+all: $(OBJDIR)/viaems
 
 TINYCBOR_OBJS= cborerrorstrings.o \
                cborencoder.o \
@@ -67,6 +67,8 @@ lint:
 
 clean:
 	-rm ${OBJDIR}/*
+	-rm src/proto/console.pb.[ch]
+	-rm -r py/proto/*
 
 
 .PHONY: clean lint format integration benchmark proto
