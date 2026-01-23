@@ -52,10 +52,10 @@ void viaems_reschedule(struct viaems *viaems,
                       MAX_EVENTS,
                       plan->schedulable_start);
     }
-    record_engine_update(viaems, u, &calcs);
+    record_engine_update(u, &calcs);
   } else {
     invalidate_scheduled_events(viaems->events, MAX_EVENTS);
-    record_engine_update(viaems, u, NULL);
+    record_engine_update(u, NULL);
   }
 
   populate_plan_from_events(plan, viaems->events);
@@ -72,5 +72,7 @@ void viaems_init(struct viaems *v, struct config *config) {
 }
 
 void viaems_idle(struct viaems *viaems, timeval_t time) {
-  console_process(viaems->config, time);
+  (void)time;
+
+  console_process(viaems->config);
 }

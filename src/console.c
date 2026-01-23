@@ -138,8 +138,7 @@ static viaems_console_SensorFault convert_sensor_fault(const sensor_fault fault)
   return viaems_console_SensorFault_SENSOR_NO_FAULT;
 }
 
-void record_engine_update(const struct viaems *viaems,
-                          const struct engine_update *eng_update,
+void record_engine_update(const struct engine_update *eng_update,
                           const struct calculated_values *calcs) {
 
   uint32_t seq = engine_update_seq;
@@ -230,6 +229,24 @@ static void console_feed_line(const struct viaems_console_EngineUpdate *update) 
 
 }
 
+#ifndef GIT_DESCRIBE
+#define GIT_DESCRIBE "unknown"
+#endif
+static const char *fw_version = GIT_DESCRIBE;
+static const char *fw_platform = FW_PLATFORM;
+
+static struct viaems_console_Response_FirmwareInfo console_fwinfo(void) {
+  struct viaems_console_Response_FirmwareInfo fwinfo;
+  fwinfo.version.len = strlen(fw_version);
+  memcpy(fwinfo.version.str, fw_version, fwinfo.version.len);
+
+  fwinfo.platform.len = strlen(fw_platform);
+  memcpy(fwinfo.platform.str, fw_platform, fwinfo.platform.len);
+
+  fwinfo.proto.len = 0;
+  return fwinfo;
+}
+
 
 static void console_process_request(struct console_rx_message *rxmsg, struct config *config) {
   if (!pb_decode_viaems_console_Message(&console_message, pb_read, rxmsg)) {
@@ -244,6 +261,11 @@ static void console_process_request(struct console_rx_message *rxmsg, struct con
     case PB_TAG_viaems_console_Request_ping:
       console_message.which_msg = PB_TAG_viaems_console_Message_response;
       console_message.response.which_response = PB_TAG_viaems_console_Response_pong;
+      break;
+    case PB_TAG_viaems_console_Request_fwinfo:
+      console_message.which_msg = PB_TAG_viaems_console_Message_response;
+      console_message.response.which_response = PB_TAG_viaems_console_Response_fwinfo;
+      console_message.response.fwinfo = console_fwinfo();
       break;
     case PB_TAG_viaems_console_Request_getconfig:
       console_message.which_msg = PB_TAG_viaems_console_Message_response;
@@ -280,7 +302,7 @@ static void console_process_request(struct console_rx_message *rxmsg, struct con
 
 }
 
-void console_process(struct config *config, timeval_t now) {
+void console_process(struct config *config) {
 
   struct console_rx_message rxmsg;
   if (platform_message_reader_new(&rxmsg)) {

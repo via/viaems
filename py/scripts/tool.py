@@ -38,6 +38,13 @@ if __name__ == "__main__":
     )
 
     parser.add_argument( 
+        "--fwinfo",
+        action="store_true",
+        default=False,
+        help="Fetches firmware info from target"
+    )
+
+    parser.add_argument( 
         "--set-config",
         action="store_true",
         default=False,
@@ -58,6 +65,13 @@ if __name__ == "__main__":
         help="Issue a command to flash running config to persistent storage"
     )
 
+    parser.add_argument( 
+        "--pause",
+        action="store_true",
+        default=False,
+        help="Wait for input after starting to allow attaching debugger"
+    )
+
 
     args = parser.parse_args()
     exe = None
@@ -76,17 +90,27 @@ if __name__ == "__main__":
     conn = ExecConnector(binary=exe)
     conn.start()
 
+    if args.pause:
+        input(f"Waiting for input (pid {conn.process.pid})...")
+
     if args.get_config:
         config = conn.getconfig()
         print(config.to_json(indent=True, casing=Casing.SNAKE))
 
     if args.set_config:
         config = console.Configuration.from_json(sys.stdin.read())
-        print(config)
         conn.setconfig(config)
 
         newconfig = conn.getconfig()
         print(newconfig.to_json(indent=True, casing=Casing.SNAKE))
+
+    if args.fwinfo:
+        fwinfo = console.Request(
+                    fwinfo=console.RequestFirmwareInfo()
+                )
+        resp = conn.request(fwinfo)
+        print(resp.response.to_json(indent=True, casing=Casing.SNAKE))
+
 
     conn.kill()
 

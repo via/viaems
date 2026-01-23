@@ -53,22 +53,21 @@ class ViaemsInterface:
                 return None
 
     def getconfig(self):
-        m = console.Message(
-                request=console.Request(
-                    getconfig=console.RequestGetConfig()
-                )
-            )
-        self.send(m)
-        return self.recv_response()
+        req = console.Request(
+                  getconfig=console.RequestGetConfig()
+              )
+        return self.request(req)
 
     def setconfig(self, config: console.Configuration):
-        msg = console.Message(
-                request=console.Request(
-                    setconfig=console.RequestSetConfig(
-                        config=config
-                    )
-                )
+        req = console.Request(
+                  setconfig=console.RequestSetConfig(
+                      config=config
+                  )
               )
+        return self.request(req)
+
+    def request(self, req: console.Request):
+        msg = console.Message(request=req)
         self.send(msg)
         return self.recv_response()
 
