@@ -7,6 +7,9 @@
 #define MAX_TRIGGERS 36
 
 typedef enum {
+  /* Decoder wheel processing disabled */
+  TRIGGER_DISABLED,
+
   /* Trigger wheel is N even teeth that add to 720 degrees.  This decoder is
    * only useful for low-resolution wheels, such as a Ford TFI */
   TRIGGER_EVEN_NOSYNC,
