@@ -516,6 +516,15 @@ void config_store_to_console_pbtype(const struct config *config, struct viaems_c
   msg->ignition.has_fixed_dwell = true;
   msg->ignition.fixed_dwell = config->ignition.dwell_us;
 
+  msg->ignition.has_ignitions_per_cycle = true;
+  msg->ignition.ignitions_per_cycle = config->ignition.ignitions_per_cycle;
+
+  msg->ignition.has_min_coil_cooldown_us = true;
+  msg->ignition.min_coil_cooldown_us = config->ignition.min_coil_cooldown_us;
+
+  msg->ignition.has_min_dwell_us = true;
+  msg->ignition.min_dwell_us = config->ignition.min_dwell_us;
+
   msg->ignition.has_dwell = true;
   store_table1d(&config->dwell, &msg->ignition.dwell);
 
@@ -917,6 +926,18 @@ config_load_result config_load_from_console_pbtype(struct config *config, const 
 
     if (msg->ignition.has_fixed_dwell) {
       config->ignition.dwell_us = msg->ignition.fixed_dwell;
+    }
+
+    if (msg->ignition.has_ignitions_per_cycle) {
+      config->ignition.ignitions_per_cycle = msg->ignition.ignitions_per_cycle;
+    }
+
+    if (msg->ignition.has_min_coil_cooldown_us) {
+      config->ignition.min_coil_cooldown_us = msg->ignition.min_coil_cooldown_us;
+    }
+
+    if (msg->ignition.has_min_dwell_us) {
+      config->ignition.min_dwell_us = msg->ignition.min_dwell_us;
     }
 
     if (msg->ignition.has_dwell) {

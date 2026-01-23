@@ -299,8 +299,12 @@ message Configuration {
     optional float fixed_dwell = 2;
     optional float fixed_duty = 3;
 
-    Table1d dwell = 4;
-    Table2d timing = 5;
+    optional float ignitions_per_cycle = 4;
+    optional uint32 min_coil_cooldown_us = 5;
+    optional uint32 min_dwell_us = 6;
+
+    Table1d dwell = 7;
+    Table2d timing = 8;
 
   }
 

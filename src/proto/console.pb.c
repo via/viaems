@@ -2170,6 +2170,24 @@ unsigned pb_sizeof_viaems_console_Configuration_Ignition(const struct viaems_con
     size += element_size;
   }
 
+  if (msg->has_ignitions_per_cycle) {
+    size += 1;  // Size of tag
+    unsigned element_size = 4;
+    size += element_size;
+  }
+
+  if (msg->has_min_coil_cooldown_us) {
+    size += 1;  // Size of tag
+    unsigned element_size = pb_sizeof_varint(msg->min_coil_cooldown_us);
+    size += element_size;
+  }
+
+  if (msg->has_min_dwell_us) {
+    size += 1;  // Size of tag
+    unsigned element_size = pb_sizeof_varint(msg->min_dwell_us);
+    size += element_size;
+  }
+
   if (msg->has_dwell) {
     size += 1;  // Size of tag
     unsigned element_size = pb_sizeof_viaems_console_Configuration_Table1d(&msg->dwell);
@@ -3087,9 +3105,30 @@ bool pb_encode_viaems_console_Configuration_Ignition(const struct viaems_console
     if (!w(scratch, ptr - scratch, user)) { return false; }
   }
 
+  if (msg->has_ignitions_per_cycle) {
+    uint8_t *ptr = scratch;
+    ptr += pb_encode_varint(ptr, (4 << 3) | PB_WT_32BIT);
+    ptr += pb_encode_float(ptr, msg->ignitions_per_cycle);
+    if (!w(scratch, ptr - scratch, user)) { return false; }
+  }
+
+  if (msg->has_min_coil_cooldown_us) {
+    uint8_t *ptr = scratch;
+    ptr += pb_encode_varint(ptr, (5 << 3) | PB_WT_VARINT);
+    ptr += pb_encode_varint(ptr, msg->min_coil_cooldown_us);
+    if (!w(scratch, ptr - scratch, user)) { return false; }
+  }
+
+  if (msg->has_min_dwell_us) {
+    uint8_t *ptr = scratch;
+    ptr += pb_encode_varint(ptr, (6 << 3) | PB_WT_VARINT);
+    ptr += pb_encode_varint(ptr, msg->min_dwell_us);
+    if (!w(scratch, ptr - scratch, user)) { return false; }
+  }
+
   if (msg->has_dwell) {
     uint8_t *ptr = scratch;
-    ptr += pb_encode_varint(ptr, (4 << 3) | PB_WT_STRING);
+    ptr += pb_encode_varint(ptr, (7 << 3) | PB_WT_STRING);
     unsigned elem_size = pb_sizeof_viaems_console_Configuration_Table1d(&msg->dwell);
     ptr += pb_encode_varint(ptr, elem_size);
     if (!w(scratch, ptr - scratch, user)) { return false; }
@@ -3098,7 +3137,7 @@ bool pb_encode_viaems_console_Configuration_Ignition(const struct viaems_console
 
   if (msg->has_timing) {
     uint8_t *ptr = scratch;
-    ptr += pb_encode_varint(ptr, (5 << 3) | PB_WT_STRING);
+    ptr += pb_encode_varint(ptr, (8 << 3) | PB_WT_STRING);
     unsigned elem_size = pb_sizeof_viaems_console_Configuration_Table2d(&msg->timing);
     ptr += pb_encode_varint(ptr, elem_size);
     if (!w(scratch, ptr - scratch, user)) { return false; }
@@ -3856,7 +3895,7 @@ unsigned pb_encode_viaems_console_Configuration_Fueling_to_buffer(uint8_t buffer
 
   return (ptr - buffer);
 }
-unsigned pb_encode_viaems_console_Configuration_Ignition_to_buffer(uint8_t buffer[2948], const struct viaems_console_Configuration_Ignition *msg) {
+unsigned pb_encode_viaems_console_Configuration_Ignition_to_buffer(uint8_t buffer[2965], const struct viaems_console_Configuration_Ignition *msg) {
   uint8_t *ptr = buffer;
   if (msg->has_type) {
     ptr += pb_encode_varint(ptr, (1 << 3) | PB_WT_VARINT);
@@ -3873,15 +3912,30 @@ unsigned pb_encode_viaems_console_Configuration_Ignition_to_buffer(uint8_t buffe
     ptr += pb_encode_float(ptr, msg->fixed_duty);
   }
 
+  if (msg->has_ignitions_per_cycle) {
+    ptr += pb_encode_varint(ptr, (4 << 3) | PB_WT_32BIT);
+    ptr += pb_encode_float(ptr, msg->ignitions_per_cycle);
+  }
+
+  if (msg->has_min_coil_cooldown_us) {
+    ptr += pb_encode_varint(ptr, (5 << 3) | PB_WT_VARINT);
+    ptr += pb_encode_varint(ptr, msg->min_coil_cooldown_us);
+  }
+
+  if (msg->has_min_dwell_us) {
+    ptr += pb_encode_varint(ptr, (6 << 3) | PB_WT_VARINT);
+    ptr += pb_encode_varint(ptr, msg->min_dwell_us);
+  }
+
   if (msg->has_dwell) {
-    ptr += pb_encode_varint(ptr, (4 << 3) | PB_WT_STRING);
+    ptr += pb_encode_varint(ptr, (7 << 3) | PB_WT_STRING);
     unsigned elem_size = pb_sizeof_viaems_console_Configuration_Table1d(&msg->dwell);
     ptr += pb_encode_varint(ptr, elem_size);
     ptr += pb_encode_viaems_console_Configuration_Table1d_to_buffer(ptr, &msg->dwell);
   }
 
   if (msg->has_timing) {
-    ptr += pb_encode_varint(ptr, (5 << 3) | PB_WT_STRING);
+    ptr += pb_encode_varint(ptr, (8 << 3) | PB_WT_STRING);
     unsigned elem_size = pb_sizeof_viaems_console_Configuration_Table2d(&msg->timing);
     ptr += pb_encode_varint(ptr, elem_size);
     ptr += pb_encode_viaems_console_Configuration_Table2d_to_buffer(ptr, &msg->timing);
@@ -3972,7 +4026,7 @@ unsigned pb_encode_viaems_console_Configuration_Debug_to_buffer(uint8_t buffer[7
 
   return (ptr - buffer);
 }
-unsigned pb_encode_viaems_console_Configuration_to_buffer(uint8_t buffer[16205], const struct viaems_console_Configuration *msg) {
+unsigned pb_encode_viaems_console_Configuration_to_buffer(uint8_t buffer[16222], const struct viaems_console_Configuration *msg) {
   uint8_t *ptr = buffer;
   if (msg->outputs_count > 0) {
     for (unsigned idx = 0; idx < msg->outputs_count; idx++) {
@@ -4661,14 +4715,26 @@ bool pb_decode_viaems_console_Configuration_Ignition(struct viaems_console_Confi
       if (!pb_decode_float(&msg->fixed_duty, r, user)) { return false; }
       msg->has_fixed_duty = true;
     }
-    if (prefix == ((4ul << 3) | PB_WT_STRING)) {
+    if (prefix == ((4ul << 3) | PB_WT_32BIT)) {
+      if (!pb_decode_float(&msg->ignitions_per_cycle, r, user)) { return false; }
+      msg->has_ignitions_per_cycle = true;
+    }
+    if (prefix == ((5ul << 3) | PB_WT_VARINT)) {
+      if (!pb_decode_varint_uint32(&msg->min_coil_cooldown_us, r, user)) { return false; }
+      msg->has_min_coil_cooldown_us = true;
+    }
+    if (prefix == ((6ul << 3) | PB_WT_VARINT)) {
+      if (!pb_decode_varint_uint32(&msg->min_dwell_us, r, user)) { return false; }
+      msg->has_min_dwell_us = true;
+    }
+    if (prefix == ((7ul << 3) | PB_WT_STRING)) {
       uint32_t length;
       if (!pb_decode_varint_uint32(&length, r, user)) { return false; }
       struct pb_bounded_reader br = { .r = r, .user = user, .len = length };
       if (!pb_decode_viaems_console_Configuration_Table1d(&msg->dwell, pb_bounded_read, &br)) { return false; }
       msg->has_dwell = true;
     }
-    if (prefix == ((5ul << 3) | PB_WT_STRING)) {
+    if (prefix == ((8ul << 3) | PB_WT_STRING)) {
       uint32_t length;
       if (!pb_decode_varint_uint32(&length, r, user)) { return false; }
       struct pb_bounded_reader br = { .r = r, .user = user, .len = length };
@@ -5034,7 +5100,7 @@ unsigned pb_encode_viaems_console_Request_Ping_to_buffer(uint8_t buffer[0], cons
   uint8_t *ptr = buffer;
   return (ptr - buffer);
 }
-unsigned pb_encode_viaems_console_Request_SetConfig_to_buffer(uint8_t buffer[16208], const struct viaems_console_Request_SetConfig *msg) {
+unsigned pb_encode_viaems_console_Request_SetConfig_to_buffer(uint8_t buffer[16225], const struct viaems_console_Request_SetConfig *msg) {
   uint8_t *ptr = buffer;
   if (msg->has_config) {
     ptr += pb_encode_varint(ptr, (1 << 3) | PB_WT_STRING);
@@ -5061,7 +5127,7 @@ unsigned pb_encode_viaems_console_Request_FirmwareInfo_to_buffer(uint8_t buffer[
   uint8_t *ptr = buffer;
   return (ptr - buffer);
 }
-unsigned pb_encode_viaems_console_Request_to_buffer(uint8_t buffer[16217], const struct viaems_console_Request *msg) {
+unsigned pb_encode_viaems_console_Request_to_buffer(uint8_t buffer[16234], const struct viaems_console_Request *msg) {
   uint8_t *ptr = buffer;
   if (msg->id != 0) {
     ptr += pb_encode_varint(ptr, (1 << 3) | PB_WT_VARINT);
@@ -5496,7 +5562,7 @@ unsigned pb_encode_viaems_console_Response_Pong_to_buffer(uint8_t buffer[0], con
   uint8_t *ptr = buffer;
   return (ptr - buffer);
 }
-unsigned pb_encode_viaems_console_Response_SetConfig_to_buffer(uint8_t buffer[16212], const struct viaems_console_Response_SetConfig *msg) {
+unsigned pb_encode_viaems_console_Response_SetConfig_to_buffer(uint8_t buffer[16229], const struct viaems_console_Response_SetConfig *msg) {
   uint8_t *ptr = buffer;
   if (msg->has_config) {
     ptr += pb_encode_varint(ptr, (1 << 3) | PB_WT_STRING);
@@ -5517,7 +5583,7 @@ unsigned pb_encode_viaems_console_Response_SetConfig_to_buffer(uint8_t buffer[16
 
   return (ptr - buffer);
 }
-unsigned pb_encode_viaems_console_Response_GetConfig_to_buffer(uint8_t buffer[16210], const struct viaems_console_Response_GetConfig *msg) {
+unsigned pb_encode_viaems_console_Response_GetConfig_to_buffer(uint8_t buffer[16227], const struct viaems_console_Response_GetConfig *msg) {
   uint8_t *ptr = buffer;
   if (msg->has_config) {
     ptr += pb_encode_varint(ptr, (1 << 3) | PB_WT_STRING);

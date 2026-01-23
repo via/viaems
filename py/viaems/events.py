@@ -66,7 +66,7 @@ class SimADCEvent(SimEvent):
 
 @dataclass
 class TargetEngineUpdateEvent(TargetEvent):
-    update: console_pb2.EngineUpdate
+    update: console.EngineUpdate
 
 @dataclass
 class TargetTriggerEvent(TargetEvent):

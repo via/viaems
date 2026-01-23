@@ -854,6 +854,15 @@ struct viaems_console_Configuration_Ignition {
   bool has_fixed_duty;
   float fixed_duty;
 
+  bool has_ignitions_per_cycle;
+  float ignitions_per_cycle;
+
+  bool has_min_coil_cooldown_us;
+  uint32_t min_coil_cooldown_us;
+
+  bool has_min_dwell_us;
+  uint32_t min_dwell_us;
+
   bool has_dwell;
   struct viaems_console_Configuration_Table1d dwell;
 
@@ -863,16 +872,19 @@ struct viaems_console_Configuration_Ignition {
 };
 
 bool pb_encode_viaems_console_Configuration_Ignition(const struct viaems_console_Configuration_Ignition *msg, pb_write_fn w, void *user);
-unsigned pb_encode_viaems_console_Configuration_Ignition_to_buffer(uint8_t buffer[2948], const struct viaems_console_Configuration_Ignition *msg);
+unsigned pb_encode_viaems_console_Configuration_Ignition_to_buffer(uint8_t buffer[2965], const struct viaems_console_Configuration_Ignition *msg);
 unsigned pb_sizeof_viaems_console_Configuration_Ignition(const struct viaems_console_Configuration_Ignition *msg);
 
 bool pb_decode_viaems_console_Configuration_Ignition(struct viaems_console_Configuration_Ignition *msg, pb_read_fn r, void *user);
 #define PB_TAG_viaems_console_Configuration_Ignition_type     1ul
 #define PB_TAG_viaems_console_Configuration_Ignition_fixed_dwell     2ul
 #define PB_TAG_viaems_console_Configuration_Ignition_fixed_duty     3ul
-#define PB_TAG_viaems_console_Configuration_Ignition_dwell     4ul
-#define PB_TAG_viaems_console_Configuration_Ignition_timing     5ul
-#define PB_MAX_SIZE_viaems_console_Configuration_Ignition    2948ul
+#define PB_TAG_viaems_console_Configuration_Ignition_ignitions_per_cycle     4ul
+#define PB_TAG_viaems_console_Configuration_Ignition_min_coil_cooldown_us     5ul
+#define PB_TAG_viaems_console_Configuration_Ignition_min_dwell_us     6ul
+#define PB_TAG_viaems_console_Configuration_Ignition_dwell     7ul
+#define PB_TAG_viaems_console_Configuration_Ignition_timing     8ul
+#define PB_MAX_SIZE_viaems_console_Configuration_Ignition    2965ul
 
 
 struct viaems_console_Configuration_BoostControl {
@@ -1005,7 +1017,7 @@ struct viaems_console_Configuration {
 };
 
 bool pb_encode_viaems_console_Configuration(const struct viaems_console_Configuration *msg, pb_write_fn w, void *user);
-unsigned pb_encode_viaems_console_Configuration_to_buffer(uint8_t buffer[16205], const struct viaems_console_Configuration *msg);
+unsigned pb_encode_viaems_console_Configuration_to_buffer(uint8_t buffer[16222], const struct viaems_console_Configuration *msg);
 unsigned pb_sizeof_viaems_console_Configuration(const struct viaems_console_Configuration *msg);
 
 bool pb_decode_viaems_console_Configuration(struct viaems_console_Configuration *msg, pb_read_fn r, void *user);
@@ -1019,7 +1031,7 @@ bool pb_decode_viaems_console_Configuration(struct viaems_console_Configuration 
 #define PB_TAG_viaems_console_Configuration_cel     8ul
 #define PB_TAG_viaems_console_Configuration_boost_control     9ul
 #define PB_TAG_viaems_console_Configuration_debug     10ul
-#define PB_MAX_SIZE_viaems_console_Configuration    16205ul
+#define PB_MAX_SIZE_viaems_console_Configuration    16222ul
 
 
 // Nested messages for Request
@@ -1042,12 +1054,12 @@ struct viaems_console_Request_SetConfig {
 };
 
 bool pb_encode_viaems_console_Request_SetConfig(const struct viaems_console_Request_SetConfig *msg, pb_write_fn w, void *user);
-unsigned pb_encode_viaems_console_Request_SetConfig_to_buffer(uint8_t buffer[16208], const struct viaems_console_Request_SetConfig *msg);
+unsigned pb_encode_viaems_console_Request_SetConfig_to_buffer(uint8_t buffer[16225], const struct viaems_console_Request_SetConfig *msg);
 unsigned pb_sizeof_viaems_console_Request_SetConfig(const struct viaems_console_Request_SetConfig *msg);
 
 bool pb_decode_viaems_console_Request_SetConfig(struct viaems_console_Request_SetConfig *msg, pb_read_fn r, void *user);
 #define PB_TAG_viaems_console_Request_SetConfig_config     1ul
-#define PB_MAX_SIZE_viaems_console_Request_SetConfig    16208ul
+#define PB_MAX_SIZE_viaems_console_Request_SetConfig    16225ul
 
 
 struct viaems_console_Request_GetConfig {
@@ -1110,7 +1122,7 @@ struct viaems_console_Request {
 };
 
 bool pb_encode_viaems_console_Request(const struct viaems_console_Request *msg, pb_write_fn w, void *user);
-unsigned pb_encode_viaems_console_Request_to_buffer(uint8_t buffer[16217], const struct viaems_console_Request *msg);
+unsigned pb_encode_viaems_console_Request_to_buffer(uint8_t buffer[16234], const struct viaems_console_Request *msg);
 unsigned pb_sizeof_viaems_console_Request(const struct viaems_console_Request *msg);
 
 bool pb_decode_viaems_console_Request(struct viaems_console_Request *msg, pb_read_fn r, void *user);
@@ -1121,7 +1133,7 @@ bool pb_decode_viaems_console_Request(struct viaems_console_Request *msg, pb_rea
 #define PB_TAG_viaems_console_Request_getconfig     5ul
 #define PB_TAG_viaems_console_Request_flashconfig     6ul
 #define PB_TAG_viaems_console_Request_resettobootloader     7ul
-#define PB_MAX_SIZE_viaems_console_Request    16217ul
+#define PB_MAX_SIZE_viaems_console_Request    16234ul
 
 
 // Nested messages for Response
@@ -1148,14 +1160,14 @@ struct viaems_console_Response_SetConfig {
 };
 
 bool pb_encode_viaems_console_Response_SetConfig(const struct viaems_console_Response_SetConfig *msg, pb_write_fn w, void *user);
-unsigned pb_encode_viaems_console_Response_SetConfig_to_buffer(uint8_t buffer[16212], const struct viaems_console_Response_SetConfig *msg);
+unsigned pb_encode_viaems_console_Response_SetConfig_to_buffer(uint8_t buffer[16229], const struct viaems_console_Response_SetConfig *msg);
 unsigned pb_sizeof_viaems_console_Response_SetConfig(const struct viaems_console_Response_SetConfig *msg);
 
 bool pb_decode_viaems_console_Response_SetConfig(struct viaems_console_Response_SetConfig *msg, pb_read_fn r, void *user);
 #define PB_TAG_viaems_console_Response_SetConfig_config     1ul
 #define PB_TAG_viaems_console_Response_SetConfig_success     2ul
 #define PB_TAG_viaems_console_Response_SetConfig_requires_restart     3ul
-#define PB_MAX_SIZE_viaems_console_Response_SetConfig    16212ul
+#define PB_MAX_SIZE_viaems_console_Response_SetConfig    16229ul
 
 
 struct viaems_console_Response_GetConfig {
@@ -1167,13 +1179,13 @@ struct viaems_console_Response_GetConfig {
 };
 
 bool pb_encode_viaems_console_Response_GetConfig(const struct viaems_console_Response_GetConfig *msg, pb_write_fn w, void *user);
-unsigned pb_encode_viaems_console_Response_GetConfig_to_buffer(uint8_t buffer[16210], const struct viaems_console_Response_GetConfig *msg);
+unsigned pb_encode_viaems_console_Response_GetConfig_to_buffer(uint8_t buffer[16227], const struct viaems_console_Response_GetConfig *msg);
 unsigned pb_sizeof_viaems_console_Response_GetConfig(const struct viaems_console_Response_GetConfig *msg);
 
 bool pb_decode_viaems_console_Response_GetConfig(struct viaems_console_Response_GetConfig *msg, pb_read_fn r, void *user);
 #define PB_TAG_viaems_console_Response_GetConfig_config     1ul
 #define PB_TAG_viaems_console_Response_GetConfig_needs_flash     2ul
-#define PB_MAX_SIZE_viaems_console_Response_GetConfig    16210ul
+#define PB_MAX_SIZE_viaems_console_Response_GetConfig    16227ul
 
 
 struct viaems_console_Response_FlashConfig {
