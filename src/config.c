@@ -468,7 +468,6 @@ void config_store_to_console_pbtype(const struct config *config, struct viaems_c
     store_output_config(&config->outputs[i], &msg->outputs[i]);
 	}
 
-
   msg->triggers_count = 4;
   for (int i = 0; i < 4; i++) {
     store_trigger_config(&config->trigger_inputs[i], &msg->triggers[i]);
@@ -630,14 +629,21 @@ void config_store_to_console_pbtype(const struct config *config, struct viaems_c
   // TODO test trigger handling
 }
 
+static bool load_title(char name[MAX_TABLE_TITLE_SIZE], const char *str, unsigned len) {
+    if (len > MAX_TABLE_TITLE_SIZE) {
+      return false;
+    }
+    for (unsigned i = 0; i < len; i++) {
+      name[i] = str[i];
+    }
+    name[len] = '\0';
+}
+
+
 static bool load_table_axis(struct table_axis *axis, const struct viaems_console_Configuration_TableAxis *msg) {
   
   if (msg->has_name) {
-    if (msg->name.len > MAX_TABLE_TITLE_SIZE) {
-      return false;
-    }
-    memcpy(axis->name, msg->name.str, msg->name.len);
-    axis->name[msg->name.len] = '\0';
+    load_title(axis->name, msg->name.str, msg->name.len);
   }
 
   if (msg->values_count > MAX_AXIS_SIZE) {
@@ -663,11 +669,7 @@ static bool load_table_row(float *row, const struct table_axis *axis, const stru
 
 static bool load_table1d(struct table_1d *table, const struct viaems_console_Configuration_Table1d *msg) {
   if (msg->has_name) {
-    if (msg->name.len > MAX_TABLE_TITLE_SIZE) {
-      return false;
-    }
-    memcpy(table->title, msg->name.str, msg->name.len);
-    table->title[msg->name.len] = '\0';
+    load_title(table->title, msg->name.str, msg->name.len);
   }
 
   if (msg->has_cols) {
@@ -687,11 +689,7 @@ static bool load_table1d(struct table_1d *table, const struct viaems_console_Con
 
 static bool load_table2d(struct table_2d *table, const struct viaems_console_Configuration_Table2d *msg) {
   if (msg->has_name) {
-    if (msg->name.len > MAX_TABLE_TITLE_SIZE) {
-      return false;
-    }
-    memcpy(table->title, msg->name.str, msg->name.len);
-    table->title[msg->name.len] = '\0';
+    load_title(table->title, msg->name.str, msg->name.len);
   }
 
   if (msg->has_cols) {

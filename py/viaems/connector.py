@@ -24,10 +24,10 @@ def deframe_message(frame: bytes) -> console.Message:
     pdu = decoded[2:-4]
     crc = struct.unpack("<I", crcbytes)[0]
     length = struct.unpack("<H", lengthbytes)[0]
-    if len(pdu) != length:
-        raise ValueError(f"Length mismatch: {len(pdu)} pdu but header is {length}")
     if zlib.crc32(pdu) != crc:
         raise ValueError("CRC failure")
+    if len(pdu) != length:
+        raise ValueError(f"Length mismatch: {len(pdu)} pdu but header is {length}")
     message = console.Message.parse(pdu)
     return message
 
@@ -205,7 +205,7 @@ class HilConnector(ExecConnector):
     def start(self, args=[]):
         self._target_reset()
 
-        super().start(replayargs + args)
+        super().start(args)
 
         # Wait for first null
         while True:

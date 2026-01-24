@@ -13,6 +13,8 @@
 #include "crc.h"
 #include "viaems.h"
 
+#include "console.pb.h"
+
 #define FAR_FUTURE (TICKRATE * 60)
 
 struct benchmark_results {
@@ -555,6 +557,20 @@ static uint32_t do_crc32_of_200byte_string(void) {
   return end - start;
 }
 
+static uint32_t do_load_config_from_pb(void) {
+
+  static struct viaems_console_Configuration msg;
+  static struct config newconfig;
+
+  /* First, dump config to it */
+  config_store_to_console_pbtype(&default_config, &msg);
+
+  uint64_t start = cycle_count();
+  config_load_from_console_pbtype(&newconfig, &msg);
+  uint64_t end = cycle_count();
+  return end - start;
+}
+
 int start_benchmarks() {
   for (volatile int i = 0; i < 10000000; i++)
     ;
@@ -597,6 +613,8 @@ int start_benchmarks() {
                    do_missing_tooth_sequence(1000));
   report_benchmark("crc32(uint8_t[200])",
                    run_benchmark(do_crc32_of_200byte_string, 1000));
+  report_benchmark("Config: parse from message",
+                   run_benchmark(do_load_config_from_pb, 1000));
   puts("\r\nDone!\r\n");
 
   return 0;
