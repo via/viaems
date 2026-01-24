@@ -19,7 +19,7 @@ CFLAGS= -DNDEBUG -ffunction-sections -fdata-sections -O2 -g3
 CFLAGS+= -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mthumb -mcpu=cortex-m4
 
 CFLAGS+= -DTICKRATE=4000000 -DSPI_${SPI_ADC}
-CFLAGS+= -DPLATFORM_HAS_NATIVE_MESSAGE_IO
+#CFLAGS+= -DPLATFORM_HAS_NATIVE_MESSAGE_IO
 
 LDFLAGS+= -lc -lnosys -L ${OBJDIR} -nostartfiles -Wl,--gc-sections --specs=nano.specs
 LDFLAGS+= -T src/platforms/s32k144/s32k144-lram.ld
