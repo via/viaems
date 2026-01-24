@@ -291,13 +291,13 @@ uint32_t current_time(void) {
     return 0;
   }
 
-  disable_interrupts();
+  _disable_interrupts();
 
   uint32_t ftm_value = *FTM0_CNT;
   uint32_t rollovers = ftm_rollover_counter;
   bool rollover_flag = *LPIT_MSR & 0x2;
 
-  enable_interrupts();
+  _enable_interrupts();
 
   uint32_t time_4m = rollovers * 800;
   if (rollover_flag && (ftm_value < 8000)) {
@@ -576,6 +576,21 @@ void SystemInit(void) {
   }
 }
 
+
+
+#ifndef PLATFORM_HAS_NATIVE_MESSAGING
+size_t platform_read(uint8_t *buffer, size_t max) {
+  return 0;
+}
+
+size_t platform_write(const uint8_t *buffer, size_t length) {
+  for (unsigned i = 0; i < length; i++) {
+    write_character(buffer[i]);
+  }
+  return length;
+}
+#endif
+
 int startup(void) {
   disable_watchdog();
 
@@ -633,7 +648,9 @@ int startup(void) {
   struct enet_config conf;
   enet_initialize(&conf);
 
-  viaems_idle(&s32k148_viaems);
+  while (true) {
+    viaems_idle(&s32k148_viaems, current_time());
+  }
 #endif
 
 }

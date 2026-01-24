@@ -335,6 +335,7 @@ struct udp_header {
 
 };
 
+#if 0
 void platform_write_message(struct console_buffer *buffer) {
   const uint16_t ip_header_len = 20;
   const uint16_t udp_header_len = 8;
@@ -404,3 +405,4 @@ void platform_write_message(struct console_buffer *buffer) {
 
 bool platform_read_message(struct console_buffer **buffer) { return false; }
 void platform_read_message_release(struct console_buffer **buffer) { } 
+#endif
