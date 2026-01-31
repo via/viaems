@@ -162,8 +162,30 @@ void record_engine_update(const struct engine_update *eng_update,
   update->position.instantaneous_rpm = eng_update->position.tooth_rpm;
   update->position.has_position = eng_update->position.has_position;
   update->position.synced = engine_position_is_synced(&eng_update->position, eng_update->current_time);
-
   update->position.last_angle = eng_update->position.last_trigger_angle;
+
+  switch (eng_update->position.loss) {
+    case DECODER_NO_LOSS:
+      update->position.loss_cause = viaems_console_DecoderLossReason_DECODER_NO_LOSS;
+      break;
+    case DECODER_VARIATION:
+      update->position.loss_cause = viaems_console_DecoderLossReason_DECODER_TRIGGER_TOOTH_VARIATION;
+      break;
+    case DECODER_TRIGGERCOUNT_LOW:
+      update->position.loss_cause = viaems_console_DecoderLossReason_DECODER_TRIGGER_COUNT_LOW;
+      break;
+    case DECODER_TRIGGERCOUNT_HIGH:
+      update->position.loss_cause = viaems_console_DecoderLossReason_DECODER_TRIGGER_COUNT_HIGH;
+      break;
+    case DECODER_OVERFLOW:
+      update->position.loss_cause = viaems_console_DecoderLossReason_DECODER_OVERFLOWED;
+      break;
+  }
+
+  if ((eng_update->position.loss == DECODER_NO_LOSS) &&
+      !time_before(eng_update->current_time, eng_update->position.valid_until)) {
+    update->position.loss_cause = viaems_console_DecoderLossReason_DECODER_EXPIRED;
+  }
 
   if (calcs != NULL) {
     update->has_calculations = true;
@@ -175,6 +197,7 @@ void record_engine_update(const struct engine_update *eng_update,
     update->calculations.pulse_width_correction = calcs->pwc;
     update->calculations.tipin_percent = calcs->tipin;
     update->calculations.airmass_per_cycle = calcs->airmass_per_cycle;
+    update->calculations.fuelvol_per_cycle = calcs->fuelvol_per_cycle;
 
     update->calculations.advance = calcs->timing_advance;
     update->calculations.dwell_us = calcs->dwell_us;

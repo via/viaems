@@ -37,7 +37,6 @@ typedef enum {
   DECODER_VARIATION,
   DECODER_TRIGGERCOUNT_HIGH,
   DECODER_TRIGGERCOUNT_LOW,
-  DECODER_EXPIRED,
   DECODER_OVERFLOW,
 } decoder_loss_reason;
 
@@ -64,6 +63,8 @@ struct engine_position {
 
   bool has_position;
   degrees_t last_trigger_angle;
+
+  decoder_loss_reason loss;
 };
 
 typedef enum {
@@ -86,7 +87,6 @@ struct decoder {
   /* Debug */
   uint32_t t0_count;
   uint32_t t1_count;
-  decoder_loss_reason loss;
 };
 
 struct trigger_event {
