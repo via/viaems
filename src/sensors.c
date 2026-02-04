@@ -108,7 +108,7 @@ static void sensor_update_raw(struct sensor_state *s,
   const struct sensor_config *conf = s->config;
   struct sensor_value out;
 
-  if (detect_faults(s, raw) != FAULT_NONE) {
+  if ((out.fault = detect_faults(s, raw)) != FAULT_NONE) {
     out.value = conf->fault_config.fault_value;
     out.derivative = 0;
   } else {
