@@ -265,7 +265,6 @@ static struct viaems_console_Response_FirmwareInfo console_fwinfo(void) {
   fwinfo.platform.len = strlen(fw_platform);
   memcpy(fwinfo.platform.str, fw_platform, fwinfo.platform.len);
 
-  fwinfo.proto.len = 0;
   return fwinfo;
 }
 
@@ -292,6 +291,17 @@ static void console_process_request(struct console_rx_message *rxmsg, struct con
       console_message.response.which_response = PB_TAG_viaems_console_Response_fwinfo;
       console_message.response.fwinfo = console_fwinfo();
       break;
+    case PB_TAG_viaems_console_Request_setdebug: {
+      float new_rpm = 0;
+      if (console_message.request.setdebug.has_test_trigger_rpm) {
+        new_rpm = console_message.request.setdebug.test_trigger_rpm;
+        set_test_trigger_rpm(new_rpm);
+      }
+      console_message.which_msg = PB_TAG_viaems_console_Message_response;
+      console_message.response.which_response = PB_TAG_viaems_console_Response_setdebug;
+      console_message.response.setdebug.test_trigger_rpm = new_rpm;
+      break;
+                                                 }
     case PB_TAG_viaems_console_Request_flashconfig:
       platform_save_config();
       console_message.which_msg = PB_TAG_viaems_console_Message_response;

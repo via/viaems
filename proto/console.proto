@@ -398,11 +398,6 @@ message Configuration {
     optional float rpm_limit_stop = 2;    // RPM limit
   }
 
-  message Debug {
-    optional bool test_trigger_enabled = 1;
-    optional float test_trigger_rpm = 2;
-  }
-
   repeated Output outputs = 1;
   repeated TriggerInput triggers = 2;
   optional Sensors sensors = 3;
@@ -412,7 +407,6 @@ message Configuration {
   optional RpmCut rpm_cut = 7;
   optional CheckEngineLight cel = 8;
   optional BoostControl boost_control = 9;
-  optional Debug debug = 10;
 }
 
 
@@ -438,6 +432,10 @@ message Request {
   // Request firmware information
   message FirmwareInfo { }
 
+  message SetDebug {
+    optional float test_trigger_rpm = 1;
+  }
+
   uint32 id = 1;
   oneof request {
     Ping ping = 2;
@@ -447,6 +445,7 @@ message Request {
     GetConfig getconfig = 5;
     FlashConfig flashconfig = 6;
     ResetToBootloader resettobootloader = 7;
+    SetDebug setdebug = 8;
   }
 }
 
@@ -467,7 +466,10 @@ message Response {
   message FirmwareInfo { 
     string version = 1;    // Firmware version string
     string platform = 2;   // Platform string
-    string proto = 3;      // Full text of this file
+  }
+
+  message SetDebug {
+    float test_trigger_rpm = 1;
   }
 
   uint32 id = 1;
@@ -478,6 +480,7 @@ message Response {
     SetConfig setconfig = 4;
     GetConfig getconfig = 5;
     FlashConfig flashconfig = 6;
+    SetDebug setdebug = 7;
   }
 }
 
