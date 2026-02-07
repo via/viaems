@@ -15,7 +15,7 @@ struct fueling_config {
   uint32_t fuel_pump_pin;
 
   struct {
-    float crank_rpm;
+    uint32_t crank_rpm;
     float cutoff_temperature;
     float enrich_amt;
   } crank_enrich_config;
