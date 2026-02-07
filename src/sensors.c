@@ -18,7 +18,7 @@ static bool current_window_for_angle(const struct window_config *conf,
                                      degrees_t *window_start,
                                      degrees_t angle) {
 
-  degrees_t window_size = 720.0 / conf->windows_per_cycle;
+  degrees_t window_size = 720.0f / conf->windows_per_cycle;
   int window_num = clamp_angle(angle - conf->window_offset, 720) / window_size;
   *window_start = window_num * window_size + conf->window_offset;
   degrees_t angle_in_window = clamp_angle(angle - *window_start, 720);
