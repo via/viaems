@@ -129,10 +129,6 @@ class SafetyTests(TestCase):
                                values = [20.0] * 16,
                            )
                        )
-                   ),
-                   rpm_cut=console.ConfigurationRpmCut(
-                       rpm_limit_start=3000,
-                       rpm_limit_stop=4000,
                    )
                )
 

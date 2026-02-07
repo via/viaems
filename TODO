@@ -1,4 +1,8 @@
-- Detect overlapping output schedules on same pin
+- Configuration validation checks on load from message
+- Hardcoded proto text in fwinfo struct
+- meaningful interface test
+
+- Strategy for not racing configs
 - Replace asserts with something that doesn't use printf (remove -NDEBUG)
 - Protect against overly high frequency inputs
 
