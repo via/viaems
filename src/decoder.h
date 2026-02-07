@@ -4,7 +4,7 @@
 #include "platform.h"
 #include "sensors.h"
 
-#define MAX_TRIGGERS 36
+#define MAX_TRIGGERS 60
 
 typedef enum {
   /* Decoder wheel processing disabled */
