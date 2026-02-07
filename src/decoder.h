@@ -4,7 +4,7 @@
 #include "platform.h"
 #include "sensors.h"
 
-#define MAX_TRIGGERS 36
+#define MAX_TRIGGERS 60
 
 typedef enum {
   /* Trigger wheel is N even teeth that add to 720 degrees.  This decoder is

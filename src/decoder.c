@@ -24,7 +24,9 @@ void decoder_desync(struct decoder *state, decoder_loss_reason reason) {
 
 static void push_time(struct decoder *d, timeval_t t) {
   // TODO make this a circular buffer
-  size_t len = sizeof(d->times) / sizeof(d->times[0]);
+  
+  /* Maintain list of N + 1 triggers, where N is the number of triggers on a wheel */
+  size_t len = d->config->num_triggers + 1;
   for (int i = len - 1; i > 0; --i) {
     d->times[i] = d->times[i - 1];
   }
