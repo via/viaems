@@ -62,17 +62,6 @@ def dump_vcd(log, file):
                         if update.is_set('calculations'):
                             for s, w in calculations.items():
                                 writer.change(w, time * 250, float(getattr(update.calculations, s)))
-                            #                            for s, value in pb_dict(update.sensors).items():
-                            #                                writer.change(sensors[s], time * 250, float(value))
-                            #
-                            #                        if update.is_set('calculations'):
-                            #                            for s, value in pb_dict(update.calculations).items():
-                            #                                writer.change(calculations[s], time * 250, float(value))
-                            #
-                            #                        if update.is_set('position'):
-                            #                            for s, value in pb_dict(update.position).items():
-                            #                                writer.change(position[s], time * 250, float(value))
-
                     case SimMarkEvent(time, name):
                         writer.change(marks, time * 250, True)
 

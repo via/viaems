@@ -1,7 +1,6 @@
 #include <string.h>
 
 #include "platform.h"
-#include "spsc.h"
 #include "stm32f4xx.h"
 #include "tusb.h"
 

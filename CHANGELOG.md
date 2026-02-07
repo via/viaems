@@ -20,8 +20,7 @@ Major breaking changes are introduced in this release
      to be used for CAN or Ethernet.
    - The existing serial/USB comms are "streaming" IO, but instead of directly
      concatonating CBOR messages, each message is suffixed with a CRC32 and
-     framed using COBS and NULL byte delimiters.  See INTERFACE.md for more
-     details
+     framed using COBS and NULL byte delimiters.  
 
 ### 1.6.0 (2025 March 1)
 This introduces breaking changes for sensors and table configuration
