@@ -274,7 +274,7 @@ message Configuration {
 
     optional float max_tooth_variance = 3;     // Maximum allowable inter-tooth variation: Value of 0.5 means a tooth
                                                // gap 0.5x-1.5x as long as the previous one is the bounds
-    optional float min_rpm = 4;                // Minium rpm to produce position information
+    optional uint32 min_rpm = 4;               // Minimum rpm to produce position information
 
     optional uint32 num_triggers = 5;          // Quantity of triggers on wheel
 
@@ -306,9 +306,9 @@ message Configuration {
 
   // Crank enrichment config. This provides enrichment during engine cranking, not after.
   message CrankEnrichment {
-    optional float cranking_rpm = 1;    // RPM threshold, below which engine is considered to be cranking
-    optional float cranking_temp = 2;   // Temperature threshold, below which enables enrichment
-    optional float enrich_amt = 3;      // Enrichment multiplier
+    optional uint32 cranking_rpm = 1;    // RPM threshold, below which engine is considered to be cranking
+    optional float cranking_temp = 2;    // Temperature threshold, below which enables enrichment
+    optional float enrich_amt = 3;       // Enrichment multiplier
   }
 
   message Fueling {
@@ -391,11 +391,11 @@ message Configuration {
   }
 
   message RpmCut {
-    optional float rpm_limit_start = 1;   // RPM lower hysteresis. If RPM cut is triggered (by exceeding
-                                          // rpm_limit_stop), the cut will remain enabled until RPM drops to
-                                          // rpm_limit_start
+    optional uint32 rpm_limit_start = 1;   // RPM lower hysteresis. If RPM cut is triggered (by exceeding
+                                           // rpm_limit_stop), the cut will remain enabled until RPM drops to
+                                           // rpm_limit_start
 
-    optional float rpm_limit_stop = 2;    // RPM limit
+    optional uint32 rpm_limit_stop = 2;    // RPM limit
   }
 
   repeated Output outputs = 1;

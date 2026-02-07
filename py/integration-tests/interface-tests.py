@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
+import betterproto2
 import unittest
+import struct
 import sys
 import time
-import json # TODO Remove
 
 from viaems.testcase import TestCase
 from viaems_proto.viaems import console
-
 
 
 class ViaemsInterfaceTests(TestCase):
@@ -27,10 +27,12 @@ class ViaemsInterfaceTests(TestCase):
             return None
         elif isinstance(element, bool):
             return not element
+        elif isinstance(element, betterproto2.Enum):
+            return element # TODO choose another enum
         elif isinstance(element, int):
-            return element # TODO this doesn't handle enums
+            return element + 1
         elif isinstance(element, float):
-            return element * 2.0 # Lossless for the double->float conversion python is doing
+            return element + 0.1
         elif isinstance(element, list):
             result = element
             element[0] = self.mutate(element[0])
@@ -45,13 +47,20 @@ class ViaemsInterfaceTests(TestCase):
             return element
 
     def test_mutate_every_option(self):
-        """Issues commands to change very field and validate that the change is accepted"""
+        """Issues commands to change every field and validate that the change is accepted.
+           Note, this test can be brittle, as it assumes the default config can 
+           tolerate the slight changes we make to all fields
+           """
+
         mutated = self.mutate(self.default_config)
+
+        # To force doubles to 32 bit floats
+        roundtrip = console.Configuration.parse(bytes(mutated))
 
         self.conn.setconfig(mutated)
         newconfig = self.conn.getconfig().response.getconfig.config
 
-        assert newconfig.to_dict() == mutated.to_dict()
+        assert newconfig.to_dict() == roundtrip.to_dict()
 
 
     def test_set_sensor_map(self):
