@@ -285,6 +285,13 @@ struct config default_config __attribute__((section(".configdata"))) = {
   },
 };
 
+static inline bool check_int_range(uint32_t value, uint32_t min, uint32_t max) {
+  return ((value >= min) && (value <= max));
+}
+
+static inline bool check_float_range(float value, float min, float max) {
+  return ((value >= min) && (value <= max));
+}
 
 static void store_output_config(const struct output_event_config *ev, struct viaems_console_Configuration_Output *ev_msg) {
   switch (ev->type) {
@@ -720,7 +727,7 @@ static bool load_table2d(struct table_2d *table, const struct viaems_console_Con
 }
 
 static bool load_output_config(struct output_event_config *config, const struct viaems_console_Configuration_Output *msg) {
-  if (msg->has_pin) {
+  if (msg->has_pin && check_int_range(msg->pin, 0, 15)) {
     config->pin = msg->pin;
   }
 
@@ -740,7 +747,7 @@ static bool load_output_config(struct output_event_config *config, const struct 
   if (msg->has_inverted) {
     config->inverted = msg->inverted;
   }
-  if (msg->has_angle) {
+  if (msg->has_angle && check_float_range(msg->angle, 0.0f, 719.9f)) {
     config->angle = msg->angle;
   }
   return true;
@@ -813,10 +820,10 @@ static bool load_sensor_config(struct sensor_config *config, const struct viaems
         break;
     }
   }
-  if (msg->has_pin) {
+  if (msg->has_pin && check_int_range(msg->pin, 0, MAX_ADC_PINS-1)) {
     config->pin = msg->pin;
   }
-  if (msg->has_lag) {
+  if (msg->has_lag && check_float_range(msg->lag, 0, 99.99f)) {
     config->lag = msg->lag;
   }
 
@@ -832,16 +839,25 @@ static bool load_sensor_config(struct sensor_config *config, const struct viaems
   }
 
   if (msg->has_window_config) {
-   config->window.window_opening = msg->window_config.opening;
-   config->window.windows_per_cycle = msg->window_config.count;
-   config->window.window_offset = msg->window_config.offset;
+    if (check_float_range(msg->window_config.opening, 0, 359.9f)) {
+      config->window.window_opening = msg->window_config.opening;
+    }
+
+    if (check_int_range(msg->window_config.count, 1, 16)) {
+      config->window.windows_per_cycle = msg->window_config.count;
+    }
+    if (check_float_range(msg->window_config.offset, -360, 360)) {
+      config->window.window_offset = msg->window_config.offset;
+    }
   }
 
   if (msg->has_thermistor_config) {
     config->therm.a = msg->thermistor_config.a;
     config->therm.b = msg->thermistor_config.b;
     config->therm.c = msg->thermistor_config.c;
-    config->therm.bias = msg->thermistor_config.bias;
+    if (check_float_range(msg->thermistor_config.bias, 100, 20000)) {
+      config->therm.bias = msg->thermistor_config.bias;
+    }
   }
 
   if (msg->has_fault_config) {
@@ -857,7 +873,7 @@ static void load_knock_config(struct knock_sensor_config *config, const struct v
     config->enabled = msg->enabled;
   }
 
-  if (msg->has_frequency) {
+  if (msg->has_frequency && msg->frequency > 0) {
     config->frequency = msg->frequency;
   }
 
@@ -930,11 +946,11 @@ config_load_result config_load_from_console_pbtype(struct config *config, const 
       }
     }
 
-    if (msg->ignition.has_fixed_dwell) {
+    if (msg->ignition.has_fixed_dwell && check_int_range(msg->ignition.fixed_dwell, 1, 20000)) {
       config->ignition.dwell_us = msg->ignition.fixed_dwell;
     }
 
-    if (msg->ignition.has_ignitions_per_cycle) {
+    if (msg->ignition.has_ignitions_per_cycle && check_int_range(msg->ignition.ignitions_per_cycle, 1, 8)) {
       config->ignition.ignitions_per_cycle = msg->ignition.ignitions_per_cycle;
     }
 
@@ -956,30 +972,30 @@ config_load_result config_load_from_console_pbtype(struct config *config, const 
   }
 
   if (msg->has_fueling) {
-    if (msg->fueling.has_fuel_pump_pin) {
+    if (msg->fueling.has_fuel_pump_pin && check_int_range(msg->fueling.fuel_pump_pin, 0, MAX_GPIOS)) {
       config->fueling.fuel_pump_pin = msg->fueling.fuel_pump_pin;
     }
-    if (msg->fueling.has_cylinder_cc) {
+    if (msg->fueling.has_cylinder_cc && check_float_range(msg->fueling.cylinder_cc, 50, 5000)) {
       config->fueling.cylinder_cc = msg->fueling.cylinder_cc;
     }
 
-    if (msg->fueling.has_fuel_density) {
+    if (msg->fueling.has_fuel_density && check_float_range(msg->fueling.fuel_density, 0.5f, 1.5f)) {
       config->fueling.density_of_fuel = msg->fueling.fuel_density;
     }
 
-    if (msg->fueling.has_fuel_stoich_ratio) {
+    if (msg->fueling.has_fuel_stoich_ratio && check_float_range(msg->fueling.fuel_stoich_ratio, 3, 25)) {
       config->fueling.fuel_stoich_ratio = msg->fueling.fuel_stoich_ratio;
     }
 
-    if (msg->fueling.has_injections_per_cycle) {
+    if (msg->fueling.has_injections_per_cycle && check_int_range(msg->fueling.injections_per_cycle, 1, 8)) {
       config->fueling.injections_per_cycle = msg->fueling.injections_per_cycle;
     }
 
-    if (msg->fueling.has_injector_cc) {
+    if (msg->fueling.has_injector_cc && check_int_range(msg->fueling.injector_cc, 50, 5000)) {
       config->fueling.injector_cc_per_minute = msg->fueling.injector_cc;
     }
 
-    if (msg->fueling.has_max_duty_cycle) {
+    if (msg->fueling.has_max_duty_cycle && check_float_range(msg->fueling.max_duty_cycle, 1, 100)) {
       config->fueling.max_duty_cycle = msg->fueling.max_duty_cycle;
     }
 
@@ -992,7 +1008,7 @@ config_load_result config_load_from_console_pbtype(struct config *config, const 
         config->fueling.crank_enrich_config.cutoff_temperature = msg->fueling.crank_enrich.cranking_temp;
       }
 
-      if (msg->fueling.crank_enrich.has_enrich_amt) {
+      if (msg->fueling.crank_enrich.has_enrich_amt && check_float_range(msg->fueling.crank_enrich.enrich_amt, 0.5f, 5.0f)) {
         config->fueling.crank_enrich_config.enrich_amt = msg->fueling.crank_enrich.enrich_amt;
       }
     }
@@ -1047,11 +1063,11 @@ config_load_result config_load_from_console_pbtype(struct config *config, const 
       }
     }
 
-    if (msg->decoder.has_degrees_per_trigger) {
+    if (msg->decoder.has_degrees_per_trigger && check_float_range(msg->decoder.degrees_per_trigger, 2, 90)) {
       config->decoder.degrees_per_trigger = msg->decoder.degrees_per_trigger;
     }
 
-    if (msg->decoder.has_max_tooth_variance) {
+    if (msg->decoder.has_max_tooth_variance && check_float_range(msg->decoder.max_tooth_variance, 0, 0.8f)) {
       config->decoder.trigger_max_rpm_change = msg->decoder.max_tooth_variance;
     }
 
@@ -1059,11 +1075,11 @@ config_load_result config_load_from_console_pbtype(struct config *config, const 
       config->decoder.trigger_min_rpm = msg->decoder.min_rpm;
     }
 
-    if (msg->decoder.has_num_triggers) {
+    if (msg->decoder.has_num_triggers && check_int_range(msg->decoder.num_triggers, 4, MAX_TRIGGERS)) {
       config->decoder.num_triggers = msg->decoder.num_triggers;
     }
 
-    if (msg->decoder.has_offset) {
+    if (msg->decoder.has_offset && check_float_range(msg->decoder.offset, 0, 719.9f)) {
       config->decoder.offset = msg->decoder.offset;
     }
   }
@@ -1078,7 +1094,7 @@ config_load_result config_load_from_console_pbtype(struct config *config, const 
   }
 
   if (msg->has_cel) {
-    if (msg->cel.has_pin) {
+    if (msg->cel.has_pin && check_int_range(msg->cel.pin, 0, MAX_GPIOS)) {
       config->cel.pin = msg->cel.pin;
     }
 
@@ -1092,7 +1108,7 @@ config_load_result config_load_from_console_pbtype(struct config *config, const 
   }
 
   if (msg->has_boost_control) {
-    if (msg->boost_control.has_pin) {
+    if (msg->boost_control.has_pin && check_int_range(msg->boost_control.pin, 0, MAX_PWM)) {
       config->boost_control.pin = msg->boost_control.pin;
     }
 
