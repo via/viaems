@@ -1,6 +1,7 @@
 - Configuration validation checks on load from message
 - Hardcoded proto text in fwinfo struct
 - meaningful interface test
+- debug/test trigger section
 
 - Strategy for not racing configs
 - Replace asserts with something that doesn't use printf (remove -NDEBUG)
