@@ -15,7 +15,7 @@ from viaems.vcd import dump_vcd
 from viaems.validation import enrich_log
 from viaems.events import *
 
-from viaems_proto.viaems import console
+from viaems_proto import console_pb2 as console
 
 def deframe_message(frame: bytes) -> console.Message:
     decoded = cobs.decode(frame)
@@ -28,11 +28,11 @@ def deframe_message(frame: bytes) -> console.Message:
         raise ValueError("CRC failure")
     if len(pdu) != length:
         raise ValueError(f"Length mismatch: {len(pdu)} pdu but header is {length}")
-    message = console.Message.parse(pdu)
+    message = console.Message.FromString(pdu)
     return message
 
 def enframe_message(message: console.Message) -> bytes:
-    pdu = bytes(message)
+    pdu = message.SerializeToString()
     length = len(pdu)
     crc = zlib.crc32(pdu)
 
@@ -46,28 +46,26 @@ class ViaemsInterface:
     def recv_response(self, max_messages=1000):
         while True:
             result = self.recv()
-            if result.response is not None:
+            if result.HasField('response'):
                 return result
             max_messages -= 1
             if max_messages == 0:
                 return None
 
     def getconfig(self):
-        req = console.Request(
-                  getconfig=console.RequestGetConfig()
-              )
-        return self.request(req)
+        req = console.Request()
+        req.getconfig.SetInParent()
+        return self.request(req).response.getconfig.config
 
     def setconfig(self, config: console.Configuration):
-        req = console.Request(
-                  setconfig=console.RequestSetConfig(
-                      config=config
-                  )
-              )
+        req = console.Request()
+        req.setconfig.config.CopyFrom(config)
         return self.request(req)
 
     def request(self, req: console.Request):
-        msg = console.Message(request=req)
+        msg = console.Message()
+        msg.request.CopyFrom(req)
+
         self.send(msg)
         return self.recv_response()
 

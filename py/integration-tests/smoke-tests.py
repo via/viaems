@@ -6,7 +6,7 @@ from viaems.scenario import Scenario
 from viaems.testcase import TestCase
 from viaems.util import ticks_for_rpm_degrees, ms_ticks
 from viaems.validation import validate_outputs
-from viaems_proto.viaems import console
+from viaems_proto import console_pb2 as console
 
 
 class NMinus1DecoderTests(TestCase):
@@ -56,7 +56,7 @@ class NMinus1DecoderTests(TestCase):
 #       - (after sync) advance is reasonable
 #       - (after sync) pw is reasonable
       
-      first_sync = next(filter(lambda i: i.update.is_set('position') and i.update.position.synced == True,
+      first_sync = next(filter(lambda i: i.update.HasField('position') and i.update.position.synced == True,
                                results.filter_between(t1, t2).filter_updates()))
 
       self.assertLessEqual(first_sync.time - t1, ms_ticks(500))
@@ -100,15 +100,10 @@ class NMinus1DecoderTests(TestCase):
 
 
     def test_high_rpm_ramp(self):
-      config = console.Configuration(
-              rpm_cut=console.ConfigurationRpmCut(
-                rpm_limit_start=9000,
-                rpm_limit_stop=10000,
-                ),
-              decoder=console.ConfigurationDecoder(
-                  offset=45
-                )
-              )
+      config = console.Configuration()
+      config.rpm_cut.rpm_limit_start = 9000
+      config.rpm_cut.rpm_limit_stop = 10000
+      config.decoder.offset=45
 
       scenario = Scenario("high_rpm_ramp", CrankNMinus1PlusCam_Wheel(36,
                                                                      offset=45))
