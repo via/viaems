@@ -235,6 +235,7 @@ make
 ```
 `obj/stm32f4/viaems` is the resultant executable that can be loaded.  
 
+
 ```
 make PLATFORM=hosted proxy
 ```
@@ -248,6 +249,7 @@ brought up by holding BOOT1 high, or for any already-programmed ViaEMS chip, the
 ResetToBootloader command will reboot it into DFU mode. Either way, there is a
 make target:
 ```
+(cd py; pip install -r requirements.txt)
 make program
 ```
 that will load the binary.
