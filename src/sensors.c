@@ -28,6 +28,12 @@ static bool current_window_for_angle(const struct window_config *conf,
   return false;
 }
 
+static void window_reset(struct sensor_state *s) {
+  s->window_collecting = false;
+  s->window_accumulator = 0;
+  s->window_sample_count = 0;
+}
+
 static float sensor_convert_linear_windowed(struct sensor_state *state,
                                             degrees_t angle,
                                             float raw) {
@@ -118,10 +124,11 @@ static void sensor_update_raw(struct sensor_state *s,
       new_value = sensor_convert_linear(conf, raw);
       break;
     case METHOD_LINEAR_WINDOWED:
-      if (d->has_position && (d->rpm > 0)) {
+      if (engine_position_is_synced(d, time)) {
         new_value =
           sensor_convert_linear_windowed(s, engine_current_angle(d, time), raw);
       } else {
+        window_reset(s);
         new_value = sensor_convert_linear(conf, raw);
       }
       break;
