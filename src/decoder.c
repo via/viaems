@@ -11,6 +11,8 @@
 
 static void invalidate_decoder(struct decoder *s) {
   s->state = DECODER_NOSYNC;
+  s->camsync_seen_this_rotation = false;
+  s->camsync_seen_last_rotation = false;
   s->current_triggers_rpm = 0;
   s->triggers_since_last_sync = 0;
   s->output.has_position = false;
@@ -333,27 +335,24 @@ static void decode_missing_no_sync(struct decoder *state,
 static void decode_missing_with_camsync(struct decoder *state,
                                         struct trigger_event *ev) {
   bool was_valid = state->output.has_position;
-  static bool camsync_seen_this_rotation = false;
-  static bool camsync_seen_last_rotation = false;
-
   if (ev->type == TRIGGER) {
     missing_tooth_trigger_update(state, ev->time);
     if ((state->state == DECODER_SYNC) &&
         (state->triggers_since_last_sync == 0)) {
-      if (!camsync_seen_this_rotation && !camsync_seen_last_rotation) {
+      if (!state->camsync_seen_this_rotation && !state->camsync_seen_last_rotation) {
         /* We've gone two cycles without a camsync, desync */
         state->output.has_position = false;
       }
-      camsync_seen_last_rotation = camsync_seen_this_rotation;
-      camsync_seen_this_rotation = false;
+      state->camsync_seen_last_rotation = state->camsync_seen_this_rotation;
+      state->camsync_seen_this_rotation = false;
     }
   } else if (ev->type == SYNC) {
     if (state->state == DECODER_SYNC) {
-      if (camsync_seen_this_rotation || camsync_seen_last_rotation) {
+      if (state->camsync_seen_this_rotation || state->camsync_seen_last_rotation) {
         state->output.has_position = false;
-        camsync_seen_this_rotation = false;
+        state->camsync_seen_this_rotation = false;
       } else {
-        camsync_seen_this_rotation = true;
+        state->camsync_seen_this_rotation = true;
       }
     }
   }
@@ -365,7 +364,7 @@ static void decode_missing_with_camsync(struct decoder *state,
   state->output.rpm = missing_tooth_average_rpm(state);
 
   bool has_seen_camsync =
-    camsync_seen_this_rotation || camsync_seen_last_rotation;
+    state->camsync_seen_this_rotation || state->camsync_seen_last_rotation;
   if (state->state != DECODER_SYNC) {
     state->output.has_position = false;
   } else if (!was_valid && (state->state == DECODER_SYNC) && has_seen_camsync) {
@@ -374,7 +373,7 @@ static void decode_missing_with_camsync(struct decoder *state,
     state->loss = DECODER_NO_LOSS;
     state->output.last_trigger_angle = clamp_angle(
       (state->config->degrees_per_trigger * state->triggers_since_last_sync) +
-      (camsync_seen_this_rotation ? 0 : 360) - state->config->offset, 720);
+      (state->camsync_seen_this_rotation ? 0 : 360) - state->config->offset, 720);
   }
   if (was_valid && !state->output.has_position) {
     /* We lost sync */
@@ -393,6 +392,8 @@ void decoder_init(const struct decoder_config *conf, struct decoder *state) {
     .time = 0,
     .last_trigger_angle = first_tooth_angle(conf->offset),
   };
+  state->camsync_seen_this_rotation = false;
+  state->camsync_seen_last_rotation = false;
   state->state = DECODER_NOSYNC;
   state->triggers_since_last_sync = 0;
   state->t0_count = 0;
