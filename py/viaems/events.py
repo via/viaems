@@ -3,7 +3,7 @@ from typing import Dict, List
 from copy import copy
 import bisect
 
-from viaems_proto.viaems import console
+from viaems_proto import console_pb2 as console
 
 CaptureTime = int
 ScenarioTime = int
@@ -157,20 +157,20 @@ def log_from_target_messages(msgs: List[console.Message]) -> List[TargetEvent]:
 
     result : List[TargetEvent] = []
     for msg in msgs:
-        if msg.is_set('event'):
+        if msg.HasField('event'):
             check_seq(msg.event)
 
-        if msg.is_set('engine_update'):
+        if msg.HasField('engine_update'):
             result.append(TargetEngineUpdateEvent(time=TargetTime(msg.engine_update.header.timestamp), update=msg.engine_update))
-        elif msg.is_set("event"):
+        elif msg.HasField("event"):
             time = msg.event.header.timestamp
-            if msg.event.is_set("trigger"):
+            if msg.event.HasField("trigger"):
                 result.append(TargetTriggerEvent(time=TargetTime(time),
                                                  trigger=msg.event.trigger))
-            elif msg.event.is_set("output_pins"):
+            elif msg.event.HasField("output_pins"):
                 result.append(TargetOutputEvent(time=TargetTime(time),
                                                 values=msg.event.output_pins))
-            elif msg.event.is_set("gpio_pins"):
+            elif msg.event.HasField("gpio_pins"):
                 result.append(TargetGpioEvent(time=TargetTime(time),
                                                 values=msg.event.gpio_pins))
 

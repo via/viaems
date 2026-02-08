@@ -2,8 +2,19 @@ import argparse
 import sys
 
 from viaems.connector import ExecConnector
-from betterproto2 import Casing
-from viaems_proto.viaems import console
+from viaems_proto import console_pb2 as console
+from google.protobuf import json_format
+
+def to_json(m):
+    j = json_format.MessageToJson(m, 
+                                  always_print_fields_with_no_presence=True,
+                                  preserving_proto_field_name=True,
+                                  indent=2)
+    return j
+
+def from_json(j, m):
+    m = json_format.Parse(j, m)
+    return m
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -95,28 +106,25 @@ if __name__ == "__main__":
 
     if args.get_config:
         config = conn.getconfig()
-        print(config.to_json(indent=True, casing=Casing.SNAKE))
+        j = to_json(config)
+        print(j)
 
     if args.set_config:
-        config = console.Configuration.from_json(sys.stdin.read())
+        config = from_json(sys.stdin.read(), console.Configuration())
         conn.setconfig(config)
 
         newconfig = conn.getconfig()
-        print(newconfig.to_json(indent=True, casing=Casing.SNAKE))
+        print(to_json(newconfig))
 
     if args.fwinfo:
-        fwinfo = console.Request(
-                    fwinfo=console.RequestFirmwareInfo()
-                )
+        fwinfo = console.Request()
+        fwinfo.fwinfo.SetInParent()
         resp = conn.request(fwinfo)
-        print(resp.response.to_json(indent=True, casing=Casing.SNAKE))
+        print(to_json(resp))
 
     if args.bootloader:
-        bootloader = console.Message(request=
-                                     console.Request(
-                                         resettobootloader=console.RequestResetToBootloader()
-                                         )
-                                     )
+        bootloader = console.Message()
+        bootload.resettobootloader.SetInParent()
         conn.send(bootloader)
 
     conn.kill()

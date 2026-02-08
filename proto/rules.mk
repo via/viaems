@@ -21,5 +21,5 @@ py/viaems_proto:
 	mkdir py/viaems_proto
 
 py/viaems_proto/__init__.py: proto/console.proto py/viaems_proto
-	python -m grpc_tools.protoc -I proto --python_betterproto2_out py/viaems_proto proto/console.proto
+	python -m grpc_tools.protoc -I proto --python_out py/viaems_proto proto/console.proto
 

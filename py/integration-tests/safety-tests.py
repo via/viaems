@@ -7,7 +7,7 @@ from viaems.testcase import TestCase
 from viaems.util import ticks_for_rpm_degrees, ms_ticks
 from viaems.validation import validate_outputs
 from viaems.events import OutputConfig
-from viaems_proto.viaems import console
+from viaems_proto import console_pb2 as console
 
 class SafetyTests(TestCase):
 
@@ -49,12 +49,10 @@ class SafetyTests(TestCase):
       assert results.filter_latest_gpio_at(t5).pin(0) == False
 
     def test_rev_limiter(self):
-      config = console.Configuration(
-              rpm_cut=console.ConfigurationRpmCut(
-                rpm_limit_start=3000,
-                rpm_limit_stop=4000,
-                )
-              )
+      config = console.Configuration()
+      config.rpm_cut.rpm_limit_start = 3000
+      config.rpm_cut.rpm_limit_stop = 4000
+
       scenario = Scenario("rev_limiter", CrankNMinus1PlusCam_Wheel(36))
       t0 = scenario.mark()
 
@@ -122,15 +120,8 @@ class SafetyTests(TestCase):
 
     def test_fuel_overduty(self):
 
-      config = console.Configuration(
-                   fueling=console.ConfigurationFueling(
-                       injector_dead_time=console.ConfigurationTable1D(
-                           data=console.ConfigurationTableRow(
-                               values = [20.0] * 16,
-                           )
-                       )
-                   )
-               )
+      config = console.Configuration()
+      config.fueling.injector_dead_time.data.values[:] = [20.0] * 16
 
       scenario = Scenario("fuel_overduty", CrankNMinus1PlusCam_Wheel(36))
       scenario.set_brv(14.0)
@@ -177,20 +168,11 @@ class SafetyTests(TestCase):
 
 
     def test_ignition_overduty(self):
-      config = console.Configuration(
-                 ignition=console.ConfigurationIgnition(
-                   min_dwell_us=6000,
-                   dwell=console.ConfigurationTable1D(
-                     data=console.ConfigurationTableRow(
-                       values = [9.0] * 4
-                     )
-                   )
-                 ),
-              rpm_cut=console.ConfigurationRpmCut(
-                rpm_limit_start=11000,
-                rpm_limit_stop=10000,
-                )
-              )
+      config = console.Configuration()
+      config.ignition.min_dwell_us = 6000
+      config.ignition.dwell.data.values[:] = [9.0] * 4
+      config.rpm_cut.rpm_limit_stop = 11000
+      config.rpm_cut.rpm_limit_start = 10000
 
       scenario = Scenario("dwell_overduty", CrankNMinus1PlusCam_Wheel(36))
       scenario.set_brv(14.0)
