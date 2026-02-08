@@ -124,7 +124,7 @@ if __name__ == "__main__":
 
     if args.bootloader:
         bootloader = console.Message()
-        bootload.resettobootloader.SetInParent()
+        bootloader.resettobootloader.SetInParent()
         conn.send(bootloader)
 
     conn.kill()
