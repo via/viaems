@@ -1,5 +1,6 @@
-### master (unreleased)
-Major breaking changes are introduced in this release
+### 1.7.0 (2026 Feb 16)
+Major breaking changes are introduced in this release. Additionally, this is expected
+to be the last major version using the CBOR interface and flviaems companion software.
 
  - stm32f4 platform is re-implemented, and is once again the default
    - Support for STM32F407 is dropped, and now STM32F427 is required, which
