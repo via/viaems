@@ -285,7 +285,7 @@ static void missing_tooth_trigger_update(struct decoder *state, timeval_t t) {
       conf->degrees_per_trigger *
       ((state->triggers_since_last_sync == conf->num_triggers - 2) ? 2 : 1);
     timeval_t expected_time =
-      time_from_rpm_diff(state->output.rpm, expected_gap);
+      time_from_rpm_diff(state->output.tooth_rpm, expected_gap);
     state->output.valid_until =
       state->times[0] +
       (timeval_t)(expected_time * (1.0f + conf->trigger_max_rpm_change));
