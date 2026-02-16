@@ -105,6 +105,10 @@ See #[console.proto](proto/console.proto) for details on what status reporting a
 options are available. High level details of the configuration options are
 below.
 
+Currently, #[viaems-ui](https://github.com/via/viaems-rs) is the actively maintained companion
+software for consuming this interface, allowing live configuration and log
+recording/reviewing.
+
 ### Streaming interface
 To provide a reliable interface over a serial or USB link, binary protobuf
 messages are encoded into NUL-delimited frames.  Each frame contains a
