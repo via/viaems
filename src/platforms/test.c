@@ -4,6 +4,7 @@
 #include "calculations.h"
 #include "config.h"
 #include "console.h"
+#include "crc.h"
 #include "decoder.h"
 #include "platform.h"
 #include "scheduler.h"
@@ -11,7 +12,6 @@
 #include "table.h"
 #include "tasks.h"
 #include "util.h"
-#include "crc.h"
 
 /* Disable leak detection in asan. There are several convenience allocations,
  * but they should be single ones for the lifetime of the program */

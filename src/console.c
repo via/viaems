@@ -1340,17 +1340,17 @@ static void render_sensor_object(struct console_request_context *ctx,
                          &input->fault_config.fault_value);
 
   render_float_map_field(ctx,
-                          "window-capture-opening",
-                          "Crank degrees in window to average samples over",
-                          &input->window.window_opening);
+                         "window-capture-opening",
+                         "Crank degrees in window to average samples over",
+                         &input->window.window_opening);
   render_uint32_map_field(ctx,
                           "window-count",
                           "windows per engine cycle",
                           &input->window.windows_per_cycle);
   render_float_map_field(ctx,
-                          "window-offset",
-                          "Crank degree into window to start averagine",
-                          &input->window.window_offset);
+                         "window-offset",
+                         "Crank degree into window to start averagine",
+                         &input->window.window_offset);
 }
 
 static void render_knock_object(struct console_request_context *ctx,

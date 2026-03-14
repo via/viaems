@@ -99,7 +99,7 @@ static void setup_watchdog() {
 static void ensure_db1m(void) {
 
   bool needs_update = (FLASH->OPTCR & FLASH_OPTCR_DB1M) == 0;
-  bool onemeg_chip  = *((uint16_t *)FLASHSIZE_BASE) == 0x400;
+  bool onemeg_chip = *((uint16_t *)FLASHSIZE_BASE) == 0x400;
 
   if (!needs_update || !onemeg_chip) {
     return;
@@ -116,7 +116,6 @@ static void ensure_db1m(void) {
     ;
 
   FLASH->OPTCR |= FLASH_OPTCR_OPTLOCK;
-
 }
 
 extern unsigned _configdata_loadaddr, _sconfigdata, _econfigdata;
@@ -260,7 +259,8 @@ void Reset_Handler(void) {
     platform_configure(true);
     int start_benchmarks(void);
     start_benchmarks();
-    while (true);
+    while (true)
+      ;
   } else {
     viaems_init(&stm32f4_viaems, config);
     platform_configure(false);

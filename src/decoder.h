@@ -80,7 +80,6 @@ struct decoder {
   bool camsync_seen_this_rotation;
   bool camsync_seen_last_rotation;
 
-
   struct engine_position output;
 
   /* Debug */

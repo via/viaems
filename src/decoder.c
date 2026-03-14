@@ -26,8 +26,9 @@ void decoder_desync(struct decoder *state, decoder_loss_reason reason) {
 
 static void push_time(struct decoder *d, timeval_t t) {
   // TODO make this a circular buffer
-  
-  /* Maintain list of N + 1 triggers, where N is the number of triggers on a wheel */
+
+  /* Maintain list of N + 1 triggers, where N is the number of triggers on a
+   * wheel */
   size_t len = d->config->num_triggers + 1;
   for (int i = len - 1; i > 0; --i) {
     d->times[i] = d->times[i - 1];
@@ -135,7 +136,8 @@ static void even_tooth_sync_update(struct decoder *state) {
     if (state->triggers_since_last_sync == state->config->num_triggers) {
       state->state = DECODER_SYNC;
       state->loss = DECODER_NO_LOSS;
-      state->output.last_trigger_angle = first_tooth_angle(state->config->offset);
+      state->output.last_trigger_angle =
+        first_tooth_angle(state->config->offset);
     } else {
       state->state = DECODER_NOSYNC;
       state->loss = DECODER_TRIGGERCOUNT_LOW;
@@ -339,7 +341,8 @@ static void decode_missing_with_camsync(struct decoder *state,
     missing_tooth_trigger_update(state, ev->time);
     if ((state->state == DECODER_SYNC) &&
         (state->triggers_since_last_sync == 0)) {
-      if (!state->camsync_seen_this_rotation && !state->camsync_seen_last_rotation) {
+      if (!state->camsync_seen_this_rotation &&
+          !state->camsync_seen_last_rotation) {
         /* We've gone two cycles without a camsync, desync */
         state->output.has_position = false;
       }
@@ -348,7 +351,8 @@ static void decode_missing_with_camsync(struct decoder *state,
     }
   } else if (ev->type == SYNC) {
     if (state->state == DECODER_SYNC) {
-      if (state->camsync_seen_this_rotation || state->camsync_seen_last_rotation) {
+      if (state->camsync_seen_this_rotation ||
+          state->camsync_seen_last_rotation) {
         state->output.has_position = false;
         state->camsync_seen_this_rotation = false;
       } else {
@@ -373,7 +377,8 @@ static void decode_missing_with_camsync(struct decoder *state,
     state->loss = DECODER_NO_LOSS;
     state->output.last_trigger_angle = clamp_angle(
       (state->config->degrees_per_trigger * state->triggers_since_last_sync) +
-      (state->camsync_seen_this_rotation ? 0 : 360) - state->config->offset, 720);
+        (state->camsync_seen_this_rotation ? 0 : 360) - state->config->offset,
+      720);
   }
   if (was_valid && !state->output.has_position) {
     /* We lost sync */
@@ -453,9 +458,9 @@ degrees_t engine_current_angle(const struct engine_position *d,
   }
 
   degrees_t angle_since_last_tooth =
-    time_before(at_time, d->time) ?
-      -degrees_from_time_diff(d->time - at_time, d->rpm) :
-      degrees_from_time_diff(at_time - d->time, d->rpm);
+    time_before(at_time, d->time)
+      ? -degrees_from_time_diff(d->time - at_time, d->rpm)
+      : degrees_from_time_diff(at_time - d->time, d->rpm);
 
   if ((angle_since_last_tooth < -720.0f) || (angle_since_last_tooth > 720.0f)) {
     /* This should never happen unless something is wrong with the input time,

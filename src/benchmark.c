@@ -5,11 +5,11 @@
 
 #include "calculations.h"
 #include "config.h"
+#include "crc.h"
 #include "platform.h"
 #include "scheduler.h"
 #include "table.h"
 #include "tasks.h"
-#include "crc.h"
 #include "viaems.h"
 
 #define FAR_FUTURE (TICKRATE * 60)
@@ -537,7 +537,7 @@ static uint32_t do_viaems_reschedule_normal() {
 
 static uint32_t do_crc32_of_200byte_string(void) {
 
-  uint8_t mymsg[200] = {0};
+  uint8_t mymsg[200] = { 0 };
   for (size_t i = 0; i < sizeof(mymsg); i++) {
     mymsg[i] = i;
   }

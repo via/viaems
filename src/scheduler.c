@@ -80,9 +80,8 @@ static bool schedule_ignition_event(const struct config *config,
     return false;
   }
 
-  degrees_t firing_angle =
-    clamp_angle(clamp_angle(ev->config->angle - advance, 720) -
-                  d->last_trigger_angle, 720);
+  degrees_t firing_angle = clamp_angle(
+    clamp_angle(ev->config->angle - advance, 720) - d->last_trigger_angle, 720);
 
   timeval_t stop_time =
     d->time + time_from_rpm_diff(d->tooth_rpm, firing_angle);
@@ -164,8 +163,8 @@ static bool schedule_fuel_event(struct output_event_schedule_state *ev,
                                 const struct engine_position *pos,
                                 unsigned int usecs_pw) {
 
-  degrees_t firing_angle = clamp_angle(
-    ev->config->angle - pos->last_trigger_angle, 720);
+  degrees_t firing_angle =
+    clamp_angle(ev->config->angle - pos->last_trigger_angle, 720);
 
   timeval_t stop_time =
     pos->time + time_from_rpm_diff(pos->tooth_rpm, firing_angle);

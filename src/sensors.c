@@ -40,9 +40,11 @@ static float sensor_convert_linear_windowed(struct sensor_state *state,
   float result = state->output.value;
 
   degrees_t window_start;
-  bool in_window = current_window_for_angle(&state->config->window, &window_start, angle);
+  bool in_window =
+    current_window_for_angle(&state->config->window, &window_start, angle);
 
-  /* If not in a window, or we are not in the same window that we started accumulating with */
+  /* If not in a window, or we are not in the same window that we started
+   * accumulating with */
   if (!in_window || (window_start != state->window_start)) {
     if (state->window_collecting && state->window_sample_count > 0) {
       state->window_collecting = false;
@@ -435,7 +437,6 @@ START_TEST(check_sensor_convert_linear_windowed_wide) {
   ck_assert_float_eq_tol(
     sensor_convert_linear_windowed(&state, 130, 1500), 12, 0.1);
 
-
   /* Reaches end of window, should average all three prior samples */
   ck_assert_float_eq_tol(
     sensor_convert_linear_windowed(&state, 180, 2000), 1733.33, 0.1);
@@ -554,7 +555,6 @@ START_TEST(check_current_angle_in_window) {
 
   ck_assert(current_window_for_angle(&conf.window, &window, 710));
   ck_assert(window == 690);
-
 }
 END_TEST
 
