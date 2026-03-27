@@ -13,6 +13,13 @@ Infinite_Loop:
   .global Reset_Handler
   .thumb_func
 Reset_Handler:
+    ldr r0, =0
+    ldr r1, =0x40052000   // WDOG_CS
+    str.w r0, [r1]        // Disable 
+
+    ldr r0, =0xffff
+    str.w r0, [r1, 8]     // Set WDOG TOVAL to FFFF
+
     ldr r1, =_sram_l_start
     ldr r2, =_sram_u_end
 

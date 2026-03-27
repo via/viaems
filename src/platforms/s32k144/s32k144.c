@@ -25,7 +25,7 @@ static void enable_peripheral_clocks(void) {
   *PCC_PORTD = PCC_CGC;
   *PCC_PORTE = PCC_CGC;
 
-//  *PCC_FLEXCAN2 = PCC_CGC;
+  *PCC_FLEXCAN0 = PCC_CGC;
   *PCC_LPUART2 = PCC_CGC | PCC_PCS(3); // Use FIRCDIV2 for UART
 
   *PCC_LPIT = PCC_CGC | PCC_PCS(6); // Use SPLLDIV2 for LPIT
@@ -37,7 +37,7 @@ static void enable_peripheral_clocks(void) {
   *PCC_ADC0 = PCC_CGC | PCC_PCS(6); // SPLLDIV2 (40 MHz) for ADC0
 
   *PCC_ENET = PCC_CGC;
-
+  *PCC_CRC = PCC_CGC;
 }
 
 static void configure_pins(void) {
@@ -45,6 +45,9 @@ static void configure_pins(void) {
   // Set C16 and C17 to FlexCAN2
 //  *PORTC_PCRn(16) |= PORT_PCRn_MUX(3);
 //  *PORTC_PCRn(17) |= PORT_PCRn_MUX(3);
+//  PTE5 and PTE4 as FlexCAN0
+  *PORTE_PCRn(5) |= 0;
+  *PORTE_PCRn(4) |= 0;
   
 
   // Configure PTE12 as LPUART2 TX
@@ -116,15 +119,15 @@ static void configure_system_clocks(void) {
 
 }
 
-static void setup_can(void) {
-  *FLEXCAN2_CTRL1 = (1u << 13); // CLKSRC to peripheral clock
-  *FLEXCAN2_MCR &= ~(1u << 31); // Clear MDIS
+static void setup_can0(void) {
+  *FLEXCAN0_CTRL1 = (1u << 13); // CLKSRC to peripheral clock
+  *FLEXCAN0_MCR &= ~(1u << 31); // Clear MDIS
 
-  while ((*FLEXCAN2_MCR & (1u << 24)) == 0); // Wait for FRZACK
+  while ((*FLEXCAN0_MCR & (1u << 24)) == 0); // Wait for FRZACK
 
   // Configure for 40 MHz peripheral clock, 500 kbit bus rate, so 80 TQ per bit.
   // (SYNC(1) + EPROPSEG(46) + ESEG1(16) + ESEG2(16), 80% sample point
-  *FLEXCAN2_CBT = (1u << 31) | // BTF=1
+  *FLEXCAN0_CBT = (1u << 31) | // BTF=1
                   (1u << 21) | // EPRESDIV=1
                   (15u << 16) | // ERJW=15
                   (46u << 10) | // EPROPSET=46
@@ -145,13 +148,13 @@ static void setup_can(void) {
 //                     (31u << 8);  // TDCOFF
                      
   for (int i = 0; i < 128; i++) {
-    FLEXCAN2_MEM[0] = 0x0;
+    FLEXCAN0_MEM[0] = 0x0;
   }
 
-  *FLEXCAN2_MCR = (0x1Fu << 0) | // MAXMB=31
+  *FLEXCAN0_MCR = (0x1Fu << 0) | // MAXMB=31
                   (3u << 8);   // Reject all RX
                                //
-  while ((*FLEXCAN2_MCR & (1u << 27)) != 0); // Wait for NOTRDY to clear
+  while ((*FLEXCAN0_MCR & (1u << 27)) != 0); // Wait for NOTRDY to clear
 
 
 
@@ -235,17 +238,17 @@ void LPIT0_Ch1_IRQHandler(void) {
   __asm__("isb");
 
   
-  struct engine_update update = {
-    .sensors = sensors_get_values(&s32k148_viaems.sensors),
-    .position = decoder_get_engine_position(&s32k148_viaems.decoder), 
-    .current_time = current_time(),
-  };
-  struct platform_plan plan = {
-    .schedulable_start = 0,
-    .schedulable_end = 0,
-  };
-
-  viaems_reschedule(&s32k148_viaems, &update, &plan);
+//  struct engine_update update = {
+//    .sensors = sensors_get_values(&s32k148_viaems.sensors),
+//    .position = decoder_get_engine_position(&s32k148_viaems.decoder), 
+//    .current_time = current_time(),
+//  };
+//  struct platform_plan plan = {
+//    .schedulable_start = 0,
+//    .schedulable_end = 0,
+//  };
+//
+//  viaems_reschedule(&s32k148_viaems, &update, &plan);
 
 //  time += 200; 
 //  uint16_t channels[] = {0xFFFF, 0xFFFF};
@@ -569,11 +572,13 @@ uint32_t maxi = 0;
 
 void SystemInit(void) {
   *SCB_CPACR |= ((3UL << (10 * 2)) | (3UL << (11 * 2))); /* set CP10 and CP11 Full Access */
+#if 1
   // copy text segment to SRAM_L
   volatile uint32_t *src, *dest;
   for (src = &_text_loadaddr, dest = &_stext; dest < &_etext; src++, dest++) {
     *dest = *src;
   }
+#endif
 }
 
 
@@ -592,7 +597,6 @@ size_t platform_write(const uint8_t *buffer, size_t length) {
 #endif
 
 int startup(void) {
-  disable_watchdog();
 
   // copy data
   volatile uint32_t *src, *dest;
@@ -619,7 +623,7 @@ int startup(void) {
 
 
   setup_uart();
-//  setup_can();
+  //setup_can0();
   setup_lpit();
   setup_ftm0();
   setup_ftm3();
@@ -640,7 +644,7 @@ int startup(void) {
   *((volatile uint32_t *)(0x4000D800)) |= (6u << 18); // RW for ENET to all
 
                                                       // memory via alt
-#if BENCH
+#if BENCHMARK
   int start_benchmarks(void);
   start_benchmarks();
 #else

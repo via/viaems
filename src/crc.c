@@ -51,10 +51,12 @@ const uint32_t crc32_lookup[] = {
   0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d,
 };
 
+__attribute__((weak))
 void crc32_init(struct crc32 *c) {
   c->value = 0xffffffff;
 }
 
+__attribute__((weak))
 void crc32_add_byte(struct crc32 *crc, uint8_t byte) {
 
   uint32_t current = crc->value;
@@ -62,6 +64,7 @@ void crc32_add_byte(struct crc32 *crc, uint8_t byte) {
   crc->value = current;
 }
 
+__attribute__((weak))
 void crc32_add_bytes(struct crc32 *crc,
                      size_t n_bytes,
                      const uint8_t bytes[n_bytes]) {
@@ -70,6 +73,7 @@ void crc32_add_bytes(struct crc32 *crc,
   }
 }
 
+__attribute__((weak))
 uint32_t crc32_finish(struct crc32 *crc) {
   crc->value ^= 0xffffffff;
   return crc->value;

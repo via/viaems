@@ -1,3 +1,4 @@
+#include "viapb.h"
 #undef NDEBUG // Enable benchmark checks
 #include <assert.h>
 #include <stdbool.h>
@@ -551,7 +552,7 @@ static uint32_t do_crc32_of_200byte_string(void) {
   crc32_add_bytes(&crc, sizeof(mymsg), mymsg);
   uint32_t result = crc32_finish(&crc);
   if (result != 3976749440) {
-    puts("Bad result!\n");
+    printf("Bad result %x vs %x \r\n", result, 3976749440);
   }
   uint64_t end = cycle_count();
   return end - start;
@@ -567,6 +568,98 @@ static uint32_t do_load_config_from_pb(void) {
 
   uint64_t start = cycle_count();
   config_load_from_console_pbtype(&newconfig, &msg);
+  uint64_t end = cycle_count();
+  return end - start;
+}
+
+static uint32_t do_serialize_engineupdate(void) {
+
+  const struct viaems_console_EngineUpdate msg = {
+    .has_header = true,
+    .header = {
+      .timestamp = 12345,
+      .seq = 1,
+    },
+
+    .has_position = true,
+    .position = {
+      .time = 12345,
+      .average_rpm = 1000,
+      .instantaneous_rpm = 1000,
+      .has_position = true,
+      .synced = true,
+      .last_angle = 120.0f,
+      .loss_cause = DECODER_VARIATION,
+    },
+
+    .has_calculations = true,
+    .calculations = {
+      .ve = 100.0f,
+      .lambda = 1.0f,
+      .fuel_us = 1000,
+      .engine_temp_enrichment = 1.0f,
+      .injector_dead_time = 1.0f,
+      .pulse_width_correction = 0.1f,
+      .tipin_percent = 1.0f,
+      .airmass_per_cycle = 100.0f,
+      .fuelvol_per_cycle = 100.0f,
+      .advance = 20,
+      .dwell_us = 3000,
+      .rpm_limit_cut = true,
+      .boost_cut = true,
+      .fuel_overduty_cut = true,
+      .dwell_overduty_cut = true,
+    },
+    .has_sensors = true,
+    .sensors = {
+      .map = 100.0f,
+      .map_rate = 1.0f,
+      .map_fault = viaems_console_SensorFault_SENSOR_CONNECTION_FAULT,
+
+      .iat = 100.0f,
+      .iat_rate = 1.0f,
+      .iat_fault = viaems_console_SensorFault_SENSOR_CONNECTION_FAULT,
+
+      .clt = 100.0f,
+      .clt_rate = 1.0f,
+      .clt_fault = viaems_console_SensorFault_SENSOR_CONNECTION_FAULT,
+
+      .brv = 100.0f,
+      .brv_rate = 1.0f,
+      .brv_fault = viaems_console_SensorFault_SENSOR_CONNECTION_FAULT,
+
+      .tps = 100.0f,
+      .tps_rate = 1.0f,
+      .tps_fault = viaems_console_SensorFault_SENSOR_CONNECTION_FAULT,
+
+      .aap = 100.0f,
+      .aap_rate = 1.0f,
+      .aap_fault = viaems_console_SensorFault_SENSOR_CONNECTION_FAULT,
+
+      .frt = 100.0f,
+      .frt_rate = 1.0f,
+      .frt_fault = viaems_console_SensorFault_SENSOR_CONNECTION_FAULT,
+
+      .ego = 100.0f,
+      .ego_rate = 1.0f,
+      .ego_fault = viaems_console_SensorFault_SENSOR_CONNECTION_FAULT,
+
+      .frp = 100.0f,
+      .frp_rate = 1.0f,
+      .frp_fault = viaems_console_SensorFault_SENSOR_CONNECTION_FAULT,
+
+      .eth = 100.0f,
+      .eth_rate = 1.0f,
+      .eth_fault = viaems_console_SensorFault_SENSOR_CONNECTION_FAULT,
+    },
+  };
+
+  static uint8_t buffer[300];
+  struct pb_buffer pbb = { .ptr = buffer, .length = sizeof(buffer) };
+
+
+  uint64_t start = cycle_count();
+  pb_encode_viaems_console_EngineUpdate(&msg, pb_buffer_write, &pbb);
   uint64_t end = cycle_count();
   return end - start;
 }
@@ -615,6 +708,8 @@ int start_benchmarks() {
                    run_benchmark(do_crc32_of_200byte_string, 1000));
   report_benchmark("Config: parse from message",
                    run_benchmark(do_load_config_from_pb, 1000));
+  report_benchmark("Console: encode EngineUpdate",
+                   run_benchmark(do_serialize_engineupdate, 1000));
   puts("\r\nDone!\r\n");
 
   return 0;

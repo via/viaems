@@ -10,7 +10,9 @@ VPATH=src/platforms/${PLATFORM}
 OBJS+= s32k144.o \
        s32k144_extra.o \
        s32k144_enet.o \
+       s32k1xx_crc.o \
        s32k144_startup.o
+
 
 
 OBJS+= libssp.a libssp_nonshared.a

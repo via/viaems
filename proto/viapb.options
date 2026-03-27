@@ -9,6 +9,7 @@
 
 .viaems.console.RawAdcUpdate.values                max_count:16
 .viaems.console.Message                            submsg_store:384
+.viaems.console.EngineUpdate                       submsg_store:256
 
 .viaems.console.Response.FirmwareInfo.version      max_size:64
 .viaems.console.Response.FirmwareInfo.platform     max_size:32
