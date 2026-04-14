@@ -46,8 +46,8 @@ static void configure_pins(void) {
 //  *PORTC_PCRn(16) |= PORT_PCRn_MUX(3);
 //  *PORTC_PCRn(17) |= PORT_PCRn_MUX(3);
 //  PTE5 and PTE4 as FlexCAN0
-  *PORTE_PCRn(5) |= 0;
-  *PORTE_PCRn(4) |= 0;
+  *PORTE_PCRn(5) |= PORT_PCRn_MUX(5);
+  *PORTE_PCRn(4) |= PORT_PCRn_MUX(5);
   
 
   // Configure PTE12 as LPUART2 TX
@@ -120,44 +120,75 @@ static void configure_system_clocks(void) {
 }
 
 static void setup_can0(void) {
+
+
   *FLEXCAN0_CTRL1 = (1u << 13); // CLKSRC to peripheral clock
   *FLEXCAN0_MCR &= ~(1u << 31); // Clear MDIS
 
   while ((*FLEXCAN0_MCR & (1u << 24)) == 0); // Wait for FRZACK
 
-  // Configure for 40 MHz peripheral clock, 500 kbit bus rate, so 80 TQ per bit.
+
+  // Configure for 40 MHz peripheral clock, div 1, 500 kbit bus rate, so 160 TQ per bit.
   // (SYNC(1) + EPROPSEG(46) + ESEG1(16) + ESEG2(16), 80% sample point
   *FLEXCAN0_CBT = (1u << 31) | // BTF=1
-                  (1u << 21) | // EPRESDIV=1
-                  (15u << 16) | // ERJW=15
-                  (46u << 10) | // EPROPSET=46
-                  (15u << 5) | // EPSEG1=15
-                  (15u << 0);  // EPSEG2=15
-
- // // 2 Mbit bus, so 20 TQ per bit
- // *FLEXCAN0_FDCBT = (1u << 20) | // FPRESDIV=1
- //                   (3u << 16) | // FRJW=3
- //                   (7u << 10) | // FPROPSEG=7
- //                   (7u << 5) |  // FPSEG1=7
- //                   (3u << 0);  // FPSEG2=3
+                  (1u << 21) | // EPRESDIV=10  8
+                  (15 << 16) | // ERJW=15      60
+                  (46u << 10) | // EPROPSET=5  20
+                  (15u << 5) | // EPSEG1=8   32
+                  (15u << 0);  // EPSEG2=2   8
 
 
-//  *FLEXCAN0_FDCTRL = (1u << 31) | // FDRATE
-//                     (3u << 16) | // MBDSR0 = 3 (64 byte msgs)
-//                     (1u << 15) | // TCDEN
-//                     (31u << 8);  // TDCOFF
+  // 2 Mbit bus, so 20 TQ per bit
+//  *FLEXCAN0_FDCBT = (1u << 20) | // FPRESDIV=1
+//                    (3u << 16) | // FRJW=3
+//                    (1u << 10) | // FPROPSEG=2
+//                    (3u << 5) |  // FPSEG1=8
+//                    (1u << 0);  // FPSEG2=4
+//
+  *FLEXCAN0_FDCBT = (1u << 20) | // FPRESDIV=1
+                    (15u << 16) | // FRJW=3
+                    (11u << 10) | // FPROPSEG=2
+                    (15u << 5) |  // FPSEG1=8
+                    (3u << 0);  // FPSEG2=4
+
+  *FLEXCAN0_FDCTRL = (1u << 31) | // FDRATE
+                     (3u << 16) | // MBDSR0 = 3 (64 byte msgs)
+                     (1u << 15) | // TCDEN
+                     (8 << 8);  // TDCOFF
                      
   for (int i = 0; i < 128; i++) {
     FLEXCAN0_MEM[0] = 0x0;
   }
 
-  *FLEXCAN0_MCR = (0x1Fu << 0) | // MAXMB=31
+  *FLEXCAN0_IFLAG1 = 0x1;
+  *FLEXCAN0_CTRL2 |= (1u << 12); // ISOCANFDEN
+  *FLEXCAN0_MCR = (6 << 0) | // MAXMB=31
+                  (1u << 11) | // FDEN
                   (3u << 8);   // Reject all RX
                                //
   while ((*FLEXCAN0_MCR & (1u << 27)) != 0); // Wait for NOTRDY to clear
+}
 
+static void send_can_frame(size_t len, uint8_t bytes[8]) {
 
+  // Find a MB, but for now assume first one
+  volatile uint32_t *MB = FLEXCAN0_MEM;
 
+  *FLEXCAN0_IFLAG1 = 0x1;
+
+  uint32_t ext_id = 0x555 << 18;
+
+  MB[2] = __builtin_bswap32(((uint32_t *)bytes)[0]);
+  MB[3] = __builtin_bswap32(((uint32_t *)bytes)[1]);
+
+  MB[4] = __builtin_bswap32(((uint32_t *)bytes)[0]);
+  MB[5] = __builtin_bswap32(((uint32_t *)bytes)[1]);
+
+  MB[1] = ext_id;
+//  MB[0] = (0xCu << 24) | (len << 16); 
+  MB[0] = (1u << 31) | (1u << 30) | (1u << 22) | (0xCu << 24) | (10 << 16); 
+
+  while ((*FLEXCAN0_IFLAG1 & 1) == 0);
 
 }
 
@@ -623,7 +654,7 @@ int startup(void) {
 
 
   setup_uart();
-  //setup_can0();
+  setup_can0();
   setup_lpit();
   setup_ftm0();
   setup_ftm3();
@@ -645,6 +676,10 @@ int startup(void) {
 
                                                       // memory via alt
 #if BENCHMARK
+  while (true) {
+    send_can_frame(8, (uint8_t[]){0xAA, 0xB0, 0xCC, 0xDD, 0xEE, 0xFF, 0xAE, 0xEA});
+//    write_string("Wrote message\r\n");
+  }
   int start_benchmarks(void);
   start_benchmarks();
 #else
