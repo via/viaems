@@ -11,209 +11,34 @@
 static uint8_t spi_tx_buffer[520];
 static uint8_t spi_rx_buffer[520];
 
-struct flash flash_init() {
 
-  const uint8_t query_cmd[4] = { 0x9f, 0x00, 0x00, 0x00 };
-  uint8_t query_resp[4];
-  flash_spi_transaction(query_cmd, query_resp, sizeof(query_cmd));
-
-  const uint8_t devid = query_resp[1];
-  const uint8_t memid = query_resp[2];
-  const uint8_t capacity = query_resp[3];
-  if (devid == 0xef && memid == 0x40 && capacity > 0x13 && capacity < 0x20) {
-    /* Winbond SPI NOR flash */
-
-    uint32_t capacity_bytes = 1 << capacity;
-    return (struct flash){
-      .valid = true,
-      .sector_size = 4096,
-      .page_size = 256,
-      .capacity_bytes = capacity_bytes,
-      .config_a_pgs = 16,
-      .config_b_pgs = 16,
-    };
-  }
-  return (struct flash){ .valid = false };
-}
-
-bool flash_read(struct flash *f,
-                uint8_t *dest,
-                uint32_t address,
-                size_t length) {
-  if (!f->valid) {
-    return false;
-  }
-  if (length > 512) {
-    return false;
-  }
-  if (address + length >= f->capacity_bytes) {
-    return false;
-  }
-
-  uint8_t cmd[] = {
-    0x03,
-    (address & 0xff0000) >> 16,
-    (address & 0xff00) >> 8,
-    (address & 0xff),
-  };
-  memset(spi_tx_buffer, 0, sizeof(cmd) + length);
-  memcpy(spi_tx_buffer, cmd, sizeof(cmd));
-  flash_spi_transaction(spi_tx_buffer, spi_rx_buffer, sizeof(cmd) + length);
-  memcpy(dest, spi_rx_buffer + 4, length);
-  return true;
-}
-
-bool flash_is_busy(struct flash *f) {
-  const uint8_t read_sr1_cmd[] = { 0x5, 0x00 };
-  uint8_t read_sr1_resp[2];
-
-  flash_spi_transaction(read_sr1_cmd, read_sr1_resp, sizeof(read_sr1_cmd));
-  return (read_sr1_resp[1] & 0x1) != 0;
-}
-
-bool flash_enable_write(struct flash *f) {
-  const uint8_t write_enable_cmd[] = { 0x6 };
-  uint8_t write_enable_resp[1];
-
-  flash_spi_transaction(
-    write_enable_cmd, write_enable_resp, sizeof(write_enable_cmd));
-  while (flash_is_busy(f))
-    ;
-  return true;
-}
-
-bool flash_erase_sector(struct flash *f, uint32_t address) {
-  if (f->valid) {
-    return false;
-  }
-  if ((address & (f->sector_size - 1)) != 0) {
-    /* Address must be on page boundary */
-    return false;
-  }
-  if (address >= f->capacity_bytes) {
-    return false;
-  }
-
-  flash_enable_write(f);
-
-  uint8_t cmd[] = {
-    0x20,
-    (address & 0xff0000) >> 16,
-    (address & 0xff00) >> 8,
-    (address & 0xff),
-  };
-
-  uint8_t resp[4];
-
-  flash_spi_transaction(cmd, resp, sizeof(cmd));
-
-  while (flash_is_busy(f))
-    ;
-  return true;
-}
-
-bool flash_write(struct flash *f,
-                 const uint8_t *src,
-                 uint32_t address,
-                 size_t length) {
-  if (!f->valid) {
-    return false;
-  }
-  uint32_t start_page = address / f->page_size;
-  uint32_t end_page = (address + length - 1) / f->page_size;
-
-  if (start_page != end_page) {
-    /* Full written range must be in single page */
-    return false;
-  }
-  if ((address + length) >= f->capacity_bytes) {
-    return false;
-  }
-
-  flash_enable_write(f);
-
-  uint8_t cmd[] = {
-    0x02,
-    (address & 0xff0000) >> 16,
-    (address & 0xff00) >> 8,
-    (address & 0xff),
-  };
-  memcpy(spi_tx_buffer, cmd, sizeof(cmd));
-  memcpy(spi_tx_buffer + sizeof(cmd), src, length);
-  flash_spi_transaction(spi_tx_buffer, spi_rx_buffer, sizeof(cmd) + length);
-
-  while (flash_is_busy(f))
-    ;
-  return true;
-}
 
 static uint8_t sdcard_command(uint8_t cmd, uint32_t arg, uint8_t crc) {
-  uint8_t arg1 = arg >> 24;
-  uint8_t arg2 = (arg & 0xff0000) >> 16;
-  uint8_t arg3 = (arg & 0xff00) >> 8;
-  uint8_t arg4 = (arg & 0xff);
-  uint8_t tx[16] = { 0x40 | cmd, arg1, arg2, arg3, arg4, crc };
-  uint8_t rx[16];
-  for (uint32_t i = 6; i < sizeof(tx); i++) {
-    tx[i] = 0xff;
-  }
+
   sdcard_spi_chipselect(true);
-  sdcard_spi_transaction(tx, rx, sizeof(rx));
-  sdcard_spi_chipselect(false);
-  for (int i = 6; i < sizeof(rx); i++) {
-    if ((rx[i] & 0x80) == 0) {
-      return rx[i];
+
+  sdcard_spi_single(0x40 | cmd);
+  sdcard_spi_single(arg >> 24);
+  sdcard_spi_single(arg >> 16);
+  sdcard_spi_single(arg >> 8);
+  sdcard_spi_single(arg >> 0);
+  sdcard_spi_single(crc);
+
+  uint8_t result = 0xff;
+  for (int i = 0; i < 8; i++) {
+    uint8_t rx = sdcard_spi_single(0xff);
+    if ((rx & 0x80) == 0) {
+      result = rx;
+      break;
     }
   }
-  return 0xff;
-}
 
-struct slice {
-  uint8_t *rxstorageptr;
-  uint8_t *txstorageptr;
-  size_t storagelen;
-  uint8_t *ptr;
-  size_t len;
-};
+  sdcard_spi_chipselect(false);
 
-static void slice_repopulate(struct slice *s, size_t chunksize) {
-    s->len = chunksize;
-    s->ptr = s->rxstorageptr;
-    memset(s->txstorageptr, 0xff, chunksize);
-    sdcard_spi_transaction(s->txstorageptr, s->rxstorageptr, chunksize);
-}
-
-static uint8_t slice_next_byte(struct slice *s, size_t chunksize) {
-  if (s->len == 0) {
-    slice_repopulate(s, chunksize);
-  }
-  uint8_t result = *s->ptr;
-  s->len--;
-  s->ptr++;
   return result;
 }
 
-static void slice_range(struct slice *s, uint8_t *dest, size_t len, size_t chunksize) {
-  do {
-    if (s->len == 0) {
-      slice_repopulate(s, chunksize);
-    }
-    size_t amt_to_copy = (len > s->len) ? s->len : len;
-    memcpy(dest, s->ptr, amt_to_copy);
-    s->len -= amt_to_copy;
-    s->ptr += amt_to_copy;
-    dest += amt_to_copy;
-    len -= amt_to_copy;
-  } while (len > 0);
-}
-
-static void slice_skip(struct slice *s, size_t n_skip, size_t chunksize) {
-  while (n_skip > 0) {
-    slice_next_byte(s, chunksize);
-    n_skip--;
-  }
-}
-
+#if 0
 uint8_t sdcard_rxbuffer[1024];
 uint8_t sdcard_txbuffer[1024];
 static bool sdcard_data_read_command(uint8_t cmd,
@@ -523,13 +348,17 @@ static bool sdcard_data_write_multiple(uint32_t arg,
   return true;
 }
 
+#endif
+
 struct sdcard sdcard_init() {
   struct sdcard sdcard = { 0 };
   sdcard_spi_highspeed(false);
+  sdcard_spi_chipselect(false);
 
   /* 74+ cycles with CS deasserted */
-  memset(sdcard_rxbuffer, 0xff, 32);
-  sdcard_spi_transaction(sdcard_rxbuffer, sdcard_rxbuffer, 32);
+  for (int i = 0; i < 74; i++) {
+    sdcard_spi_single(0xff);
+  }
 
   /* Go to idle */
   uint8_t resp = sdcard_command(0, 0, 0x95);

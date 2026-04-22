@@ -28,7 +28,10 @@ void set_gpio_port(uint32_t output) {
 }
 
 static void enable_peripherals(void) {
-  RCC->APB1ENR |= RCC_APB1ENR_PWREN | RCC_APB1ENR_TIM2EN | RCC_APB1ENR_TIM3EN;
+  RCC->APB1ENR |= RCC_APB1ENR_PWREN | 
+                  RCC_APB1ENR_TIM2EN | 
+                  RCC_APB1ENR_TIM3EN | 
+                  RCC_APB1ENR_SPI3EN;
 
   RCC->APB2ENR |= RCC_APB2ENR_TIM1EN | RCC_APB2ENR_TIM8EN | RCC_APB2ENR_TIM9EN |
                   RCC_APB2ENR_SPI1EN;
