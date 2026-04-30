@@ -151,7 +151,6 @@ void record_engine_update(const struct engine_update *eng_update,
 
   struct viaems_console_EngineUpdate *update = &engine_update_msgs[idx];
 
-  *update = (struct viaems_console_EngineUpdate){ 0 };
   update->has_header = true;
   update->header.timestamp = eng_update->current_time;
   update->header.seq = seq;
