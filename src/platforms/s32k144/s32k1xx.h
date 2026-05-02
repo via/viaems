@@ -36,6 +36,10 @@
 #define PCC_FLEXCAN1       MEM32(PCC_BASE + 0x94u)
 #define PCC_FTM3           MEM32(PCC_BASE + 0x98u)
 #define PCC_ADC1           MEM32(PCC_BASE + 0x9Cu)
+#define PCC_LPSPI0         MEM32(PCC_BASE + 0xB0u)
+#define PCC_LPSPI1         MEM32(PCC_BASE + 0xB4u)
+#define PCC_LPSPI2         MEM32(PCC_BASE + 0xB8u)
+
 #define PCC_PDB1           MEM32(PCC_BASE + 0xC4u)
 #define PCC_CRC           MEM32(PCC_BASE + 0xC8u)
 #define PCC_FLEXCAN2       MEM32(PCC_BASE + 0xACu)
@@ -233,6 +237,8 @@
 #define TRGMUX_FTM1              MEM32(TRGMUX_BASE + 0x2C)
 #define TRGMUX_FTM2              MEM32(TRGMUX_BASE + 0x30)
 #define TRGMUX_FTM3              MEM32(TRGMUX_BASE + 0x34)
+#define TRGMUX_PDB0              MEM32(TRGMUX_BASE + 0x38)
+#define TRGMUX_PDB1              MEM32(TRGMUX_BASE + 0x3C)
 
 #define TRGMUX_SEL0(X)           ((uint32_t)(X) << 0)
 #define TRGMUX_SEL1(X)           ((uint32_t)(X) << 8)
@@ -328,6 +334,7 @@
 #define FTM_CnSC_ELSA            (1u << 2)
 #define FTM_CnSC_MSA             (1u << 4)
 #define FTM_CnSC_CHIE            (1u << 6)
+#define FTM_CnSC_CHF             (1u << 7)
 #define FTM_EXTTRIG_INITTRIGEN   (1u << 6)
 
 #define DMA_BASE                     0x40008000u
@@ -457,6 +464,7 @@
 #define PDB_SC_SWTRIG            (1u << 16)
 #define PDB_SC_TRGSEL(X)         ((uint32_t)(X) << 8)
 #define PDB_SC_PDBEN             (1u << 7)
+#define PDB_SC_PDBIF             (1u << 6)
 #define PDB_SC_PDBIE             (1u << 5)
 #define PDB_SC_LDOK              (1u << 0)
 #define PDB_CHnC1_BB(X)          ((uint32_t)(X) << 16)
@@ -516,6 +524,9 @@
 #define CRC_CTRL_FXOR       (1u << 26)
 #define CRC_CTRL_WAS        (1u << 25)
 #define CRC_CTRL_TCRC       (1u << 24)
+
+#define LPSPI_BASE(X)    (0x4002C000u + (X) * 0x1000)
+#define LPSPI_CR(X)      MEM32(LPSPI_BASE(X) + 0x10)
 
 #endif
 

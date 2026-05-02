@@ -7,11 +7,21 @@
 #include "decoder.h"
 #include "sensors.h"
 #include "viaems.h"
+#include "util.h"
 
 #include <stdio.h>
 #include <string.h>
 
 static struct viaems s32k148_viaems = { 0 };
+
+// Note to self: maybe we should just use a 40 MHz tickrate! gives <1 rpm delta for a 60 tooth 
+// wheel at 6000 rpms, loops every 107 seconds. If it comes for free, why not?
+//
+// LPIT is set to trigger CH 1 at 5 khz. CH1 is routed to both FTM0 and FTM3 to reset them
+//
+// FTM0 counts at 40 MHz. It is used as the timebase and for input capture
+// FTM3 counts at 40 MHz. It is used as the output compares for outputs 1-8
+// FTM? counts at 40 MHz. It is used as the output compares for outputs 9-16
 
 static void disable_watchdog(void) {
   *WDOG_CS = *WDOG_CS & ~WDOG_CS_EN;
@@ -38,6 +48,8 @@ static void enable_peripheral_clocks(void) {
 
   *PCC_ENET = PCC_CGC;
   *PCC_CRC = PCC_CGC;
+
+  *PCC_LPSPI0 = PCC_CGC | PCC_PCS(6); // SPLLDIV2 (40 MHz) for SPI0
 }
 
 static void configure_pins(void) {
@@ -63,10 +75,13 @@ static void configure_pins(void) {
   // Configure PTA3 as FTM3_CH1
   *PORTA_PCRn(3) |= PORT_PCRn_MUX(2);
 
-  // Configure PTC0 as FTM0 CH0
-//  *PORTC_PCRn(0) |= PORT_PCRn_MUX(2);  // pin needed for eth
+  // Configure PTD15 as FTM0 CH0
+  *PORTD_PCRn(15) |= PORT_PCRn_MUX(2);
+  // Configure PTD16 as FTM0 CH1
+  *PORTD_PCRn(16) |= PORT_PCRn_MUX(2);
 
 
+#if 0
   // EMAC pins
   // PTC2 - TXD0
   *PORTC_PCRn(2) |= PORT_PCRn_MUX(5) | PORT_PCRn_DSE;
@@ -90,6 +105,7 @@ static void configure_pins(void) {
   *PORTC_PCRn(3) |= PORT_PCRn_MUX(1);
   *GPIOC_PDDR |= (1u << 3);
   *GPIOC_PSOR = (1u << 3);
+#endif
 }
 
 static void configure_system_clocks(void) {
@@ -116,6 +132,10 @@ static void configure_system_clocks(void) {
   while ((*SCG_CSR & SCG_CSR_SCS(0xF)) != SCG_CSR_SCS(6)); // Wait for SPLL to be used as clock
   
   *SCG_FIRCDIV = (2u << 8);
+
+}
+
+static void setup_spi0(void) {
 
 }
 
@@ -194,8 +214,8 @@ static void send_can_frame(size_t len, uint8_t bytes[8]) {
 
 static void setup_uart(void) {
   // Use LPUART0 on PTC2/3 at 115200
-  // SBR at 12 gives 24000000 / ((16+1) * 12) = 117646, 2% error
-  *LPUART2_BAUD = LPUART_BAUD_OSR(16) | LPUART_BAUD_SBR(12);
+  // SBR at 12 gives 24000000 / ((5+1) * 1) = 4000000 (4 MBaud)
+  *LPUART2_BAUD = LPUART_BAUD_OSR(5) | LPUART_BAUD_SBR(1) | (1u << 17); // (Sample both edges)
   *LPUART2_CTRL = LPUART_CTRL_TE;
 }
 
@@ -223,8 +243,6 @@ _write(int fd, const char *buf, size_t count) {
   return count;
 }
 
-static volatile uint32_t ftm_rollover_counter = 0;
-static volatile bool ftm_synchronized = false;
 
 struct oev {
   int pin;
@@ -258,30 +276,29 @@ struct oev oevs[16] = {
   { .pin = 1, .start = 113301, .stop = 140000 },
 };
 
-static uint32_t time = 0;
-static bool fail = false;
+static uint32_t current_lpit_base_time = 0;
+
 void LPIT0_Ch1_IRQHandler(void) {
 //  *GPIOE_PSOR = 1;
-  ftm_rollover_counter++;
-  ftm_synchronized = true;
   *LPIT_MSR = 2; // Clear flag
   __asm__("dsb");
   __asm__("isb");
 
+  current_lpit_base_time += 8000;
   
-//  struct engine_update update = {
-//    .sensors = sensors_get_values(&s32k148_viaems.sensors),
-//    .position = decoder_get_engine_position(&s32k148_viaems.decoder), 
-//    .current_time = current_time(),
-//  };
-//  struct platform_plan plan = {
-//    .schedulable_start = 0,
-//    .schedulable_end = 0,
-//  };
-//
-//  viaems_reschedule(&s32k148_viaems, &update, &plan);
+  struct engine_update update = {
+    .sensors = sensors_get_values(&s32k148_viaems.sensors),
+    .position = decoder_get_engine_position(&s32k148_viaems.decoder), 
+    .current_time = current_lpit_base_time,
+  };
+  struct platform_plan plan = {
+    .schedulable_start = current_lpit_base_time + 8000,
+    .schedulable_end = current_lpit_base_time + 8000 * 2,
+  };
 
-//  time += 200; 
+  viaems_reschedule(&s32k148_viaems, &update, &plan);
+
+
 //  uint16_t channels[] = {0xFFFF, 0xFFFF};
 //  for (int i = 0; i < 16; i++) {
 //    uint16_t *ch = &channels[oevs[i].pin];
@@ -303,10 +320,10 @@ void LPIT0_Ch1_IRQHandler(void) {
 uint32_t current_time(void) {
 
   /* Get current time in 4MHz increments based on:
-   * - FTM0's 80 MHz counter that represents the time inside a 200 uS window,
-   *   from 0 to 15999
-   * - ftm_rollover_counter, which is incremented in the LPIT's interrupt and
-   *   counts the number of rollovers of FTM0.
+   * - FTM0's 40 MHz counter that represents the time inside a 200 uS window,
+   *   from 0 to 7999.
+   * - current_lpit_base_time, which is incremented in the LPIT's interrupt 
+   *   by 8000 ticks.
    *
    * Special cases:
    * - The rollover has occured (due to LPIT's trigger) but the interrupt has
@@ -316,54 +333,83 @@ uint32_t current_time(void) {
    *   with that interrupt disabled
    * - Even with interrupts disabled, the FTM0 counter value overflowing can
    *   race with when we fetch it vs when we read the overflow flag. For example
-   *   the counter could be 15999 when we read it, and when we read LPIT_MSR it
+   *   the counter could be 7999 when we read it, and when we read LPIT_MSR it
    *   has overflowed.  We get around this by assuming if the counter is in the
    *   second half that we have not missed any overflow.
    */
   
-  if (!ftm_synchronized) {
-    return 0;
-  }
-
   _disable_interrupts();
 
   uint32_t ftm_value = *FTM0_CNT;
-  uint32_t rollovers = ftm_rollover_counter;
+  uint32_t time = current_lpit_base_time;
   bool rollover_flag = *LPIT_MSR & 0x2;
 
   _enable_interrupts();
 
-  uint32_t time_4m = rollovers * 800;
-  if (rollover_flag && (ftm_value < 8000)) {
-    time_4m += 800;
+  if (rollover_flag && (ftm_value < 4000)) {
+    time += 8000;
   }
-  time_4m += (ftm_value / 20);
 
-  return time_4m;
+  return time + ftm_value;
 }
 
 volatile uint32_t last_capture = 0;
 void FTM0_Ch0_Ch1_IRQHandler(void) {
 
-  uint32_t ftm_value = *FTM0_CnV(0);
-  uint32_t rollovers = ftm_rollover_counter;
+  /* Use same rollover logic as current_time() */
+  uint32_t lpit_time = current_lpit_base_time;
   bool rollover_flag = *LPIT_MSR & 0x2;
 
-  *FTM0_CnSC(0) &= ~(1u << 7);
+  bool ch0_fired = false;
+  bool ch1_fired = false;
+  timeval_t ch0_time;
+  timeval_t ch1_time;
 
-  uint32_t time_4m = (rollovers * 800) + (ftm_value / 20); 
-
-  if (rollover_flag && (ftm_value < 8000)) {
-    time_4m += 800;
+  if (*FTM0_CnSC(0) & FTM_CnSC_CHF) {
+    ch0_fired = true;
+    ch0_time = *FTM0_CnV(0);
+    if (rollover_flag && (ch0_time < 4000)) {
+      ch0_time += 8000;
+    }
+    *FTM0_CnSC(0) &= ~FTM_CnSC_CHF;
+    ch0_time += lpit_time;
   }
-  last_capture = time_4m;
+
+  if (*FTM0_CnSC(1) & FTM_CnSC_CHF) {
+    ch1_fired = true;
+    ch1_time = *FTM0_CnV(1);
+    if (rollover_flag && (ch1_time < 4000)) {
+      ch1_time += 8000;
+    }
+    *FTM0_CnSC(1) &= ~FTM_CnSC_CHF;
+    ch1_time += lpit_time;
+  }
+
+  const trigger_type ch0_type = s32k148_viaems.config->trigger_inputs[0].type;
+  const trigger_type ch1_type = s32k148_viaems.config->trigger_inputs[1].type;
+
+  if (ch0_fired && ch1_fired && time_before(ch1_time, ch0_time)) {
+    decoder_update(&s32k148_viaems.decoder,
+                   &(struct trigger_event){ .time = ch1_time, .type = ch1_type });
+    decoder_update(&s32k148_viaems.decoder,
+                   &(struct trigger_event){ .time = ch0_time, .type = ch0_type });
+
+  } else {
+    if (ch0_fired) {
+      decoder_update(&s32k148_viaems.decoder,
+          &(struct trigger_event){ .time = ch0_time, .type = ch0_type });
+    }
+    if (ch1_fired) {
+      decoder_update(&s32k148_viaems.decoder,
+                     &(struct trigger_event){ .time = ch1_time, .type = ch1_type });
+    }
+  }
+
 
 }
 
 static void setup_lpit(void) {
-  /* Configure channel 0 for 1 MHz clock:
-   *   - used to drive DMA for outputs
-   * Configure channel 1 for 5 KHz clock:
+   /* Configure channel 1 for 5 KHz clock:
    *   - used to drive ADC
    *   - used to drive reset of FTM0 for trigger captures
    */
@@ -394,7 +440,7 @@ static void start_lpit(void) {
 
 
 static void setup_ftm0(void) {
-  /* Enable FTM0 to count up at 80 MHz from 0-15999, with the reset to 0
+  /* Enable FTM0 to count up at 40 MHz from 0-7999, with the reset to 0
    * synchronized with the LPIT CH1 5 KHz clock.  An interrupt fires on this
    * rollover or on input captures on CH0/1, which allows this to act as a time
    * base
@@ -404,6 +450,8 @@ static void setup_ftm0(void) {
   
   *FTM0_CnSC(0) = FTM_CnSC_ELSA | FTM_CnSC_CHIE; // Input capture, enable
                                                  // interrupt
+  *FTM0_CnSC(1) = FTM_CnSC_ELSA | FTM_CnSC_CHIE; // Input capture, enable
+                                                 // interrupt
 
   *FTM0_CNTIN = 0;
   *FTM0_MOD = 0xFFFF;
@@ -411,7 +459,7 @@ static void setup_ftm0(void) {
   // Enable counter reset from trgmux input (LPIT CH 1, 5 KHz)
   *FTM0_SYNC = FTM_SYNC_TRIG0;
   *FTM0_SYNCONF = FTM_SYNCONF_HWRSTCNT | FTM_SYNCONF_SYNCMODE | FTM_SYNCONF_HWTRIGMODE;
-  *FTM0_SC = FTM_SC_SCS(1); // Use 80 MHz sys clock
+  *FTM0_SC = FTM_SC_PS(1) | FTM_SC_SCS(1); // Use 80 MHz sys clock divided by 2
 
   *FTM0_EXTTRIG |= FTM_EXTTRIG_INITTRIGEN;
   *NVIC_ISER((99/32)) = (1 << (99 & 0x1F));
@@ -456,6 +504,9 @@ static void setup_ftm3(void) {
 
 
 }
+
+#if NEVER_USED
+// Just left as an example of setting up DMA
 
 struct value {
   uint16_t set;
@@ -516,6 +567,7 @@ static void setup_programmed_outputs(void) {
                      DMAMUX_CHCFG_TRIG |
                      DMAMUX_CHCFG_SOURCE(62);
 }
+#endif
 
 static void setup_adc(void) {
   // Set ADC clock to 4 MHz via prescaler
@@ -558,9 +610,8 @@ static void setup_adc(void) {
   *ADC0_SC1(4) = 8; // External input 8
   *ADC0_SC1(5) = 0x1D; 
   *ADC0_SC1(6) = 0x1E; 
-  *ADC0_SC1(7) = ADC_SC1_AIEN | 0x1B;
+  *ADC0_SC1(7) = 0x7;
 
-  nvic_enable_irq(39);
 }
 
 static _Atomic bool bump = false; 
@@ -569,18 +620,64 @@ void ADC0_IRQHandler(void) {
   bump = true;
 }
 
+// Our strategy should be:
+// Configure PDB 0 CH0 for back-to-back within itself
+// Configure PDB 0 CH1 for back to back within itself
+// 
+// Configure PDB0 Ch0 Trg 0 to be triggered by LPIT for ADC0 ch0-7
+// Configure PDB0 Ch1 Trg 0 delay to be 50 uS (*1) for ADC0 8-15
+// Configure PDB0 Interrupt delay to something like 100 uS (*2), enough to be sure CH1 is done
+// For now, handle the interrupt. Later, trigger DMA, and have dma interrupt do sensor calcs
+//
+// Configure PDB1 CH0 for back to back within itself for trig 0-3
+// Configure PDB1 CH1 to be triggered by a 50 kHz (or more) LPIT channel. for knock
+// Trigger DMA. Have DMA transfer count set so that we only process in batches at 5 kHz
+//
+// (*2) total time, including finishing up of sensor calcs, should ideally be
+// done in time for our reschedule. Depending on sample time, *1 could probably be more like 50 uS. Do some tests, give
+// wiggle room, try to have everything done as close as can be done to the end to reduce time
+// between samples and reschedule
+
 static void setup_pdb(void) {
   // Configure PDB0 to back-to-back trigger CH0-CH7 as ADC inputs 8-15
 
   *PDB0_MOD = 0xffff;
-  *PDB0_SC = PDB_SC_TRGSEL(0xF) |
+  *PDB0_IDLY = 12000; // 150 uS at 80 MHz
+  *PDB0_SC = PDB_SC_TRGSEL(0x0) | // TRGMUX input
              PDB_SC_PDBEN |
+             PDB_SC_PDBIE |
              PDB_SC_LDOK;
 
   *PDB0_CH0C1 = PDB_CHnC1_BB(0xfe) | // Enable back to back trigger on last 7
                 PDB_CHnC1_TOS(0)   |
                 PDB_CHnC1_EN(0xff);
 
+  *TRGMUX_PDB0 = TRGMUX_SEL0(TRGMUX_SRC_LPIT_CH1); // LPIT1 triggers PDB0
+  nvic_enable_irq(52); // Replace with DMA
+}
+
+void PDB0_IRQHandler(void) {
+  *PDB0_SC &= ~PDB_SC_PDBIF;
+  struct adc_update update = {
+    .time = current_lpit_base_time,
+    .valid = true,
+    .values = {
+      (5 * *ADC0_R(0)) / 4096.0f,
+      (5 * *ADC0_R(1)) / 4096.0f,
+      (5 * *ADC0_R(2)) / 4096.0f,
+      (5 * *ADC0_R(3)) / 4096.0f,
+      (5 * *ADC0_R(4)) / 4096.0f,
+      (5 * *ADC0_R(5)) / 4096.0f,
+      (5 * *ADC0_R(6)) / 4096.0f,
+      (5 * *ADC0_R(7)) / 4096.0f,
+    },
+  };
+
+  _disable_interrupts();
+  struct engine_position pos =
+    decoder_get_engine_position(&s32k148_viaems.decoder);
+  _enable_interrupts();
+  sensor_update_adc(&s32k148_viaems.sensors, &pos, &update);
 }
 
 static void enable_cache(void) {
@@ -649,43 +746,38 @@ int startup(void) {
 
   configure_system_clocks();
   enable_peripheral_clocks();
+  configure_pins();
 
   enable_cache();
 
-
-  setup_uart();
-  setup_can0();
-  setup_lpit();
-  setup_ftm0();
-  setup_ftm3();
-  //setup_programmed_outputs();
-
-  configure_pins();
+  bool benchmark_enabled = false;
+#ifdef BENCHMARK
+  benchmark_enabled = true;
+#endif
 
   viaems_init(&s32k148_viaems, &default_config);
-  start_lpit();
-//
-//  setup_adc();
-//  setup_pdb();
-//
-//  char buf[128];
-  write_string("Startup complete!\r\n");
+
+  setup_uart();
+
+  if (!benchmark_enabled) {
+    setup_can0();
+    setup_lpit();
+    setup_ftm0();
+    setup_ftm3();
+    setup_adc();
+    setup_pdb();
+    start_lpit();
+  }
 
 //  *((volatile uint32_t *)(0x4000D000)) &= ~0x1ULL;
   *((volatile uint32_t *)(0x4000D800)) |= (6u << 18); // RW for ENET to all
 
                                                       // memory via alt
 #if BENCHMARK
-  while (true) {
-    send_can_frame(8, (uint8_t[]){0xAA, 0xB0, 0xCC, 0xDD, 0xEE, 0xFF, 0xAE, 0xEA});
-//    write_string("Wrote message\r\n");
-  }
+  write_string("Startup complete!\r\n");
   int start_benchmarks(void);
   start_benchmarks();
 #else
-
-  struct enet_config conf;
-  enet_initialize(&conf);
 
   while (true) {
     viaems_idle(&s32k148_viaems, current_time());

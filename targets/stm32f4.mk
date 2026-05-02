@@ -45,7 +45,7 @@ CFLAGS+= -I${CMSIS}/CMSIS/Core/Include
 CFLAGS+= -I${CMSISDEV}/Include
 CFLAGS+= -Icontrib/tinyusb/src/
 CFLAGS+= -Isrc/platforms/stm32f4
-CFLAGS+= -DTICKRATE=4000000 -DSPI_${SPI_ADC}
+CFLAGS+= -DTICKRATE=40000000 -DSPI_${SPI_ADC}
 
 LDFLAGS+= -lc -lnosys -L ${OBJDIR} -nostartfiles -Wl,--gc-sections
 LDFLAGS+= -T src/platforms/stm32f4/stm32f4.ld

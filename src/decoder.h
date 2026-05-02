@@ -81,6 +81,7 @@ struct decoder {
   uint32_t triggers_since_last_sync;
   float trigger_cur_rpm_change;
   timeval_t times[MAX_TRIGGERS + 1];
+  size_t last_time_idx;
   bool camsync_seen_this_rotation;
   bool camsync_seen_last_rotation;
 
