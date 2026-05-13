@@ -145,36 +145,42 @@ static void setup_can0(void) {
   *FLEXCAN0_CTRL1 = (1u << 13); // CLKSRC to peripheral clock
   *FLEXCAN0_MCR &= ~(1u << 31); // Clear MDIS
 
+
   while ((*FLEXCAN0_MCR & (1u << 24)) == 0); // Wait for FRZACK
 
+  *FLEXCAN0_MCR |= (1u << 25);
+  while ((*FLEXCAN0_MCR & (1u << 25)) != 0); // Wait for FRZACK
 
-  // Configure for 40 MHz peripheral clock, div 1, 500 kbit bus rate, so 160 TQ per bit.
-  // (SYNC(1) + EPROPSEG(46) + ESEG1(16) + ESEG2(16), 80% sample point
+  // Params copied from https://github.com/nxp-auto-support/s32k148_cookbook/blob/master/S32K148_Project_FlexCan_FdFrames/src/CAN_FD.c
+  // Literally the only set of params i've gotten FD working with. Modified for 500kbit base rate for OBD2
+  
+
+  // Configure for 80 MHz peripheral clock, div 1, 500 kbit bus rate, so 80 TQ per bit.
+  // (SYNC(1) + EPROPSEG(46) + ESEG1(18) +2 + ESEG2(12) + 1, 83.75% sample point
   *FLEXCAN0_CBT = (1u << 31) | // BTF=1
                   (1u << 21) | // EPRESDIV=10  8
-                  (15 << 16) | // ERJW=15      60
-                  (46u << 10) | // EPROPSET=5  20
-                  (15u << 5) | // EPSEG1=8   32
-                  (15u << 0);  // EPSEG2=2   8
+                 (12 << 16) | // ERJW=15      60
+                 (46 << 10) | // EPROPSET=5  20
+                 (18 << 5) | // EPSEG1=8   32
+                 (12 << 0);  // EPSEG2=2   8
 
 
-  // 2 Mbit bus, so 20 TQ per bit
-//  *FLEXCAN0_FDCBT = (1u << 20) | // FPRESDIV=1
-//                    (3u << 16) | // FRJW=3
-//                    (1u << 10) | // FPROPSEG=2
-//                    (3u << 5) |  // FPSEG1=8
-//                    (1u << 0);  // FPSEG2=4
-//
-  *FLEXCAN0_FDCBT = (1u << 20) | // FPRESDIV=1
-                    (15u << 16) | // FRJW=3
-                    (11u << 10) | // FPROPSEG=2
-                    (15u << 5) |  // FPSEG1=8
-                    (3u << 0);  // FPSEG2=4
+
+
+  // Configure for 80 MHz peripheral clock, div 0, 4000 kbit bus rate, so 20 TQ per bit.
+  // (SYNC(1) + EPROPSEG(7) + ESEG1(6) + 1 + ESEG2(4) + 1, 80% sample point
+
+  *FLEXCAN0_FDCBT = (0u << 20) | // FPRESDIV=1
+                    (4 << 16) | // FRJW=3
+                    (7 << 10) | // FPROPSEG=2
+                    (6 << 5) |  // FPSEG1=8
+                    (4 << 0);  // FPSEG2=4
+
 
   *FLEXCAN0_FDCTRL = (1u << 31) | // FDRATE
                      (3u << 16) | // MBDSR0 = 3 (64 byte msgs)
                      (1u << 15) | // TCDEN
-                     (8 << 8);  // TDCOFF
+                     (5 << 8);  // TDCOFF
                      
   for (int i = 0; i < 128; i++) {
     FLEXCAN0_MEM[0] = 0x0;
@@ -192,23 +198,141 @@ static void setup_can0(void) {
 static void send_can_frame(size_t len, uint8_t bytes[8]) {
 
   // Find a MB, but for now assume first one
-  volatile uint32_t *MB = FLEXCAN0_MEM;
+  volatile uint32_t *MB = &FLEXCAN0_MEM[0];
 
-  *FLEXCAN0_IFLAG1 = 0x1;
-
-  uint32_t ext_id = 0x555 << 18;
+  *FLEXCAN0_IFLAG1 = 0xf;
 
   MB[2] = __builtin_bswap32(((uint32_t *)bytes)[0]);
   MB[3] = __builtin_bswap32(((uint32_t *)bytes)[1]);
 
   MB[4] = __builtin_bswap32(((uint32_t *)bytes)[0]);
   MB[5] = __builtin_bswap32(((uint32_t *)bytes)[1]);
+  
+  MB[6] = __builtin_bswap32(((uint32_t *)bytes)[0]);
+  MB[7] = __builtin_bswap32(((uint32_t *)bytes)[1]);
 
-  MB[1] = ext_id;
-//  MB[0] = (0xCu << 24) | (len << 16); 
-  MB[0] = (1u << 31) | (1u << 30) | (1u << 22) | (0xCu << 24) | (10 << 16); 
+  MB[8] = __builtin_bswap32(((uint32_t *)bytes)[0]);
+  MB[9] = __builtin_bswap32(((uint32_t *)bytes)[1]);
 
-  while ((*FLEXCAN0_IFLAG1 & 1) == 0);
+  MB[10] = __builtin_bswap32(((uint32_t *)bytes)[0]);
+  MB[11] = __builtin_bswap32(((uint32_t *)bytes)[1]);
+
+  MB[12] = __builtin_bswap32(((uint32_t *)bytes)[0]);
+  MB[13] = __builtin_bswap32(((uint32_t *)bytes)[1]);
+  
+  MB[14] = __builtin_bswap32(((uint32_t *)bytes)[0]);
+  MB[15] = __builtin_bswap32(((uint32_t *)bytes)[1]);
+
+  MB[16] = __builtin_bswap32(((uint32_t *)bytes)[0]);
+  MB[17] = __builtin_bswap32(((uint32_t *)bytes)[1]);
+
+  MB[1] = FLEXCAN_MB1_ID(0x554);
+  MB[0] = FLEXCAN_MB0_EDL | 
+          FLEXCAN_MB0_BRS | 
+//          FLEXCAN_MB0_SRR | 
+          FLEXCAN_MB0_CODE(0xC) | 
+          FLEXCAN_MB0_DLC(15);
+
+  MB = &FLEXCAN0_MEM[18];
+
+  MB[2] = __builtin_bswap32(((uint32_t *)bytes)[0]);
+  MB[3] = __builtin_bswap32(((uint32_t *)bytes)[1]);
+
+  MB[4] = __builtin_bswap32(((uint32_t *)bytes)[0]);
+  MB[5] = __builtin_bswap32(((uint32_t *)bytes)[1]);
+  
+  MB[6] = __builtin_bswap32(((uint32_t *)bytes)[0]);
+  MB[7] = __builtin_bswap32(((uint32_t *)bytes)[1]);
+
+  MB[8] = __builtin_bswap32(((uint32_t *)bytes)[0]);
+  MB[9] = __builtin_bswap32(((uint32_t *)bytes)[1]);
+
+  MB[10] = __builtin_bswap32(((uint32_t *)bytes)[0]);
+  MB[11] = __builtin_bswap32(((uint32_t *)bytes)[1]);
+
+  MB[12] = __builtin_bswap32(((uint32_t *)bytes)[0]);
+  MB[13] = __builtin_bswap32(((uint32_t *)bytes)[1]);
+  
+  MB[14] = __builtin_bswap32(((uint32_t *)bytes)[0]);
+  MB[15] = __builtin_bswap32(((uint32_t *)bytes)[1]);
+
+  MB[16] = __builtin_bswap32(((uint32_t *)bytes)[0]);
+  MB[17] = __builtin_bswap32(((uint32_t *)bytes)[1]);
+
+  MB[1] = FLEXCAN_MB1_ID(0x555);
+  MB[0] = FLEXCAN_MB0_EDL | 
+          FLEXCAN_MB0_BRS | 
+//          FLEXCAN_MB0_SRR | 
+          FLEXCAN_MB0_CODE(0xC) | 
+          FLEXCAN_MB0_DLC(15);
+
+  MB = &FLEXCAN0_MEM[36];
+
+  MB[2] = __builtin_bswap32(((uint32_t *)bytes)[0]);
+  MB[3] = __builtin_bswap32(((uint32_t *)bytes)[1]);
+
+  MB[4] = __builtin_bswap32(((uint32_t *)bytes)[0]);
+  MB[5] = __builtin_bswap32(((uint32_t *)bytes)[1]);
+  
+  MB[6] = __builtin_bswap32(((uint32_t *)bytes)[0]);
+  MB[7] = __builtin_bswap32(((uint32_t *)bytes)[1]);
+
+  MB[8] = __builtin_bswap32(((uint32_t *)bytes)[0]);
+  MB[9] = __builtin_bswap32(((uint32_t *)bytes)[1]);
+
+  MB[10] = __builtin_bswap32(((uint32_t *)bytes)[0]);
+  MB[11] = __builtin_bswap32(((uint32_t *)bytes)[1]);
+
+  MB[12] = __builtin_bswap32(((uint32_t *)bytes)[0]);
+  MB[13] = __builtin_bswap32(((uint32_t *)bytes)[1]);
+  
+  MB[14] = __builtin_bswap32(((uint32_t *)bytes)[0]);
+  MB[15] = __builtin_bswap32(((uint32_t *)bytes)[1]);
+
+  MB[16] = __builtin_bswap32(((uint32_t *)bytes)[0]);
+  MB[17] = __builtin_bswap32(((uint32_t *)bytes)[1]);
+
+  MB[1] = FLEXCAN_MB1_ID(0x556);
+  MB[0] = FLEXCAN_MB0_EDL | 
+          FLEXCAN_MB0_BRS | 
+//          FLEXCAN_MB0_SRR | 
+          FLEXCAN_MB0_CODE(0xC) | 
+          FLEXCAN_MB0_DLC(15);
+
+  MB = &FLEXCAN0_MEM[54];
+
+  MB[2] = __builtin_bswap32(((uint32_t *)bytes)[0]);
+  MB[3] = __builtin_bswap32(((uint32_t *)bytes)[1]);
+
+  MB[4] = __builtin_bswap32(((uint32_t *)bytes)[0]);
+  MB[5] = __builtin_bswap32(((uint32_t *)bytes)[1]);
+  
+  MB[6] = __builtin_bswap32(((uint32_t *)bytes)[0]);
+  MB[7] = __builtin_bswap32(((uint32_t *)bytes)[1]);
+
+  MB[8] = __builtin_bswap32(((uint32_t *)bytes)[0]);
+  MB[9] = __builtin_bswap32(((uint32_t *)bytes)[1]);
+
+  MB[10] = __builtin_bswap32(((uint32_t *)bytes)[0]);
+  MB[11] = __builtin_bswap32(((uint32_t *)bytes)[1]);
+
+  MB[12] = __builtin_bswap32(((uint32_t *)bytes)[0]);
+  MB[13] = __builtin_bswap32(((uint32_t *)bytes)[1]);
+  
+  MB[14] = __builtin_bswap32(((uint32_t *)bytes)[0]);
+  MB[15] = __builtin_bswap32(((uint32_t *)bytes)[1]);
+
+  MB[16] = __builtin_bswap32(((uint32_t *)bytes)[0]);
+  MB[17] = __builtin_bswap32(((uint32_t *)bytes)[1]);
+
+  MB[1] = FLEXCAN_MB1_ID(0x200);
+  MB[0] = FLEXCAN_MB0_EDL | 
+          FLEXCAN_MB0_BRS | 
+//          FLEXCAN_MB0_SRR | 
+          FLEXCAN_MB0_CODE(0xC) | 
+          FLEXCAN_MB0_DLC(15);
+
+  while ((*FLEXCAN0_IFLAG1 & 0xf) == 0);
 
 }
 
@@ -780,6 +904,7 @@ int startup(void) {
 #else
 
   while (true) {
+    send_can_frame(8, (uint8_t[]){0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF});
     viaems_idle(&s32k148_viaems, current_time());
   }
 #endif

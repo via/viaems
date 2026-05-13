@@ -186,6 +186,21 @@
 #define FLEXCAN0_FDCBT        MEM32(FLEXCAN0_BASE + 0xC04u)
 #define FLEXCAN0_FDCRC        MEM32(FLEXCAN0_BASE + 0xC08u)
 
+#define FLEXCAN_MB0_EDL       (1u << 31)
+#define FLEXCAN_MB0_BRS       (1u << 30)
+#define FLEXCAN_MB0_ESI       (1u << 29)
+#define FLEXCAN_MB0_CODE(X)   ((uint32_t)(X) << 24)
+#define FLEXCAN_MB0_SRR       (1u << 22)
+#define FLEXCAN_MB0_IDE       (1u << 21)
+#define FLEXCAN_MB0_RTR       (1u << 20)
+#define FLEXCAN_MB0_DLC(X)    ((uint32_t)(X) << 16)
+#define FLEXCAN_MB0_TS(X)     ((uint32_t)(X) << 0)
+
+#define FLEXCAN_MB1_PRIO(X)   ((uint32_t)(X) << 29)
+#define FLEXCAN_MB1_ID(X)     ((uint32_t)(X) << 18)
+#define FLEXCAN_MB1_IDEXT(X)  ((uint32_t)(X) << 0)
+
+
 #define FLEXIO_BASE              0x4005A000u
 #define FLEXIO_VERID             MEM32(FLEXIO_BASE + 0x0)
 #define FLEXIO_PARAM             MEM32(FLEXIO_BASE + 0x4)
