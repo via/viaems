@@ -3,6 +3,8 @@
 #include "s32k1xx.h"
 #include "s32k144_enet.h"
 
+#include "platform.h"
+#include "scheduler.h"
 #include "config.h"
 #include "decoder.h"
 #include "sensors.h"
@@ -13,6 +15,72 @@
 #include <string.h>
 
 static struct viaems s32k148_viaems = { 0 };
+
+enum s32k1xx_port {
+  PORT_DISABLED,
+  PORT_A,
+  PORT_B,
+  PORT_C,
+  PORT_D,
+  PORT_E,
+};
+
+struct s32k1xx_pincfg {
+  enum s32k1xx_port port;
+  uint8_t num;
+  uint8_t alt;
+};
+
+struct s32k1xx_cfg {
+  struct s32k1xx_pincfg FTM[4][8];
+  struct s32k1xx_pincfg ADC0[8];
+  struct s32k1xx_pincfg ADC1[8];
+};
+
+const struct s32k1xx_cfg s32k1xx_cfg = {
+  .FTM = {
+    [0] = {
+      { PORT_D, 15, .alt = 2 },
+      { PORT_D, 16, .alt = 2 },
+      { PORT_C, 2, .alt = 2 },
+      { PORT_C, 3, .alt = 2 },
+      { PORT_B, 4, .alt = 2 },
+      { PORT_B, 5, .alt = 2 },
+      { PORT_E, 8, .alt = 2 },
+      { PORT_E, 9, .alt = 2 },
+    },
+    [1] = {
+      { PORT_B, 2, .alt = 2 },
+      { PORT_B, 3, .alt = 2 },
+      { PORT_C, 14, .alt = 2 },
+      { PORT_C, 15, .alt = 2 },
+      { PORT_A, 10, .alt = 2 },
+      { PORT_A, 11, .alt = 2 },
+      { PORT_C, 0, .alt = 2 },
+      { PORT_C, 1, .alt = 2 },
+    },
+    [2] = {
+      { PORT_C, 5, .alt = 2 },
+      { .port = PORT_DISABLED },
+      { .port = PORT_DISABLED },
+      { PORT_D, 5, .alt = 2 },
+      { PORT_E, 10, .alt = 4 },
+      { PORT_E, 11, .alt = 4 },
+      { .port = PORT_DISABLED },
+      { .port = PORT_DISABLED },
+    },
+    [3] = {
+      { PORT_A, 2, .alt = 2 },
+      { PORT_A, 3, .alt = 2 },
+      { PORT_C, 6, .alt = 4 },
+      { PORT_C, 7, .alt = 4 },
+      { PORT_D, 2, .alt = 2 },
+      { PORT_D, 3, .alt = 2 },
+      { PORT_E, 2, .alt = 4 },
+      { PORT_E, 6, .alt = 4 },
+    },
+  },
+};
 
 // Note to self: maybe we should just use a 40 MHz tickrate! gives <1 rpm delta for a 60 tooth 
 // wheel at 6000 rpms, loops every 107 seconds. If it comes for free, why not?
@@ -40,13 +108,15 @@ static void enable_peripheral_clocks(void) {
 
   *PCC_LPIT = PCC_CGC | PCC_PCS(6); // Use SPLLDIV2 for LPIT
   *PCC_FTM0 = PCC_CGC;
+  *PCC_FTM1 = PCC_CGC;
+  *PCC_FTM2 = PCC_CGC;
   *PCC_FTM3 = PCC_CGC;
   *PCC_DMAMUX = PCC_CGC;
 
   *PCC_PDB0 = PCC_CGC;
   *PCC_ADC0 = PCC_CGC | PCC_PCS(6); // SPLLDIV2 (40 MHz) for ADC0
 
-  *PCC_ENET = PCC_CGC;
+//  *PCC_ENET = PCC_CGC;
   *PCC_CRC = PCC_CGC;
 
   *PCC_LPSPI0 = PCC_CGC | PCC_PCS(6); // SPLLDIV2 (40 MHz) for SPI0
@@ -58,28 +128,72 @@ static void configure_pins(void) {
 //  *PORTC_PCRn(16) |= PORT_PCRn_MUX(3);
 //  *PORTC_PCRn(17) |= PORT_PCRn_MUX(3);
 //  PTE5 and PTE4 as FlexCAN0
-  *PORTE_PCRn(5) |= PORT_PCRn_MUX(5);
-  *PORTE_PCRn(4) |= PORT_PCRn_MUX(5);
+//  *PORTE_PCRn(5) |= PORT_PCRn_MUX(5);
+ // *PORTE_PCRn(4) |= PORT_PCRn_MUX(5);
   
+  // Configure PTD7 as LPUART2 TX
+  *PORTD_PCRn(7) |= PORT_PCRn_MUX(2);
 
-  // Configure PTE12 as LPUART2 TX
-  *PORTE_PCRn(12) |= PORT_PCRn_MUX(3);
+#if 0
+  // FTM0 pins
+  *PORTD_PCRn(15) |= PORT_PCRn_MUX(2);  // PTD15
+  *PORTD_PCRn(16) |= PORT_PCRn_MUX(2);  // PTD16
+  *PORTC_PCRn(2)  |= PORT_PCRn_MUX(2);  // PTC2
+  *PORTC_PCRn(3)  |= PORT_PCRn_MUX(2);  // PTC3
+  *PORTB_PCRn(4)  |= PORT_PCRn_MUX(2);  // PTB4
+  *PORTB_PCRn(5)  |= PORT_PCRn_MUX(2);  // PTB5
+  *PORTE_PCRn(8)  |= PORT_PCRn_MUX(2);  // PTE8
+  *PORTE_PCRn(9)  |= PORT_PCRn_MUX(2);  // PTE9
 
-  // Configure PTA0 as TRGMUX OUT 3
-  *PORTA_PCRn(0) |= PORT_PCRn_MUX(7);
-  // Configure PTA1 as TRGMUX OUT 0
-  *PORTA_PCRn(1) |= PORT_PCRn_MUX(7);
+  // FTM1 pins
+  *PORTB_PCRn(2)   |= PORT_PCRn_MUX(2);  // PTB2
+  *PORTB_PCRn(3)   |= PORT_PCRn_MUX(2);  // PTB3
+  *PORTC_PCRn(14)  |= PORT_PCRn_MUX(2);  // PTC14
+  *PORTC_PCRn(15)  |= PORT_PCRn_MUX(2);  // PTC15
+  *PORTA_PCRn(10)  |= PORT_PCRn_MUX(2);  // PTA10
+  *PORTA_PCRn(11)  |= PORT_PCRn_MUX(2);  // PTA11
+  *PORTC_PCRn(0)   |= PORT_PCRn_MUX(2);  // PTC0
+  *PORTC_PCRn(1)   |= PORT_PCRn_MUX(2);  // PTC1
 
-  // Configure PTA2 as FTM3_CH0
-  *PORTA_PCRn(2) |= PORT_PCRn_MUX(2);
-  // Configure PTA3 as FTM3_CH1
-  *PORTA_PCRn(3) |= PORT_PCRn_MUX(2);
+  // FTM2
+  *PORTC_PCRn(5)  |= PORT_PCRn_MUX(2);  // CH0 - PTC5
+  *PORTD_PCRn(5)  |= PORT_PCRn_MUX(2);  // CH3 - PTD5
+  *PORTE_PCRn(10) |= PORT_PCRn_MUX(4);  // CH4 - PTE10
+  *PORTE_PCRn(11) |= PORT_PCRn_MUX(4);  // CH5 - PTE11
 
-  // Configure PTD15 as FTM0 CH0
-  *PORTD_PCRn(15) |= PORT_PCRn_MUX(2);
-  // Configure PTD16 as FTM0 CH1
-  *PORTD_PCRn(16) |= PORT_PCRn_MUX(2);
+  // FTM3 pins
+  *PORTA_PCRn(2) |= PORT_PCRn_MUX(2);  // PTA2
+  *PORTA_PCRn(3) |= PORT_PCRn_MUX(2);  // PTA3
+  *PORTC_PCRn(6) |= PORT_PCRn_MUX(4);  // PTC6
+  *PORTC_PCRn(7) |= PORT_PCRn_MUX(4);  // PTC7
+  *PORTD_PCRn(2) |= PORT_PCRn_MUX(2);  // PTD2
+  *PORTD_PCRn(3) |= PORT_PCRn_MUX(2);  // PTD3
+  *PORTE_PCRn(2) |= PORT_PCRn_MUX(4);  // PTE2
+  *PORTE_PCRn(6) |= PORT_PCRn_MUX(4);  // PTE6
+#endif                                       //
 
+  for (int f = 0; f < 3; f++) {
+    for (int p = 0; p < 8; p++) {
+      struct s32k1xx_pincfg cfg = s32k1xx_cfg.FTM[f][p];
+
+      switch (cfg.port) {
+        case PORT_A: *PORTA_PCRn(cfg.num) = (*PORTA_PCRn(cfg.num) & ~PORT_PCRn_MUX(7)) | PORT_PCRn_MUX(cfg.alt); break;
+        case PORT_B: *PORTB_PCRn(cfg.num) = (*PORTA_PCRn(cfg.num) & ~PORT_PCRn_MUX(7)) | PORT_PCRn_MUX(cfg.alt); break;
+        case PORT_C: *PORTC_PCRn(cfg.num) = (*PORTA_PCRn(cfg.num) & ~PORT_PCRn_MUX(7)) | PORT_PCRn_MUX(cfg.alt); break;
+        case PORT_D: *PORTD_PCRn(cfg.num) = (*PORTA_PCRn(cfg.num) & ~PORT_PCRn_MUX(7)) | PORT_PCRn_MUX(cfg.alt); break;
+        case PORT_E: *PORTE_PCRn(cfg.num) = (*PORTA_PCRn(cfg.num) & ~PORT_PCRn_MUX(7)) | PORT_PCRn_MUX(cfg.alt); break;
+        case PORT_DISABLED: break;
+      }
+    }
+  }
+
+
+
+
+  // E0 E1 debug/timing pins
+  *PORTE_PCRn(0) |= PORT_PCRn_MUX(1);
+  *PORTE_PCRn(1) |= PORT_PCRn_MUX(1);
+  *GPIOE_PDDR |= (1u << 0) | (1u << 1);
 
 #if 0
   // EMAC pins
@@ -110,14 +224,14 @@ static void configure_pins(void) {
 
 static void configure_system_clocks(void) {
   // Board has 8 MHz crystal
-  *SCG_SOSCCFG = SCG_SOSCCFG_RANGE(3) | SCG_SOSCCFG_EREFS; 
+  *SCG_SOSCCFG = SCG_SOSCCFG_RANGE(3) | SCG_SOSCCFG_EREFS; // | (1u << 3); 
   *SCG_SOSCCSR |= SCG_SOSCCSR_SOSCEN;
                              //
   while ((*SCG_SOSCCSR & SCG_SOSCCSR_SOSCVLD) == 0); // Wait for valid
 
   // PLL out = PLLin / (PREDIV+1) * (MULT+16)
-  // PLL out = 8     / (0+1)      * (24+16) = 320
-  *SCG_SPLLCFG = SCG_SPLLCFG_MULT(24) | SCG_SPLLCFG_PREDIV(0);
+  // PLL out = 16     / (1+1)      * (24+16) = 320
+  *SCG_SPLLCFG = SCG_SPLLCFG_MULT(24) | SCG_SPLLCFG_PREDIV(1);
   /* SPLLDIV1 = 80 MHz, SPLLDIV2 = 40 MHz */
   *SCG_SPLLDIV = SCG_SPLLDIV_SPLLDIV1(2) | SCG_SPLLDIV_SPLLDIV2(3);
   *SCG_SPLLCSR = SCG_SPLLCSR_SPLLEN; // enable PLL
@@ -337,7 +451,7 @@ static void send_can_frame(size_t len, uint8_t bytes[8]) {
 }
 
 static void setup_uart(void) {
-  // Use LPUART0 on PTC2/3 at 115200
+  // Use LPUART2 on PTC2/3 at 115200
   // SBR at 12 gives 24000000 / ((5+1) * 1) = 4000000 (4 MBaud)
   *LPUART2_BAUD = LPUART_BAUD_OSR(5) | LPUART_BAUD_SBR(1) | (1u << 17); // (Sample both edges)
   *LPUART2_CTRL = LPUART_CTRL_TE;
@@ -366,6 +480,81 @@ _write(int fd, const char *buf, size_t count) {
   }
   return count;
 }
+
+enum s32k1xx_ftm_pin_type {
+  FTM_PIN_DISABLED,
+  FTM_PIN_GPIO_IN,
+  FTM_PIN_GPIO_OUT,
+  FTM_PIN_SCHED_OUT,
+  FTM_PIN_LSPWM_OUT,
+  FTM_PIN_FREQ_IN,
+  FTM_PIN_TRIGGER_IN,
+  FTM_PIN_SYNC_IN,
+  FTM_PIN_HSPWM_OUT, /* This mode consumes two adjacent even->odd pins as a pair:
+                        Other pin can either be DISABLED or also HSPWM_OUT to
+                        act as complementary output */
+};
+
+/* In order, all of FTM0, FTM1, FTM2, FTM3 */
+enum s32k1xx_ftm_pin_type ftm_pin_types[32] = { 
+  FTM_PIN_TRIGGER_IN,
+  FTM_PIN_SYNC_IN,
+  FTM_PIN_HSPWM_OUT,
+  FTM_PIN_DISABLED,
+  FTM_PIN_HSPWM_OUT,
+  FTM_PIN_DISABLED,
+  FTM_PIN_DISABLED,
+  FTM_PIN_DISABLED,
+
+#if 1
+  FTM_PIN_SCHED_OUT,
+  FTM_PIN_SCHED_OUT,
+  FTM_PIN_SCHED_OUT,
+  FTM_PIN_SCHED_OUT,
+  FTM_PIN_SCHED_OUT,
+  FTM_PIN_SCHED_OUT,
+  FTM_PIN_SCHED_OUT,
+  FTM_PIN_SCHED_OUT,
+#else
+  FTM_PIN_HSPWM_OUT,
+  FTM_PIN_DISABLED,
+  FTM_PIN_HSPWM_OUT,
+  FTM_PIN_DISABLED,
+  FTM_PIN_HSPWM_OUT,
+  FTM_PIN_DISABLED,
+  FTM_PIN_HSPWM_OUT,
+  FTM_PIN_DISABLED,
+#endif
+
+  FTM_PIN_HSPWM_OUT,
+  FTM_PIN_DISABLED,
+  FTM_PIN_DISABLED,
+  FTM_PIN_HSPWM_OUT,
+  FTM_PIN_HSPWM_OUT,
+  FTM_PIN_DISABLED,
+  FTM_PIN_DISABLED,
+  FTM_PIN_DISABLED,
+
+#if 1
+  FTM_PIN_SCHED_OUT,
+  FTM_PIN_SCHED_OUT,
+  FTM_PIN_SCHED_OUT,
+  FTM_PIN_SCHED_OUT,
+  FTM_PIN_SCHED_OUT,
+  FTM_PIN_SCHED_OUT,
+  FTM_PIN_SCHED_OUT,
+  FTM_PIN_SCHED_OUT,
+#else
+  FTM_PIN_HSPWM_OUT,
+  FTM_PIN_DISABLED,
+  FTM_PIN_HSPWM_OUT,
+  FTM_PIN_DISABLED,
+  FTM_PIN_HSPWM_OUT,
+  FTM_PIN_DISABLED,
+  FTM_PIN_HSPWM_OUT,
+  FTM_PIN_DISABLED,
+#endif
+};
 
 
 struct oev {
@@ -402,8 +591,103 @@ struct oev oevs[16] = {
 
 static uint32_t current_lpit_base_time = 0;
 
+struct hspwm_state {
+  float duty;
+  uint32_t period; // In FTM ticks at 40 MHz
+
+  bool active;
+  uint32_t remaining;
+};
+
+static uint32_t ftm_from_pin(const uint32_t pin) {
+  return FTM_BASE(pin >> 3);
+}
+
+static uint32_t ftm_channel_from_pin(const uint32_t pin) {
+  return pin & 0x7u;
+}
+
+static struct hspwm_state hspwm_states[32] = {
+  { .period = (40000000 / 201) },
+  { .period = (40000000 / 201) },
+  { .period = (40000000 / 201) },
+  { .period = (40000000 / 201) },
+  { .period = (40000000 / 201) },
+  { .period = (40000000 / 201) },
+  { .period = (40000000 / 201) },
+  { .period = (40000000 / 201) },
+  { .period = (40000000 / 201) },
+  { .period = (40000000 / 201) },
+  { .period = (40000000 / 201) },
+  { .period = (40000000 / 201) },
+  { .period = (40000000 / 201) },
+  { .period = (40000000 / 201) },
+  { .period = (40000000 / 201) },
+  { .period = (40000000 / 201) },
+  { .period = (40000000 / 201) },
+  { .period = (40000000 / 201) },
+  { .period = (40000000 / 201) },
+  { .period = (40000000 / 201) },
+  { .period = (40000000 / 201) },
+  { .period = (40000000 / 201) },
+  { .period = (40000000 / 201) },
+  { .period = (40000000 / 201) },
+  { .period = (40000000 / 201) },
+  { .period = (40000000 / 201) },
+  { .period = (40000000 / 201) },
+  { .period = (40000000 / 201) },
+  { .period = (40000000 / 201) },
+  { .period = (40000000 / 201) },
+  { .period = (40000000 / 201) },
+  { .period = (40000000 / 201) },
+};
+
+static void do_hspwm(struct hspwm_state *s, float duty, uint32_t FTM, uint8_t pin) {
+  uint8_t p1 = pin & 0xFE;  
+  uint8_t p2 = p1 + 1;
+
+  *FTM_CnV(FTM, p1) = 0xFFFF;
+  *FTM_CnV(FTM, p2) = 0xFFFF;
+
+  /* If remaining < 8000, we will need at least one transition */
+  if (s->remaining < 8000) {
+    uint16_t t1 = s->remaining;
+    *FTM_CnV(FTM, p1) = t1;
+
+    /* Calculate next remaining */
+    if (s->active) {
+      s->remaining = s->period * (1.0f - duty);
+    } else {
+      s->remaining = s->period * duty;
+    }
+    s->active = !s->active;
+
+    /* Do we need a second transition? */
+    if (s->remaining + t1 < 8000) {
+      uint16_t t2 = t1 + s->remaining ;
+      *FTM_CnV(FTM, p2) = t2;
+
+      /* Calculate next remaining */
+      if (s->active) {
+        s->remaining = s->period * (1.0f - duty);
+      } else {
+        s->remaining = s->period * duty;
+      }
+      s->active = !s->active;
+      s->remaining -= (8000 - t2);
+    } else {
+      s->remaining -= (8000 - t1);
+    }
+
+  } else {
+    s->remaining -= 8000;
+  }
+}
+
+
+static bool offcycle = false;
 void LPIT0_Ch1_IRQHandler(void) {
-//  *GPIOE_PSOR = 1;
+  *GPIOE_PSOR = 1;
   *LPIT_MSR = 2; // Clear flag
   __asm__("dsb");
   __asm__("isb");
@@ -422,23 +706,146 @@ void LPIT0_Ch1_IRQHandler(void) {
 
   viaems_reschedule(&s32k148_viaems, &update, &plan);
 
+#if 1
+  struct ftm_pin {
+    uint32_t FTM;
+    uint32_t pin;
+  };
 
-//  uint16_t channels[] = {0xFFFF, 0xFFFF};
-//  for (int i = 0; i < 16; i++) {
-//    uint16_t *ch = &channels[oevs[i].pin];
-//    if ((oevs[i].start >= time) && (oevs[i].start < (time + 200))) {
-//      if (*ch != 0xffff) fail = true;
-//      *ch = (oevs[i].start - time) * 40;
-//    }
-//    if ((oevs[i].stop >= time) && (oevs[i].stop < (time + 200))) {
-//      if (*ch != 0xffff) fail = true;
-//      *ch = (oevs[i].stop - time) * 40;
-//    }
-//  }
-//  *FTM3_CnV(0) = channels[0];
-//  *FTM3_CnV(1) = channels[1];
+  plan.n_events = 16;
+  plan.schedule[0] = &(struct schedule_entry){
+    .pin = 8,
+    .time = plan.schedulable_start + 100,
+  };
+  plan.schedule[1] = &(struct schedule_entry){
+    .pin = 9,
+    .time = plan.schedulable_start + 200,
+  };
+  plan.schedule[2] = &(struct schedule_entry){
+    .pin = 10,
+    .time = plan.schedulable_start + 300,
+  };
+  plan.schedule[3] = &(struct schedule_entry){
+    .pin = 11,
+    .time = plan.schedulable_start + 400,
+  };
+  plan.schedule[4] = &(struct schedule_entry){
+    .pin = 12,
+    .time = plan.schedulable_start + 500,
+  };
+  plan.schedule[5] = &(struct schedule_entry){
+    .pin = 13,
+    .time = plan.schedulable_start + 600,
+  };
+  plan.schedule[6] = &(struct schedule_entry){
+    .pin = 14,
+    .time = plan.schedulable_start + 700,
+  };
+  plan.schedule[7] = &(struct schedule_entry){
+    .pin = 15,
+    .time = plan.schedulable_start + 800,
+  };
+  plan.schedule[8] = &(struct schedule_entry){
+    .pin = 24,
+    .time = plan.schedulable_start + 100,
+  };
+  plan.schedule[9] = &(struct schedule_entry){
+    .pin = 25,
+    .time = plan.schedulable_start + 200,
+  };
+  plan.schedule[10] = &(struct schedule_entry){
+    .pin = 26,
+    .time = plan.schedulable_start + 300,
+  };
+  plan.schedule[11] = &(struct schedule_entry){
+    .pin = 27,
+    .time = plan.schedulable_start + 400,
+  };
+  plan.schedule[12] = &(struct schedule_entry){
+    .pin = 28,
+    .time = plan.schedulable_start + 500,
+  };
+  plan.schedule[13] = &(struct schedule_entry){
+    .pin = 29,
+    .time = plan.schedulable_start + 600,
+  };
+  plan.schedule[14] = &(struct schedule_entry){
+    .pin = 30,
+    .time = plan.schedulable_start + 700,
+  };
+  plan.schedule[15] = &(struct schedule_entry){
+    .pin = 31,
+    .time = plan.schedulable_start + 800,
+  };
 
-//  *GPIOE_PCOR = 1;
+  for (int i = 0; i < 32; i++) {
+    plan.pwm[i] = 0.3f;
+  }
+
+#endif
+
+  *GPIOE_PSOR = (1 << 1);
+
+  uint16_t sched_out_ftm_values[32];
+
+  // Ensure any value we don't explicitly set will be reset and not trigger
+  for (int i = 0; i < 32; i++) {
+    sched_out_ftm_values[i] = 0xFFFF;
+  }
+
+  for (int i = 0; i < plan.n_events; i++) {
+    struct schedule_entry *s = plan.schedule[i];
+
+    uint32_t ftm_time = s->time - plan.schedulable_start;
+    if (sched_out_ftm_values[s->pin] != 0xffff) {
+      // TODO, this is a fault condition
+    }
+    sched_out_ftm_values[s->pin] = ftm_time;
+  }
+
+  // All buffered registers don't show our writes in a read, so we need to
+  // maintain our changes locally and set them once.
+  uint32_t INVCTRL = 0;
+  uint32_t SWOCTRL = 0;
+
+  for (int pin = 0; pin < 32; pin++) {
+    uint32_t FTM = ftm_from_pin(pin);
+    uint32_t FTM_CH = ftm_channel_from_pin(pin);
+    switch (ftm_pin_types[pin]) {
+      case FTM_PIN_SCHED_OUT: {
+        *FTM_CnV(FTM, FTM_CH) = sched_out_ftm_values[pin];
+                              }
+        break;
+      case FTM_PIN_GPIO_OUT:
+        SWOCTRL |= (FTM_CH);
+        if ((plan.gpio & (1 << pin)) != 0) {
+          SWOCTRL |= (FTM_CH << 8);
+        }
+        break;
+      case FTM_PIN_HSPWM_OUT:
+        if (hspwm_states[pin].active) {
+          INVCTRL |= (1u << (FTM_CH >> 1));
+        }
+        do_hspwm(&hspwm_states[pin], plan.pwm[pin], FTM, FTM_CH);
+        break;
+      case FTM_PIN_LSPWM_OUT:
+        break;
+      default:
+        break;
+    }
+    if ((pin & 0x7) == 0x7) {
+      // End of an FTM, synchronize INVCTRL and SWOCTRL
+      *FTM_INVCTRL(FTM) = INVCTRL;
+      INVCTRL = 0;
+
+      *FTM_SWOCTRL(FTM) = SWOCTRL;
+      SWOCTRL = 0;
+    }
+  }
+    
+  *GPIOE_PCOR = (1 << 1);
+
+  *GPIOE_PCOR = 1;
 }
 
 uint32_t current_time(void) {
@@ -589,6 +996,105 @@ static void setup_ftm0(void) {
   *NVIC_ISER((99/32)) = (1 << (99 & 0x1F));
 } 
 
+static void configure_ftm(void) {
+  /* Configure all FTMs to count up at 40 MHz from 0-7999 with a reset to 0
+   * synchronized by the LPIT CH1 5 KHz clock.
+   */
+
+  *TRGMUX_FTM0 = TRGMUX_SEL0(TRGMUX_SRC_LPIT_CH1); // LPIT1 triggers FTM0
+  *TRGMUX_FTM1 = TRGMUX_SEL0(TRGMUX_SRC_LPIT_CH1); // LPIT1 triggers FTM0
+  *TRGMUX_FTM2 = TRGMUX_SEL0(TRGMUX_SRC_LPIT_CH1); // LPIT1 triggers FTM0
+  *TRGMUX_FTM3 = TRGMUX_SEL0(TRGMUX_SRC_LPIT_CH1); // LPIT1 triggers FTM0
+
+
+  for (int f = 0; f < 4; f++) {
+    uint32_t FTM = FTM_BASE(f);
+    *FTM_CNTIN(FTM) = 0;
+    *FTM_MOD(FTM) = 7999;
+    *FTM_CNT(FTM) = 0;
+    *FTM_MODE(FTM) = FTM_MODE_WPDIS | FTM_MODE_FTMEN;
+    *FTM_SYNC(FTM) = FTM_SYNC_TRIG0;
+    *FTM_SYNCONF(FTM) = FTM_SYNCONF_HWRSTCNT | 
+                        FTM_SYNCONF_SYNCMODE | 
+                        FTM_SYNCONF_HWTRIGMODE | 
+                        FTM_SYNCONF_HWINVC |
+                        FTM_SYNCONF_INVC |
+                        FTM_SYNCONF_HWWRBUF;
+
+    *FTM_COMBINE(FTM) = FTM_COMBINE_SYNCNE0 | // CH0 and CH1 synchronized reg loads
+                        FTM_COMBINE_SYNCNE1 |
+                        FTM_COMBINE_SYNCNE2 |
+                        FTM_COMBINE_SYNCNE3;
+  }
+
+  for (int pin = 0; pin < 32; pin++) {
+    uint32_t FTM = ftm_from_pin(pin);
+    uint32_t FTM_CH = ftm_channel_from_pin(pin);
+
+    switch (ftm_pin_types[pin]) {
+      case FTM_PIN_GPIO_OUT:
+        *FTM_CnSC(FTM, FTM_CH) = FTM_CnSC_ELSA | FTM_CnSC_MSA; // Output compare
+        *FTM_SWOCTRL(FTM) |= (1u << FTM_CH); // Enable software control
+        break;
+
+      case FTM_PIN_SCHED_OUT:
+      case FTM_PIN_LSPWM_OUT:
+        *FTM_CnSC(FTM, FTM_CH) = FTM_CnSC_ELSA | FTM_CnSC_MSA; // Output compare
+        break;
+      case FTM_PIN_HSPWM_OUT: {
+        // HSPWM requires both channels, so incompatible with other FTM use cases
+        uint32_t other_pin = pin ^ 0x1u;
+        switch (ftm_pin_types[other_pin]) {
+          case FTM_PIN_LSPWM_OUT:
+          case FTM_PIN_SCHED_OUT:
+          case FTM_PIN_FREQ_IN:
+          case FTM_PIN_SYNC_IN:
+          case FTM_PIN_TRIGGER_IN:
+            // TODO report config error
+            break;
+          default:
+            break;
+        }
+
+        uint32_t FTM_OTHER_CH = ftm_channel_from_pin(other_pin);
+        *FTM_CnSC(FTM, FTM_CH) = FTM_CnSC_ELSB;
+        *FTM_CnSC(FTM, FTM_OTHER_CH) = FTM_CnSC_ELSB;
+        switch (FTM_CH) {
+          case 0:
+          case 1:
+            *FTM_COMBINE(FTM) |= FTM_COMBINE_COMP0 | FTM_COMBINE_COMBINE0;
+            break;
+          case 2:
+          case 3:
+            *FTM_COMBINE(FTM) |= FTM_COMBINE_COMP1 | FTM_COMBINE_COMBINE1;
+            break;
+          case 4:
+          case 5:
+            *FTM_COMBINE(FTM) |= FTM_COMBINE_COMP2 | FTM_COMBINE_COMBINE2;
+            break;
+          case 6:
+          case 7:
+            *FTM_COMBINE(FTM) |= FTM_COMBINE_COMP3 | FTM_COMBINE_COMBINE3;
+            break;
+        }
+        break;
+                              }
+      default:
+        break;
+
+    }
+    *FTM_CnV(FTM, FTM_CH) = 0xffff;
+
+  }
+
+  for (int f = 0; f < 4; f++) {
+    uint32_t FTM = FTM_BASE(f);
+    *FTM_SC(FTM) = FTM_SC_PS(1) |    // prescale divide by 2 (40 MHz)
+                   FTM_SC_SCS(1) |   // Use 80 MHz sys clock
+                   FTM_SC_PWMEN(0xff);
+  }
+}
+
 static void setup_ftm3(void) {
   /* Enable FTM3 to count up at 40 MHz from 0-7999 with the reset to 0
    * synchronized with the LPIT CH1 5 KHz clock. 
@@ -599,17 +1105,25 @@ static void setup_ftm3(void) {
    * - Output compare is configured as toggle. If the upcoming 200 uS window has
    *   no toggles for a channel, CnV is set to 0xFFFF so that it will not fire.
    */
+  //
+  // Experiment with FTM3_CH2/3 for combined "fast" custom pwm on PTD2
 
   *TRGMUX_FTM3 = TRGMUX_SEL0(TRGMUX_SRC_LPIT_CH1); // LPIT1 triggers FTM0
   
   *FTM3_CnSC(0) = FTM_CnSC_ELSA | FTM_CnSC_MSA; // Output compare
   *FTM3_CnSC(1) = FTM_CnSC_ELSA | FTM_CnSC_MSA; // Output compare
 
+  *FTM3_CnSC(4) = FTM_CnSC_ELSB;
+  *FTM3_CnSC(5) = FTM_CnSC_ELSB;
+
   *FTM3_CNTIN = 0;
   *FTM3_MOD = 7999;
 
   *FTM3_CnV(0) = 0xffff;
   *FTM3_CnV(1) = 0xffff;
+
+  *FTM3_CnV(4) = 0xffff;
+  *FTM3_CnV(5) = 0xffff;
 
   *FTM3_CNT = 0;
   // Enable counter reset from trgmux input (LPIT CH 1, 5 KHz)
@@ -618,13 +1132,19 @@ static void setup_ftm3(void) {
   *FTM3_SYNCONF = FTM_SYNCONF_HWRSTCNT | 
                   FTM_SYNCONF_SYNCMODE | 
                   FTM_SYNCONF_HWTRIGMODE | 
+                  FTM_SYNCONF_HWINVC |
+                  FTM_SYNCONF_INVC |
                   FTM_SYNCONF_HWWRBUF;
 
-  *FTM3_COMBINE = FTM_COMBINE_SYNCNE0; // CH0 and CH1 synchronized reg loads
+  *FTM3_COMBINE = FTM_COMBINE_SYNCNE0 | // CH0 and CH1 synchronized reg loads
+                  FTM_COMBINE_SYNCNE2 | // CH4/5 combined CVn/n+1 load
+                  FTM_COMBINE_COMP2 | // CH4/5 combined CVn/n+1 load
+                  FTM_COMBINE_COMBINE2; // CH4/5 combined
 
   *FTM3_SC = FTM_SC_PS(1) |    // prescale divide by 2 (40 MHz)
              FTM_SC_SCS(1) |   // Use 80 MHz sys clock
-             FTM_SC_PWMEN(3);  // Enable ch0/1 output
+             FTM_SC_PWMEN(0x3 | 0x30);  // Enable ch0/1 output ch4/5
+
 
 
 }
@@ -868,6 +1388,12 @@ int startup(void) {
 
   *DWT_CTRL |= DWT_CTRL_CYCCNTENA;
 
+#if HWTEST_PINS
+  void mcxe246_hwtest_pinheaders(void);
+  mcxe246_hwtest_pinheaders();
+#endif
+
+
   configure_system_clocks();
   enable_peripheral_clocks();
   configure_pins();
@@ -884,27 +1410,29 @@ int startup(void) {
   setup_uart();
 
   if (!benchmark_enabled) {
-    setup_can0();
+    //setup_can0();
     setup_lpit();
-    setup_ftm0();
-    setup_ftm3();
+    //setup_ftm0();
+//    setup_ftm3();
+    configure_ftm();
     setup_adc();
     setup_pdb();
     start_lpit();
   }
 
 //  *((volatile uint32_t *)(0x4000D000)) &= ~0x1ULL;
-  *((volatile uint32_t *)(0x4000D800)) |= (6u << 18); // RW for ENET to all
+//  *((volatile uint32_t *)(0x4000D800)) |= (6u << 18); // RW for ENET to all
 
                                                       // memory via alt
 #if BENCHMARK
   write_string("Startup complete!\r\n");
   int start_benchmarks(void);
-  start_benchmarks();
+  while (true) {
+    start_benchmarks();
+  }
 #else
 
   while (true) {
-    send_can_frame(8, (uint8_t[]){0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF});
     viaems_idle(&s32k148_viaems, current_time());
   }
 #endif

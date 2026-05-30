@@ -4,8 +4,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define MAX_GPIOS 8
-#define MAX_PWM 4
+#define MAX_GPIOS 32
+#define MAX_PWM 32
 #define MAX_EVENTS 16
 
 typedef uint32_t timeval_t;

@@ -16,7 +16,7 @@
 
 #include "console.pb.h"
 
-#define FAR_FUTURE (TICKRATE * 60)
+#define FAR_FUTURE (TICKRATE * 20)
 
 struct benchmark_results {
   int n_runs;

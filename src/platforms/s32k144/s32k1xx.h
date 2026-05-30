@@ -20,14 +20,34 @@
 #define GPIOD_BASE          0x400FF0C0u
 #define GPIOE_BASE          0x400FF100u
 
+#define GPIOA_PDOR          MEM32(GPIOA_BASE + 0x0u)
+#define GPIOA_PSOR          MEM32(GPIOA_BASE + 0x4u)
+#define GPIOA_PCOR          MEM32(GPIOA_BASE + 0x8u)
+#define GPIOA_PTOR          MEM32(GPIOA_BASE + 0xCu)
+#define GPIOA_PDDR          MEM32(GPIOA_BASE + 0x14u)
+
+#define GPIOB_PDOR          MEM32(GPIOB_BASE + 0x0u)
+#define GPIOB_PSOR          MEM32(GPIOB_BASE + 0x4u)
+#define GPIOB_PCOR          MEM32(GPIOB_BASE + 0x8u)
+#define GPIOB_PTOR          MEM32(GPIOB_BASE + 0xCu)
+#define GPIOB_PDDR          MEM32(GPIOB_BASE + 0x14u)
+
 #define GPIOC_PDOR          MEM32(GPIOC_BASE + 0x0u)
 #define GPIOC_PSOR          MEM32(GPIOC_BASE + 0x4u)
 #define GPIOC_PCOR          MEM32(GPIOC_BASE + 0x8u)
+#define GPIOC_PTOR          MEM32(GPIOC_BASE + 0xCu)
 #define GPIOC_PDDR          MEM32(GPIOC_BASE + 0x14u)
+
+#define GPIOD_PDOR          MEM32(GPIOD_BASE + 0x0u)
+#define GPIOD_PSOR          MEM32(GPIOD_BASE + 0x4u)
+#define GPIOD_PCOR          MEM32(GPIOD_BASE + 0x8u)
+#define GPIOD_PTOR          MEM32(GPIOD_BASE + 0xCu)
+#define GPIOD_PDDR          MEM32(GPIOD_BASE + 0x14u)
 
 #define GPIOE_PDOR          MEM32(GPIOE_BASE + 0x0u)
 #define GPIOE_PSOR          MEM32(GPIOE_BASE + 0x4u)
 #define GPIOE_PCOR          MEM32(GPIOE_BASE + 0x8u)
+#define GPIOE_PTOR          MEM32(GPIOE_BASE + 0xCu)
 #define GPIOE_PDDR          MEM32(GPIOE_BASE + 0x14u)
 
 #define PCC_BASE           0x40065000u
@@ -269,6 +289,21 @@
 #define FTM2_BASE                0x4003A000u
 #define FTM3_BASE                0x40026000u
 
+static inline uint32_t FTM_BASE(int FTM) {
+  switch (FTM) {
+    case 0:
+      return FTM0_BASE;
+    case 1:
+      return FTM1_BASE;
+    case 2:
+      return FTM2_BASE;
+    case 3:
+      return FTM3_BASE;
+    default:
+      return 0;
+  }
+}
+
 #define FTM0_SC                  MEM32(FTM0_BASE + 0x0)
 #define FTM0_CNT                 MEM32(FTM0_BASE + 0x4)
 #define FTM0_MOD                 MEM32(FTM0_BASE + 0x8)
@@ -335,19 +370,75 @@
 #define FTM3_MOD_MIRROR          MEM32(FTM3_BASE + 0x200)
 #define FTM3_CXV_MIRROR(X)       MEM32(FTM3_BASE + 0x204 + 4 * X))
 
+#define FTM_SC(FTM)                    MEM32(FTM + 0x0)
+#define FTM_CNT(FTM)                   MEM32(FTM + 0x4)
+#define FTM_MOD(FTM)                   MEM32(FTM + 0x8)
+#define FTM_CnSC(FTM, N)               MEM32(FTM + 0xC + 8 * (N))
+#define FTM_CnV(FTM, N)                MEM32(FTM + 0x10 + 8 * (N))
+#define FTM_CNTIN(FTM)                 MEM32(FTM + 0x4C)
+#define FTM_STATUS(FTM)                MEM32(FTM + 0x50)
+#define FTM_MODE(FTM)                  MEM32(FTM + 0x54)
+#define FTM_SYNC(FTM)                  MEM32(FTM + 0x58)
+#define FTM_OUTINIT(FTM)               MEM32(FTM + 0x5C)
+#define FTM_OUTMASK(FTM)               MEM32(FTM + 0x60)
+#define FTM_COMBINE(FTM)               MEM32(FTM + 0x64)
+#define FTM_DEADTIME(FTM)              MEM32(FTM + 0x68)
+#define FTM_EFTMTTRIG(FTM)             MEM32(FTM + 0x6C)
+#define FTM_POL(FTM)                   MEM32(FTM + 0x70)
+#define FTM_FMS(FTM)                   MEM32(FTM + 0x74)
+#define FTM_FILTER(FTM)                MEM32(FTM + 0x78)
+#define FTM_FRTCRTL(FTM)               MEM32(FTM + 0x7C)
+#define FTM_QDCTRL(FTM)                MEM32(FTM + 0x80)
+#define FTM_CONF(FTM)                  MEM32(FTM + 0x84)
+#define FTM_FLTPOL(FTM)                MEM32(FTM + 0x88)
+#define FTM_SYNCONF(FTM)               MEM32(FTM + 0x8C)
+#define FTM_INVCTRL(FTM)               MEM32(FTM + 0x90)
+#define FTM_SWOCTRL(FTM)               MEM32(FTM + 0x94)
+#define FTM_PWMLOAD(FTM)               MEM32(FTM + 0x98)
+#define FTM_HCR(FTM)                   MEM32(FTM + 0x9C)
+#define FTM_PAIR0DEADTIME(FTM)         MEM32(FTM + 0xA0)
+#define FTM_PAIR1DEADTIME(FTM)         MEM32(FTM + 0xA8)
+#define FTM_PAIR2DEADTIME(FTM)         MEM32(FTM + 0xB0)
+#define FTM_PAIR3DEADTIME(FTM)         MEM32(FTM + 0xB8)
+#define FTM_MOD_MIRROR(FTM)            MEM32(FTM + 0x200)
+#define FTM_CFTMV_MIRROR(FTM, N)       MEM32(FTM + 0x204 + 4 * N))
+
 #define FTM_MODE_WPDIS           (1u << 2)
 #define FTM_MODE_FTMEN           (1u << 0)
+#define FTM_COMBINE_COMBINE0     (1u << 0)
+#define FTM_COMBINE_COMP0        (1u << 1)
+#define FTM_COMBINE_DECAPEN0     (1u << 2)
+#define FTM_COMBINE_DECAP0       (1u << 3)
 #define FTM_COMBINE_SYNCNE0      (1u << 5)
+#define FTM_COMBINE_COMBINE1     (1u << 8)
+#define FTM_COMBINE_COMP1        (1u << 9)
+#define FTM_COMBINE_DECAPEN1     (1u << 10)
+#define FTM_COMBINE_DECAP1       (1u << 11)
+#define FTM_COMBINE_SYNCNE1      (1u << 13)
+#define FTM_COMBINE_COMBINE2     (1u << 16)
+#define FTM_COMBINE_COMP2        (1u << 17)
+#define FTM_COMBINE_DECAPEN2     (1u << 18)
+#define FTM_COMBINE_DECAP2       (1u << 19)
+#define FTM_COMBINE_SYNCNE2      (1u << 21)
+#define FTM_COMBINE_COMBINE3     (1u << 24)
+#define FTM_COMBINE_COMP3        (1u << 25)
+#define FTM_COMBINE_DECAPEN3     (1u << 26)
+#define FTM_COMBINE_DECAP3       (1u << 27)
+#define FTM_COMBINE_SYNCNE3      (1u << 29)
 #define FTM_SYNC_TRIG0           (1u << 4)
+#define FTM_SYNCONF_HWINVC       (1u << 19)
+#define FTM_SYNCONF_HWWRBUF      (1u << 17)
 #define FTM_SYNCONF_HWRSTCNT     (1u << 16)
 #define FTM_SYNCONF_SYNCMODE     (1u << 7)
-#define FTM_SYNCONF_HWWRBUF      (1u << 17)
+#define FTM_SYNCONF_INVC         (1u << 4)
 #define FTM_SYNCONF_HWTRIGMODE   (1u << 0)
 #define FTM_SC_SCS(X)            ((uint32_t)(X) << 3)
 #define FTM_SC_PS(X)             ((uint32_t)(X) << 0)
 #define FTM_SC_PWMEN(X)          ((uint32_t)(X) << 16)
 #define FTM_CnSC_ELSA            (1u << 2)
+#define FTM_CnSC_ELSB            (1u << 3)
 #define FTM_CnSC_MSA             (1u << 4)
+#define FTM_CnSC_MSB             (1u << 5)
 #define FTM_CnSC_CHIE            (1u << 6)
 #define FTM_CnSC_CHF             (1u << 7)
 #define FTM_EXTTRIG_INITTRIGEN   (1u << 6)
