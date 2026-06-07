@@ -8,16 +8,16 @@
 
 struct config default_config __attribute__((section(".configdata"))) = {
   .outputs = {
-    {.type=IGNITION_EVENT, .angle=0, .pin=0},
-    {.type=IGNITION_EVENT, .angle=120, .pin=1},
-    {.type=IGNITION_EVENT, .angle=240, .pin=2},
-    {.type=IGNITION_EVENT, .angle=360, .pin=0},
-    {.type=IGNITION_EVENT, .angle=480, .pin=1},
-    {.type=IGNITION_EVENT, .angle=600, .pin=2},
+    {.type=IGNITION_EVENT, .angle=0, .pin=8},
+    {.type=IGNITION_EVENT, .angle=120, .pin=9},
+    {.type=IGNITION_EVENT, .angle=240, .pin=10},
+    {.type=IGNITION_EVENT, .angle=360, .pin=8},
+    {.type=IGNITION_EVENT, .angle=480, .pin=9},
+    {.type=IGNITION_EVENT, .angle=600, .pin=10},
 
-    {.type=FUEL_EVENT, .angle=700, .pin=8},
-    {.type=FUEL_EVENT, .angle=460, .pin=9},
-    {.type=FUEL_EVENT, .angle=220, .pin=10},
+    {.type=FUEL_EVENT, .angle=700, .pin=12},
+    {.type=FUEL_EVENT, .angle=460, .pin=13},
+    {.type=FUEL_EVENT, .angle=220, .pin=14},
   },
   .decoder = {
     .type = TRIGGER_MISSING_CAMSYNC,
@@ -248,7 +248,7 @@ struct config default_config __attribute__((section(".configdata"))) = {
     .fuel_stoich_ratio = 14.7,
     .injections_per_cycle = 1, /* All batched */
     .max_duty_cycle = 95.0,
-    .fuel_pump_pin = 0,
+    .fuel_pump_pin = 7,
     .density_of_fuel = 0.755, /* g/cm^3 at 15C */
     .crank_enrich_config = {
       .crank_rpm = 400,

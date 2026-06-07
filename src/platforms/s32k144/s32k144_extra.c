@@ -49,11 +49,7 @@ uint32_t platform_knock_samplerate(void) { return 5000; }
 timeval_t platform_output_earliest_schedulable_time(void) { return 0; }
 void platform_benchmark_init(void) { }
 
-void set_gpio(int output, char v) { }
-void set_pwm(int output, float v) { }
-
 void platform_save_config(void) { }
 
 void platform_reset_into_bootloader(void) { }
 
-void set_sim_wakeup(timeval_t t) {  }

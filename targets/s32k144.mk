@@ -25,7 +25,7 @@ CFLAGS+= -DTICKRATE=40000000 -DSPI_${SPI_ADC}
 #CFLAGS+= -DHWTEST_PINS
 #CFLAGS+= -DPLATFORM_HAS_NATIVE_MESSAGE_IO
 
-LDFLAGS+= -lc -lnosys -L ${OBJDIR} -nostartfiles -Wl,--gc-sections 
+LDFLAGS+= -lc -lnosys -L ${OBJDIR} -nostartfiles -Wl,--gc-sections
 # --specs=nano.specs
 LDFLAGS+= -T src/platforms/s32k144/s32k144-lram.ld
 

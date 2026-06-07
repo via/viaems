@@ -9,6 +9,7 @@
 #include "decoder.h"
 #include "sensors.h"
 #include "viaems.h"
+#include "sim.h"
 #include "util.h"
 
 #include <stdio.h>
@@ -104,7 +105,7 @@ static void enable_peripheral_clocks(void) {
   *PCC_PORTE = PCC_CGC;
 
   *PCC_FLEXCAN0 = PCC_CGC;
-  *PCC_LPUART2 = PCC_CGC | PCC_PCS(3); // Use FIRCDIV2 for UART
+  *PCC_LPUART2 = PCC_CGC | PCC_PCS(6); // Use SPLLDIV2 (40 MHz) for UART
 
   *PCC_LPIT = PCC_CGC | PCC_PCS(6); // Use SPLLDIV2 for LPIT
   *PCC_FTM0 = PCC_CGC;
@@ -133,6 +134,8 @@ static void configure_pins(void) {
   
   // Configure PTD7 as LPUART2 TX
   *PORTD_PCRn(7) |= PORT_PCRn_MUX(2);
+  // Configure PTE3 as LPUART2 RTS
+  *PORTE_PCRn(3) |= PORT_PCRn_MUX(3);
 
 #if 0
   // FTM0 pins
@@ -188,7 +191,9 @@ static void configure_pins(void) {
   }
 
 
-
+  // Set RTS low
+  *GPIOE_PDDR |= (1u << 3);
+  *GPIOE_PCOR = (1u << 3);
 
   // E0 E1 debug/timing pins
   *PORTE_PCRn(0) |= PORT_PCRn_MUX(1);
@@ -286,7 +291,7 @@ static void setup_can0(void) {
 
   *FLEXCAN0_FDCBT = (0u << 20) | // FPRESDIV=1
                     (4 << 16) | // FRJW=3
-                    (7 << 10) | // FPROPSEG=2
+                    (8 << 10) | // FPROPSEG=2
                     (6 << 5) |  // FPSEG1=8
                     (4 << 0);  // FPSEG2=4
 
@@ -451,9 +456,10 @@ static void send_can_frame(size_t len, uint8_t bytes[8]) {
 }
 
 static void setup_uart(void) {
-  // Use LPUART2 on PTC2/3 at 115200
-  // SBR at 12 gives 24000000 / ((5+1) * 1) = 4000000 (4 MBaud)
-  *LPUART2_BAUD = LPUART_BAUD_OSR(5) | LPUART_BAUD_SBR(1) | (1u << 17); // (Sample both edges)
+  // SBR at 1 gives 40000000 / ((9+1) * 1) = 4000000 (4 MBaud)
+  *LPUART2_BAUD = LPUART_BAUD_OSR(9) | LPUART_BAUD_SBR(1) | (1u << 17); // (Sample both edges)
+  *LPUART2_FIFO |= (1u << 7); // enable fifo
+  *LPUART2_WATER |= 3;
   *LPUART2_CTRL = LPUART_CTRL_TE;
 }
 
@@ -497,14 +503,14 @@ enum s32k1xx_ftm_pin_type {
 
 /* In order, all of FTM0, FTM1, FTM2, FTM3 */
 enum s32k1xx_ftm_pin_type ftm_pin_types[32] = { 
-  FTM_PIN_TRIGGER_IN,
-  FTM_PIN_SYNC_IN,
+  FTM_PIN_TRIGGER_IN,  // Hard-code for now
+  FTM_PIN_SYNC_IN,     // Hard-code for now
   FTM_PIN_HSPWM_OUT,
   FTM_PIN_DISABLED,
   FTM_PIN_HSPWM_OUT,
   FTM_PIN_DISABLED,
   FTM_PIN_DISABLED,
-  FTM_PIN_DISABLED,
+  FTM_PIN_GPIO_OUT,
 
 #if 1
   FTM_PIN_SCHED_OUT,
@@ -530,8 +536,8 @@ enum s32k1xx_ftm_pin_type ftm_pin_types[32] = {
   FTM_PIN_DISABLED,
   FTM_PIN_DISABLED,
   FTM_PIN_HSPWM_OUT,
-  FTM_PIN_HSPWM_OUT,
-  FTM_PIN_DISABLED,
+  FTM_PIN_LSPWM_OUT,
+  FTM_PIN_LSPWM_OUT,
   FTM_PIN_DISABLED,
   FTM_PIN_DISABLED,
 
@@ -589,10 +595,60 @@ struct oev oevs[16] = {
   { .pin = 1, .start = 113301, .stop = 140000 },
 };
 
+static bool sim_wakeup_enabled = false;
+static uint32_t sim_wakeup_time = 0;
+
+void set_sim_wakeup(timeval_t t) {  
+  sim_wakeup_enabled = true;
+  sim_wakeup_time = t;
+}
+
 static uint32_t current_lpit_base_time = 0;
 
+struct lspwm_state {
+  uint32_t period;
+  bool active;
+  uint32_t remaining;
+  uint16_t shift;
+};
+
+static void do_lspwm(struct lspwm_state *s, float duty, uint32_t FTM, uint8_t pin) {
+
+  *FTM_CnV(FTM, pin) = 0xFFFF;
+
+  /* If remaining < 8000, we will need a transition */
+  if (s->remaining < 8000) {
+    uint16_t t1 = s->remaining;
+
+    /* Calculate next remaining, factoring in any prior phase shift */
+    uint16_t after_t1 = 0;
+    if (s->active) {
+      s->remaining = s->period * (1.0f - duty) - s->shift;
+    } else {
+      s->remaining = s->period * duty - s->shift;
+    }
+    s->shift = 0;
+
+    s->active = !s->active;
+
+    // If t1 + after_t2 is still inside this window, we need to phase shift to get the second
+    // edge to the next one. Store the offset so that we can remove it somewhere else.
+    if (t1 + s->remaining < 8000) {
+      uint16_t shift = 8000 - (t1 + s->remaining);
+      t1 += shift;
+      s->shift = shift;
+    }
+
+
+    *FTM_CnV(FTM, pin) = t1;
+    s->remaining -= (8000 - t1);
+
+  } else {
+    s->remaining -= 8000;
+  }
+}
+
 struct hspwm_state {
-  float duty;
   uint32_t period; // In FTM ticks at 40 MHz
 
   bool active;
@@ -642,6 +698,41 @@ static struct hspwm_state hspwm_states[32] = {
   { .period = (40000000 / 201) },
 };
 
+static struct lspwm_state lspwm_states[32] = {
+  { .period = (40000000 / 200) },
+  { .period = (40000000 / 200) },
+  { .period = (40000000 / 200) },
+  { .period = (40000000 / 200) },
+  { .period = (40000000 / 200) },
+  { .period = (40000000 / 200) },
+  { .period = (40000000 / 200) },
+  { .period = (40000000 / 200) },
+  { .period = (40000000 / 200) },
+  { .period = (40000000 / 200) },
+  { .period = (40000000 / 200) },
+  { .period = (40000000 / 200) },
+  { .period = (40000000 / 200) },
+  { .period = (40000000 / 200) },
+  { .period = (40000000 / 200) },
+  { .period = (40000000 / 200) },
+  { .period = (40000000 / 200) },
+  { .period = (40000000 / 200) },
+  { .period = (40000000 / 200) },
+  { .period = (40000000 / 200) },
+  { .period = (40000000 / 200) },
+  { .period = (40000000 / 200) },
+  { .period = (40000000 / 200) },
+  { .period = (40000000 / 200) },
+  { .period = (40000000 / 200) },
+  { .period = (40000000 / 200) },
+  { .period = (40000000 / 200) },
+  { .period = (40000000 / 200) },
+  { .period = (40000000 / 200) },
+  { .period = (40000000 / 200) },
+  { .period = (40000000 / 200) },
+  { .period = (40000000 / 200) },
+};
+
 static void do_hspwm(struct hspwm_state *s, float duty, uint32_t FTM, uint8_t pin) {
   uint8_t p1 = pin & 0xFE;  
   uint8_t p2 = p1 + 1;
@@ -685,12 +776,26 @@ static void do_hspwm(struct hspwm_state *s, float duty, uint32_t FTM, uint8_t pi
 }
 
 
+/* To correctly set fired events as fired, we need to double buffer
+ * the plans */
+static struct platform_plan plans[2] = { 0 };
+static size_t current_plan = 0;
+
 static bool offcycle = false;
 void LPIT0_Ch1_IRQHandler(void) {
   *GPIOE_PSOR = 1;
   *LPIT_MSR = 2; // Clear flag
   __asm__("dsb");
   __asm__("isb");
+
+  current_plan = (current_plan == 0) ? 1 : 0;
+  struct platform_plan *plan = &plans[current_plan];
+
+  /* Retire this plan's events */
+  for (int i = 0; i < plan->n_events; i++) {
+    struct schedule_entry *s = plan->schedule[i];
+    s->state = SCHED_FIRED;
+  }
 
   current_lpit_base_time += 8000;
   
@@ -699,92 +804,18 @@ void LPIT0_Ch1_IRQHandler(void) {
     .position = decoder_get_engine_position(&s32k148_viaems.decoder), 
     .current_time = current_lpit_base_time,
   };
-  struct platform_plan plan = {
-    .schedulable_start = current_lpit_base_time + 8000,
-    .schedulable_end = current_lpit_base_time + 8000 * 2,
-  };
-
-  viaems_reschedule(&s32k148_viaems, &update, &plan);
-
-#if 1
-  struct ftm_pin {
-    uint32_t FTM;
-    uint32_t pin;
-  };
-
-  plan.n_events = 16;
-  plan.schedule[0] = &(struct schedule_entry){
-    .pin = 8,
-    .time = plan.schedulable_start + 100,
-  };
-  plan.schedule[1] = &(struct schedule_entry){
-    .pin = 9,
-    .time = plan.schedulable_start + 200,
-  };
-  plan.schedule[2] = &(struct schedule_entry){
-    .pin = 10,
-    .time = plan.schedulable_start + 300,
-  };
-  plan.schedule[3] = &(struct schedule_entry){
-    .pin = 11,
-    .time = plan.schedulable_start + 400,
-  };
-  plan.schedule[4] = &(struct schedule_entry){
-    .pin = 12,
-    .time = plan.schedulable_start + 500,
-  };
-  plan.schedule[5] = &(struct schedule_entry){
-    .pin = 13,
-    .time = plan.schedulable_start + 600,
-  };
-  plan.schedule[6] = &(struct schedule_entry){
-    .pin = 14,
-    .time = plan.schedulable_start + 700,
-  };
-  plan.schedule[7] = &(struct schedule_entry){
-    .pin = 15,
-    .time = plan.schedulable_start + 800,
-  };
-  plan.schedule[8] = &(struct schedule_entry){
-    .pin = 24,
-    .time = plan.schedulable_start + 100,
-  };
-  plan.schedule[9] = &(struct schedule_entry){
-    .pin = 25,
-    .time = plan.schedulable_start + 200,
-  };
-  plan.schedule[10] = &(struct schedule_entry){
-    .pin = 26,
-    .time = plan.schedulable_start + 300,
-  };
-  plan.schedule[11] = &(struct schedule_entry){
-    .pin = 27,
-    .time = plan.schedulable_start + 400,
-  };
-  plan.schedule[12] = &(struct schedule_entry){
-    .pin = 28,
-    .time = plan.schedulable_start + 500,
-  };
-  plan.schedule[13] = &(struct schedule_entry){
-    .pin = 29,
-    .time = plan.schedulable_start + 600,
-  };
-  plan.schedule[14] = &(struct schedule_entry){
-    .pin = 30,
-    .time = plan.schedulable_start + 700,
-  };
-  plan.schedule[15] = &(struct schedule_entry){
-    .pin = 31,
-    .time = plan.schedulable_start + 800,
-  };
-
-  for (int i = 0; i < 32; i++) {
-    plan.pwm[i] = 0.3f;
-  }
-
-#endif
+  plan->schedulable_start = current_lpit_base_time + 8000;
+  plan->schedulable_end = current_lpit_base_time + 8000 * 2;
+  plan->n_events = 0;
 
   *GPIOE_PSOR = (1 << 1);
+
+  viaems_reschedule(&s32k148_viaems, &update, plan);
+
+  plan->pwm[20] = 0.02;
+  plan->pwm[21] = 0.03;
+
+  *GPIOE_PCOR = (1 << 1);
 
   uint16_t sched_out_ftm_values[32];
 
@@ -793,14 +824,15 @@ void LPIT0_Ch1_IRQHandler(void) {
     sched_out_ftm_values[i] = 0xFFFF;
   }
 
-  for (int i = 0; i < plan.n_events; i++) {
-    struct schedule_entry *s = plan.schedule[i];
+  for (int i = 0; i < plan->n_events; i++) {
+    struct schedule_entry *s = plan->schedule[i];
 
-    uint32_t ftm_time = s->time - plan.schedulable_start;
+    uint32_t ftm_time = s->time - plan->schedulable_start;
     if (sched_out_ftm_values[s->pin] != 0xffff) {
       // TODO, this is a fault condition
     }
     sched_out_ftm_values[s->pin] = ftm_time;
+    s->state = SCHED_SUBMITTED;
   }
 
   // All buffered registers don't show our writes in a read, so we need to
@@ -817,18 +849,19 @@ void LPIT0_Ch1_IRQHandler(void) {
                               }
         break;
       case FTM_PIN_GPIO_OUT:
-        SWOCTRL |= (FTM_CH);
-        if ((plan.gpio & (1 << pin)) != 0) {
-          SWOCTRL |= (FTM_CH << 8);
+        SWOCTRL |= (1u << FTM_CH);
+        if ((plan->gpio & (1 << pin)) != 0) {
+          SWOCTRL |= (1u << (FTM_CH + 8));
         }
         break;
       case FTM_PIN_HSPWM_OUT:
         if (hspwm_states[pin].active) {
           INVCTRL |= (1u << (FTM_CH >> 1));
         }
-        do_hspwm(&hspwm_states[pin], plan.pwm[pin], FTM, FTM_CH);
+        do_hspwm(&hspwm_states[pin], plan->pwm[pin], FTM, FTM_CH);
         break;
       case FTM_PIN_LSPWM_OUT:
+        do_lspwm(&lspwm_states[pin], plan->pwm[pin], FTM, FTM_CH);
         break;
       default:
         break;
@@ -842,10 +875,19 @@ void LPIT0_Ch1_IRQHandler(void) {
       SWOCTRL = 0;
     }
   }
-    
-  *GPIOE_PCOR = (1 << 1);
 
   *GPIOE_PCOR = 1;
+
+  // Handle sim callbacks if between now and next lpit rollover
+  while (sim_wakeup_enabled && 
+         time_in_range(sim_wakeup_time, 
+                       current_lpit_base_time, 
+                       current_lpit_base_time + 8000)) {
+    sim_wakeup_callback(&s32k148_viaems.decoder);
+  }
+
+
+
 }
 
 uint32_t current_time(void) {
@@ -884,7 +926,9 @@ uint32_t current_time(void) {
   return time + ftm_value;
 }
 
-volatile uint32_t last_capture = 0;
+static void do_ftm_captures(void) {
+}
+
 void FTM0_Ch0_Ch1_IRQHandler(void) {
 
   /* Use same rollover logic as current_time() */
@@ -1018,6 +1062,8 @@ static void configure_ftm(void) {
                         FTM_SYNCONF_SYNCMODE | 
                         FTM_SYNCONF_HWTRIGMODE | 
                         FTM_SYNCONF_HWINVC |
+                        FTM_SYNCONF_HWSOC |
+                        FTM_SYNCONF_SWOC |
                         FTM_SYNCONF_INVC |
                         FTM_SYNCONF_HWWRBUF;
 
@@ -1034,7 +1080,6 @@ static void configure_ftm(void) {
     switch (ftm_pin_types[pin]) {
       case FTM_PIN_GPIO_OUT:
         *FTM_CnSC(FTM, FTM_CH) = FTM_CnSC_ELSA | FTM_CnSC_MSA; // Output compare
-        *FTM_SWOCTRL(FTM) |= (1u << FTM_CH); // Enable software control
         break;
 
       case FTM_PIN_SCHED_OUT:
@@ -1432,6 +1477,8 @@ int startup(void) {
   }
 #else
 
+  set_test_trigger_rpm(1000);
+
   while (true) {
     viaems_idle(&s32k148_viaems, current_time());
   }
@@ -1489,3 +1536,14 @@ int startup(void) {
 //  }
 //}
 //
+//
+
+/* TODO: implement graceful shutdown of outputs on fault */
+#define STACK_CHK_GUARD 0xe2dee396
+uintptr_t  __attribute__((externally_visible)) __stack_chk_guard = STACK_CHK_GUARD;
+
+__attribute__((noreturn)) __attribute__((externally_visible))
+void __stack_chk_fail(void) {
+  while(1);
+}
+
