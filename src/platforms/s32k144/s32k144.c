@@ -120,7 +120,8 @@ static void enable_peripheral_clocks(void) {
 //  *PCC_ENET = PCC_CGC;
   *PCC_CRC = PCC_CGC;
 
-  *PCC_LPSPI0 = PCC_CGC | PCC_PCS(6); // SPLLDIV2 (40 MHz) for SPI0
+//  *PCC_LPSPI0 = PCC_CGC | PCC_PCS(6); // SPLLDIV2 (40 MHz) for SPI0
+  *PCC_LPSPI1 = PCC_CGC | PCC_PCS(3);   // FIRCDIV2 (24 MHz) for SPI1
 }
 
 static void configure_pins(void) {
@@ -136,6 +137,11 @@ static void configure_pins(void) {
   *PORTD_PCRn(7) |= PORT_PCRn_MUX(2);
   // Configure PTE3 as LPUART2 RTS
   *PORTE_PCRn(3) |= PORT_PCRn_MUX(3);
+
+  *PORTD_PCRn(0) |= PORT_PCRn_MUX(3) | PORT_PCRn_DSE;  // SCK
+  *PORTD_PCRn(1) |= PORT_PCRn_MUX(3) | PORT_PCRn_DSE;  // MOSI
+  *PORTE_PCRn(0) |= PORT_PCRn_MUX(5);  // MISO
+  *PORTE_PCRn(1) |= PORT_PCRn_MUX(5) | PORT_PCRn_DSE;  // CS
 
 #if 0
   // FTM0 pins
@@ -181,10 +187,10 @@ static void configure_pins(void) {
 
       switch (cfg.port) {
         case PORT_A: *PORTA_PCRn(cfg.num) = (*PORTA_PCRn(cfg.num) & ~PORT_PCRn_MUX(7)) | PORT_PCRn_MUX(cfg.alt); break;
-        case PORT_B: *PORTB_PCRn(cfg.num) = (*PORTA_PCRn(cfg.num) & ~PORT_PCRn_MUX(7)) | PORT_PCRn_MUX(cfg.alt); break;
-        case PORT_C: *PORTC_PCRn(cfg.num) = (*PORTA_PCRn(cfg.num) & ~PORT_PCRn_MUX(7)) | PORT_PCRn_MUX(cfg.alt); break;
-        case PORT_D: *PORTD_PCRn(cfg.num) = (*PORTA_PCRn(cfg.num) & ~PORT_PCRn_MUX(7)) | PORT_PCRn_MUX(cfg.alt); break;
-        case PORT_E: *PORTE_PCRn(cfg.num) = (*PORTA_PCRn(cfg.num) & ~PORT_PCRn_MUX(7)) | PORT_PCRn_MUX(cfg.alt); break;
+        case PORT_B: *PORTB_PCRn(cfg.num) = (*PORTB_PCRn(cfg.num) & ~PORT_PCRn_MUX(7)) | PORT_PCRn_MUX(cfg.alt); break;
+        case PORT_C: *PORTC_PCRn(cfg.num) = (*PORTC_PCRn(cfg.num) & ~PORT_PCRn_MUX(7)) | PORT_PCRn_MUX(cfg.alt); break;
+        case PORT_D: *PORTD_PCRn(cfg.num) = (*PORTD_PCRn(cfg.num) & ~PORT_PCRn_MUX(7)) | PORT_PCRn_MUX(cfg.alt); break;
+        case PORT_E: *PORTE_PCRn(cfg.num) = (*PORTE_PCRn(cfg.num) & ~PORT_PCRn_MUX(7)) | PORT_PCRn_MUX(cfg.alt); break;
         case PORT_DISABLED: break;
       }
     }
@@ -196,9 +202,9 @@ static void configure_pins(void) {
   *GPIOE_PCOR = (1u << 3);
 
   // E0 E1 debug/timing pins
-  *PORTE_PCRn(0) |= PORT_PCRn_MUX(1);
-  *PORTE_PCRn(1) |= PORT_PCRn_MUX(1);
-  *GPIOE_PDDR |= (1u << 0) | (1u << 1);
+//  *PORTE_PCRn(0) |= PORT_PCRn_MUX(1);
+//  *PORTE_PCRn(1) |= PORT_PCRn_MUX(1);
+//  *GPIOE_PDDR |= (1u << 0) | (1u << 1);
 
 #if 0
   // EMAC pins
@@ -214,7 +220,7 @@ static void configure_pins(void) {
   *PORTD_PCRn(11) |= PORT_PCRn_MUX(5);
   // PTC17 - CRS_DV
   *PORTC_PCRn(17) |= PORT_PCRn_MUX(5);
-  // PTC1 - RXD0
+  // PTC1 - RXD-1
   *PORTC_PCRn(1) |= PORT_PCRn_MUX(5);
   // PTC0 - RXD1
   *PORTC_PCRn(0) |= PORT_PCRn_MUX(4);
@@ -783,7 +789,7 @@ static size_t current_plan = 0;
 
 static bool offcycle = false;
 void LPIT0_Ch1_IRQHandler(void) {
-  *GPIOE_PSOR = 1;
+//  *GPIOE_PSOR = 1;
   *LPIT_MSR = 2; // Clear flag
   __asm__("dsb");
   __asm__("isb");
@@ -808,14 +814,14 @@ void LPIT0_Ch1_IRQHandler(void) {
   plan->schedulable_end = current_lpit_base_time + 8000 * 2;
   plan->n_events = 0;
 
-  *GPIOE_PSOR = (1 << 1);
+//  *GPIOE_PSOR = (1 << 1);
 
   viaems_reschedule(&s32k148_viaems, &update, plan);
 
   plan->pwm[20] = 0.02;
   plan->pwm[21] = 0.03;
 
-  *GPIOE_PCOR = (1 << 1);
+//  *GPIOE_PCOR = (1 << 1);
 
   uint16_t sched_out_ftm_values[32];
 
@@ -876,7 +882,7 @@ void LPIT0_Ch1_IRQHandler(void) {
     }
   }
 
-  *GPIOE_PCOR = 1;
+//  *GPIOE_PCOR = 1;
 
   // Handle sim callbacks if between now and next lpit rollover
   while (sim_wakeup_enabled && 
@@ -1463,12 +1469,16 @@ int startup(void) {
     setup_adc();
     setup_pdb();
     start_lpit();
+    configure_spi();
   }
 
 //  *((volatile uint32_t *)(0x4000D000)) &= ~0x1ULL;
 //  *((volatile uint32_t *)(0x4000D800)) |= (6u << 18); // RW for ENET to all
 
                                                       // memory via alt
+  void configure_spi(void);
+  void send_spi(void);
+
 #if BENCHMARK
   write_string("Startup complete!\r\n");
   int start_benchmarks(void);
@@ -1481,6 +1491,7 @@ int startup(void) {
 
   while (true) {
     viaems_idle(&s32k148_viaems, current_time());
+    //send_spi();
   }
 #endif
 

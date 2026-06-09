@@ -637,6 +637,20 @@ static inline uint32_t FTM_BASE(int FTM) {
 
 #define LPSPI_BASE(X)    (0x4002C000u + (X) * 0x1000)
 #define LPSPI_CR(X)      MEM32(LPSPI_BASE(X) + 0x10)
+#define LPSPI_SR(X)      MEM32(LPSPI_BASE(X) + 0x14)
+#define LPSPI_IER(X)     MEM32(LPSPI_BASE(X) + 0x18)
+#define LPSPI_DER(X)     MEM32(LPSPI_BASE(X) + 0x1C)
+#define LPSPI_CFGR0(X)   MEM32(LPSPI_BASE(X) + 0x20)
+#define LPSPI_CFGR1(X)   MEM32(LPSPI_BASE(X) + 0x24)
+#define LPSPI_DMR0(X)    MEM32(LPSPI_BASE(X) + 0x30)
+#define LPSPI_DMR1(X)    MEM32(LPSPI_BASE(X) + 0x34)
+#define LPSPI_CCR(X)     MEM32(LPSPI_BASE(X) + 0x40)
+#define LPSPI_FCR(X)     MEM32(LPSPI_BASE(X) + 0x58)
+#define LPSPI_FSR(X)     MEM32(LPSPI_BASE(X) + 0x5C)
+#define LPSPI_TCR(X)     MEM32(LPSPI_BASE(X) + 0x60)
+#define LPSPI_TDR(X)     MEM32(LPSPI_BASE(X) + 0x64)
+#define LPSPI_RSR(X)     MEM32(LPSPI_BASE(X) + 0x70)
+#define LPSPI_RDR(X)     MEM32(LPSPI_BASE(X) + 0x74)
 
 #endif
 

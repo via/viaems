@@ -12,6 +12,7 @@ OBJS+= s32k144.o \
        s32k144_enet.o \
        s32k1xx_crc.o \
        s32k144_startup.o \
+       s32k144_comms.o \
        mcxe246_hwtest.o
 
 
