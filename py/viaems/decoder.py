@@ -29,6 +29,7 @@ class CrankNMinus1PlusCam_Wheel:
     def time_to_next_trigger(self, rpm):
         current_angle = self.wheel[self.index][1]
         next_angle = self.wheel[self._next_index()][1]
+
         diff = clamp_angle(next_angle - current_angle)
         return ticks_for_rpm_degrees(rpm, diff)
 
@@ -38,3 +39,28 @@ class CrankNMinus1PlusCam_Wheel:
         if angle == 0:
             self.cycle += 1
         return (trigger, clamp_angle(angle - self.offset))
+
+
+class CrankNMinus1PlusCam_BadGap_Wheel(CrankNMinus1PlusCam_Wheel):
+    """
+    Real-life use of a missing tooth wheel shows error in the teeth directly
+    adjacent to the gap of the missing tooth.  This class adds a 1.5 degree
+    delay to the tooth before the gap, and a 1.5 degree advance to the tooth
+    after the gap.
+    """
+
+    def time_to_next_trigger(self, rpm):
+        current_angle = self.wheel[self.index][1]
+        next_angle = self.wheel[self._next_index()][1]
+
+        delta = 0
+        if self.index == 35 or self.index == 70:
+            delta = -1.5
+        if self.index == 34 or self.index == 69:
+            delta = 1.5
+
+        diff = clamp_angle(next_angle - current_angle + delta)
+        return ticks_for_rpm_degrees(rpm, diff)
+
+
+

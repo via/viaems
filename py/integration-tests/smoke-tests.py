@@ -1,7 +1,7 @@
 import unittest
 import sys
 
-from viaems.decoder import CrankNMinus1PlusCam_Wheel
+from viaems.decoder import CrankNMinus1PlusCam_Wheel, CrankNMinus1PlusCam_BadGap_Wheel
 from viaems.scenario import Scenario
 from viaems.testcase import TestCase
 from viaems.util import ticks_for_rpm_degrees, ms_ticks
@@ -97,6 +97,35 @@ class NMinus1DecoderTests(TestCase):
       is_valid, msg = validate_outputs(results.filter_between(t1, t5))
       self.assertTrue(is_valid, msg)
 
+
+    def test_high_rpm_noisy_wheel(self):
+      config = console.Configuration()
+      config.rpm_cut.rpm_limit_start = 9000
+      config.rpm_cut.rpm_limit_stop = 10000
+
+      scenario = Scenario("high_rpm_noisy_wheel", CrankNMinus1PlusCam_BadGap_Wheel(36))
+      scenario.set_brv(14.0)
+      scenario.set_map(90);
+      scenario.wait_milliseconds(500)
+      scenario.set_rpm(4000)
+      scenario.wait_milliseconds(1000)
+
+      t1 = scenario.mark()
+      for scan in range(1, 4):
+          for rpm in range(4000, 8000, 10):
+              scenario.set_rpm(rpm)
+              scenario.wait_milliseconds(10)
+          for rpm in range(8000, 4000, -10):
+              scenario.set_rpm(rpm)
+              scenario.wait_milliseconds(10)
+
+      t2 = scenario.mark()
+      scenario.end()
+
+      results = self.conn.execute_scenario(scenario, config)
+
+      is_valid, msg = validate_outputs(results.filter_between(t1, t2))
+      self.assertTrue(is_valid, msg)
 
 
     def test_high_rpm_ramp(self):

@@ -80,6 +80,11 @@ static bool schedule_ignition_event(const struct config *config,
     return false;
   }
 
+  /* Unlike fuel, we always schedule ignition by the tooth rpm (vs average).
+   * The timing accuracy of the end of the pulse is most important, and dwell
+   * time less so.  Inter-tooth variation can only impact the dwell.
+   */
+
   degrees_t firing_angle = clamp_angle(
     clamp_angle(ev->config->angle - advance, 720) - d->last_trigger_angle, 720);
 
@@ -163,11 +168,22 @@ static bool schedule_fuel_event(struct output_event_schedule_state *ev,
                                 const struct engine_position *pos,
                                 unsigned int usecs_pw) {
 
+  /* For a fuel event, we prioritize the duration over the angle. The end time
+   * can't be adjusted after starting to account for changing trigger times,
+   * since we're locked into a duration once we start. 
+   *
+   * Fuel pulses can also be quite long, > 10 ms, so at high RPMs, a little bit
+   * of error in our tooth rpm can cause the start time to vary significantly.
+   * Since some error in the final angle is fine, use the average rpm. Its more
+   * likely to end up with a sane start time, even if it means if the end angle
+   * has more error during increasing/decreasing RPMs.
+   */
+
   degrees_t firing_angle =
     clamp_angle(ev->config->angle - pos->last_trigger_angle, 720);
 
   timeval_t stop_time =
-    pos->time + time_from_rpm_diff(pos->tooth_rpm, firing_angle);
+    pos->time + time_from_rpm_diff(pos->rpm, firing_angle);
   timeval_t start_time = stop_time - time_from_us(usecs_pw);
 
   if (event_has_fired(ev)) {
@@ -199,11 +215,11 @@ static bool schedule_fuel_event(struct output_event_schedule_state *ev,
       ev->start.state = SCHED_SCHEDULED;
 
       /* If not, and the new end time is in the future, move it to the earliest
-       * schedulable time and adjust the end time, but not more than 20 degrees
+       * schedulable time and adjust the end time, but not more than 90 degrees
        * from the original scheduled angle */
     } else if (!time_before(stop_time, earliest_schedulable_time) &&
                (degrees_from_time_diff(earliest_schedulable_time - start_time,
-                                       pos->rpm) < 20.0f)) {
+                                       pos->rpm) < 90.0f)) {
       ev->start.time = earliest_schedulable_time;
       ev->start.state = SCHED_SCHEDULED;
       stop_time += earliest_schedulable_time - start_time;
@@ -594,6 +610,56 @@ START_TEST(check_deschedule_event) {
 }
 END_TEST
 
+START_TEST(check_schedule_fuel_reschedule_at_noisy_tooth) {
+
+  struct engine_position pos = { .has_position = true,
+                                 .has_rpm = true,
+                                 .rpm = 6000,
+                                 .tooth_rpm = 6000,
+                                 .last_trigger_angle = 340.0f,
+                                 .valid_until = -1 };
+
+  /* Test a fuel event schedule when a noisy tooth would cause
+   * the start time to move into the past significantly:
+   * Our last tooth before the gap is at 340*.  Schedule the fuel
+   * event to end at 720*.  Set our pulse width such that with the
+   * average rpm, the event would start soon, but the noise pushes it
+   * into the past.
+   */
+
+  struct output_event_config ev_conf = {
+    .type = FUEL_EVENT,
+    .angle = 720,
+    .pin = 0,
+    .inverted = false,
+  };
+
+  struct output_event_schedule_state ev = {
+    .config = &ev_conf,
+  };
+
+  const unsigned int pw = us_from_time(
+      time_from_rpm_diff(pos.rpm, ev_conf.angle - pos.last_trigger_angle))
+      - 10; // Make sure it starts slightly in the future.
+
+  schedule_fuel_event(&ev, 0, &pos, pw);
+
+  ck_assert(ev.start.state == SCHED_SCHEDULED);
+  ck_assert(ev.stop.state == SCHED_SCHEDULED);
+
+  /* Now do it again, but with a tooth rpm that is higher rpm */
+  pos.tooth_rpm = 6500;
+
+  schedule_fuel_event(&ev, 0, &pos, pw);
+
+  ck_assert(ev.start.state == SCHED_SCHEDULED);
+  ck_assert(ev.stop.state == SCHED_SCHEDULED);
+
+
+}
+END_TEST
+
+
 TCase *setup_scheduler_tests() {
   TCase *tc = tcase_create("scheduler");
   tcase_add_test(tc, check_schedule_ignition);
@@ -606,6 +672,7 @@ TCase *setup_scheduler_tests() {
   tcase_add_test(tc, check_schedule_ignition_reschedule_active_too_early);
   tcase_add_test(tc, check_schedule_fuel_immediately_after_finish);
   tcase_add_test(tc, check_deschedule_event);
+  tcase_add_test(tc, check_schedule_fuel_reschedule_at_noisy_tooth);
   return tc;
 }
 #endif
