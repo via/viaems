@@ -1,3 +1,5 @@
+import random
+
 from viaems.util import ticks_for_rpm_degrees, clamp_angle
 
 
@@ -11,7 +13,7 @@ class CrankNMinus1PlusCam_Wheel:
 
         # Populate even tooth wheel for trigger 0
         self.wheel = [
-            (0, x * self.degrees_per_tooth)
+            (0, x * self.degrees_per_tooth + random.randint(0, 1))
             for x in range(N * 2)
             # Except for a missing tooth each rev
             # The first tooth *after* the gap is the 0 degree mark, and we want

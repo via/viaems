@@ -18,7 +18,6 @@ static struct libusb_device_handle *devh = NULL;
 static void read_callback(struct libusb_transfer *xfer) {
   if (xfer->status != LIBUSB_TRANSFER_COMPLETED) {
     fprintf(stderr, "Transfer failed! %d\n", xfer->status);
-    exit(2);
   }
 
   const uint8_t *rxbuf = xfer->buffer;

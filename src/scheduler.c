@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <string.h>
 #include <strings.h>
+#include <stdio.h>
 
 /* Returns true if both the start and stop entry have been confirmed to fire */
 static bool event_has_fired(struct output_event_schedule_state *ev) {
@@ -199,17 +200,22 @@ static bool schedule_fuel_event(struct output_event_schedule_state *ev,
       ev->start.state = SCHED_SCHEDULED;
 
       /* If not, and the new end time is in the future, move it to the earliest
-       * schedulable time and adjust the end time, but not more than 20 degrees
+       * schedulable time and adjust the end time, but not more than 90 degrees
        * from the original scheduled angle */
     } else if (!time_before(stop_time, earliest_schedulable_time) &&
                (degrees_from_time_diff(earliest_schedulable_time - start_time,
-                                       pos->rpm) < 20.0f)) {
+                                       pos->rpm) < 90.0f)) {
       ev->start.time = earliest_schedulable_time;
       ev->start.state = SCHED_SCHEDULED;
       stop_time += earliest_schedulable_time - start_time;
     } else {
       /* This should only happen if we're trying to schedule an event completely
        * in the past. Prevent the event from scheduling. */
+      if ((ev->start.state == SCHED_SCHEDULED) &&
+          (ev->stop.state == SCHED_SCHEDULED)) {
+        fprintf(stderr, "Move: %d-%d -> %d-%d\n", 
+            ev->start.time, ev->stop.time, start_time, stop_time);
+      }
       ev->start.state = SCHED_UNSCHEDULED;
       ev->stop.state = SCHED_UNSCHEDULED;
       return false;

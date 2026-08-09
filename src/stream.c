@@ -84,9 +84,21 @@ static bool blocking_read_timeout(size_t n, uint8_t data[n], void *arg) {
   return true;
 }
 
-static bool nonblocking_read(size_t n, uint8_t data[n], void *arg) {
-  (void)arg;
-  return platform_read(data, n) == n;
+struct buffer_reader {
+  uint8_t *ptr;
+  size_t remaining;
+};
+
+static bool buffer_read(size_t n, uint8_t data[n], void *arg) {
+  struct buffer_reader *reader = (struct buffer_reader *)arg;
+  if (n > reader->remaining) {
+    return false;
+  }
+  memcpy(data, reader->ptr, n);
+  reader->remaining -= n;
+  reader->ptr += n;
+
+  return true;
 }
 
 static bool blocking_platform_write(size_t n,
@@ -392,18 +404,34 @@ bool platform_message_reader_new(struct console_rx_message *msg) {
     return false;
   }
 
-  /* Use a nonblocking read to see if we have length bytes available.
-   * This means the 2 length bytes must both be readable similtaneously.
-   */
-  if (!stream_message_reader_new(&msg_reader, nonblocking_read, NULL)) {
+
+  static uint8_t start_buf[3]; // Buffer first three bytes of a frame, it
+                               // is the longest that the length prefix + overhead byte
+                               // can be
+  static size_t start_buf_len = 0;
+
+  /* Use nonblocking reads to populate the start buffer */
+  start_buf_len += platform_read(start_buf + start_buf_len, sizeof(start_buf) - start_buf_len);
+
+  if (start_buf_len != sizeof(start_buf)) {
     return false;
   }
+
+  start_buf_len = 0;
+
+  /* Start processing a stream from our buffer */
+  struct buffer_reader rdr = { .ptr = start_buf, .remaining = sizeof(start_buf) };
+  if (!stream_message_reader_new(&msg_reader, buffer_read, &rdr)) {
+    return false;
+  }
+
+  read_stream_synchronized = true;
   msg->length = msg_reader.length;
   /* Bound the total reception time to 100 ms to avoid blocking transmits
    * forever */
   blocking_read_arg =
     (struct blocking_reader){ .fail_after =
-                                current_time() + time_from_us(100000) };
+                                current_time() + time_from_us(1000000) };
   return true;
 }
 

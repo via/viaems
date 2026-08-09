@@ -1393,6 +1393,7 @@ uint32_t max = 0;
 uint32_t last_time = 0;
 uint32_t maxi = 0;
 
+__attribute__((no_stack_protector))
 void SystemInit(void) {
   *SCB_CPACR |= ((3UL << (10 * 2)) | (3UL << (11 * 2))); /* set CP10 and CP11 Full Access */
 #if 1
@@ -1405,19 +1406,6 @@ void SystemInit(void) {
 }
 
 
-
-#ifndef PLATFORM_HAS_NATIVE_MESSAGING
-size_t platform_read(uint8_t *buffer, size_t max) {
-  return 0;
-}
-
-size_t platform_write(const uint8_t *buffer, size_t length) {
-  for (unsigned i = 0; i < length; i++) {
-    write_character(buffer[i]);
-  }
-  return length;
-}
-#endif
 
 int startup(void) {
 
@@ -1469,6 +1457,8 @@ int startup(void) {
     setup_adc();
     setup_pdb();
     start_lpit();
+
+    void configure_spi(void);
     configure_spi();
   }
 
@@ -1549,7 +1539,6 @@ int startup(void) {
 //
 //
 
-/* TODO: implement graceful shutdown of outputs on fault */
 #define STACK_CHK_GUARD 0xe2dee396
 uintptr_t  __attribute__((externally_visible)) __stack_chk_guard = STACK_CHK_GUARD;
 
@@ -1557,4 +1546,3 @@ __attribute__((noreturn)) __attribute__((externally_visible))
 void __stack_chk_fail(void) {
   while(1);
 }
-

@@ -21,7 +21,7 @@ void crc32_add_bytes(struct crc32 *crc, size_t len, const uint8_t bytes[len]) {
 
   const uint8_t *src = bytes;
   size_t remaining = len;
-  while (((uint32_t)src & 0x3) != 0) {
+  while ((remaining > 0) && ((uint32_t)src & 0x3) != 0) {
     crc32_add_byte(crc, *src);
     src++;
     remaining--;

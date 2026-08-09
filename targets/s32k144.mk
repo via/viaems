@@ -19,10 +19,11 @@ OBJS+= s32k144.o \
 
 OBJS+= libssp.a libssp_nonshared.a
 
-CFLAGS= -DNDEBUG -ffunction-sections -fdata-sections -O2 -g3
+CFLAGS= -DNDEBUG -ffunction-sections -fdata-sections -O1 -g3
 CFLAGS+= -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mthumb -mcpu=cortex-m4
 
 CFLAGS+= -DTICKRATE=40000000 -DSPI_${SPI_ADC}
+CFLAGS+= -fstack-protector-all
 #CFLAGS+= -DHWTEST_PINS
 #CFLAGS+= -DPLATFORM_HAS_NATIVE_MESSAGE_IO
 

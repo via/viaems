@@ -652,5 +652,10 @@ static inline uint32_t FTM_BASE(int FTM) {
 #define LPSPI_RSR(X)     MEM32(LPSPI_BASE(X) + 0x70)
 #define LPSPI_RDR(X)     MEM32(LPSPI_BASE(X) + 0x74)
 
+#define LPSPI_CCR_SCKPCS(X) ((uint32_t)(X) << 24)
+#define LPSPI_CCR_PCSSCK(X) ((uint32_t)(X) << 16)
+#define LPSPI_CCR_DBT(X)    ((uint32_t)(X) << 8)
+#define LPSPI_CCR_SCKDIV(X) ((uint32_t)(X) << 0)
+
 #endif
 
