@@ -6,8 +6,8 @@ MEMORY
 
   flexnvm(rx) : ORIGIN = 0x10000000, LENGTH = 64K
 	
-	sram_l(rwx)  : ORIGIN = 0x1FFE0000, LENGTH = 128K 
-	sram_u(rwx)  : ORIGIN = 0x20000000, LENGTH = 124K
+	sram_l(rwx)  : ORIGIN = 0x1FFF0000, LENGTH = 64K 
+	sram_u(rwx)  : ORIGIN = 0x20000000, LENGTH = 60K
 }
 
 ENTRY(Reset_Handler)

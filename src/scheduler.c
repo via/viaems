@@ -211,11 +211,6 @@ static bool schedule_fuel_event(struct output_event_schedule_state *ev,
     } else {
       /* This should only happen if we're trying to schedule an event completely
        * in the past. Prevent the event from scheduling. */
-      if ((ev->start.state == SCHED_SCHEDULED) &&
-          (ev->stop.state == SCHED_SCHEDULED)) {
-        fprintf(stderr, "Move: %d-%d -> %d-%d\n", 
-            ev->start.time, ev->stop.time, start_time, stop_time);
-      }
       ev->start.state = SCHED_UNSCHEDULED;
       ev->stop.state = SCHED_UNSCHEDULED;
       return false;

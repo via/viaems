@@ -11,6 +11,7 @@
 #include "viaems.h"
 #include "sim.h"
 #include "util.h"
+#include "rtt.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -120,8 +121,8 @@ static void enable_peripheral_clocks(void) {
 //  *PCC_ENET = PCC_CGC;
   *PCC_CRC = PCC_CGC;
 
-//  *PCC_LPSPI0 = PCC_CGC | PCC_PCS(6); // SPLLDIV2 (40 MHz) for SPI0
-  *PCC_LPSPI1 = PCC_CGC | PCC_PCS(3);   // FIRCDIV2 (24 MHz) for SPI1
+  *PCC_LPSPI1 = PCC_CGC | PCC_PCS(6); // SPLLDIV2 (40 MHz) for SPI1
+//  *PCC_LPSPI1 = PCC_CGC | PCC_PCS(3);   // FIRCDIV2 (24 MHz) for SPI1
 }
 
 static void configure_pins(void) {
@@ -485,12 +486,20 @@ void write_string(const char *c) {
 int __attribute__((externally_visible))
 _write(int fd, const char *buf, size_t count) {
   (void)fd;
+#if 0 
   size_t pos = 0;
   while (pos < count) {
     write_character(buf[pos]);
     pos += 1;
   }
   return count;
+#else
+  if (rtt_write(buf, count)) {
+    return count;
+  } else {
+    return 0;
+  }
+#endif
 }
 
 enum s32k1xx_ftm_pin_type {

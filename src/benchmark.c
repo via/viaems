@@ -560,6 +560,7 @@ static uint32_t do_crc32_of_200byte_string(void) {
 
 static uint32_t do_load_config_from_pb(void) {
 
+#if MOARRAM
   static struct viaems_console_Configuration msg;
   static struct config newconfig;
 
@@ -570,6 +571,8 @@ static uint32_t do_load_config_from_pb(void) {
   config_load_from_console_pbtype(&newconfig, &msg);
   uint64_t end = cycle_count();
   return end - start;
+#endif
+  return 0;
 }
 
 static uint32_t do_serialize_engineupdate(void) {

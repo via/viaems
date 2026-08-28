@@ -3,6 +3,8 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include <stdio.h>
+
 #include "s32k1xx.h"
 
 #include "spsc.h"
@@ -87,7 +89,7 @@ static void update_frame(void) {
 // Configure SPI1 to be a master at 12 Mhz.
 // We send/receive SPI "frames" of 260 bytes (32 bit control + 256 byte data). 
 // CS is kept active low during the frame, and set high between frames.
-// Expects FIRCDIV2 (24 MHz) to be used as peripheral clock.
+// Expects SPLLDIV2 (40 MHz) to be used as peripheral clock.
 void configure_spi(void) {
 
   update_frame();
@@ -146,10 +148,10 @@ void configure_spi(void) {
   *LPSPI_CR(1) = 1; // MEN
   *LPSPI_DER(1) = 3; // TDDE and RDDE
   *LPSPI_TCR(1) = (1u << 30) | // CPHA
-                  (1u << 27) | // temp: 6 MHz
+                  (1u << 27) | // 10 MHz
                   (1u << 22) | // Byte swap
                   (2079 << 0); // Frame size is 2080 bits (256 + 4 bytes)
-  *LPSPI_CCR(1) = LPSPI_CCR_DBT(120);
+  *LPSPI_CCR(1) = LPSPI_CCR_DBT(255) | LPSPI_CCR_PCSSCK(16) | LPSPI_CCR_SCKPCS(16);
 
   *DMA_ERQ = 3;
 }
@@ -203,6 +205,9 @@ size_t platform_read(uint8_t *buffer, size_t max) {
 }
 
 size_t platform_write(const uint8_t *buffer, size_t length) {
+  static int32_t cur_idx;
+  static uint32_t cur_pos;
+
   if (length == 0) {
     return 0;
   }

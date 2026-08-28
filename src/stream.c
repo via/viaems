@@ -10,6 +10,8 @@
 #include "stream.h"
 #include "util.h"
 
+#include "rtt.h"
+
 /* This file implements the platform message API for platforms that do not have
  * a native messaging API. It does so by using the platform streaming reads and
  * writes.  Messages are encoded with COBS and framed with a starting length and
@@ -75,6 +77,7 @@ static bool blocking_read_timeout(size_t n, uint8_t data[n], void *arg) {
   size_t remaining = n;
   while (remaining > 0) {
     if (time_before(br->fail_after, current_time())) {
+      rtt_debug("read timeout", n, 0, 0, 0);
       return false;
     }
     size_t amt = platform_read(ptr, remaining);
@@ -101,14 +104,18 @@ static bool buffer_read(size_t n, uint8_t data[n], void *arg) {
   return true;
 }
 
-static bool blocking_platform_write(size_t n,
-                                    const uint8_t data[n],
-                                    void *arg) {
-  (void)arg;
+static bool blocking_write_timeout(size_t n,
+                                   const uint8_t data[n],
+                                   void *arg) {
+  timeval_t fail_after = *(timeval_t *)arg;
 
   size_t remaining = n;
   const uint8_t *ptr = data;
   while (remaining > 0) {
+    if (time_before(fail_after, current_time())) {
+      rtt_debug("write timeout", n, n, n, n);
+      return false;
+    }
     size_t written = platform_write(ptr, remaining);
     ptr += written;
     remaining -= written;
@@ -364,8 +371,9 @@ static bool stream_message_read(struct stream_message_reader *msg,
 bool platform_message_writer_new(struct console_tx_message *msg,
                                  size_t length) {
   (void)msg;
+  timeval_t fail_after = current_time() + time_from_us(10000);
   if (!stream_message_writer_new(
-        &msg_writer, blocking_platform_write, NULL, length)) {
+        &msg_writer, blocking_write_timeout, &fail_after, length)) {
     return false;
   }
 
@@ -376,8 +384,9 @@ bool platform_message_writer_write(struct console_tx_message *msg,
                                    const uint8_t *data,
                                    size_t length) {
   (void)msg;
+  timeval_t fail_after = current_time() + time_from_us(10000);
   if (!stream_message_write(
-        &msg_writer, blocking_platform_write, NULL, length, data)) {
+        &msg_writer, blocking_write_timeout, &fail_after, length, data)) {
     return false;
   }
 
@@ -400,15 +409,18 @@ static bool read_until_null_byte(void) {
 }
 
 bool platform_message_reader_new(struct console_rx_message *msg) {
-  if (!read_stream_synchronized && !read_until_null_byte()) {
-    return false;
-  }
-
-
   static uint8_t start_buf[3]; // Buffer first three bytes of a frame, it
                                // is the longest that the length prefix + overhead byte
                                // can be
   static size_t start_buf_len = 0;
+
+  if (!read_stream_synchronized) {
+    start_buf_len = 0;
+    if (!read_until_null_byte()) {
+      return false;
+    }
+    read_stream_synchronized = true;
+  }
 
   /* Use nonblocking reads to populate the start buffer */
   start_buf_len += platform_read(start_buf + start_buf_len, sizeof(start_buf) - start_buf_len);
@@ -422,16 +434,17 @@ bool platform_message_reader_new(struct console_rx_message *msg) {
   /* Start processing a stream from our buffer */
   struct buffer_reader rdr = { .ptr = start_buf, .remaining = sizeof(start_buf) };
   if (!stream_message_reader_new(&msg_reader, buffer_read, &rdr)) {
+    /* Because we're reading from a buffer, this can only fail if we read a nul byte when it is inappropriate */
+    read_stream_synchronized = false;
     return false;
   }
 
-  read_stream_synchronized = true;
   msg->length = msg_reader.length;
   /* Bound the total reception time to 100 ms to avoid blocking transmits
    * forever */
   blocking_read_arg =
     (struct blocking_reader){ .fail_after =
-                                current_time() + time_from_us(1000000) };
+                                current_time() + time_from_us(100000) };
   return true;
 }
 

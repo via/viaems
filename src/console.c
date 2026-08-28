@@ -360,13 +360,10 @@ void console_process(struct config *config) {
       console_process_request(&rxmsg, config);
   }
 
-  /* Process any outstanding event messages */
+  /* Process an event message first */
   struct logged_event ev = get_logged_event();
   if (ev.type != EVENT_NONE) {
-    do {
-      console_event_message(&ev);
-      ev = get_logged_event();
-    } while (ev.type != EVENT_NONE);
+    console_event_message(&ev);
   }
 
   int idx = spsc_next(&engine_update_queue);
