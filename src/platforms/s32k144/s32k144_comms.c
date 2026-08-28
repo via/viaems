@@ -212,16 +212,25 @@ size_t platform_write(const uint8_t *buffer, size_t length) {
     return 0;
   }
 
-  int32_t idx = spsc_allocate(&tx_queue);
-  if (idx < 0) {
-    return 0;
+  if (cur_idx < 0) {
+    cur_idx = spsc_allocate(&tx_queue);
+    if (cur_idx < 0) {
+      return 0;
+    }
+    cur_pos = 0;
   }
-  size_t amt = length > 256 ? 256 : length;
 
-  memcpy(txqes[idx].data, buffer, amt);
-  txqes[idx].control = CONTROL_LEN(amt - 1);
+  size_t remaining_in_buffer = 256 - cur_pos;
+  size_t write_amt = length > remaining_in_buffer ? remaining_in_buffer : length;
 
-  spsc_push(&tx_queue);
-  return amt;
+  memcpy(txqes[cur_idx].data + cur_pos, buffer, write_amt);
+  cur_pos += write_amt;
+  if (cur_pos == 256) {
+    txqes[cur_idx].control = CONTROL_LEN(cur_pos - 1);
+    spsc_push(&tx_queue);
+    cur_idx = -1;
+  }
+
+  return write_amt;
 }
 
